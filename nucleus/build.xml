@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project name="nucleus" basedir=".">
+    <property name="jar.dir" value="${build.dir}/jar" />
+    <property name="version" value="0.1.1"  />
+    <property name="wonder.dir" value="../../../WonderCloud/repository/android/WonderCloud" />
+
+    <target name="jar4wonder">
+        <jar destfile="${wonder.dir}/libs/${ant.project.name}-${version}.jar" basedir="bin">
+        </jar>
+    </target>
+</project>
