@@ -24,17 +24,29 @@ THE SOFTWARE.
 -----------------------------------------------------------------------------
 */
 
-package net.cellcloud.talk;
+package net.cellcloud.talk.dialect;
 
-/** 方言。
+/** 动作方言工厂。
  * 
  * @author Jiangwei Xu
  */
-public abstract class Dialect {
+public final class ActionDialectFactory extends DialectFactory {
 
-	private String name;
+	public final static String FACTORY_NAME = "ActionDialect";
 
-	public Dialect(String name) {
-		this.name = name;
+	private DialectMetaData metaData;
+
+	public ActionDialectFactory() {
+		this.metaData = new DialectMetaData(FACTORY_NAME, "Action Dialect");
+	}
+
+	@Override
+	public DialectMetaData getMetaData() {
+		return this.metaData;
+	}
+
+	@Override
+	public Dialect create(String tracker) {
+		return new ActionDialect(tracker);
 	}
 }

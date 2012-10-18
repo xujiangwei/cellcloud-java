@@ -32,6 +32,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import net.cellcloud.core.Cellet;
+import net.cellcloud.talk.dialect.Dialect;
 
 /** 原语描述类。
  * 
@@ -48,17 +49,20 @@ public class Primitive {
 	private ArrayList<ComplementStuff> complementList;
 
 	private Cellet cellet;
+	private Dialect dialect;
 
 	/** 构造函数。 */
 	public Primitive() {
 		this.ownerTag = null;
 		this.cellet = null;
+		this.dialect = null;
 	}
 
 	/** 构造函数。 */
 	public Primitive(String ownerTag) {
 		this.ownerTag = ownerTag;
 		this.cellet = null;
+		this.dialect = null;
 	}
 
 	/** 返回原语所属端的标签。
@@ -76,6 +80,24 @@ public class Primitive {
 	 */
 	public Cellet getCellet() {
 		return this.cellet;
+	}
+
+	/** 判断是否具有方言属性。
+	 */
+	public boolean hasDialect() {
+		return (null != this.dialect);
+	}
+
+	/** 返回方言。
+	 */
+	public Dialect getDialect() {
+		return this.dialect;
+	}
+
+	/** 设置关联方言。
+	 */
+	public void capture(Dialect dialect) {
+		this.dialect = dialect;
 	}
 
 	/** 提交主语。

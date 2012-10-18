@@ -33,6 +33,8 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.Vector;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 import net.cellcloud.common.Message;
 import net.cellcloud.common.NonblockingAcceptor;
@@ -44,6 +46,11 @@ import net.cellcloud.core.Cryptology;
 import net.cellcloud.core.Logger;
 import net.cellcloud.core.Nucleus;
 import net.cellcloud.exception.SingletonException;
+import net.cellcloud.talk.dialect.ActionDelegate;
+import net.cellcloud.talk.dialect.ActionDialect;
+import net.cellcloud.talk.dialect.ActionDialectFactory;
+import net.cellcloud.talk.dialect.Dialect;
+import net.cellcloud.talk.dialect.DialectEnumerator;
 import net.cellcloud.talk.stuff.Primitive;
 import net.cellcloud.util.Util;
 
@@ -72,6 +79,8 @@ public final class TalkService implements Service {
 	private TalkServiceDaemon daemon;
 	private ArrayList<TalkListener> listeners;
 
+	private ExecutorService executor;
+
 	/** 构造函数。
 	 * @throws SingletonException 
 	 */
@@ -87,6 +96,11 @@ public final class TalkService implements Service {
 			this.speakers = null;
 			this.lostSpeakers = null;
 			this.listeners = null;
+
+			this.executor = null;
+
+			// 添加默认方言工厂
+			DialectEnumerator.getInstance().addFactory(new ActionDialectFactory());
 		}
 		else {
 			throw new SingletonException(TalkService.class.getName());
@@ -247,14 +261,46 @@ public final class TalkService implements Service {
 
 	/** 向指定 Cellet 发送原语。
 	 */
-	public void talk(String identifier, Primitive primitive) {
+	public boolean talk(final String identifier, Primitive primitive) {
 		if (null == this.speakers)
-			return;
+			return false;
 
 		Speaker speaker = this.speakers.get(identifier);
 		if (null != speaker) {
 			speaker.speak(primitive);
+			return true;
 		}
+
+		return false;
+	}
+
+	/** 向指定 Cellet 发送方言。
+	 */
+	public boolean talk(final String identifier, Dialect dialect) {
+		if (null == this.speakers)
+			return false;
+
+		Primitive primitive = dialect.translate(Nucleus.getInstance().getTagAsString());
+		if (null != primitive) {
+			return this.talk(identifier, primitive);
+		}
+
+		return false;
+	}
+
+	/** 执行动作。
+	 */
+	public void doAction(final ActionDialect dialect, final ActionDelegate delegate) {
+		if (null == this.executor) {
+			this.executor = Executors.newFixedThreadPool(64);
+		}
+
+		this.executor.execute(new ActionTask() {
+			@Override
+			public void run() {
+				delegate.doAction(dialect);
+			}
+		});
 	}
 
 	/** 将指定 Speaker 标记为丢失连接。
@@ -597,5 +643,18 @@ public final class TalkService implements Service {
 		protected long time;
 		/// 是否已经发送校验请求
 		protected boolean checked;
+	}
+
+	/** 动作任务。
+	*/
+	protected class ActionTask implements Runnable {
+		/**
+		 */
+		public ActionTask() {
+		}
+
+		@Override
+		public void run() {
+		}
 	}
 }

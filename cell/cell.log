@@ -1,0 +1,6 @@
+11:12:50 [INFO]  net.cellcloud.core.Nucleus *-*-* Cell Initializing *-*-*
+11:12:51 [INFO]  net.cellcloud.core.Nucleus Talk Service starts successfully
+11:12:51 [INFO]  net.cellcloud.core.Nucleus Analysing jar file : E:\Development\CellCloud-Java\workspace\cellet-dummy\cellet-dummy.jar
+11:12:51 [DEBUG] net.cellcloud.cellet.DummyCellet activate
+11:12:56 [INFO]  net.cellcloud.core.Nucleus *-*-* Cell Finalizing *-*-*
+11:12:56 [DEBUG] net.cellcloud.cellet.DummyCellet deactivate

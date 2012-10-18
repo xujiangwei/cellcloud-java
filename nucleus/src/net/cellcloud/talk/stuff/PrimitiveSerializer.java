@@ -33,6 +33,9 @@ import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
 import java.util.Iterator;
 
+import net.cellcloud.talk.dialect.Dialect;
+import net.cellcloud.talk.dialect.DialectEnumerator;
+
 /** 原语序列化器。
  * 
  * @author Jiangwei Xu
@@ -229,6 +232,15 @@ public final class PrimitiveSerializer {
 				}
 			}
 
+			// 方言
+			if (null != primitive.getDialect()) {
+				stream.write(TOKEN_OPEN_BRACKET);
+				stream.write(primitive.getDialect().getName().getBytes(Charset.forName("UTF8")));
+				stream.write(TOKEN_AT);
+				stream.write(primitive.getDialect().getTracker().getBytes(Charset.forName("UTF8")));
+				stream.write(TOKEN_CLOSE_BRACKET);
+			}
+
 			stream.flush();
 		} catch (IOException e) {
 			e.printStackTrace();
@@ -325,7 +337,7 @@ public final class PrimitiveSerializer {
 						// 添加语素
 						injectStuff(primitive, type, value, literal);
 
-						parse = PARSE_PHASE_UNKNOWN;
+						parse = PARSE_PHASE_DIALECT;
 						length = 0;
 						continue;
 					}
@@ -348,6 +360,26 @@ public final class PrimitiveSerializer {
 						continue;
 					}
 					buf.put((byte)read);
+					break;
+
+				case PARSE_PHASE_DIALECT:
+					if (read == TOKEN_OPEN_BRACE) {
+						parse = PARSE_PHASE_TYPE;
+						buf.clear();
+					}
+					else if (read == TOKEN_OPEN_BRACKET) {
+						// 解析方言开始
+						buf.clear();
+					}
+					else if (read == TOKEN_CLOSE_BRACKET) {
+						// 解析方言结束
+						deserializeDialect(primitive, new String(buf.array(), 0, length, Charset.forName("UTF-8")));
+					}
+					else {
+						// 记录数据
+						buf.put((byte)read);
+						++length;
+					}
 					break;
 
 				default:
@@ -477,5 +509,26 @@ public final class PrimitiveSerializer {
 		else {
 			return null;
 		}
+	}
+
+	/** 反序列化方言
+	 */
+	private static void deserializeDialect(Primitive primitive, final String dialectStr) {
+		String[] sections = dialectStr.split("@");
+		if (sections.length != 2) {
+			return;
+		}
+
+		String dialectName = sections[0];
+		String tracker = sections[1];
+
+		// 创建方言
+		Dialect dialect = DialectEnumerator.getInstance().createDialect(dialectName, tracker);
+		dialect.setTag(primitive.getOwnerTag());
+
+		// 分析数据
+		dialect.build(primitive);
+		// 关联
+		primitive.capture(dialect);
 	}
 }
