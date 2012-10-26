@@ -443,7 +443,7 @@ public final class TalkService implements Service {
 		log.append("Talk service reject session (");
 		log.append(sid);
 		log.append("): ");
-		log.append(session.getAddress().getHostString());
+		log.append(session.getAddress().getHostName());
 		log.append(":");
 		log.append(session.getAddress().getPort());
 		Logger.w(TalkService.class, log.toString());
@@ -556,7 +556,7 @@ public final class TalkService implements Service {
 
 				StringBuilder log = new StringBuilder();
 				log.append("Talk service session timeout: ");
-				log.append(session.getAddress().getHostString());
+				log.append(session.getAddress().getHostName());
 				log.append(":");
 				log.append(session.getAddress().getPort());
 				Logger.i(TalkService.class, log.toString());

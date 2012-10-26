@@ -28,7 +28,6 @@ package net.cellcloud.common;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
-import java.net.StandardSocketOptions;
 import java.nio.ByteBuffer;
 import java.nio.channels.ClosedChannelException;
 import java.nio.channels.SelectionKey;
@@ -81,7 +80,7 @@ public class NonblockingConnector extends MessageService implements
 	@Override
 	public Session connect(InetSocketAddress address) {
 		if (this.channel != null && this.channel.isConnected()) {
-			Logger.w(NonblockingConnector.class, "Connector has connected to " + address.getHostString());
+			Logger.w(NonblockingConnector.class, "Connector has connected to " + address.getHostName());
 			return this.session;
 		}
 
@@ -116,9 +115,15 @@ public class NonblockingConnector extends MessageService implements
 			this.channel.configureBlocking(false);
 
 			// 配置
+			/* 以下为 JDK7 的代码
 			this.channel.setOption(StandardSocketOptions.SO_KEEPALIVE, true);
 			this.channel.setOption(StandardSocketOptions.SO_RCVBUF, BLOCK);
 			this.channel.setOption(StandardSocketOptions.SO_SNDBUF, BLOCK);
+			*/
+			// 以下为 JDK6 的代码
+			this.channel.socket().setKeepAlive(true);
+			this.channel.socket().setReceiveBufferSize(BLOCK);
+			this.channel.socket().setSendBufferSize(BLOCK);
 
 			this.selector = Selector.open();
 			// 注册事件
@@ -163,7 +168,7 @@ public class NonblockingConnector extends MessageService implements
 				}
 			}
 		};
-		this.handleThread.setName("NonblockingConnector@" + this.address.getHostString() + ":" + this.address.getPort());
+		this.handleThread.setName("NonblockingConnector@" + this.address.getHostName() + ":" + this.address.getPort());
 		// 启动线程
 		this.handleThread.start();
 

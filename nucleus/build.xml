@@ -1,9 +1,26 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project name="nucleus" basedir=".">
+	<property name="build.dir" value="build" />
+	<property name="src.dir" value="src" />
+	<property name="bin.dir" value="${build.dir}/bin" />
     <property name="jar.dir" value="${build.dir}/jar" />
     <property name="version" value="0.1.1"  />
     <property name="wonder.dir" value="../../../WonderCloud/repository/android/WonderCloud" />
 
+	<!-- Clean -->
+	<target name="clean">
+	</target>
+
+	<!-- Compile -->
+	<target name="compile" depends="clean">
+		<javac srcdir="${src.dir}" destdir="${bin.dir}"/>
+	</target>
+
+	<!-- Jar -->
+	<target name="jar" depends="compile">
+	</target>
+
+	<!-- Only for Ambrose Xu -->
     <target name="jar4wonder">
         <jar destfile="${wonder.dir}/libs/${ant.project.name}-${version}.jar" basedir="bin">
         </jar>

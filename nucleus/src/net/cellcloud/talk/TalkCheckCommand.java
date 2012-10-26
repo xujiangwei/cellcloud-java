@@ -69,7 +69,7 @@ public final class TalkCheckCommand extends TalkCommand {
 		log.append("Session (");
 		log.append(this.session.getId());
 		log.append(") ");
-		log.append(this.session.getAddress().getHostString());
+		log.append(this.session.getAddress().getHostName());
 		log.append(":");
 		log.append(this.session.getAddress().getPort());
 

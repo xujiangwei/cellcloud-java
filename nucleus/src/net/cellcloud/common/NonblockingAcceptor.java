@@ -128,7 +128,7 @@ public class NonblockingAcceptor extends MessageService implements
 		};
 
 		// 启动线程
-		this.handleThread.setName("NonblockingAcceptor@" + this.bindAddress.getHostString() + ":" + this.bindAddress.getPort());
+		this.handleThread.setName("NonblockingAcceptor@" + this.bindAddress.getHostName() + ":" + this.bindAddress.getPort());
 		this.handleThread.start();
 
 		return true;
@@ -188,7 +188,7 @@ public class NonblockingAcceptor extends MessageService implements
 		Iterator<NonblockingAcceptorSession> iter = this.sessions.values().iterator();
 		while (iter.hasNext()) {
 			NonblockingAcceptorSession nas = iter.next();
-			if (nas.getId() == session.getId()) {
+			if (nas.getId().longValue() == session.getId().longValue()) {
 				try {
 					nas.socket.close();
 				} catch (IOException e) {
@@ -204,7 +204,7 @@ public class NonblockingAcceptor extends MessageService implements
 		Iterator<NonblockingAcceptorSession> iter = this.sessions.values().iterator();
 		while (iter.hasNext()) {
 			NonblockingAcceptorSession nas = iter.next();
-			if (nas.getId() == session.getId()) {
+			if (nas.getId().longValue() == session.getId().longValue()) {
 				nas.messages.add(message);
 				break;
 			}
@@ -235,7 +235,7 @@ public class NonblockingAcceptor extends MessageService implements
 		while (iter.hasNext()) {
 			Integer hasCode = iter.next();
 			NonblockingAcceptorSession nas = this.sessions.get(hasCode);
-			if (nas.getId() == session.getId()) {
+			if (nas.getId().longValue() == session.getId().longValue()) {
 				this.sessions.remove(hasCode);
 				exist = true;
 				break;

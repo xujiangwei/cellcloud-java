@@ -127,7 +127,7 @@ public final class SpeakerConnectorHandler extends MessageHandler {
 			buf.append("Cellet '");
 			buf.append(this.speaker.getIdentifier());
 			buf.append("' has called at ");
-			buf.append(this.speaker.getAddress().getHostString());
+			buf.append(this.speaker.getAddress().getHostName());
 			buf.append(":");
 			buf.append(this.speaker.getAddress().getPort());
 			Logger.d(SpeakerConnectorHandler.class, buf.toString());

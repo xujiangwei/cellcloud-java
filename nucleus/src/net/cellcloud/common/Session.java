@@ -36,7 +36,7 @@ import net.cellcloud.util.Util;
  */
 public class Session {
 
-	private long id;
+	private Long id;
 	private MessageService service;
 	private InetSocketAddress address;
 
@@ -48,7 +48,7 @@ public class Session {
 
 	/** 返回会话 ID 。
 	 */
-	public long getId() {
+	public Long getId() {
 		return this.id;
 	}
 

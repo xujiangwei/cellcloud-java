@@ -243,11 +243,13 @@ public final class Nucleus {
 					}
 				}
 
+				/* 以下为 JDK7 的代码
 				try {
 					loader.close();
 				} catch (IOException e) {
 					e.printStackTrace();
 				}
+				*/
 			}
 		}
 	}

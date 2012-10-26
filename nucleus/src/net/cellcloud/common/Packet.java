@@ -162,6 +162,9 @@ public final class Packet {
 	/** 获取子段。
 	 */
 	public byte[] getSubsegment(int index) {
+		if (index < 0 || index >= this.subsegments.size())
+			return null;
+
 		return this.subsegments.get(index);
 	}
 
