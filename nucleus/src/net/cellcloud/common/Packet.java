@@ -61,12 +61,12 @@ import net.cellcloud.core.Logger;
 */
 public final class Packet {
 	
-	public static final int PSL_TAG = 4;
-	public static final int PSL_VERSION = 4;
-	public static final int PSL_SN = 4;
-	public static final int PSL_BODY_LENGTH = 8;
-	public static final int PSL_SUBSEGMENT_NUM = 4;
-	public static final int PSL_SUBSEGMENT_LENGTH = 8;
+	protected static final int PSL_TAG = 4;
+	protected static final int PSL_VERSION = 4;
+	protected static final int PSL_SN = 4;
+	protected static final int PSL_BODY_LENGTH = 8;
+	protected static final int PSL_SUBSEGMENT_NUM = 4;
+	protected static final int PSL_SUBSEGMENT_LENGTH = 8;
 
 	private byte[] tag;
 	private int sn;
@@ -291,12 +291,10 @@ public final class Packet {
 		// 创建实例
 		Packet packet = new Packet(bTag, sn, major, minor);
 
-		if (datalen > PSL_TAG + PSL_VERSION + PSL_SN + PSL_BODY_LENGTH)
-		{
+		if (datalen > PSL_TAG + PSL_VERSION + PSL_SN + PSL_BODY_LENGTH) {
 			// 确认有 BODY 段，校验 BODY 段长度
-			if ((datalen - (PSL_TAG + PSL_VERSION + PSL_SN + PSL_BODY_LENGTH)) != bodyLength)
-			{
-				Logger.w(Packet.class, "Packet length error");
+			if ((datalen - (PSL_TAG + PSL_VERSION + PSL_SN + PSL_BODY_LENGTH)) != bodyLength) {
+				Logger.w(Packet.class, "Packet length has exception");
 			}
 
 			int begin = PSL_TAG + PSL_VERSION + PSL_SN + PSL_BODY_LENGTH;
