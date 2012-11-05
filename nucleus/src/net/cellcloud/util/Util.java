@@ -27,6 +27,9 @@ THE SOFTWARE.
 package net.cellcloud.util;
 
 import java.nio.charset.Charset;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.Random;
 
 /** 实用函数库。
@@ -35,7 +38,8 @@ import java.util.Random;
  */
 public final class Util {
 
-	private static Random sRandom = new Random(System.currentTimeMillis());
+	public final static SimpleDateFormat sDateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+	private final static Random sRandom = new Random(System.currentTimeMillis());
 
 	// 字母表
 	private static final char[] ALPHABET = {'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K',
@@ -77,6 +81,23 @@ public final class Util {
 			buf[i] = ALPHABET[index];
 		}
 		return new String(buf);
+	}
+
+	/** 转换日期为字符串形式。
+	 */
+	public static String convertDateToSimpleString(Date date) {
+		return sDateFormat.format(date);
+	}
+	/** 转换字符串形式为日期。
+	 */
+	public static Date convertSimpleStringToDate(String string) {
+		try {
+			return sDateFormat.parse(string);
+		} catch (ParseException e) {
+			e.printStackTrace();
+		}
+
+		return null;
 	}
 
 	/** Byte 数组转 UTF-8 字符串。

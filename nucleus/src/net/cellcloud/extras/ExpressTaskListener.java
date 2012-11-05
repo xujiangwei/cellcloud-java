@@ -26,8 +26,24 @@ THE SOFTWARE.
 
 package net.cellcloud.extras;
 
-/**
+/** 任务监听器。
+ * @author Jiangwei Xu
  */
 public interface ExpressTaskListener {
 
+	/**
+	 */
+	public void expressStarted(FileExpressContext context);
+
+	/**
+	 */
+	public void expressCompleted(FileExpressContext context);
+
+	/**
+	 */
+	public void expressProgress(FileExpressContext context);
+
+	/**
+	 */
+	public void expressError(FileExpressContext context);
 }

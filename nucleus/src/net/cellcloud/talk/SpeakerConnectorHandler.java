@@ -105,7 +105,7 @@ public final class SpeakerConnectorHandler extends MessageHandler {
 	@Override
 	public void errorOccurred(int errorCode, Session session) {
 		Logger.d(SpeakerConnectorHandler.class, "errorOccurred : " + errorCode);
-		if (errorCode == MessageHandler.EC_CONNECT_TIMEOUT) {
+		if (errorCode == MessageHandler.EC_CONNECT_FAILED) {
 			TalkService.getInstance().markLostSpeaker(this.speaker);
 		}
 	}
@@ -127,7 +127,7 @@ public final class SpeakerConnectorHandler extends MessageHandler {
 			buf.append("Cellet '");
 			buf.append(this.speaker.getIdentifier());
 			buf.append("' has called at ");
-			buf.append(this.speaker.getAddress().getHostName());
+			buf.append(this.speaker.getAddress().getAddress().getHostAddress());
 			buf.append(":");
 			buf.append(this.speaker.getAddress().getPort());
 			Logger.d(SpeakerConnectorHandler.class, buf.toString());

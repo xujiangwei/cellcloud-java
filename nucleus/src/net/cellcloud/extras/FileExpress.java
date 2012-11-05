@@ -28,9 +28,12 @@ package net.cellcloud.extras;
 
 import java.io.File;
 import java.net.InetSocketAddress;
+import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.Vector;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 import net.cellcloud.common.Message;
 import net.cellcloud.common.MessageHandler;
@@ -42,7 +45,7 @@ import net.cellcloud.util.Util;
 /** 文件传输服务类。
  * @author Jiangwei Xu
  */
-public final class FileExpress extends MessageHandler {
+public final class FileExpress extends MessageHandler implements ExpressTaskListener {
 
 	private NonblockingAcceptor acceptor;
 
@@ -50,10 +53,40 @@ public final class FileExpress extends MessageHandler {
 	private ConcurrentHashMap<String, ExpressAuthCode> authCodes;
 	private ConcurrentHashMap<String, FileExpressServoContext> servoContexts;
 
+	private ExecutorService executor;
+
+	private ArrayList<FileExpressListener> listeners;
+	private byte[] listenerMonitor = new byte[0];
+
 	public FileExpress() {
 		this.sessionRecords = new ConcurrentHashMap<Long, SessionRecord>();
 		this.authCodes = new ConcurrentHashMap<String, ExpressAuthCode>();
 		this.servoContexts = new ConcurrentHashMap<String, FileExpressServoContext>();
+		this.executor = Executors.newCachedThreadPool();
+	}
+
+	/** 添加监听器。
+	 */
+	public void addListener(FileExpressListener listener) {
+		synchronized (this.listenerMonitor) {
+			if (null == this.listeners) {
+				this.listeners = new ArrayList<FileExpressListener>();
+			}
+
+			if (!this.listeners.contains(listener)) {
+				this.listeners.add(listener);
+			}
+		}
+	}
+
+	/** 移除监听器。
+	 */
+	public void removeListener(FileExpressListener listener) {
+		synchronized (this.listenerMonitor) {
+			if (null != this.listeners) {
+				this.listeners.remove(listener);
+			}
+		}
 	}
 
 	/** 下载文件。
@@ -65,7 +98,24 @@ public final class FileExpress extends MessageHandler {
 			localPath += File.separator;
 		}
 
-		return false;
+		// 检查并创建目录
+		File dir = new File(localPath);
+		if (!dir.exists()) {
+			dir.mkdirs();
+		}
+		dir = null;
+
+		// 创建上下文
+		FileExpressContext ctx = new FileExpressContext(authCode, address, fileName, localPath);
+
+		// 创建任务
+		FileExpressTask task = new FileExpressTask(ctx);
+		task.setListener(this);
+
+		// 提交任务执行
+		this.executor.execute(task);
+
+		return true;
 	}
 
 	/** 上传文件。
@@ -293,6 +343,66 @@ public final class FileExpress extends MessageHandler {
 			FileExpressServoContext ctx = iter.next();
 			if (ctx.getRemainingTime() <= 0) {
 				iter.remove();
+			}
+		}
+	}
+
+	@Override
+	public void expressStarted(FileExpressContext context) {
+		synchronized (this.listenerMonitor) {
+			if (null == this.listeners) {
+				return;
+			}
+
+			FileExpressListener listener = null;
+			for (int i = 0, size = this.listeners.size(); i < size; ++i) {
+				listener = this.listeners.get(i);
+				listener.expressStarted(context);
+			}
+		}
+	}
+
+	@Override
+	public void expressCompleted(FileExpressContext context) {
+		synchronized (this.listenerMonitor) {
+			if (null == this.listeners) {
+				return;
+			}
+
+			FileExpressListener listener = null;
+			for (int i = 0, size = this.listeners.size(); i < size; ++i) {
+				listener = this.listeners.get(i);
+				listener.expressCompleted(context);
+			}
+		}
+	}
+
+	@Override
+	public void expressProgress(FileExpressContext context) {
+		synchronized (this.listenerMonitor) {
+			if (null == this.listeners) {
+				return;
+			}
+
+			FileExpressListener listener = null;
+			for (int i = 0, size = this.listeners.size(); i < size; ++i) {
+				listener = this.listeners.get(i);
+				listener.expressProgress(context);
+			}
+		}
+	}
+
+	@Override
+	public void expressError(FileExpressContext context) {
+		synchronized (this.listenerMonitor) {
+			if (null == this.listeners) {
+				return;
+			}
+
+			FileExpressListener listener = null;
+			for (int i = 0, size = this.listeners.size(); i < size; ++i) {
+				listener = this.listeners.get(i);
+				listener.expressError(context);
 			}
 		}
 	}

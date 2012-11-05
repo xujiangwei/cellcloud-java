@@ -26,6 +26,7 @@ THE SOFTWARE.
 
 package net.cellcloud.extras;
 
+import java.io.File;
 import java.net.InetSocketAddress;
 
 /** 文件快递上下文。
@@ -42,23 +43,32 @@ public class FileExpressContext {
 	protected final static int OP_DOWNLOAD = 2;
 
 	/// 成功
-	protected final static int EC_SUCCESS = 0;
+	public final static int EC_SUCCESS = 0;
 	/// 网络故障
-	protected final static int EC_NETWORK_FAULT = 1;
+	public final static int EC_NETWORK_FAULT = 1;
 	/// 未获得操作授权
-	protected final static int EC_UNAUTH = 2;
+	public final static int EC_UNAUTH = 2;
 	/// 文件不存在
-	protected final static int EC_FILE_NOEXIST = 3;
+	public final static int EC_FILE_NOEXIST = 3;
 	/// 因文件大小问题拒绝操作
-	protected final static int EC_REJECT_SIZE = 4;
+	public final static int EC_REJECT_SIZE = 4;
 	/// 数据包错误
-	protected final static int EC_PACKET_ERROR = 5;
-
+	public final static int EC_PACKET_ERROR = 5;
+	/// 其他原因
+	public final static int EC_OTHERS = 9;
 
 	private ExpressAuthCode authCode;
 	private int operate;
 	private InetSocketAddress address;
 	private String fullPath;
+	private String filePath;
+	private String fileName;
+	private FileAttribute attribute;
+
+	protected long bytesLoaded = 0;
+	protected long bytesTotal = 0;
+
+	protected int errorCode = EC_SUCCESS;
 
 	/** 用于伺服操作的构造函数。
 	 */
@@ -74,6 +84,25 @@ public class FileExpressContext {
 		this.operate = OP_UPLOAD;
 		this.address = address;
 		this.fullPath = fullPath;
+		this.authCode = new ExpressAuthCode(authCode);
+
+		int index = this.fullPath.lastIndexOf("/");
+		if (index < 0) {
+			index = this.fullPath.lastIndexOf("\\");
+		}
+
+		if (index < 0) {
+			this.filePath = "";
+			this.fileName = fullPath;
+		}
+		else if (index == 0) {
+			this.filePath = fullPath.substring(0, 1);
+			this.fileName = fullPath.substring(1, fullPath.length());
+		}
+		else {
+			this.filePath = fullPath.substring(0, index + 1);
+			this.fileName = fullPath.substring(index + 1, fullPath.length());
+		}
 	}
 
 	/** 用于下载操作的构造函数。
@@ -82,6 +111,18 @@ public class FileExpressContext {
 			InetSocketAddress address, String fileName, String path) {
 		this.operate = OP_DOWNLOAD;
 		this.address = address;
+
+		this.fileName = fileName;
+		this.filePath = new String(path);
+		this.fullPath = new String(path);
+		if (!path.endsWith("\\")
+			&& !path.endsWith("/")) {
+			this.filePath += File.separator;
+			this.fullPath += File.separator;
+		}
+		this.fullPath += fileName;
+
+		this.authCode = new ExpressAuthCode(authCode);
 	}
 
 	public ExpressAuthCode getAuthCode() {
@@ -94,5 +135,36 @@ public class FileExpressContext {
 
 	public InetSocketAddress getAddress() {
 		return this.address;
+	}
+
+	public String getFullPath() {
+		return this.fullPath;
+	}
+
+	public String getFileName() {
+		return this.fileName;
+	}
+
+	public String getFilePath() {
+		return this.filePath;
+	}
+
+	public FileAttribute getAttribute() {
+		if (null == this.attribute) {
+			this.attribute = new FileAttribute();
+		}
+		return this.attribute;
+	}
+
+	public long getBytesLoaded() {
+		return this.bytesLoaded;
+	}
+
+	public long getBytesTotal() {
+		return this.bytesTotal;
+	}
+
+	public int getErrorCode() {
+		return this.errorCode;
 	}
 }

@@ -78,10 +78,10 @@ public class NonblockingConnector extends MessageService implements
 	}
 
 	@Override
-	public Session connect(InetSocketAddress address) {
+	public boolean connect(InetSocketAddress address) {
 		if (this.channel != null && this.channel.isConnected()) {
-			Logger.w(NonblockingConnector.class, "Connector has connected to " + address.getHostName());
-			return this.session;
+			Logger.w(NonblockingConnector.class, "Connector has connected to " + address.getAddress().getHostAddress());
+			return true;
 		}
 
 		if (this.running && null != this.channel) {
@@ -90,6 +90,9 @@ public class NonblockingConnector extends MessageService implements
 			try {
 				if (this.channel.isOpen()) {
 					this.channel.close();
+				}
+
+				if (null != this.selector) {
 					this.selector.close();
 				}
 			} catch (IOException e) {
@@ -131,10 +134,25 @@ public class NonblockingConnector extends MessageService implements
 
 			// 连接
 			this.channel.connect(this.address);
-
 		} catch (IOException e) {
 			Logger.e(NonblockingConnector.class, e.getMessage());
-			return null;
+
+			try {
+				if (null != this.channel) {
+					this.channel.close();
+				}
+			} catch (Exception e1) {
+				// Nothing
+			}
+			try {
+				if (null != this.selector) {
+					this.selector.close();
+				}
+			} catch (Exception e1) {
+				// Nothing
+			}
+
+			return false;
 		}
 
 		// 创建 Session
@@ -161,18 +179,20 @@ public class NonblockingConnector extends MessageService implements
 				running = false;
 
 				try {
-					channel.close();
-					selector.close();
+					if (null != channel)
+						channel.close();
+					if (null != selector)
+						selector.close();
 				} catch (IOException e) {
 					e.printStackTrace();
 				}
 			}
 		};
-		this.handleThread.setName("NonblockingConnector@" + this.address.getHostName() + ":" + this.address.getPort());
+		this.handleThread.setName("NonblockingConnector@" + this.address.getAddress().getHostAddress() + ":" + this.address.getPort());
 		// 启动线程
 		this.handleThread.start();
 
-		return this.session;
+		return true;
 	}
 
 	@Override
@@ -180,13 +200,26 @@ public class NonblockingConnector extends MessageService implements
 		if (null != this.channel) {
 			this.spinning = false;
 
-			fireSessionClosed();
+			if (this.channel.isConnected()) {
+				fireSessionClosed();
+			}
 
 			try {
-				this.channel.close();
-				this.selector.close();
+				if (this.channel.isOpen()) {
+					this.channel.close();
+				}
 			} catch (IOException e) {
 				e.printStackTrace();
+			}
+		}
+
+		if (null != this.selector) {
+			if (this.selector.isOpen()) {
+				try {
+					this.selector.close();
+				} catch (IOException e) {
+					e.printStackTrace();
+				}
 			}
 		}
 
@@ -276,7 +309,7 @@ public class NonblockingConnector extends MessageService implements
 
 					// 当前通道选择器产生连接已经准备就绪事件，并且客户端套接字通道尚未连接到服务端套接字通道
 					if (key.isConnectable()) {
-						if (!connect(key)) {
+						if (!doConnect(key)) {
 							this.spinning = false;
 							return;
 						}
@@ -301,7 +334,7 @@ public class NonblockingConnector extends MessageService implements
 		} // # while
 	}
 
-	private boolean connect(SelectionKey key) {
+	private boolean doConnect(SelectionKey key) {
 		// 获取创建通道选择器事件键的套接字通道
 		SocketChannel channel = (SocketChannel)key.channel();
 
@@ -311,7 +344,7 @@ public class NonblockingConnector extends MessageService implements
 			try {
 				channel.finishConnect();
 			} catch (IOException e) {
-				e.printStackTrace();
+//				e.printStackTrace();
 
 				try {
 					this.channel.close();
@@ -321,7 +354,7 @@ public class NonblockingConnector extends MessageService implements
 				}
 
 				// 连接失败
-				fireErrorOccurred(MessageHandler.EC_CONNECT_TIMEOUT);
+				fireErrorOccurred(MessageHandler.EC_CONNECT_FAILED);
 				return false;
 			}
 

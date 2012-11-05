@@ -128,7 +128,7 @@ public class NonblockingAcceptor extends MessageService implements
 		};
 
 		// 启动线程
-		this.handleThread.setName("NonblockingAcceptor@" + this.bindAddress.getHostName() + ":" + this.bindAddress.getPort());
+		this.handleThread.setName("NonblockingAcceptor@" + this.bindAddress.getAddress().getHostAddress() + ":" + this.bindAddress.getPort());
 		this.handleThread.start();
 
 		return true;

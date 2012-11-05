@@ -24,25 +24,26 @@ THE SOFTWARE.
 -----------------------------------------------------------------------------
 */
 
-package net.cellcloud.common;
+package net.cellcloud.extras;
 
-import java.net.InetSocketAddress;
-
-/** 消息连接器。
- * 
+/** 文件快递监听器。
  * @author Jiangwei Xu
  */
-public interface MessageConnector {
+public interface FileExpressListener {
 
-	/** 连接远端的消息接收器。 */
-	public boolean connect(InetSocketAddress addres);
+	/** 当开始传输文件数据时被调用。
+	*/
+	public void expressStarted(FileExpressContext context);
 
-	/** 关闭已建立的连接。 */
-	public void disconnect();
+	/** 当文件数据传输完成时被调用。
+	*/
+	public void expressCompleted(FileExpressContext context);
 
-	/** 设置连接超时值。 */
-	public void setConnectTimeout(long timeout);
+	/** 文件正在传输时被调用。
+	*/
+	public void expressProgress(FileExpressContext context);
 
-	/** 返回会话实例。 */
-	public Session getSession();
+	/** 传输发生错误时被调用。
+	*/
+	public void expressError(FileExpressContext context);
 }

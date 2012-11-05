@@ -62,6 +62,12 @@ public final class ExpressAuthCode {
 		this.setContextPath(path);
 	}
 
+	/** 构造函数。
+	 */
+	protected ExpressAuthCode(final String authCode) {
+		this.code = authCode;
+	}
+
 	/** 返回授权码。
 	 */
 	public String getCode() {
@@ -78,6 +84,20 @@ public final class ExpressAuthCode {
 	 */
 	public int getAuth() {
 		return this.auth;
+	}
+
+	/** 改变权限。
+	 */
+	protected void changeAuth(byte[] value) {
+		if (value[0] == FileExpressDefinition.AUTH_READ[0]) {
+			this.auth = AUTH_READ;
+		}
+		else if (value[0] == FileExpressDefinition.AUTH_WRITE[0]) {
+			this.auth = AUTH_WRITE;
+		}
+		else {
+			this.auth = AUTH_NOACCESS;
+		}
 	}
 
 	/** 返回有效期起始时间。

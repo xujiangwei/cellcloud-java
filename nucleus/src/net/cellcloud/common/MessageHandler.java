@@ -48,8 +48,8 @@ public abstract class MessageHandler {
 	public static final int EC_ACCEPT_FAILED = 6;
 	/// 写入数据时发生错误。
 	public static final int EC_WRITE_FAILED = 7;
-	/// 连接超时
-	public static final int EC_CONNECT_TIMEOUT = 9;
+	/// 连接失败。
+	public static final int EC_CONNECT_FAILED = 9;
 
 
 	/** 创建连接会话。

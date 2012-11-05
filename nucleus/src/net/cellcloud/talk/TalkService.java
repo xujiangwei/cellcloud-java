@@ -292,7 +292,7 @@ public final class TalkService implements Service {
 	 */
 	public void doAction(final ActionDialect dialect, final ActionDelegate delegate) {
 		if (null == this.executor) {
-			this.executor = Executors.newFixedThreadPool(64);
+			this.executor = Executors.newCachedThreadPool();
 		}
 
 		this.executor.execute(new ActionTask() {
@@ -443,7 +443,7 @@ public final class TalkService implements Service {
 		log.append("Talk service reject session (");
 		log.append(sid);
 		log.append("): ");
-		log.append(session.getAddress().getHostName());
+		log.append(session.getAddress().getAddress().getHostAddress());
 		log.append(":");
 		log.append(session.getAddress().getPort());
 		Logger.w(TalkService.class, log.toString());
@@ -556,7 +556,7 @@ public final class TalkService implements Service {
 
 				StringBuilder log = new StringBuilder();
 				log.append("Talk service session timeout: ");
-				log.append(session.getAddress().getHostName());
+				log.append(session.getAddress().getAddress().getHostAddress());
 				log.append(":");
 				log.append(session.getAddress().getPort());
 				Logger.i(TalkService.class, log.toString());

@@ -33,22 +33,22 @@ package net.cellcloud.extras;
 public final class FileExpressDefinition {
 
 	// 默认端口
-	public final static int PORT = 7100;
+	protected final static int PORT = 7100;
 
 	// 文件块大小
-	public final static int CHUNK_SIZE = 1048576;
+	protected final static int CHUNK_SIZE = 1048576;
 	// 文件拆分大小
-	public final static int SPLIT_SIZE = 4194304;
-	
-	// 文件数据区大小
-	public final static int FILEDATA_SIZE = 7168;
+	protected final static int SPLIT_SIZE = 4194304;
 
-	public final static int CACHE_SIZE = 8192;
+	// 文件数据区大小
+	protected final static int FILEDATA_SIZE = 7168;
+
+	protected final static int CACHE_SIZE = 8192;
 
 	// 文件权限
-	public final static byte[] AUTH_WRITE = {'w'};
-	public final static byte[] AUTH_READ = {'r'};
-	public final static byte[] AUTH_NOACCESS = {'n','o'};
+	protected final static byte[] AUTH_WRITE = {'w'};
+	protected final static byte[] AUTH_READ = {'r'};
+	protected final static byte[] AUTH_NOACCESS = {'n','o'};
 
 	// 数据包标签
 

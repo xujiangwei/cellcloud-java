@@ -136,6 +136,11 @@ public final class SingleFileStorage implements Storage {
 					rs.copyFileData(this.readBuffer);
 					return rs;
 				}
+				else {
+					SingleFileResultSet rs = new SingleFileResultSet(this,
+							statement, this.fileName, this.fileSize);
+					return rs;
+				}
 			}
 			else if (statement.equals("write")) {
 				SingleFileResultSet rs = new SingleFileResultSet(this,

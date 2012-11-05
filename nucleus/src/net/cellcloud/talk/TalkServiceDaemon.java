@@ -88,7 +88,7 @@ public final class TalkServiceDaemon extends Thread {
 						buf.append("Retry call cellet ");
 						buf.append(speaker.getIdentifier());
 						buf.append(" at ");
-						buf.append(speaker.getAddress().getHostName());
+						buf.append(speaker.getAddress().getAddress().getHostAddress());
 						buf.append(":");
 						buf.append(speaker.getAddress().getPort());
 						Logger.d(TalkServiceDaemon.class, buf.toString());
