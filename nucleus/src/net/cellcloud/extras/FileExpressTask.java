@@ -314,6 +314,20 @@ public final class FileExpressTask extends MessageHandler implements Runnable {
 				}
 				break;
 			}
+			case EXPRESS_STATE_UNAUTH: {
+				Logger.e(FileExpressTask.class, "Download file '" + 
+						this.context.getFullPath() + "' have not been authorized");
+
+				// 结束循环
+				this.state = EXPRESS_STATE_EXIT;
+
+				this.context.errorCode = FileExpressContext.EC_UNAUTH;
+				if (null != this.listener) {
+					this.listener.expressError(this.context);
+				}
+
+				break;
+			}
 			default:
 				break;
 			}
@@ -379,7 +393,7 @@ public final class FileExpressTask extends MessageHandler implements Runnable {
 		this.state = EXPRESS_STATE_LOST;
 		this.retryCount = -1;
 
-		while (this.state == EXPRESS_STATE_EXIT) {
+		while (this.state != EXPRESS_STATE_EXIT) {
 			switch (this.state) {
 			case EXPRESS_STATE_LOST: {
 				if (false == connector.isConnected()) {
@@ -525,11 +539,12 @@ public final class FileExpressTask extends MessageHandler implements Runnable {
 					} catch (InterruptedException e) {
 						this.state = EXPRESS_STATE_EXIT;
 					}
-				}
+				} // #synchronized
 				break;
 			}
 			case EXPRESS_STATE_BEGIN: {
 				synchronized (this.monitor) {
+					// 处理数据上传
 					processUploadData(connector.getSession(), resultSet);
 
 					try {
@@ -542,6 +557,10 @@ public final class FileExpressTask extends MessageHandler implements Runnable {
 			}
 			case EXPRESS_STATE_DATA: {
 				synchronized (this.monitor) {
+					// 判定数据结束
+					if (false == processUploadData(connector.getSession(), resultSet)) {
+						endUpload(connector.getSession());
+					}
 
 					try {
 						this.monitor.wait();
@@ -551,10 +570,44 @@ public final class FileExpressTask extends MessageHandler implements Runnable {
 				}
 				break;
 			}
+			case EXPRESS_STATE_END: {
+				synchronized (this.monitor) {
+					this.state = EXPRESS_STATE_EXIT;
+				}
+				break;
+			}
+			case EXPRESS_STATE_UNAUTH: {
+				Logger.e(FileExpressTask.class, "Upload file '" + 
+						this.context.getFullPath() + "' have not been authorized");
+
+				// 结束循环
+				this.state = EXPRESS_STATE_EXIT;
+
+				this.context.errorCode = FileExpressContext.EC_UNAUTH;
+				if (null != this.listener) {
+					this.listener.expressError(this.context);
+				}
+
+				break;
+			}
 			default:
 				break;
 			}
 		}
+
+		// 关闭存储器
+		this.fileStorage.close();
+
+		try {
+			Thread.sleep(1000);
+		} catch (InterruptedException e) {
+			e.printStackTrace();
+		}
+
+		// 关闭连接
+		connector.disconnect();
+
+		this.fileStorage = null;
 	}
 
 	private void postAuthCode(Session session) {
@@ -695,6 +748,25 @@ public final class FileExpressTask extends MessageHandler implements Runnable {
 		}
 	}
 
+	private void endUpload(Session session) {
+		// 包结构：授权码|文件名|文件长度|操作
+		Packet packet = new Packet(FileExpressDefinition.PT_END, 5, 1, 0);
+		packet.appendSubsegment(this.context.getAuthCode().getCode().getBytes());
+		packet.appendSubsegment(Util.string2Bytes(this.context.getFileName()));
+		packet.appendSubsegment(Long.toString(this.context.getAttribute().size()).getBytes());
+		packet.appendSubsegment(Integer.toString(this.context.getOperate()).getBytes());
+
+		byte[] data = Packet.pack(packet);
+		if (null != data) {
+			Message message = new Message(data);
+			session.write(message);
+		}
+
+		if (null != this.listener) {
+			this.listener.expressCompleted(this.context);
+		}
+	}
+
 	private boolean processUploadData(Session session, ResultSet resultSet) {
 		// 包格式：授权码|文件名|数据起始位|数据结束位|数据
 		byte[] bytes = resultSet.getRaw(SingleFileStorage.FIELD_DATA, this.progress, FileExpressDefinition.FILEDATA_SIZE);
@@ -713,6 +785,18 @@ public final class FileExpressTask extends MessageHandler implements Runnable {
 			if (null != data) {
 				Message message = new Message(data);
 				session.write(message);
+
+				// 更新进度
+				this.progress += bytes.length;
+
+				// 设置已传输大小
+				this.context.bytesLoaded = this.progress;
+
+				// 回调监听器
+				if (null != this.listener) {
+					this.listener.expressProgress(this.context);
+				}
+
 				return true;
 			}
 			else {

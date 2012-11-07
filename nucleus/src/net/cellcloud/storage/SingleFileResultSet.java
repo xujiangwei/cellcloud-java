@@ -240,6 +240,10 @@ public final class SingleFileResultSet implements ResultSet {
 			length = this.buffer.capacity() - offset;
 		}
 
+		if (length <= 0) {
+			return null;
+		}
+
 		byte[] dst = new byte[(int)length];
 		this.buffer.position((int)offset);
 		this.buffer.get(dst, 0, (int)length);
