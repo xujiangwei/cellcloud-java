@@ -31,6 +31,7 @@ import net.cellcloud.common.MessageHandler;
 import net.cellcloud.common.NonblockingConnector;
 import net.cellcloud.common.Packet;
 import net.cellcloud.common.Session;
+import net.cellcloud.core.Logger;
 import net.cellcloud.exception.StorageException;
 import net.cellcloud.storage.ResultSet;
 import net.cellcloud.storage.SingleFileStorage;
@@ -104,6 +105,7 @@ public final class FileExpressTask extends MessageHandler implements Runnable {
 			upload();
 			break;
 		default:
+			Logger.e(FileExpressTask.class, "File express task error - file: " + this.context.getFileName());
 			break;
 		}
 	}
@@ -121,7 +123,7 @@ public final class FileExpressTask extends MessageHandler implements Runnable {
 		// 打开文件
 		if (!this.fileStorage.open(this.context.getFullPath())) {
 			if (null != this.listener) {
-				this.context.errorCode = FileExpressContext.EC_OTHERS;
+				this.context.errorCode = FileExpressContext.EC_STORAGE_FAULT;
 				this.listener.expressError(this.context);
 			}
 			return;
@@ -150,6 +152,7 @@ public final class FileExpressTask extends MessageHandler implements Runnable {
 		connector.setConnectTimeout(5000);
 		connector.setHandler(this);
 
+		// 设置初始状态
 		this.state = EXPRESS_STATE_LOST;
 		this.retryCount = -1;
 
@@ -177,6 +180,7 @@ public final class FileExpressTask extends MessageHandler implements Runnable {
 							if (null != this.listener) {
 								this.listener.expressError(this.context);
 							}
+							this.fileStorage.close();
 							return;
 						}
 					}
@@ -189,6 +193,7 @@ public final class FileExpressTask extends MessageHandler implements Runnable {
 							if (null != this.listener) {
 								this.listener.expressError(this.context);
 							}
+							this.fileStorage.close();
 							connector.disconnect();
 							return;
 						}
@@ -330,7 +335,226 @@ public final class FileExpressTask extends MessageHandler implements Runnable {
 	}
 
 	private void upload() {
-		
+		if (null == this.fileStorage) {
+			this.fileStorage = (SingleFileStorage) StorageEnumerator.getInstance().createStorage(
+					SingleFileStorage.FACTORY_TYPE_NAME, "FileUpload" + this.toString());
+		}
+
+		// 打开文件
+		if (!this.fileStorage.open(this.context.getFullPath())) {
+			if (null != this.listener) {
+				this.context.errorCode = FileExpressContext.EC_STORAGE_FAULT;
+				this.listener.expressError(this.context);
+			}
+			return;
+		}
+
+		ResultSet resultSet = this.fileStorage.store(this.fileStorage.generateReadStatement());
+		// 移动游标
+		resultSet.next();
+
+		// 检查文件是否存在
+		if (!resultSet.getBool(SingleFileStorage.FIELD_EXIST)) {
+			// 文件不存在
+			this.fileStorage.close();
+			this.fileStorage = null;
+
+			// 设置错误码
+			this.context.errorCode = FileExpressContext.EC_FILE_NOEXIST;
+			if (null != this.listener) {
+				this.listener.expressError(this.context);
+			}
+
+			return;
+		}
+
+		NonblockingConnector connector = new NonblockingConnector();
+		byte[] headMark = {0x10, 0x04, 0x11, 0x24};
+		byte[] tailMark = {0x11, 0x24, 0x10, 0x04};
+		connector.defineDataMark(headMark, tailMark);
+		connector.setConnectTimeout(5000);
+		connector.setHandler(this);
+
+		// 设置初始状态
+		this.state = EXPRESS_STATE_LOST;
+		this.retryCount = -1;
+
+		while (this.state == EXPRESS_STATE_EXIT) {
+			switch (this.state) {
+			case EXPRESS_STATE_LOST: {
+				if (false == connector.isConnected()) {
+					// 连接
+					boolean ret = connector.connect(this.context.getAddress());
+					if (false == ret) {
+						if (this.retryCount < this.maxRetryCount) {
+							// 5 秒后重试
+							try {
+								Thread.sleep(5000);
+							} catch (InterruptedException e) {
+								e.printStackTrace();
+							}
+							// 重试计数
+							++this.retryCount;
+							break;
+						}
+						else {
+							// 达到最大重试次数
+							this.context.errorCode = FileExpressContext.EC_NETWORK_FAULT;
+							if (null != this.listener) {
+								this.listener.expressError(this.context);
+							}
+							this.fileStorage.close();
+							return;
+						}
+					}
+					else {
+						++this.retryCount;
+
+						if (this.retryCount >= this.maxRetryCount) {
+							// 达到最大重试次数
+							this.context.errorCode = FileExpressContext.EC_NETWORK_FAULT;
+							if (null != this.listener) {
+								this.listener.expressError(this.context);
+							}
+							this.fileStorage.close();
+							connector.disconnect();
+							return;
+						}
+
+						synchronized (this.monitor) {
+							try {
+								this.monitor.wait();
+							} catch (InterruptedException e) {
+								e.printStackTrace();
+							}
+						}
+
+						if (FileExpressContext.EC_NETWORK_FAULT == this.context.errorCode) {
+							try {
+								Thread.sleep(5000);
+							} catch (InterruptedException e) {
+								e.printStackTrace();
+							}
+						}
+
+						// 退出 switch-case，重新判断状态
+						break;
+					}
+				}
+
+				synchronized (this.monitor) {
+					this.context.errorCode = FileExpressContext.EC_SUCCESS;
+
+					// 发送验证码进行验证。
+					postAuthCode(connector.getSession());
+
+					try {
+						this.monitor.wait();
+					} catch (InterruptedException e) {
+						e.printStackTrace();
+					}
+				}
+
+				break;
+			}
+			case EXPRESS_STATE_ATTR: {
+				synchronized (this.monitor) {
+					// 请求文件报告
+					queryFile(connector.getSession());
+
+					try {
+						this.monitor.wait();
+					} catch (InterruptedException e) {
+						e.printStackTrace();
+					}
+				}
+
+				break;
+			}
+			case EXPRESS_STATE_PREPARE: {
+				synchronized (this.monitor) {
+					if (!this.context.getAttribute().exist()) {
+						// 设置文件大小
+						this.context.getAttribute().size = resultSet.getLong(SingleFileStorage.FIELD_SIZE);
+
+						// 新上传
+						this.progress = 0;
+
+						// 准备开始
+						beginUpload(connector.getSession(), resultSet);
+					}
+					else {
+						// 文件存在，判断是否续传
+						long remoteFileSize = this.context.getAttribute().size();
+						long localFileSize = resultSet.getLong(SingleFileStorage.FIELD_SIZE);
+						if (remoteFileSize == localFileSize) {
+							this.state = EXPRESS_STATE_EXIT;
+							
+							this.context.errorCode = FileExpressContext.EC_REJECT_SIZE;
+							if (null != this.listener) {
+								this.listener.expressError(this.context);
+							}
+							
+							break;
+						}
+						else {
+							// 如果服务端文件小于本地文件则续传
+							if (remoteFileSize < localFileSize) {
+								this.progress = remoteFileSize;
+
+								// 准备开始
+								beginUpload(connector.getSession(), resultSet);
+							}
+							else {
+								this.state = EXPRESS_STATE_EXIT;
+
+								// 设置错误码
+								this.context.errorCode = FileExpressContext.EC_REJECT_SIZE;
+								if (null != this.listener) {
+									// 通知监听器发生错误
+									this.listener.expressError(this.context);
+								}
+
+								break;
+							}
+						}
+					}
+
+					try {
+						this.monitor.wait();
+					} catch (InterruptedException e) {
+						this.state = EXPRESS_STATE_EXIT;
+					}
+				}
+				break;
+			}
+			case EXPRESS_STATE_BEGIN: {
+				synchronized (this.monitor) {
+					processUploadData(connector.getSession(), resultSet);
+
+					try {
+						this.monitor.wait();
+					} catch (InterruptedException e) {
+						this.state = EXPRESS_STATE_EXIT;
+					}
+				}
+				break;
+			}
+			case EXPRESS_STATE_DATA: {
+				synchronized (this.monitor) {
+
+					try {
+						this.monitor.wait();
+					} catch (InterruptedException e) {
+						this.state = EXPRESS_STATE_EXIT;
+					}
+				}
+				break;
+			}
+			default:
+				break;
+			}
+		}
 	}
 
 	private void postAuthCode(Session session) {
@@ -449,6 +673,57 @@ public final class FileExpressTask extends MessageHandler implements Runnable {
 		}
 	}
 
+	private void beginUpload(Session session, ResultSet resultSet) {
+		// 包格式：授权码|文件名|文件长度|操作
+		Packet packet = new Packet(FileExpressDefinition.PT_BEGIN, 3, 1, 0);
+		packet.appendSubsegment(this.context.getAuthCode().getCode().getBytes());
+		packet.appendSubsegment(Util.string2Bytes(this.context.getFileName()));
+		packet.appendSubsegment(Long.toString(resultSet.getLong(SingleFileStorage.FIELD_SIZE)).getBytes());
+		packet.appendSubsegment(Integer.toString(FileExpressContext.OP_UPLOAD).getBytes());
+
+		byte[] data = Packet.pack(packet);
+		if (null != data) {
+			Message message = new Message(data);
+			session.write(message);
+		}
+
+		// 设置总字节数
+		this.context.bytesTotal = resultSet.getLong(SingleFileStorage.FIELD_SIZE) - this.progress;
+		// 通知开始
+		if (null != this.listener) {
+			this.listener.expressStarted(this.context);
+		}
+	}
+
+	private boolean processUploadData(Session session, ResultSet resultSet) {
+		// 包格式：授权码|文件名|数据起始位|数据结束位|数据
+		byte[] bytes = resultSet.getRaw(SingleFileStorage.FIELD_DATA, this.progress, FileExpressDefinition.FILEDATA_SIZE);
+		if (null != bytes) {
+			long start = this.progress;
+			long end = this.progress + bytes.length;
+
+			Packet packet = new Packet(FileExpressDefinition.PT_DATA, 4, 1, 0);
+			packet.appendSubsegment(this.context.getAuthCode().getCode().getBytes());
+			packet.appendSubsegment(Util.string2Bytes(this.context.getFileName()));
+			packet.appendSubsegment(Long.toString(start).getBytes());
+			packet.appendSubsegment(Long.toString(end).getBytes());
+			packet.appendSubsegment(bytes);
+
+			byte[] data = Packet.pack(packet);
+			if (null != data) {
+				Message message = new Message(data);
+				session.write(message);
+				return true;
+			}
+			else {
+				return false;
+			}
+		}
+		else {
+			return false;
+		}
+	}
+
 	private void interpret(Session session, Packet packet) {
 		byte[] tag = packet.getTag();
 
@@ -457,7 +732,21 @@ public final class FileExpressTask extends MessageHandler implements Runnable {
 				&& tag[1] == FileExpressDefinition.PT_DATA_RECEIPT[1]
 				&& tag[2] == FileExpressDefinition.PT_DATA_RECEIPT[2]
 				&& tag[3] == FileExpressDefinition.PT_DATA_RECEIPT[3]) {
-				
+				// 包格式：文件名|数据进度
+				if (packet.getSubsegmentNumber() < 2) {
+					// 包格式错误
+					this.context.errorCode = FileExpressContext.EC_PACKET_ERROR;
+					if (null != this.listener) {
+						this.listener.expressError(this.context);
+					}
+
+					this.state = EXPRESS_STATE_EXIT;
+					this.monitor.notify();
+					return;
+				}
+
+				this.state = EXPRESS_STATE_DATA;
+				this.monitor.notify();
 			}
 			else if (tag[0] == FileExpressDefinition.PT_DATA[0]
 				&& tag[1] == FileExpressDefinition.PT_DATA[1]

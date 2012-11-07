@@ -54,8 +54,8 @@ public class FileExpressContext {
 	public final static int EC_REJECT_SIZE = 4;
 	/// 数据包错误
 	public final static int EC_PACKET_ERROR = 5;
-	/// 其他原因
-	public final static int EC_OTHERS = 9;
+	/// 存储器故障
+	public final static int EC_STORAGE_FAULT = 6;
 
 	private ExpressAuthCode authCode;
 	private int operate;

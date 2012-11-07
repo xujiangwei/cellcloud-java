@@ -122,7 +122,18 @@ public final class FileExpress extends MessageHandler implements ExpressTaskList
 	 */
 	public boolean upload(InetSocketAddress address, final String fullPath,
 			final String authCode) {
-		return false;
+
+		// 创建上下文
+		FileExpressContext ctx = new FileExpressContext(authCode, address, fullPath);
+
+		// 创建任务
+		FileExpressTask task = new FileExpressTask(ctx);
+		task.setListener(this);
+
+		// 提交任务执行
+		this.executor.execute(task);
+
+		return true;
 	}
 
 	/** 启动为服务器模式。

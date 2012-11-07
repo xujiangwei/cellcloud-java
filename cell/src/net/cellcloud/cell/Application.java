@@ -99,7 +99,12 @@ public final class Application {
 		config.device = NucleusConfig.Device.SERVER;
 
 		try {
-			this.nucleus = new Nucleus(config);
+			if (null == (this.nucleus = Nucleus.getInstance())) {
+				this.nucleus = new Nucleus(config);
+			}
+			else {
+				this.nucleus.setConfig(config);
+			}
 		} catch (SingletonException e) {
 			Logger.e(Application.class, e.getMessage());
 			return false;

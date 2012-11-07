@@ -59,6 +59,23 @@ public final class Nucleus {
 
 	/** 构造函数。
 	 */
+	public Nucleus() throws SingletonException {
+		if (null == Nucleus.instance) {
+			Nucleus.instance = this;
+			this.tag = new NucleusTag();
+
+			this.talkService = new TalkService();
+
+			this.celletJarClasses = null;
+			this.cellets = new ConcurrentHashMap<String, Cellet>();
+		}
+		else {
+			throw new SingletonException(Nucleus.class.getName());
+		}
+	}
+
+	/** 构造函数。
+	 */
 	public Nucleus(NucleusConfig config) throws SingletonException {
 		if (null == Nucleus.instance) {
 			Nucleus.instance = this;
@@ -68,7 +85,7 @@ public final class Nucleus {
 			this.talkService = new TalkService();
 
 			this.celletJarClasses = null;
-			this.cellets = null;
+			this.cellets = new ConcurrentHashMap<String, Cellet>();
 		}
 		else {
 			throw new SingletonException(Nucleus.class.getName());
@@ -78,6 +95,11 @@ public final class Nucleus {
 	/** 返回单例。 */
 	public synchronized static Nucleus getInstance() {
 		return Nucleus.instance;
+	}
+
+	/** 设置配置。 */
+	public void setConfig(NucleusConfig config) {
+		this.config = config;
 	}
 
 	/** 返回内核标签。 */
@@ -151,14 +173,22 @@ public final class Nucleus {
 		this.celletJarClasses.put(jarFile, classes);
 	}
 
+	/** 注册 Cellet 。
+	*/
+	public void registerCellet(Cellet cellet) {
+		this.cellets.put(cellet.getFeature().getIdentifier(), cellet);
+	}
+
+	/** 注销 Cellet 。
+	*/
+	public void unregisterCellet(Cellet cellet) {
+		this.cellets.remove(cellet.getFeature().getIdentifier());
+	}
+
 	/** 加载外部 Jar 文件。
 	 */
 	private void loadExternalJar() {
 		if (null != this.celletJarClasses) {
-			if (null == this.cellets) {
-				this.cellets = new ConcurrentHashMap<String, Cellet>();
-			}
-
 			// 遍历配置数据
 			Iterator<String> iter = this.celletJarClasses.keySet().iterator();
 			while (iter.hasNext()) {
@@ -257,7 +287,7 @@ public final class Nucleus {
 	/** 启动所有 Cellets
 	 */
 	private void activateCellets() {
-		if (null != this.cellets) {
+		if (!this.cellets.isEmpty()) {
 			Iterator<Cellet> iter = this.cellets.values().iterator();
 			while (iter.hasNext()) {
 				iter.next().activate();
@@ -268,7 +298,7 @@ public final class Nucleus {
 	/** 停止所有 Cellets
 	 */
 	private void deactivateCellets() {
-		if (null != this.cellets) {
+		if (!this.cellets.isEmpty()) {
 			Iterator<Cellet> iter = this.cellets.values().iterator();
 			while (iter.hasNext()) {
 				iter.next().deactivate();
