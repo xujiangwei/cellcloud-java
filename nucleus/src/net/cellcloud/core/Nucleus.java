@@ -51,6 +51,7 @@ public final class Nucleus {
 
 	private NucleusTag tag;
 	private NucleusConfig config;
+	private NucleusContext context;
 
 	private TalkService talkService;
 
@@ -62,9 +63,11 @@ public final class Nucleus {
 	public Nucleus() throws SingletonException {
 		if (null == Nucleus.instance) {
 			Nucleus.instance = this;
-			this.tag = new NucleusTag();
 
-			this.talkService = new TalkService();
+			this.tag = new NucleusTag();
+			this.context = new NucleusContext();
+
+			this.talkService = new TalkService(this.context);
 
 			this.celletJarClasses = null;
 			this.cellets = new ConcurrentHashMap<String, Cellet>();
@@ -79,10 +82,12 @@ public final class Nucleus {
 	public Nucleus(NucleusConfig config) throws SingletonException {
 		if (null == Nucleus.instance) {
 			Nucleus.instance = this;
-			this.tag = new NucleusTag();
 			this.config = config;
 
-			this.talkService = new TalkService();
+			this.tag = new NucleusTag();
+			this.context = new NucleusContext();
+
+			this.talkService = new TalkService(this.context);
 
 			this.celletJarClasses = null;
 			this.cellets = new ConcurrentHashMap<String, Cellet>();
@@ -159,11 +164,15 @@ public final class Nucleus {
 
 	/** 返回指定的 Cellet 。
 	 */
-	public Cellet getCellet(final String identifier) {
-		return this.cellets.get(identifier);
+	public Cellet getCellet(final String identifier, final NucleusContext context) {
+		if (this.context == context) {
+			return this.cellets.get(identifier);
+		}
+
+		return null;
 	}
 
-	/** 加载 Cellet JAR 包。
+	/** 载入 Cellet JAR 包信息。
 	 */
 	public void prepareCelletJar(String jarFile, ArrayList<String> classes) {
 		if (null == this.celletJarClasses) {

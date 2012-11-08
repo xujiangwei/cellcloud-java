@@ -24,26 +24,14 @@ THE SOFTWARE.
 -----------------------------------------------------------------------------
 */
 
-package net.cellcloud;
+package net.cellcloud.adapter;
 
-/** 程序版本描述。
+/** 关联内核适配器接口。
  * 
  * @author Jiangwei Xu
  */
-public final class Version {
+public interface RelationNucleusAdapter extends Adapter {
 
-	/// 主版本号
-	public static final int MAJOR = 0;
-
-	/// 副版本号
-	public static final int MINOR = 2;
-
-	/// 修订号
-	public static final int REVISION = 0;
-
-	/// 版本名
-	public static final String NAME = "Origin";
-
-	/// 调试
-	public static boolean DEBUG = true;
+	/** 返回内核标签。 */
+	public String getNucleusTag();
 }

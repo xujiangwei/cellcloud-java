@@ -24,26 +24,14 @@ THE SOFTWARE.
 -----------------------------------------------------------------------------
 */
 
-package net.cellcloud;
+package net.cellcloud.core;
 
-/** 程序版本描述。
+/** 内核上下文。
  * 
  * @author Jiangwei Xu
  */
-public final class Version {
+public final class NucleusContext {
 
-	/// 主版本号
-	public static final int MAJOR = 0;
-
-	/// 副版本号
-	public static final int MINOR = 2;
-
-	/// 修订号
-	public static final int REVISION = 0;
-
-	/// 版本名
-	public static final String NAME = "Origin";
-
-	/// 调试
-	public static boolean DEBUG = true;
+	protected NucleusContext() {
+	}
 }

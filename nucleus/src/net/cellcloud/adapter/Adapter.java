@@ -24,26 +24,20 @@ THE SOFTWARE.
 -----------------------------------------------------------------------------
 */
 
-package net.cellcloud;
+package net.cellcloud.adapter;
 
-/** 程序版本描述。
+/** 适配器接口。
  * 
  * @author Jiangwei Xu
  */
-public final class Version {
+public interface Adapter {
 
-	/// 主版本号
-	public static final int MAJOR = 0;
+	/** 返回适配器名。 */
+	public String getName();
 
-	/// 副版本号
-	public static final int MINOR = 2;
+	/** 配置适配器。该方法由适配器管理器调用。 */
+	public void setup();
 
-	/// 修订号
-	public static final int REVISION = 0;
-
-	/// 版本名
-	public static final String NAME = "Origin";
-
-	/// 调试
-	public static boolean DEBUG = true;
+	/** 拆卸适配器。该方法由适配器管理器调用。 */
+	public void teardown();
 }

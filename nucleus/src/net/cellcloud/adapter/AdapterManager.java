@@ -24,26 +24,33 @@ THE SOFTWARE.
 -----------------------------------------------------------------------------
 */
 
-package net.cellcloud;
+package net.cellcloud.adapter;
 
-/** 程序版本描述。
+/** 适配器管理器。
  * 
  * @author Jiangwei Xu
  */
-public final class Version {
+public final class AdapterManager {
 
-	/// 主版本号
-	public static final int MAJOR = 0;
+	private final static AdapterManager instance = new AdapterManager();
 
-	/// 副版本号
-	public static final int MINOR = 2;
+	private AdapterManager() {
+		
+	}
 
-	/// 修订号
-	public static final int REVISION = 0;
+	public synchronized static AdapterManager getInstance() {
+		return AdapterManager.instance;
+	}
 
-	/// 版本名
-	public static final String NAME = "Origin";
+	public RelationNucleusAdapter getAdapter() {
+		return null;
+	}
 
-	/// 调试
-	public static boolean DEBUG = true;
+	public void addAdapter(RelationNucleusAdapter adapter) {
+		
+	}
+
+	public void removeAdapter(RelationNucleusAdapter adapter) {
+		
+	}
 }

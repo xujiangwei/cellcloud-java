@@ -83,8 +83,10 @@ public final class FileLogger implements LogHandle {
 			return;
 		}
 
+		File file = new File(filename);
+
 		try {
-			this.outputStream = new FileOutputStream(new File(filename));
+			this.outputStream = new FileOutputStream(file);
 			this.buffer = new BufferedOutputStream(this.outputStream);
 		} catch (FileNotFoundException e) {
 			e.printStackTrace();

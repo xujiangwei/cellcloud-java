@@ -45,6 +45,7 @@ import net.cellcloud.core.Cellet;
 import net.cellcloud.core.Cryptology;
 import net.cellcloud.core.Logger;
 import net.cellcloud.core.Nucleus;
+import net.cellcloud.core.NucleusContext;
 import net.cellcloud.exception.SingletonException;
 import net.cellcloud.talk.dialect.ActionDelegate;
 import net.cellcloud.talk.dialect.ActionDialect;
@@ -64,6 +65,7 @@ public final class TalkService implements Service {
 
 	private int port;
 	private NonblockingAcceptor acceptor;
+	private NucleusContext nucleusContext;
 	private TalkAcceptorHandler talkHandler;
 
 	/// 待检验 Session
@@ -84,9 +86,11 @@ public final class TalkService implements Service {
 	/** 构造函数。
 	 * @throws SingletonException 
 	 */
-	public TalkService() throws SingletonException {
+	public TalkService(NucleusContext nucleusContext) throws SingletonException {
 		if (null == TalkService.instance) {
 			TalkService.instance = this;
+
+			this.nucleusContext = nucleusContext;
 
 			this.port = 7000;
 			this.unidentifiedSessions = null;
@@ -404,7 +408,7 @@ public final class TalkService implements Service {
 				TalkTracker tracker = map.get(tag);
 				if (null != tracker.activeCellet) {
 					String identifier = tracker.activeCellet.getFeature().getIdentifier();
-					Cellet cellet = Nucleus.getInstance().getCellet(identifier);
+					Cellet cellet = Nucleus.getInstance().getCellet(identifier, this.nucleusContext);
 					if (null != cellet) {
 						// 通知 Cellet 对端退出
 						cellet.quitted(tag);
@@ -473,7 +477,7 @@ public final class TalkService implements Service {
 				cellet = null;
 			}
 			else {
-				cellet = Nucleus.getInstance().getCellet(identifier);
+				cellet = Nucleus.getInstance().getCellet(identifier, this.nucleusContext);
 				if (null != cellet) {
 					tracker.activeCellet = cellet;
 				}
@@ -481,7 +485,7 @@ public final class TalkService implements Service {
 		}
 		else {
 			tracker = ctx.addTracker(tag, session.getAddress());
-			cellet = Nucleus.getInstance().getCellet(identifier);
+			cellet = Nucleus.getInstance().getCellet(identifier, this.nucleusContext);
 			if (null != cellet) {
 				tracker.activeCellet = cellet;
 			}

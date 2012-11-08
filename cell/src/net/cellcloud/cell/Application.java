@@ -28,6 +28,7 @@ package net.cellcloud.cell;
 
 import java.io.File;
 import java.io.IOException;
+import java.net.URL;
 import java.util.ArrayList;
 
 import javax.xml.parsers.DocumentBuilder;
@@ -77,7 +78,7 @@ public final class Application {
 		buf.append("| |_| _|| |_| |_   | |_| |_| | | | | | |\n");
 		buf.append("|___|___|___|___|  |___|___|___|___|___/\n\n");
 
-		buf.append("Copyright (c) 2009,2012 Cell Cloud Team, www.cellcloud.net\n");
+		buf.append("Copyright (c) 2009,2013 Cell Cloud Team, www.cellcloud.net\n");
 		buf.append("-----------------------------------------------------------------------");
 
 		System.out.println(buf);
@@ -164,6 +165,10 @@ public final class Application {
 	public void stop() {
 		this.spinning = false;
 
+		if (null != this.console) {
+			this.console.quitAndClose();
+		}
+
 		try {
 			synchronized (this.monitor) {
 				this.monitor.notify();
@@ -184,7 +189,8 @@ public final class Application {
 	private boolean loadConfig(Nucleus nucleus) {
 		try {
 			// 检测配置文件
-			String resourcePath = this.getClass().getClassLoader().getResource(".").getPath();
+			URL pathURL = this.getClass().getClassLoader().getResource(".");
+			String resourcePath = (null != pathURL) ? pathURL.getPath() : "./";
 			String fileName = resourcePath + "nucleus.xml";
 			File file = new File(fileName);
 			if (!file.exists()) {

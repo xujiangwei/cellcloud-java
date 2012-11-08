@@ -1,16 +1,16 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
 <!-- ======================================================================= -->
-<!-- Cell Cloud Nucleus Library Build File                                   -->
+<!-- Cell Cloud Application Build File                                       -->
 <!-- ======================================================================= -->
 
-<project name="nucleus" default="build-release" basedir=".">
+<project name="cell" default="build-release" basedir=".">
 	<description>
-	Cell Cloud Nucleus Library Build File
+	Cell Cloud Application Build File
 	Author: Jiangwei Xu
 	</description>
 
-	<property name="version.brand" value="0.2.0" />
+	<property name="version.brand" value="0.1.1" />
 
 	<property name="build.dir" value="${basedir}/build" />
 	<property name="src.dir" value="${basedir}/src" />
@@ -56,7 +56,7 @@
 			<classpath refid="classpath" />
 		</javac>
 		<echo message="Packing the class files..." />
-		<jar jarfile="${dist.dir}/nucleus-${version.brand}-build${touch.time}-d.jar">
+		<jar jarfile="${dist.dir}/cell-${version.brand}-build${touch.time}-d.jar">
 			<fileset dir="${bin.dir}/debug">
 				<include name="**/*.*" />
 			</fileset>
@@ -73,7 +73,7 @@
 			<classpath refid="classpath" />
 		</javac>
 		<echo message="Packing the class files..." />
-		<jar jarfile="${dist.dir}/nucleus-${version.brand}-build${touch.time}.jar">
+		<jar jarfile="${dist.dir}/cell-${version.brand}-build${touch.time}.jar">
 			<fileset dir="${bin.dir}/release">
 				<include name="**/*.*" />
 			</fileset>
@@ -84,11 +84,8 @@
 	<!-- Dispenses project for debug                                         -->
 	<!-- =================================================================== -->
 	<target name="dist-debug">
-		<copy file="${dist.dir}/nucleus-${version.brand}-build${touch.time}-d.jar"
-			tofile="${deploy.dir}/nucleus-${version.brand}.jar">
-		</copy>
-		<copy file="${dist.dir}/nucleus-${version.brand}-build${touch.time}-d.jar"
-			tofile="${libs.dir}/nucleus-${version.brand}.jar">
+		<copy file="${dist.dir}/cell-${version.brand}-build${touch.time}-d.jar"
+			tofile="${deploy.dir}/cell-${version.brand}.jar">
 		</copy>
 	</target>
 
@@ -96,11 +93,8 @@
 	<!-- Dispenses project for release                                       -->
 	<!-- =================================================================== -->
 	<target name="dist-release">
-		<copy file="${dist.dir}/nucleus-${version.brand}-build${touch.time}.jar"
-			tofile="${deploy.dir}/nucleus-${version.brand}.jar">
-		</copy>
-		<copy file="${dist.dir}/nucleus-${version.brand}-build${touch.time}.jar"
-			tofile="${libs.dir}/nucleus-${version.brand}.jar">
+		<copy file="${dist.dir}/cell-${version.brand}-build${touch.time}.jar"
+			tofile="${deploy.dir}/cell-${version.brand}.jar">
 		</copy>
 	</target>
 

@@ -322,7 +322,7 @@ public class NonblockingAcceptor extends MessageService implements
 				Thread.yield();
 			} // # while
 		} catch (Exception e) {
-			e.printStackTrace();
+			Logger.w(this.getClass(), e.getMessage());
 		}
 	}
 

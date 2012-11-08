@@ -26,6 +26,7 @@ THE SOFTWARE.
 
 package net.cellcloud.cell;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -124,6 +125,18 @@ public final class Console {
 	 */
 	public void quit() {
 		this.quitted = true;
+	}
+
+	protected void quitAndClose() {
+		this.quitted = true;
+
+		try {
+			System.in.close();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+
+		this.scanner.close();
 	}
 
 	/** 注册控制台命令。
