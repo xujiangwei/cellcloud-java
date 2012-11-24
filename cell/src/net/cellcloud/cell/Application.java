@@ -95,16 +95,13 @@ public final class Application {
 	protected boolean startup() {
 		FileLogger.getInstance().open("cell.log");
 
-		NucleusConfig config = new NucleusConfig();
-		config.role = NucleusConfig.Role.NODE;
-		config.device = NucleusConfig.Device.SERVER;
-
 		try {
 			if (null == (this.nucleus = Nucleus.getInstance())) {
+				NucleusConfig config = new NucleusConfig();
+				config.role = NucleusConfig.Role.NODE;
+				config.device = NucleusConfig.Device.SERVER;
+
 				this.nucleus = new Nucleus(config);
-			}
-			else {
-				this.nucleus.setConfig(config);
 			}
 		} catch (SingletonException e) {
 			Logger.e(Application.class, e.getMessage());

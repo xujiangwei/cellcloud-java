@@ -69,11 +69,17 @@ public final class NucleusConfig {
 		public static final byte SERVER = 7;
 	}
 
+	/// 自定义内核标签
+	public String tag = null;
+
 	/// 角色
 	public byte role = Role.NODE;
 
 	/// 设备
 	public byte device = Device.SERVER;
+
+	/// 是否使用 HTTP 服务
+	public boolean http = false;
 
 	public NucleusConfig() {
 	}

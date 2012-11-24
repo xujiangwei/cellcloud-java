@@ -30,7 +30,6 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 
-import net.cellcloud.talk.TalkService;
 import net.cellcloud.talk.stuff.ObjectiveStuff;
 import net.cellcloud.talk.stuff.PredicateStuff;
 import net.cellcloud.talk.stuff.Primitive;
@@ -149,6 +148,9 @@ public final class ActionDialect extends Dialect {
 	/** 执行动作委派（异步）。
 	 */
 	public void act(ActionDelegate delegate) {
-		TalkService.getInstance().doAction(this, delegate);
+		ActionDialectFactory factory = (ActionDialectFactory) DialectEnumerator.getInstance().getFactory(ActionDialectFactory.FACTORY_NAME);
+		if (null != factory) {
+			factory.doAction(this, delegate);
+		}
 	}
 }

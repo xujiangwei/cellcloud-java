@@ -84,7 +84,8 @@ public final class NonblockingAcceptorWorker extends Thread {
 			// 如果没有任务，则线程 wait
 			synchronized (this.mutex) {
 				if (this.receiveSessions.isEmpty()
-					&& this.sendSessions.isEmpty()) {
+					&& this.sendSessions.isEmpty()
+					&& this.spinning) {
 					try {
 						this.mutex.wait();
 					} catch (InterruptedException e) {
@@ -101,11 +102,21 @@ public final class NonblockingAcceptorWorker extends Thread {
 
 	/** 停止自旋
 	 */
-	protected void stopSpinning() {
+	protected void stopSpinning(boolean blockingCheck) {
 		this.spinning = false;
 
 		synchronized (this.mutex) {
 			this.mutex.notify();
+		}
+
+		if (blockingCheck) {
+			while (this.working) {
+				try {
+					Thread.sleep(10);
+				} catch (InterruptedException e) {
+					e.printStackTrace();
+				}
+			}
 		}
 	}
 
@@ -130,6 +141,10 @@ public final class NonblockingAcceptorWorker extends Thread {
 	/** 添加执行接收数据的 Session 。
 	 */
 	protected void addReceiveSession(NonblockingAcceptorSession session, SelectionKey key) {
+		if (!this.spinning) {
+			return;
+		}
+
 		session.selectionKey = key;
 		this.receiveSessions.add(session);
 
@@ -141,6 +156,10 @@ public final class NonblockingAcceptorWorker extends Thread {
 	/** 添加执行发送数据的 Session 。
 	 */
 	protected void addSendSession(NonblockingAcceptorSession session, SelectionKey key) {
+		if (!this.spinning) {
+			return;
+		}
+
 		if (session.messages.isEmpty()) {
 			return;
 		}
@@ -297,6 +316,11 @@ public final class NonblockingAcceptorWorker extends Thread {
 	/** 解析数据格式。
 	 */
 	private void parse(NonblockingAcceptorSession session, byte[] data) {
+		// 拦截器返回 true 则该数据被拦截，不再进行数据解析。
+		if (this.acceptor.fireIntercepted(session, data)) {
+			return;
+		}
+
 		// 根据数据标志获取数据
 		if (this.acceptor.existDataMark()) {
 			byte[] headMark = this.acceptor.getHeadMark();
@@ -306,7 +330,7 @@ public final class NonblockingAcceptorWorker extends Thread {
 			int length = data.length;
 			boolean head = false;
 			boolean tail = false;
-			byte[] buf = new byte[8192];
+			byte[] buf = new byte[NonblockingAcceptor.BLOCK];
 			int bufIndex = 0;
 
 			while (cursor < length) {
@@ -355,6 +379,8 @@ public final class NonblockingAcceptorWorker extends Thread {
 					this.acceptor.fireMessageReceived(session, message);
 
 					cursor += tailMark.length;
+					// 后面要移动到下一个字节因此这里先减1
+					cursor -= 1;
 				}
 				else {
 					++bufIndex;

@@ -35,24 +35,30 @@ public final class Logger {
 	/** 打印 DEBUG 级别日志。
 	 */
 	public static void d(Class<?> clazz, String log) {
-		LoggerManager.getInstance().log(LoggerManager.DEBUG, clazz.getName(), log);
+		LoggerManager.getInstance().log(LogLevel.DEBUG, clazz.getName(), log);
 	}
 
 	/** 打印 INFO 级别日志。
 	 */
 	public static void i(Class<?> clazz, String log) {
-		LoggerManager.getInstance().log(LoggerManager.INFO, clazz.getName(), log);
+		LoggerManager.getInstance().log(LogLevel.INFO, clazz.getName(), log);
 	}
 
 	/** 打印 WARNING 级别日志。
 	 */
 	public static void w(Class<?> clazz, String log) {
-		LoggerManager.getInstance().log(LoggerManager.WARNING, clazz.getName(), log);
+		LoggerManager.getInstance().log(LogLevel.WARNING, clazz.getName(), log);
 	}
 
 	/** 打印 ERROR 级别日志。
 	 */
 	public static void e(Class<?> clazz, String log) {
-		LoggerManager.getInstance().log(LoggerManager.ERROR, clazz.getName(), log);
+		LoggerManager.getInstance().log(LogLevel.ERROR, clazz.getName(), log);
+	}
+
+	/** 日志管理器是否设置为 DEBUG 等级。
+	 */
+	public static boolean isDebugLevel() {
+		return (LoggerManager.getInstance().getLevel() == LogLevel.DEBUG);
 	}
 }

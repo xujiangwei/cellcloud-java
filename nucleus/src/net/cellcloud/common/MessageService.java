@@ -33,27 +33,41 @@ package net.cellcloud.common;
 public abstract class MessageService {
 
 	protected MessageHandler handler;
+	protected MessageInterceptor interceptor;
 	private byte[] headMark;
 	private byte[] tailMark;
 	private int maxConnectNum;
 
 	public MessageService() {
 		this.handler = null;
+		this.interceptor = null;
 		this.headMark = null;
 		this.tailMark = null;
 		this.maxConnectNum = 32;
 	}
 
-	/** 返回回调句柄。
+	/** 返回消息句柄。
 	 */
 	public MessageHandler getHandler() {
 		return this.handler;
 	}
 
-	/** 设置回调句柄。
+	/** 设置消息句柄。
 	 */
 	public void setHandler(MessageHandler handler) {
 		this.handler = handler;
+	}
+
+	/** 返回消息拦截器。
+	 */
+	public MessageInterceptor getInterceptor() {
+		return this.interceptor;
+	}
+
+	/** 设置消息拦截器。
+	 */
+	public void setInterceptor(MessageInterceptor interceptor) {
+		this.interceptor = interceptor;
 	}
 
 	/** 定义消息传输时使用的数据掩码。

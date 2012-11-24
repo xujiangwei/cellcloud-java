@@ -36,11 +36,13 @@ import net.cellcloud.talk.stuff.Primitive;
 public abstract class Cellet {
 
 	private CelletFeature feature;
+	private CelletSandbox sandbox;
 
 	/** 构造函数。
 	 */
 	public Cellet(CelletFeature feature) {
 		this.feature = feature;
+		this.sandbox = new CelletSandbox(feature);
 	}
 
 	/** 返回 Cellet 的特性描述。
@@ -52,7 +54,14 @@ public abstract class Cellet {
 	/** 发送原语到消费端进行会话。
 	 */
 	public void talk(final String targetTag, final Primitive primitive) {
-		TalkService.getInstance().notice(targetTag, primitive);
+		// 发送原语到指定的终端
+		TalkService.getInstance().notice(targetTag, primitive, this, this.sandbox);
+	}
+
+	/** 进行激活前准备。
+	 */
+	protected void prepare() {
+		Nucleus.getInstance().prepareCellet(this, this.sandbox);
 	}
 
 	/** Cellet 激活回调。
@@ -67,11 +76,19 @@ public abstract class Cellet {
 	 */
 	public abstract void dialogue(final String tag, final Primitive primitive);
 
-	/** 消费者连接服务时回调。
+	/** 当消费者连接服务时回调此方法。
 	 */
 	public abstract void contacted(final String tag);
 
-	/** 消费者退出服务时回调。
+	/** 当消费者退出服务时回调此方法。
 	 */
 	public abstract void quitted(final String tag);
+
+	/** 当消费者被挂起时回调此方法。
+	 */
+	public abstract void suspended(final String tag);
+
+	/** 当消费者从挂起状态恢复时回调此方法。
+	 */
+	public abstract void resumed(final String tag);
 }

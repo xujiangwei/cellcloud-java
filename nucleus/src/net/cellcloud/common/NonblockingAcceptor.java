@@ -34,6 +34,7 @@ import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
 import java.util.Collection;
 import java.util.Iterator;
+import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 import net.cellcloud.core.Logger;
@@ -58,7 +59,7 @@ public class NonblockingAcceptor extends MessageService implements
 
 	// 工作线程数组
 	private NonblockingAcceptorWorker[] workers;
-	private int workerNum = 4;
+	private int workerNum;
 
 	// 存储 Session 的 Map
 	private ConcurrentHashMap<Integer, NonblockingAcceptorSession> sessions;
@@ -67,6 +68,8 @@ public class NonblockingAcceptor extends MessageService implements
 		this.spinning = false;
 		this.running = false;
 		this.sessions = new ConcurrentHashMap<Integer, NonblockingAcceptorSession>();
+		// 默认 4 线程
+		this.workerNum = 4;
 	}
 
 	@Override
@@ -76,7 +79,7 @@ public class NonblockingAcceptor extends MessageService implements
 
 	@Override
 	public boolean bind(InetSocketAddress address) {
-
+		// 创建工作线程
 		if (null == this.workers) {
 			// 创建工作线程
 			this.workers = new NonblockingAcceptorWorker[this.workerNum];
@@ -139,35 +142,65 @@ public class NonblockingAcceptor extends MessageService implements
 		// 退出事件循环
 		this.spinning = false;
 
+		Iterator<NonblockingAcceptorSession> iter = this.sessions.values().iterator();
+		while (iter.hasNext()) {
+			NonblockingAcceptorSession session = iter.next();
+			this.close(session);
+		}
+
 		// 关闭 Channel
 		try {
 			this.channel.close();
 			this.channel.socket().close();
 		} catch (IOException e) {
-			Logger.w(this.getClass(), e.getMessage());
+			Logger.w(this.getClass(), "Closing channel warning " + e.getMessage());
 		}
 		try {
 			this.selector.close();
 		} catch (IOException e) {
-			Logger.w(this.getClass(), e.getMessage());
+			Logger.w(this.getClass(), "Closing selector warning " + e.getMessage());
 		}
 
 		// 关闭工作线程
 		if (null != this.workers) {
-			for (int i = 0; i < this.workers.length; ++i) {
-				if (this.workers[i].isWorking()) {
-					this.workers[i].stopSpinning();
+			for (NonblockingAcceptorWorker worker : this.workers) {
+				if (worker.isWorking()) {
+					worker.stopSpinning(false);
+				}
+			}
+
+			int stoppedCount = 0;
+			while (stoppedCount != this.workerNum) {
+				try {
+					Thread.sleep(100);
+				} catch (InterruptedException e) {
+					e.printStackTrace();
+				}
+
+				for (NonblockingAcceptorWorker worker : this.workers) {
+					if (!worker.isWorking()) {
+						++stoppedCount;
+					}
 				}
 			}
 		}
 
+		// 控制主线程超时退出
+		final int timeout = 500;
+		int count = 0;
+
 		// 等待线程结束
 		if (null != this.handleThread) {
 			while (this.running) {
+				++count;
 				try {
 					Thread.sleep(10);
 				} catch (InterruptedException e) {
 					e.printStackTrace();
+				}
+
+				if (count >= timeout) {
+					break;
 				}
 			}
 
@@ -175,6 +208,14 @@ public class NonblockingAcceptor extends MessageService implements
 				Thread.sleep(10);
 			} catch (InterruptedException e) {
 				e.printStackTrace();
+			}
+
+			if (count >= timeout) {
+				try {
+					this.handleThread.interrupt();
+				} catch (Exception e) {
+					// Nothing
+				}
 			}
 
 			this.handleThread = null;
@@ -192,7 +233,7 @@ public class NonblockingAcceptor extends MessageService implements
 				try {
 					nas.socket.close();
 				} catch (IOException e) {
-					e.printStackTrace();
+					Logger.w(this.getClass(), "#close(Session) - " + e.getMessage());
 				}
 				break;
 			}
@@ -216,6 +257,17 @@ public class NonblockingAcceptor extends MessageService implements
 		// Nothing
 	}
 
+	/** 设置工作器数量。
+	 */
+	public void setWorkerNum(int num) {
+		this.workerNum = num;
+	}
+	/** 返回工作器数量。
+	 */
+	public int getWorkerNum() {
+		return this.workerNum;
+	}
+
 	/** 返回所有 Session 。
 	 */
 	public Collection<NonblockingAcceptorSession> getSessions() {
@@ -231,12 +283,13 @@ public class NonblockingAcceptor extends MessageService implements
 
 		boolean exist = false;
 
-		Iterator<Integer> iter = this.sessions.keySet().iterator();
+		Iterator<Map.Entry<Integer, NonblockingAcceptorSession>> iter = this.sessions.entrySet().iterator();
 		while (iter.hasNext()) {
-			Integer hasCode = iter.next();
-			NonblockingAcceptorSession nas = this.sessions.get(hasCode);
+			Map.Entry<Integer, NonblockingAcceptorSession> entry = iter.next();
+			Integer hashCode = entry.getKey();
+			NonblockingAcceptorSession nas = entry.getValue();
 			if (nas.getId().longValue() == session.getId().longValue()) {
-				this.sessions.remove(hasCode);
+				this.sessions.remove(hashCode);
 				exist = true;
 				break;
 			}
@@ -288,6 +341,15 @@ public class NonblockingAcceptor extends MessageService implements
 	protected void fireMessageSent(Session session, Message message) {
 		if (null != this.handler) {
 			this.handler.messageSent(session, message);
+		}
+	}
+	/** 通知消息拦截。 */
+	protected boolean fireIntercepted(Session session, byte[] rawData) {
+		if (null != this.interceptor) {
+			return this.interceptor.intercepted(session, rawData);
+		}
+		else {
+			return false;
 		}
 	}
 
@@ -356,9 +418,11 @@ public class NonblockingAcceptor extends MessageService implements
 			// 回调事件
 			this.fireSessionOpened(session);
 		} catch (IOException e) {
-			e.printStackTrace();
+//			e.printStackTrace();
+			Logger.w(this.getClass(), e.getMessage());
 		} catch (Exception e) {
-			e.printStackTrace();
+//			e.printStackTrace();
+			Logger.w(this.getClass(), e.getMessage());
 		}
 	}
 
@@ -406,7 +470,7 @@ public class NonblockingAcceptor extends MessageService implements
 		try {
 			channel.register(this.selector, SelectionKey.OP_WRITE | SelectionKey.OP_READ);
 		} catch (IOException e) {
-			e.printStackTrace();
+			// Nothing
 		}
 	}
 
@@ -416,10 +480,10 @@ public class NonblockingAcceptor extends MessageService implements
 		NonblockingAcceptorWorker worker = null;
 
 		int min = Integer.MAX_VALUE;
-		for (int i = 0; i < this.workers.length; ++i) {
-			if (this.workers[i].getReceiveSessionNum() < min) {
-				worker = this.workers[i];
-				min = this.workers[i].getReceiveSessionNum();
+		for (NonblockingAcceptorWorker w : this.workers) {
+			if (w.getReceiveSessionNum() < min) {
+				worker = w;
+				min = w.getReceiveSessionNum();
 			}
 		}
 
@@ -432,10 +496,10 @@ public class NonblockingAcceptor extends MessageService implements
 		NonblockingAcceptorWorker worker = null;
 
 		int min = Integer.MAX_VALUE;
-		for (int i = 0; i < this.workers.length; ++i) {
-			if (this.workers[i].getSendSessionNum() < min) {
-				worker = this.workers[i];
-				min = this.workers[i].getSendSessionNum();
+		for (NonblockingAcceptorWorker w : this.workers) {
+			if (w.getSendSessionNum() < min) {
+				worker = w;
+				min = w.getSendSessionNum();
 			}
 		}
 

@@ -41,7 +41,10 @@ public final class TalkTracker {
 	private String tag;
 	private Endpoint endpoint;
 
-	public Cellet activeCellet = null;
+	private boolean autoSuspend = false;
+	private long suspendDuration = 5000;
+
+	protected Cellet activeCellet = null;
 
 	public TalkTracker(String tag, InetSocketAddress address) {
 		this.tag = tag;
@@ -58,5 +61,34 @@ public final class TalkTracker {
 	 */
 	public Endpoint getEndpoint() {
 		return this.endpoint;
+	}
+
+	/** 返回是否进行自动挂起。
+	 */
+	public boolean isAutoSuspend() {
+		return this.autoSuspend;
+	}
+
+	/** 设置是否支持自动挂起。
+	 */
+	public void setAutoSuspend(boolean value) {
+		this.autoSuspend = value;
+	}
+
+	/** 返回挂起时长。
+	 */
+	public long getSuspendDuration() {
+		return this.suspendDuration;
+	}
+
+	/** 设置挂起时长。
+	 */
+	public long setSuspendDuration(long duration) {
+		if (duration < 5000)
+			this.suspendDuration = 5000;
+		else
+			this.suspendDuration = duration;
+
+		return this.suspendDuration;
 	}
 }

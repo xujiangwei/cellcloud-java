@@ -1,6 +1,0 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<nucleus>
-	<cellet path="/E:/Development/CellCloud-Java/workspace/cellet-dummy/" jar="cellet-dummy.jar">
-		<class>net.cellcloud.cellet.DummyCellet</class>
-	</cellet>
-</nucleus>

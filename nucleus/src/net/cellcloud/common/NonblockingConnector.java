@@ -137,6 +137,9 @@ public class NonblockingConnector extends MessageService implements
 		} catch (IOException e) {
 			Logger.e(NonblockingConnector.class, e.getMessage());
 
+			// 回调错误
+			this.fireErrorOccurred(MessageErrorCode.SOCKET_FAILED);
+
 			try {
 				if (null != this.channel) {
 					this.channel.close();
@@ -354,7 +357,7 @@ public class NonblockingConnector extends MessageService implements
 				}
 
 				// 连接失败
-				fireErrorOccurred(MessageHandler.EC_CONNECT_FAILED);
+				fireErrorOccurred(MessageErrorCode.CONNECT_FAILED);
 				return false;
 			}
 
@@ -422,9 +425,10 @@ public class NonblockingConnector extends MessageService implements
 		} while (read > 0);
 
 		try {
+			// 注册
 			channel.register(this.selector, SelectionKey.OP_WRITE | SelectionKey.OP_READ);
 		} catch (IOException e) {
-			e.printStackTrace();
+			this.fireErrorOccurred(MessageErrorCode.READ_FAILED);
 		}
 	}
 
@@ -474,10 +478,9 @@ public class NonblockingConnector extends MessageService implements
 				// 注册
 				channel.register(this.selector, SelectionKey.OP_READ | SelectionKey.OP_WRITE);
 			} catch (ClosedChannelException e1) {
-				// Nothing
+				this.fireErrorOccurred(MessageErrorCode.WRITE_FAILED);
 			}
 		} catch (IOException e) {
-			e.printStackTrace();
 			Logger.e(NonblockingConnector.class, e.getMessage());
 		}
 	}
@@ -492,7 +495,7 @@ public class NonblockingConnector extends MessageService implements
 			int length = data.length;
 			boolean head = false;
 			boolean tail = false;
-			byte[] buf = new byte[8192];
+			byte[] buf = new byte[NonblockingConnector.BLOCK];
 			int bufIndex = 0;
 
 			while (cursor < length) {
@@ -543,6 +546,8 @@ public class NonblockingConnector extends MessageService implements
 					}
 
 					cursor += tailMark.length;
+					// 后面要移动到下一个字节因此这里先减1
+					cursor -= 1;
 				}
 				else {
 					++bufIndex;

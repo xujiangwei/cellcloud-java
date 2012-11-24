@@ -72,4 +72,10 @@ public final class DialectEnumerator {
 			this.factories.remove(fact.getMetaData().name);
 		}
 	}
+
+	/** 获取指定名称的方言工厂。
+	 */
+	public DialectFactory getFactory(String name) {
+		return this.factories.get(name);
+	}
 }

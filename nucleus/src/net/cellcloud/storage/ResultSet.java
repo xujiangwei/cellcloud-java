@@ -29,6 +29,7 @@ package net.cellcloud.storage;
 import net.cellcloud.exception.StorageException;
 
 /** 结果集。
+ * 
  * @author Jiangwei Xu
  */
 public interface ResultSet {
@@ -110,11 +111,11 @@ public interface ResultSet {
 	*/
 	byte[] getRaw(final String label, long offset, long length);
 
-	/**
+	/** 更新指定索引处字符值。
 	*/
 	void updateChar(int index, char value);
 
-	/**
+	/** 更新指定标签处字符值。
 	*/
 	void updateChar(final String label, char value);
 
@@ -159,4 +160,8 @@ public interface ResultSet {
 	*/
 	void updateRaw(final String label, byte[] src, long offset, long length)
 			throws StorageException;
+
+	/** 关闭结果集。
+	 */
+	void close();
 }

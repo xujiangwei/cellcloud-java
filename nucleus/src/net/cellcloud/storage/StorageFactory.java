@@ -26,6 +26,7 @@ THE SOFTWARE.
 
 package net.cellcloud.storage;
 
+
 /** 存储器工厂。
  * 
  * @author Jiangwei Xu
@@ -48,7 +49,7 @@ public abstract class StorageFactory {
 
 	/** 创建存储器实例。
 	 */
-	abstract public Storage create(final String instanceName);
+	abstract public Storage create(String instanceName);
 
 	/** 销毁存储器实例。
 	 */

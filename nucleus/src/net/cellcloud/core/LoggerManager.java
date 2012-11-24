@@ -39,36 +39,46 @@ public final class LoggerManager {
 
 	public final static SimpleDateFormat dateFormat = new SimpleDateFormat("HH:mm:ss");
 
-	public final static byte DEBUG = 1;
-	public final static byte INFO = 2;
-	public final static byte WARNING = 3;
-	public final static byte ERROR = 4;
-
 	private LogHandle handle;
+	private byte level;
 
 	private LoggerManager() {
 		this.handle = createSystemOutHandle();
+		this.level = LogLevel.DEBUG;
 	}
 
 	public synchronized static LoggerManager getInstance() {
 		return instance;
 	}
 
+	/** 设置日志等级。
+	 */
+	public void setLevel(byte level) {
+		this.level = level;
+	}
+	/** 返回日志等级。
+	 */
+	public byte getLevel() {
+		return this.level;
+	}
+
+	/** 记录日志。
+	 */
 	public void log(byte level, String tag, String log) {
-		if (null == this.handle)
+		if (null == this.handle || this.level > level)
 			return;
 
 		switch (level) {
-		case DEBUG:
+		case LogLevel.DEBUG:
 			this.handle.logDebug(tag, log);
 			break;
-		case INFO:
+		case LogLevel.INFO:
 			this.handle.logInfo(tag, log);
 			break;
-		case WARNING:
+		case LogLevel.WARNING:
 			this.handle.logWarning(tag, log);
 			break;
-		case ERROR:
+		case LogLevel.ERROR:
 			this.handle.logError(tag, log);
 			break;
 		default:
@@ -76,6 +86,8 @@ public final class LoggerManager {
 		}
 	}
 
+	/** 设置日志内容处理器。
+	 */
 	public void setHandle(LogHandle handle) {
 		this.handle = handle;
 	}

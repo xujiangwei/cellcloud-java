@@ -87,6 +87,8 @@ public final class PrimitiveSerializer {
 	private static final byte[] STUFFTYPE_ATTRIBUTIVE_BYTES = STUFFTYPE_ATTRIBUTIVE.getBytes();
 	private static final byte[] STUFFTYPE_COMPLEMENT_BYTES = STUFFTYPE_COMPLEMENT.getBytes();
 
+	private static final int BLOCK = 2048;
+
 	private PrimitiveSerializer() {
 	}
 
@@ -107,7 +109,7 @@ public final class PrimitiveSerializer {
 			stream.write(version);
 			stream.write((int)TOKEN_CLOSE_BRACKET);
 
-			ByteBuffer buf = ByteBuffer.allocate(1024);
+			ByteBuffer buf = ByteBuffer.allocate(BLOCK);
 			int bufLength = 0;
 
 			// 语素
@@ -258,10 +260,10 @@ public final class PrimitiveSerializer {
 		*/
 
 		try {
-			byte parse = PARSE_PHASE_UNKNOWN;
+			byte phase = PARSE_PHASE_UNKNOWN;
 			int read = 0;
 
-			ByteBuffer buf = ByteBuffer.allocate(1024);
+			ByteBuffer buf = ByteBuffer.allocate(BLOCK);
 			byte[] type = new byte[3];
 			byte[] value = null;
 			byte[] literal = null;
@@ -270,7 +272,7 @@ public final class PrimitiveSerializer {
 			while ((read = stream.read()) >= 0) {
 
 				// 判断处理阶段
-				switch (parse) {
+				switch (phase) {
 
 				case PARSE_PHASE_VALUE:
 					// 判断转义
@@ -302,7 +304,7 @@ public final class PrimitiveSerializer {
 						buf.get(value, 0, length);
 						buf.clear();
 
-						parse = PARSE_PHASE_LITERAL;
+						phase = PARSE_PHASE_LITERAL;
 						length = 0;
 						continue;
 					}
@@ -318,7 +320,7 @@ public final class PrimitiveSerializer {
 						buf.get(type);
 						buf.clear();
 
-						parse = PARSE_PHASE_VALUE;
+						phase = PARSE_PHASE_VALUE;
 						length = 0;
 						continue;
 					}
@@ -337,7 +339,7 @@ public final class PrimitiveSerializer {
 						// 添加语素
 						injectStuff(primitive, type, value, literal);
 
-						parse = PARSE_PHASE_DIALECT;
+						phase = PARSE_PHASE_DIALECT;
 						length = 0;
 						continue;
 					}
@@ -348,7 +350,7 @@ public final class PrimitiveSerializer {
 				case PARSE_PHASE_STUFF:
 					if (read == TOKEN_OPEN_BRACE) {
 						// 进入解析语素阶段
-						parse = PARSE_PHASE_TYPE;
+						phase = PARSE_PHASE_TYPE;
 						buf.clear();
 					}
 					break;
@@ -356,7 +358,7 @@ public final class PrimitiveSerializer {
 				case PARSE_PHASE_VERSION:
 					if (read == TOKEN_CLOSE_BRACKET) {
 						// 解析版本结束
-						parse = PARSE_PHASE_STUFF;
+						phase = PARSE_PHASE_STUFF;
 						continue;
 					}
 					buf.put((byte)read);
@@ -364,7 +366,7 @@ public final class PrimitiveSerializer {
 
 				case PARSE_PHASE_DIALECT:
 					if (read == TOKEN_OPEN_BRACE) {
-						parse = PARSE_PHASE_TYPE;
+						phase = PARSE_PHASE_TYPE;
 						buf.clear();
 					}
 					else if (read == TOKEN_OPEN_BRACKET) {
@@ -384,11 +386,11 @@ public final class PrimitiveSerializer {
 
 				default:
 					if (read == TOKEN_OPEN_BRACE) {
-						parse = PARSE_PHASE_TYPE;
+						phase = PARSE_PHASE_TYPE;
 						buf.clear();
 					}
 					else if (read == TOKEN_OPEN_BRACKET) {
-						parse = PARSE_PHASE_VERSION;
+						phase = PARSE_PHASE_VERSION;
 						buf.clear();
 					}
 					break;
@@ -415,32 +417,32 @@ public final class PrimitiveSerializer {
 		String typeString = new String(type);
 
 		if (typeString.equals(STUFFTYPE_SUBJECT)) {
-			SubjectStuff subject = new SubjectStuff(new String(value));
+			SubjectStuff subject = new SubjectStuff(new String(value, Charset.forName("UTF-8")));
 			subject.literalBase = lb;
 			primitive.commit(subject);
 		}
 		else if (typeString.equals(STUFFTYPE_PREDICATE)) {
-			PredicateStuff predicate = new PredicateStuff(new String(value));
+			PredicateStuff predicate = new PredicateStuff(new String(value, Charset.forName("UTF-8")));
 			predicate.literalBase = lb;
 			primitive.commit(predicate);
 		}
 		else if (typeString.equals(STUFFTYPE_OBJECTIVE)) {
-			ObjectiveStuff objective = new ObjectiveStuff(new String(value));
+			ObjectiveStuff objective = new ObjectiveStuff(new String(value, Charset.forName("UTF-8")));
 			objective.literalBase = lb;
 			primitive.commit(objective);
 		}
 		else if (typeString.equals(STUFFTYPE_ADVERBIAL)) {
-			AdverbialStuff adverbial = new AdverbialStuff(new String(value));
+			AdverbialStuff adverbial = new AdverbialStuff(new String(value, Charset.forName("UTF-8")));
 			adverbial.literalBase = lb;
 			primitive.commit(adverbial);
 		}
 		else if (typeString.equals(STUFFTYPE_ATTRIBUTIVE)) {
-			AttributiveStuff attributive = new AttributiveStuff(new String(value));
+			AttributiveStuff attributive = new AttributiveStuff(new String(value, Charset.forName("UTF-8")));
 			attributive.literalBase = lb;
 			primitive.commit(attributive);
 		}
 		else if (typeString.equals(STUFFTYPE_COMPLEMENT)) {
-			ComplementStuff complement = new ComplementStuff(new String(value));
+			ComplementStuff complement = new ComplementStuff(new String(value, Charset.forName("UTF-8")));
 			complement.literalBase = lb;
 			primitive.commit(complement);
 		}

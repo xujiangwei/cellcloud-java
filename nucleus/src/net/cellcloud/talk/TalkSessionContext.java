@@ -30,11 +30,15 @@ import java.net.InetSocketAddress;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
+import net.cellcloud.common.Session;
+
 /** Talk 会话上下文。
  * 
  * @author Jiangwei Xu
  */
 public final class TalkSessionContext {
+
+	private Session session;
 
 	/// Key：内核标签，Value：追踪器。
 	private ConcurrentHashMap<String, TalkTracker> trackers;
@@ -43,8 +47,15 @@ public final class TalkSessionContext {
 
 	/** 构造函数。
 	 */
-	public TalkSessionContext() {
+	public TalkSessionContext(Session session) {
+		this.session = session;
 		this.trackers = new ConcurrentHashMap<String, TalkTracker>();
+	}
+
+	/** 返回上下文对应的 Session 。
+	 */
+	public Session getSession() {
+		return this.session;
 	}
 
 	/** 返回所有 Tracker 。

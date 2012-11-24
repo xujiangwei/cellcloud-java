@@ -274,8 +274,14 @@ public final class Packet {
 		byte[] bMajor = new byte[2];
 		System.arraycopy(data, PSL_TAG, bMinor, 0, 2);
 		System.arraycopy(data, PSL_TAG + 2, bMajor, 0, 2);
-		int minor = Integer.parseInt(new String(bMinor));
-		int major = Integer.parseInt(new String(bMajor));
+		int minor = 0;
+		int major = 0;
+		try {
+			minor = Integer.parseInt(new String(bMinor));
+			major = Integer.parseInt(new String(bMajor));
+		} catch (NumberFormatException e) {
+			return null;
+		}
 
 		// 解析 SN
 		byte[] bSN = new byte[PSL_SN];
@@ -294,7 +300,7 @@ public final class Packet {
 		if (datalen > PSL_TAG + PSL_VERSION + PSL_SN + PSL_BODY_LENGTH) {
 			// 确认有 BODY 段，校验 BODY 段长度
 			if ((datalen - (PSL_TAG + PSL_VERSION + PSL_SN + PSL_BODY_LENGTH)) != bodyLength) {
-				Logger.w(Packet.class, "Packet length has exception");
+				Logger.w(Packet.class, "Packet length exception : bytes-length=" + datalen + " body-length=" + bodyLength);
 			}
 
 			int begin = PSL_TAG + PSL_VERSION + PSL_SN + PSL_BODY_LENGTH;

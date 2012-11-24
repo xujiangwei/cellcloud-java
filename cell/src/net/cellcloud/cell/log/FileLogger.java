@@ -53,7 +53,7 @@ public final class FileLogger implements LogHandle {
 
 	private String lineBreak = Util.isWindowsOS() ? "\r\n" : "\n";
 
-	private int flushThreshold = 512 * 1024;
+	private int flushThreshold = 1024;
 	private int countSize = 0;
 
 	private FileLogger() {

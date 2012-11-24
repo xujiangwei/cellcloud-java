@@ -48,5 +48,5 @@ public interface TalkListener {
 
 	/** 发生错误。
 	*/
-	public void failed(String identifier);
+	public void failed(TalkServiceFailure failure);
 }

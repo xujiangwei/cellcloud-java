@@ -27,10 +27,12 @@ THE SOFTWARE.
 package net.cellcloud.talk;
 
 import net.cellcloud.common.Message;
+import net.cellcloud.common.MessageErrorCode;
 import net.cellcloud.common.MessageHandler;
 import net.cellcloud.common.Packet;
 import net.cellcloud.common.Session;
 import net.cellcloud.core.Logger;
+import net.cellcloud.util.Util;
 
 /** Speaker 连接处理器。
  * 
@@ -51,7 +53,7 @@ public final class SpeakerConnectorHandler extends MessageHandler {
 	 */
 	@Override
 	public void sessionCreated(Session session) {
-		Logger.d(SpeakerConnectorHandler.class, "sessionCreated");
+//		Logger.d(SpeakerConnectorHandler.class, "sessionCreated");
 	}
 
 	/**
@@ -59,7 +61,7 @@ public final class SpeakerConnectorHandler extends MessageHandler {
 	 */
 	@Override
 	public void sessionDestroyed(Session session) {
-		Logger.d(SpeakerConnectorHandler.class, "sessionDestroyed");
+//		Logger.d(SpeakerConnectorHandler.class, "sessionDestroyed");
 	}
 
 	/**
@@ -67,7 +69,7 @@ public final class SpeakerConnectorHandler extends MessageHandler {
 	 */
 	@Override
 	public void sessionOpened(Session session) {
-		Logger.d(SpeakerConnectorHandler.class, "sessionOpened");
+//		Logger.d(SpeakerConnectorHandler.class, "sessionOpened");
 	}
 
 	/**
@@ -75,7 +77,7 @@ public final class SpeakerConnectorHandler extends MessageHandler {
 	 */
 	@Override
 	public void sessionClosed(Session session) {
-		Logger.d(SpeakerConnectorHandler.class, "sessionClosed");
+//		Logger.d(SpeakerConnectorHandler.class, "sessionClosed");
 		this.speaker.notifySessionClosed();
 	}
 
@@ -84,11 +86,12 @@ public final class SpeakerConnectorHandler extends MessageHandler {
 	 */
 	@Override
 	public void messageReceived(Session session, Message message) {
-//		System.out.println("recv : " + new String(message.get()));
 		// 解包
 		Packet packet = Packet.unpack(message.get());
-		// 解释数据包
-		interpret(session, packet);
+		if (null != packet) {
+			// 解释数据包
+			interpret(session, packet);
+		}
 	}
 
 	/**
@@ -105,7 +108,14 @@ public final class SpeakerConnectorHandler extends MessageHandler {
 	@Override
 	public void errorOccurred(int errorCode, Session session) {
 		Logger.d(SpeakerConnectorHandler.class, "errorOccurred : " + errorCode);
-		if (errorCode == MessageHandler.EC_CONNECT_FAILED) {
+		if (errorCode == MessageErrorCode.CONNECT_TIMEOUT
+			|| errorCode == MessageErrorCode.CONNECT_FAILED) {
+
+			TalkServiceFailure failure = new TalkServiceFailure(TalkFailureCode.CALL_TIMEOUT
+				, this.getClass());
+			failure.setSourceDescription("Attempt to connect to host timed out");
+			this.speaker.fireFailed(failure);
+
 			TalkService.getInstance().markLostSpeaker(this.speaker);
 		}
 	}
@@ -115,39 +125,30 @@ public final class SpeakerConnectorHandler extends MessageHandler {
 
 		byte[] tag = packet.getTag();
 
-		if (TalkPacketDefine.TPT_DIALOGUE[2] == tag[2]
-			&& TalkPacketDefine.TPT_DIALOGUE[3] == tag[3]) {
+		if (TalkDefinition.TPT_DIALOGUE[2] == tag[2]
+			&& TalkDefinition.TPT_DIALOGUE[3] == tag[3]) {
 			this.speaker.processDialogue(packet, session);
 		}
-		else if (TalkPacketDefine.TPT_REQUEST[2] == tag[2]
-			&& TalkPacketDefine.TPT_REQUEST[3] == tag[3]) {
-			this.speaker.setCalled(true);
-
-			StringBuilder buf = new StringBuilder();
-			buf.append("Cellet '");
-			buf.append(this.speaker.getIdentifier());
-			buf.append("' has called at ");
-			buf.append(this.speaker.getAddress().getAddress().getHostAddress());
-			buf.append(":");
-			buf.append(this.speaker.getAddress().getPort());
-			Logger.d(SpeakerConnectorHandler.class, buf.toString());
-			buf = null;
+		else if (TalkDefinition.TPT_CONSULT[2] == tag[2]
+			&& TalkDefinition.TPT_CONSULT[3] == tag[3]) {
+			this.speaker.processConsult(packet, session);
 		}
-		else if (TalkPacketDefine.TPT_CHECK[2] == tag[2]
-			&& TalkPacketDefine.TPT_CHECK[3] == tag[3]) {
+		else if (TalkDefinition.TPT_REQUEST[2] == tag[2]
+			&& TalkDefinition.TPT_REQUEST[3] == tag[3]) {
+			this.speaker.processRequestReply(packet, session);
+		}
+		else if (TalkDefinition.TPT_CHECK[2] == tag[2]
+			&& TalkDefinition.TPT_CHECK[3] == tag[3]) {
 
 			// 记录标签
-			byte[] ntag = packet.getSubsegment(1);
-			this.speaker.recordTag(new String(ntag));
-
-			// 发送事件
-			this.speaker.fireContacted();
+			byte[] rtag = packet.getSubsegment(1);
+			this.speaker.recordTag(Util.bytes2String(rtag));
 
 			// 请求 Cellet
 			this.speaker.requestCellet(session);
 		}
-		else if (TalkPacketDefine.TPT_INTERROGATE[2] == tag[2]
-			&& TalkPacketDefine.TPT_INTERROGATE[3] == tag[3]) {
+		else if (TalkDefinition.TPT_INTERROGATE[2] == tag[2]
+			&& TalkDefinition.TPT_INTERROGATE[3] == tag[3]) {
 			this.speaker.requestCheck(packet, session);
 		}
 	}

@@ -32,26 +32,6 @@ package net.cellcloud.common;
  */
 public abstract class MessageHandler {
 
-	/// 未知的错误类型。
-	public static final int EC_UNKNOWN = 0;
-	/// 无效的网络地址。
-	public static final int EC_ADDRESS_INVALID = 1;
-	/// 错误的状态。
-	public static final int EC_STATE_ERROR = 2;
-	/// Socket 函数发生错误。
-	public static final int EC_SOCK_FAILED = 3;
-	/// 绑定服务时发生错误。
-	public static final int EC_BIND_FAILED = 4;
-	/// 监听连接时发生错误。
-	public static final int EC_LISTEN_FAILED = 5;
-	/// Accept 发生错误。
-	public static final int EC_ACCEPT_FAILED = 6;
-	/// 写入数据时发生错误。
-	public static final int EC_WRITE_FAILED = 7;
-	/// 连接失败。
-	public static final int EC_CONNECT_FAILED = 9;
-
-
 	/** 创建连接会话。
 	*/
 	public abstract void sessionCreated(Session session);

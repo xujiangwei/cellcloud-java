@@ -27,6 +27,8 @@ THE SOFTWARE.
 package net.cellcloud.talk;
 
 import java.util.Iterator;
+import java.util.LinkedList;
+import java.util.Queue;
 
 import net.cellcloud.core.Logger;
 
@@ -39,14 +41,23 @@ public final class TalkServiceDaemon extends Thread {
 	private boolean spinning = false;
 	private long tickTime = 0;
 
+	private Queue<Runnable> simpleTasks;
+
 	public TalkServiceDaemon() {
 		super("TalkServiceDaemon");
+		this.simpleTasks = new LinkedList<Runnable>();
 	}
 
 	/** 返回周期时间点。
 	 */
 	protected long getTickTime() {
 		return this.tickTime;
+	}
+
+	protected void addSimpleTask(Runnable task) {
+		synchronized (this.simpleTasks) {
+			this.simpleTasks.offer(task);
+		}
 	}
 
 	@Override
@@ -56,6 +67,7 @@ public final class TalkServiceDaemon extends Thread {
 		TalkService service = TalkService.getInstance();
 
 		int heartbeatCount = 0;
+		int checkSuspendedCount = 0;
 
 		do {
 			// 当前时间
@@ -105,9 +117,35 @@ public final class TalkServiceDaemon extends Thread {
 			// 处理未识别 Session
 			service.processUnidentifiedSessions(this.tickTime);
 
+			// 5 分钟检查一次
+			++checkSuspendedCount;
+			if (checkSuspendedCount >= 300) {
+				// 检查并删除挂起的会话
+				service.checkAndDeleteSuspendedTalk();
+				checkSuspendedCount = 0;
+			}
+
+			// 执行简单任务
+			synchronized (this.simpleTasks) {
+				if (!this.simpleTasks.isEmpty()) {
+					for (int i = 0, size = this.simpleTasks.size(); i < size; ++i) {
+						Runnable task = this.simpleTasks.poll();
+						task.run();
+					}
+				}
+			}
+
 			// 休眠 1 秒
 			try {
-				Thread.sleep(1000);
+				long dt = System.currentTimeMillis() - this.tickTime;
+				if (dt <= 1000) {
+					dt = 1000 - dt;
+				}
+				else {
+					dt = dt % 1000;
+				}
+
+				Thread.sleep(dt);
 			} catch (InterruptedException e) {
 				e.printStackTrace();
 			}

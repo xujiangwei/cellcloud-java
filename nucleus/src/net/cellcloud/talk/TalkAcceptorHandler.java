@@ -26,6 +26,9 @@ THE SOFTWARE.
 
 package net.cellcloud.talk;
 
+import java.util.LinkedList;
+import java.util.Queue;
+
 import net.cellcloud.common.Message;
 import net.cellcloud.common.MessageHandler;
 import net.cellcloud.common.Packet;
@@ -38,11 +41,20 @@ import net.cellcloud.common.Session;
 public final class TalkAcceptorHandler extends MessageHandler {
 
 	private TalkService talkService;
+	private Queue<ServerDialogueCommand> dialogueCmdQueue;
+	private Queue<ServerHeartbeatCommand> heartbeatCmdQueue;
 
 	/** 构造函数。
 	 */
-	protected TalkAcceptorHandler(TalkService talkService) {
+	protected TalkAcceptorHandler(TalkService talkService, int queueLength) {
 		this.talkService = talkService;
+		this.dialogueCmdQueue = new LinkedList<ServerDialogueCommand>();
+		this.heartbeatCmdQueue = new LinkedList<ServerHeartbeatCommand>();
+
+		for (int i = 0; i < queueLength; ++i) {
+			this.dialogueCmdQueue.offer(new ServerDialogueCommand(talkService));
+			this.heartbeatCmdQueue.offer(new ServerHeartbeatCommand(talkService));
+		}
 	}
 
 	@Override
@@ -87,25 +99,82 @@ public final class TalkAcceptorHandler extends MessageHandler {
 	private void interpret(Session session, Packet packet) {
 		byte[] tag = packet.getTag();
 
-		if (TalkPacketDefine.isDialogue(tag)) {
-			TalkDialogueCelletCommand cmd = new TalkDialogueCelletCommand(this.talkService, session, packet);
+		if (TalkDefinition.isDialogue(tag)) {
+			ServerDialogueCommand cmd = borrowDialogueCommand(session, packet);
+			if (null != cmd) {
+				cmd.execute();
+				returnDialogueCommand(cmd);
+			}
+			else {
+				cmd = new ServerDialogueCommand(this.talkService, session, packet);
+				cmd.execute();
+				cmd = null;
+			}
+		}
+		else if (TalkDefinition.isHeartbeat(tag)) {
+			ServerHeartbeatCommand cmd = borrowHeartbeatCommand(session, packet);
+			if (null != cmd) {
+				cmd.execute();
+				returnHeartbeatCommand(cmd);
+			}
+			else {
+				cmd = new ServerHeartbeatCommand(this.talkService, session, packet);
+				cmd.execute();
+				cmd = null;
+			}
+		}
+		else if (TalkDefinition.isConsult(tag)) {
+			ServerConsultCommand cmd = new ServerConsultCommand(this.talkService, session, packet);
 			cmd.execute();
 			cmd = null;
 		}
-		else if (TalkPacketDefine.isHeartbeat(tag)) {
-			TalkHeartbeatCommand cmd = new TalkHeartbeatCommand(this.talkService, session, packet);
+		else if (TalkDefinition.isRequest(tag)) {
+			ServerRequestCommand cmd = new ServerRequestCommand(this.talkService, session, packet);
 			cmd.execute();
 			cmd = null;
 		}
-		else if (TalkPacketDefine.isRequest(tag)) {
-			TalkRequestCelletCommand cmd = new TalkRequestCelletCommand(this.talkService, session, packet);
+		else if (TalkDefinition.isCheck(tag)) {
+			ServerCheckCommand cmd = new ServerCheckCommand(this.talkService, session, packet);
 			cmd.execute();
 			cmd = null;
 		}
-		else if (TalkPacketDefine.isCheck(tag)) {
-			TalkCheckCommand cmd = new TalkCheckCommand(this.talkService, session, packet);
-			cmd.execute();
-			cmd = null;
+	}
+
+	private ServerDialogueCommand borrowDialogueCommand(Session session, Packet packet) {
+		synchronized (this.dialogueCmdQueue) {
+			ServerDialogueCommand cmd = this.dialogueCmdQueue.poll();
+			if (null != cmd) {
+				cmd.session = session;
+				cmd.packet = packet;
+				return cmd;
+			}
+		}
+
+		return null;
+	}
+
+	private void returnDialogueCommand(ServerDialogueCommand cmd) {
+		synchronized (this.dialogueCmdQueue) {
+			this.dialogueCmdQueue.offer(cmd);
+		}
+	}
+	
+	private ServerHeartbeatCommand borrowHeartbeatCommand(Session session, Packet packet) {
+		synchronized (this.heartbeatCmdQueue) {
+			ServerHeartbeatCommand cmd = this.heartbeatCmdQueue.poll();
+			if (null != cmd) {
+				cmd.session = session;
+				cmd.packet = packet;
+				return cmd;
+			}
+		}
+
+		return null;
+	}
+
+	private void returnHeartbeatCommand(ServerHeartbeatCommand cmd) {
+		synchronized (this.heartbeatCmdQueue) {
+			this.heartbeatCmdQueue.offer(cmd);
 		}
 	}
 }

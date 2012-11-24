@@ -26,14 +26,12 @@ THE SOFTWARE.
 
 package net.cellcloud.exception;
 
-/** 单文件存储器异常。
+/** 存储器异常。
  * 
  * @author Jiangwei Xu
  */
 public class StorageException extends Exception {
 
-	/**
-	 */
 	private static final long serialVersionUID = 5477926015926056716L;
 
 	public StorageException(String message) {

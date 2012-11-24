@@ -26,6 +26,9 @@ THE SOFTWARE.
 
 package net.cellcloud.talk.dialect;
 
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+
 /** 动作方言工厂。
  * 
  * @author Jiangwei Xu
@@ -35,6 +38,8 @@ public final class ActionDialectFactory extends DialectFactory {
 	public final static String FACTORY_NAME = "ActionDialect";
 
 	private DialectMetaData metaData;
+
+	private ExecutorService executor;
 
 	public ActionDialectFactory() {
 		this.metaData = new DialectMetaData(FACTORY_NAME, "Action Dialect");
@@ -48,5 +53,33 @@ public final class ActionDialectFactory extends DialectFactory {
 	@Override
 	public Dialect create(String tracker) {
 		return new ActionDialect(tracker);
+	}
+
+	/** 执行动作。
+	 */
+	protected void doAction(final ActionDialect dialect, final ActionDelegate delegate) {
+		if (null == this.executor) {
+			this.executor = Executors.newCachedThreadPool();
+		}
+
+		this.executor.execute(new ActionTask() {
+			@Override
+			public void run() {
+				delegate.doAction(dialect);
+			}
+		});
+	}
+
+	/** 动作任务。
+	*/
+	protected class ActionTask implements Runnable {
+		/**
+		 */
+		public ActionTask() {
+		}
+
+		@Override
+		public void run() {
+		}
 	}
 }

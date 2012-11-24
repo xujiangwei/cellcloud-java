@@ -149,7 +149,7 @@ public final class Cell {
 	/** 默认主函数。
 	 */
 	public static void main(String[] args) {
-		if (null != args) {
+		if (null != args && args.length > 0) {
 			if (args[0].equals("start")) {
 				Cell.app = new Application(true);
 
@@ -160,11 +160,15 @@ public final class Cell {
 					Cell.app.run();
 				}
 
+				Cell.spinning = false;
+
 				Cell.app.shutdown();
 
 				Cell.markStop();
 
 				Cell.app = null;
+
+				System.out.println("\nProcess exit.");
 			}
 			else if (args[0].equals("stop")) {
 				File file = new File("bin/tag");
@@ -194,7 +198,7 @@ public final class Cell {
 						}
 					}
 
-					System.out.println("\nCell Cloud has closed, progress elapsed time " +
+					System.out.println("\nCell Cloud process exit, progress elapsed time " +
 							(int)((System.currentTimeMillis() - startTime)/1000) + " seconds.\n");
 				}
 			}

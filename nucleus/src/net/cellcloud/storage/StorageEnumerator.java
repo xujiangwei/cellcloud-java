@@ -29,6 +29,7 @@ package net.cellcloud.storage;
 import java.util.concurrent.ConcurrentHashMap;
 
 /** 存储器枚举。
+ * 
  * @author Jiangwei Xu
  */
 public final class StorageEnumerator {
@@ -86,7 +87,16 @@ public final class StorageEnumerator {
 		return null;
 	}
 
+	/** 销毁存储器。
+	 */
+	public void destroyStorage(Storage storage) {
+		if (this.factories.containsKey(storage.getTypeName())) {
+			this.factories.get(storage.getTypeName()).destroy(storage);
+		}
+	}
+
 	private void buildIn() {
-		this.addFactory(new SingleFileStorageFactory());
+		this.addFactory(new LocalFileStorageFactory());
+		this.addFactory(new MongoStorageFactory());
 	}
 }

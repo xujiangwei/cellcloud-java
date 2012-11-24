@@ -26,6 +26,9 @@ THE SOFTWARE.
 
 package net.cellcloud.storage;
 
+import net.cellcloud.exception.StorageException;
+import net.cellcloud.util.Properties;
+
 /** 存储器定义。
  * @author Jiangwei Xu
  */
@@ -41,13 +44,17 @@ public interface Storage {
 
 	/** 打开存储器。
 	*/
-	public boolean open(final String dest);
+	public boolean open(Properties properties) throws StorageException;
 
 	/** 关闭存储器。
 	*/
-	public void close();
+	public void close() throws StorageException;
 
-	/** 进行存储操作。
+	/** 执行存储操作。
 	*/
-	ResultSet store(final String statement);
+	ResultSet store(String statement) throws StorageException;
+
+	/** 执行存储操作。
+	 */
+	ResultSet store(Schema schema) throws StorageException;
 }
