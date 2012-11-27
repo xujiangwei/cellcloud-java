@@ -26,21 +26,22 @@ THE SOFTWARE.
 
 package net.cellcloud.cell.command;
 
-import net.cellcloud.cell.Console;
+import net.cellcloud.core.LogHandle;
+import net.cellcloud.core.LoggerManager;
 
-/** 退出命令。
+/** 日志操作命令。
  * 
  * @author Jiangwei Xu
  */
-public final class ExitCommand extends ConsoleCommand {
+public class LogCommand extends ConsoleCommand {
 
-	private Console console;
+	private LogHandle logHandle;
 	private byte state;
 
-	public ExitCommand(Console console) {
-		super("exit", "Exit cell console and shutdown application.", "");
+	public LogCommand() {
+		super("log", "Print log text on screen.", "");
 		this.state = ConsoleCommand.CCS_FINISHED;
-		this.console = console;
+		this.logHandle = LoggerManager.getInstance().createSystemOutHandle();
 	}
 
 	@Override
@@ -50,26 +51,26 @@ public final class ExitCommand extends ConsoleCommand {
 
 	@Override
 	public boolean execute(String arg) {
-		if (null != arg) {
-			print("This command does not support this argument.");
-			this.state = ConsoleCommand.CCS_FINISHED;
-			return false;
-		}
+		LoggerManager.getInstance().removeHandle(this.logHandle);
+		LoggerManager.getInstance().addHandle(this.logHandle);
 
 		this.state = ConsoleCommand.CCS_EXECUTING;
-		print("Are you sure exit cell console and shutdown application? [y/n] ");
+		println("Input 'Q'/'q' and enter to stop print log.");
+		println("Print log text");
+
 		return true;
 	}
 
 	@Override
 	public void input(String input) {
-		if (input.equalsIgnoreCase("Y")) {
-			println("\nShutdown, please wait...");
-			this.console.quit();
-			this.console.getApp().stop();
+		if (input.equalsIgnoreCase("Q")) {			
+			LoggerManager.getInstance().removeHandle(this.logHandle);
+
+			this.state = ConsoleCommand.CCS_FINISHED;
+			println("\nStop print log to console screen.");
 		}
 		else {
-			this.state = ConsoleCommand.CCS_FINISHED;
+			println("Command 'log' : input 'Q'/'q' and enter to stop print log.");
 		}
 	}
 }

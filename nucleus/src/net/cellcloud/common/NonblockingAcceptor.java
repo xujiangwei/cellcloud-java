@@ -384,7 +384,7 @@ public class NonblockingAcceptor extends MessageService implements
 				Thread.yield();
 			} // # while
 		} catch (Exception e) {
-			Logger.w(this.getClass(), e.getMessage());
+			Logger.w(this.getClass(), "#loopDispatch() - " + e.getMessage());
 		}
 	}
 
@@ -419,10 +419,10 @@ public class NonblockingAcceptor extends MessageService implements
 			this.fireSessionOpened(session);
 		} catch (IOException e) {
 //			e.printStackTrace();
-			Logger.w(this.getClass(), e.getMessage());
+			Logger.w(this.getClass(), "#accept() - IOException : " + e.getMessage());
 		} catch (Exception e) {
 //			e.printStackTrace();
-			Logger.w(this.getClass(), e.getMessage());
+			Logger.w(this.getClass(), "#accept() - " + e.getMessage());
 		}
 	}
 

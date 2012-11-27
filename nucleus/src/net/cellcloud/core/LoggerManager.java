@@ -27,6 +27,7 @@ THE SOFTWARE.
 package net.cellcloud.core;
 
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Date;
 
 /** 日志管理器。
@@ -39,12 +40,14 @@ public final class LoggerManager {
 
 	public final static SimpleDateFormat dateFormat = new SimpleDateFormat("HH:mm:ss");
 
-	private LogHandle handle;
+	private ArrayList<LogHandle> handles;
 	private byte level;
 
 	private LoggerManager() {
-		this.handle = createSystemOutHandle();
+		this.handles = new ArrayList<LogHandle>();
 		this.level = LogLevel.DEBUG;
+
+		this.handles.add(createSystemOutHandle());
 	}
 
 	public synchronized static LoggerManager getInstance() {
@@ -65,31 +68,53 @@ public final class LoggerManager {
 	/** 记录日志。
 	 */
 	public void log(byte level, String tag, String log) {
-		if (null == this.handle || this.level > level)
-			return;
+		synchronized (this) {
+			if (this.handles.isEmpty() || this.level > level)
+				return;
 
-		switch (level) {
-		case LogLevel.DEBUG:
-			this.handle.logDebug(tag, log);
-			break;
-		case LogLevel.INFO:
-			this.handle.logInfo(tag, log);
-			break;
-		case LogLevel.WARNING:
-			this.handle.logWarning(tag, log);
-			break;
-		case LogLevel.ERROR:
-			this.handle.logError(tag, log);
-			break;
-		default:
-			break;
+			for (LogHandle handle : this.handles) {
+				switch (level) {
+				case LogLevel.DEBUG:
+					handle.logDebug(tag, log);
+					break;
+				case LogLevel.INFO:
+					handle.logInfo(tag, log);
+					break;
+				case LogLevel.WARNING:
+					handle.logWarning(tag, log);
+					break;
+				case LogLevel.ERROR:
+					handle.logError(tag, log);
+					break;
+				default:
+					break;
+				}
+			}
 		}
 	}
 
-	/** 设置日志内容处理器。
+	/** 添加日志内容处理器。
 	 */
-	public void setHandle(LogHandle handle) {
-		this.handle = handle;
+	public void addHandle(LogHandle handle) {
+		synchronized (this) {
+			this.handles.add(handle);
+		}
+	}
+
+	/** 移除日志内容处理器。
+	 */
+	public void removeHandle(LogHandle handle) {
+		synchronized (this) {
+			this.handles.remove(handle);
+		}
+	}
+
+	/** 移除所有日志内容处理器。
+	 */
+	public void removeAllHandles() {
+		synchronized (this) {
+			this.handles.clear();
+		}
 	}
 
 	/** 创建 System.out 日志。

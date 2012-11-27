@@ -26,7 +26,6 @@ THE SOFTWARE.
 
 package net.cellcloud.talk;
 
-import net.cellcloud.talk.stuff.Primitive;
 
 /** Talk 监听器。
  * 
@@ -36,15 +35,23 @@ public interface TalkListener {
 
 	/** 与内核进行会话。
 	*/
-	public void dialogue(String tag, Primitive primitive);
+	public void dialogue(String identifier, Primitive primitive);
 
-	/** 与对端 Nucleus 建立连接。
+	/** 与对端内核建立会话。
 	*/
-	public void contacted(String tag);
+	public void contacted(String identifier, String tag);
 
-	/** 与对端 Nucleus 断开连接。
+	/** 与对端内核断开会话。
 	*/
-	public void quitted(String tag);
+	public void quitted(String identifier, String tag);
+
+	/** 在对端被挂起。
+	 */
+	public void suspended(String identifier, String tag, long timestamp, int mode);
+
+	/** 从对端恢复之前被挂起的会话原语。
+	 */
+	public void resumed(String identifier, String tag, long timestamp, Primitive primitive);
 
 	/** 发生错误。
 	*/

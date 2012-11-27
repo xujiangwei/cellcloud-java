@@ -129,6 +129,14 @@ public final class SpeakerConnectorHandler extends MessageHandler {
 			&& TalkDefinition.TPT_DIALOGUE[3] == tag[3]) {
 			this.speaker.processDialogue(packet, session);
 		}
+		else if (TalkDefinition.TPT_RESUME[2] == tag[2]
+			&& TalkDefinition.TPT_RESUME[3] == tag[3]) {
+			this.speaker.processResume(packet, session);
+		}
+		else if (TalkDefinition.TPT_SUSPEND[2] == tag[2]
+				&& TalkDefinition.TPT_SUSPEND[3] == tag[3]) {
+			this.speaker.processSuspend(packet, session);
+		}
 		else if (TalkDefinition.TPT_CONSULT[2] == tag[2]
 			&& TalkDefinition.TPT_CONSULT[3] == tag[3]) {
 			this.speaker.processConsult(packet, session);

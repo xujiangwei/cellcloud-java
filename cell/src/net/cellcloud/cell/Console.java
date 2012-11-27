@@ -37,6 +37,7 @@ import java.util.Scanner;
 import net.cellcloud.cell.command.ConsoleCommand;
 import net.cellcloud.cell.command.ExitCommand;
 import net.cellcloud.cell.command.HelpCommand;
+import net.cellcloud.cell.command.LogCommand;
 import net.cellcloud.cell.command.UnknownCommand;
 
 /** 控制台。
@@ -165,7 +166,14 @@ public final class Console {
 	/** 查找命令
 	 */
 	private ConsoleCommand findCommand(String outArgs, String cmd) {
-		return this.commands.get(cmd);
+		String word = cmd;
+		int index = cmd.indexOf(" ");
+		if (index > 0) {
+			word = cmd.substring(0, index);
+			outArgs = cmd.substring(index + 1, cmd.length());
+		}
+
+		return this.commands.get(word);
 	}
 
 	/** 注册内置命令。
@@ -175,6 +183,9 @@ public final class Console {
 		this.registerCommand(cmd);
 
 		cmd = new ExitCommand(this);
+		this.registerCommand(cmd);
+
+		cmd = new LogCommand();
 		this.registerCommand(cmd);
 	}
 }

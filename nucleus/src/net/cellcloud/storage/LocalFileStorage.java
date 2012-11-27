@@ -44,7 +44,7 @@ import net.cellcloud.util.Properties;
  */
 public final class LocalFileStorage implements FileStorage {
 
-	public final static String TYPE_NAME = "SingleFileStorage";
+	public final static String TYPE_NAME = "LocalFileStorage";
 
 	public final static String FIELD_FILENAME_STRING = "filename";
 	public final static String FIELD_EXIST_BOOL = "exist";
@@ -112,7 +112,7 @@ public final class LocalFileStorage implements FileStorage {
 				}
 
 				if (null == file) {
-					throw new StorageException("SingleFileStorage ("+ this.instanceName +") load file '" + filename + "' failed.");
+					throw new StorageException("LocalFileStorage ("+ this.instanceName +") load file '" + filename + "' failed.");
 				}
 
 				LocalFileResultSet rs = new LocalFileResultSet(this, operate, file);

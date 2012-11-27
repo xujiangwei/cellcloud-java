@@ -33,6 +33,7 @@ import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
 import java.util.Iterator;
 
+import net.cellcloud.talk.Primitive;
 import net.cellcloud.talk.dialect.Dialect;
 import net.cellcloud.talk.dialect.DialectEnumerator;
 

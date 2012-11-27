@@ -30,9 +30,9 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 
+import net.cellcloud.talk.Primitive;
 import net.cellcloud.talk.stuff.ObjectiveStuff;
 import net.cellcloud.talk.stuff.PredicateStuff;
-import net.cellcloud.talk.stuff.Primitive;
 import net.cellcloud.talk.stuff.SubjectStuff;
 
 /** 动作方言。

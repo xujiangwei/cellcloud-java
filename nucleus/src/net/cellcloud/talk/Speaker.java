@@ -37,7 +37,6 @@ import net.cellcloud.common.Session;
 import net.cellcloud.core.Cryptology;
 import net.cellcloud.core.Logger;
 import net.cellcloud.core.Nucleus;
-import net.cellcloud.talk.stuff.Primitive;
 import net.cellcloud.util.Util;
 
 /** 对话者描述类。
@@ -120,6 +119,50 @@ public class Speaker {
 		this.state = SpeakerState.CALLING;
 	}
 
+	/** 挂起服务。
+	 */
+	public void suspend(long duration) {
+		if (this.state == SpeakerState.CALLED) {
+			// 包格式：内核标签|有效时长
+
+			Packet packet = new Packet(TalkDefinition.TPT_SUSPEND, 9, 1, 0);
+			packet.appendSubsegment(this.nucleusTag);
+			packet.appendSubsegment(Util.string2Bytes(Long.toString(duration)));
+
+			byte[] data = Packet.pack(packet);
+			if (null != data) {
+				// 发送数据
+				Message message = new Message(data);
+				this.connector.write(message);
+
+				this.state = SpeakerState.SUSPENDED;
+			}
+		}
+	}
+
+	/** 恢复服务。
+	 */
+	public void resume(long startTime) {
+		if (this.state == SpeakerState.SUSPENDED
+			|| this.state == SpeakerState.CALLED) {
+			// 包格式：内核标签|需要回复的原语起始时间戳
+
+			Packet packet = new Packet(TalkDefinition.TPT_RESUME, 10, 1, 0);
+			packet.appendSubsegment(this.nucleusTag);
+			packet.appendSubsegment(Util.string2Bytes(Long.toString(startTime)));
+
+			byte[] data = Packet.pack(packet);
+			if (null != data) {
+				// 发送数据
+				Message message = new Message(data);
+				this.connector.write(message);
+
+				// 恢复状态
+				this.state = SpeakerState.CALLED;
+			}
+		}
+	}
+
 	/** 中断与 Cellet 的服务。
 	*/
 	public void hangUp() {
@@ -135,6 +178,10 @@ public class Speaker {
 	/** 向 Cellet 发送原语数据。
 	 */
 	public synchronized void speak(Primitive primitive) {
+		if (this.state != SpeakerState.CALLED) {
+			return;
+		}
+
 		// 序列化原语
 		ByteArrayOutputStream stream = primitive.write();
 
@@ -173,23 +220,39 @@ public class Speaker {
 	}
 
 	protected void notifySessionClosed() {
+		// 判断是否要通知被挂起
+		if (null != this.capacity && SpeakerState.CALLED == this.state) {
+			if (this.capacity.autoSuspend) {
+				this.state = SpeakerState.SUSPENDED;
+				this.fireSuspended(System.currentTimeMillis(), TalkCapacity.SUSPENDED_PASSIVE);
+			}
+		}
+
 		this.authenticated = false;
 		this.state = SpeakerState.HANGUP;
 
 		// 通知退出
-		fireQuitted();
+		this.fireQuitted();
 	}
 
 	protected void fireDialogue(Primitive primitive) {
-		TalkService.getInstance().fireListenerDialogue(this.remoteTag , primitive);
+		TalkService.getInstance().fireListenerDialogue(this.celletIdentifier, primitive);
 	}
 
 	private void fireContacted() {
-		TalkService.getInstance().fireListenerContacted(this.remoteTag);
+		TalkService.getInstance().fireListenerContacted(this.celletIdentifier, this.remoteTag);
 	}
 
-	protected void fireQuitted() {
-		TalkService.getInstance().fireListenerQuitted(this.remoteTag);
+	private void fireQuitted() {
+		TalkService.getInstance().fireListenerQuitted(this.celletIdentifier, this.remoteTag);
+	}
+
+	private void fireSuspended(long timestamp, int mode) {
+		TalkService.getInstance().fireListenerSuspended(this.celletIdentifier, this.remoteTag, timestamp, mode);
+	}
+
+	protected void fireResumed(long timestamp, Primitive primitive) {
+		TalkService.getInstance().fireListenerResumed(this.celletIdentifier, this.remoteTag, timestamp, primitive);
 	}
 
 	protected void fireFailed(TalkServiceFailure failure) {
@@ -255,9 +318,9 @@ public class Speaker {
 
 		if (Logger.isDebugLevel() && null != this.capacity) {
 			StringBuilder buf = new StringBuilder();
-			buf.append("Update talk capacity from ");
+			buf.append("Update talk capacity from '");
 			buf.append(this.celletIdentifier);
-			buf.append(" : AutoSuspend=");
+			buf.append("' : AutoSuspend=");
 			buf.append(this.capacity.autoSuspend);
 			buf.append(" SuspendDuration=");
 			buf.append(this.capacity.suspendDuration);
@@ -321,9 +384,41 @@ public class Speaker {
 
 		// 反序列化原语
 		Primitive primitive = new Primitive(this.remoteTag);
+		primitive.setCelletIdentifier(this.celletIdentifier);
 		primitive.read(stream);
 
 		this.fireDialogue(primitive);
+	}
+
+	protected void processSuspend(Packet packet, Session session) {
+		// 包格式：请求方标签|成功码|时间戳
+
+		byte[] code = packet.getSubsegment(1);
+		if (TalkDefinition.SC_SUCCESS[0] == code[0] && TalkDefinition.SC_SUCCESS[1] == code[1]
+			&& TalkDefinition.SC_SUCCESS[2] == code[2] && TalkDefinition.SC_SUCCESS[3] == code[3]) {
+			this.state = SpeakerState.SUSPENDED;
+
+			long timestamp = Long.parseLong(Util.bytes2String(packet.getSubsegment(2)));
+			this.fireSuspended(timestamp, TalkCapacity.SUSPENDED_INITATIVE);
+		}
+		else {
+			this.state = SpeakerState.CALLED;
+		}
+	}
+
+	protected void processResume(Packet packet, Session session) {
+		// 包格式：目的标签|时间戳|原语序列
+
+		long timestamp = Long.parseLong(Util.bytes2String(packet.getSubsegment(1)));
+		byte[] pridata = packet.getSubsegment(2);
+		ByteArrayInputStream stream = new ByteArrayInputStream(pridata);
+
+		// 反序列化原语
+		Primitive primitive = new Primitive(this.remoteTag);
+		primitive.setCelletIdentifier(this.celletIdentifier);
+		primitive.read(stream);
+
+		this.fireResumed(timestamp, primitive);
 	}
 
 	/** 向 Cellet 协商能力

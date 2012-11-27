@@ -36,7 +36,7 @@ public final class LocalFileStorageFactory extends StorageFactory {
 	/** 构造函数。
 	 */
 	public LocalFileStorageFactory() {
-		super(new StorageMetaData(LocalFileStorage.TYPE_NAME, "Single File Storage"));
+		super(new StorageMetaData(LocalFileStorage.TYPE_NAME, "Local File Storage"));
 	}
 
 	@Override

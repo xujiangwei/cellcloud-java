@@ -31,7 +31,6 @@ import java.io.ByteArrayInputStream;
 import net.cellcloud.common.Packet;
 import net.cellcloud.common.Session;
 import net.cellcloud.core.Logger;
-import net.cellcloud.talk.stuff.Primitive;
 import net.cellcloud.util.Util;
 
 /** Dialogue Command

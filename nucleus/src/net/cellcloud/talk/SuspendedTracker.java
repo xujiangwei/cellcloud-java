@@ -34,7 +34,6 @@ import java.util.Queue;
 import java.util.concurrent.ConcurrentHashMap;
 
 import net.cellcloud.core.Cellet;
-import net.cellcloud.talk.stuff.Primitive;
 
 /** 被挂起的对端。
  * 
@@ -60,21 +59,27 @@ public final class SuspendedTracker {
 		this.startTime = System.currentTimeMillis();
 	}
 
+	/** 返回标签。
+	 */
+	public String getTag() {
+		return this.tag;
+	}
+
 	/** 跟踪指定的 Cellet 。
 	 */
-	protected void track(Cellet cellet, boolean initiative) {
+	protected void track(Cellet cellet, int suspendMode) {
 		if (this.records.containsKey(cellet.getFeature().getIdentifier())) {
 			Record r = this.records.get(cellet.getFeature().getIdentifier());
-			// 如果主动模式为 true，则不能设置为 false
-			if (!r.initiative) {
-				r.initiative = initiative;
+			// 如果是主动模式，则不能重置为被动模式
+			if (r.suspendMode == TalkCapacity.SUSPENDED_PASSIVE) {
+				r.suspendMode = suspendMode;
 			}
 
 			// 更新时间
 			this.startTime = System.currentTimeMillis();
 		}
 		else {
-			Record r = new Record(cellet, initiative);
+			Record r = new Record(cellet, suspendMode);
 			this.records.put(cellet.getFeature().getIdentifier(), r);
 		}
 	}
@@ -85,27 +90,32 @@ public final class SuspendedTracker {
 		this.records.remove(cellet.getFeature().getIdentifier());
 	}
 
+	/** 是否存在指定的 Cellet 的记录。
+	 */
+	protected boolean exist(Cellet cellet) {
+		return this.records.containsKey(cellet.getFeature().getIdentifier());
+	}
+
 	/** 缓存原语。
 	 */
-	protected void offerPrimitive(Cellet cellet, Primitive primitive) {
-		Record r = this.records.get(cellet.getFeature().getIdentifier());
+	protected void offerPrimitive(Cellet cellet, Long timestamp, Primitive primitive) {
+		final Record r = this.records.get(cellet.getFeature().getIdentifier());
 		if (null != r) {
+			r.timestamps.offer(timestamp);
 			r.primitives.offer(primitive);
 		}
 	}
 
 	/** 按照匹配被动挂起方式推送原语给对端。
 	 */
-	protected boolean pollPrimitiveMatchPassiveness(final TalkServiceDaemon daemon, final Cellet cellet) {
+	protected boolean pollPrimitiveMatchMode(final TalkServiceDaemon daemon, final Cellet cellet,
+			final int suspendMode, final long startTime) {
 		final Record r = this.records.get(cellet.getFeature().getIdentifier());
-		if (null != r && !r.initiative) {
-			daemon.addSimpleTask(new Thread() {
+		if (null != r && r.suspendMode == suspendMode) {
+			daemon.joinTask(new Thread() {
 				@Override
 				public void run() {
-					for (int i = 0, size = r.primitives.size(); i < size; ++i) {
-						Primitive primitive = r.primitives.poll();
-						cellet.talk(tag, primitive);
-					}
+					TalkService.getInstance().noticeResume(r.cellet, tag, r.timestamps, r.primitives, startTime);
 				}
 			});
 
@@ -113,12 +123,6 @@ public final class SuspendedTracker {
 		}
 
 		return false;
-	}
-
-	/** 是否为空记录。
-	 */
-	protected boolean isEmptyRecord() {
-		return this.records.isEmpty();
 	}
 
 	/** 是否超时。
@@ -139,13 +143,15 @@ public final class SuspendedTracker {
 	/** 记录封装类。
 	 */
 	protected class Record {
-		protected boolean initiative = false;
+		protected int suspendMode = TalkCapacity.SUSPENDED_PASSIVE;
 		protected Cellet cellet = null;
+		protected Queue<Long> timestamps = null;
 		protected Queue<Primitive> primitives = null;
 
-		protected Record(Cellet cellet, boolean initiative) {
+		protected Record(Cellet cellet, int suspendMode) {
 			this.cellet = cellet;
-			this.initiative = initiative;
+			this.suspendMode = suspendMode;
+			this.timestamps = new LinkedList<Long>();
 			this.primitives = new LinkedList<Primitive>();
 		}
 	}

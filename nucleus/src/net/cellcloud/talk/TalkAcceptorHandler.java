@@ -33,6 +33,7 @@ import net.cellcloud.common.Message;
 import net.cellcloud.common.MessageHandler;
 import net.cellcloud.common.Packet;
 import net.cellcloud.common.Session;
+import net.cellcloud.core.Logger;
 
 /** Talk 服务句柄。
  * 
@@ -100,43 +101,81 @@ public final class TalkAcceptorHandler extends MessageHandler {
 		byte[] tag = packet.getTag();
 
 		if (TalkDefinition.isDialogue(tag)) {
-			ServerDialogueCommand cmd = borrowDialogueCommand(session, packet);
-			if (null != cmd) {
-				cmd.execute();
-				returnDialogueCommand(cmd);
-			}
-			else {
-				cmd = new ServerDialogueCommand(this.talkService, session, packet);
-				cmd.execute();
-				cmd = null;
+			try {
+				ServerDialogueCommand cmd = borrowDialogueCommand(session, packet);
+				if (null != cmd) {
+					cmd.execute();
+					returnDialogueCommand(cmd);
+				}
+				else {
+					cmd = new ServerDialogueCommand(this.talkService, session, packet);
+					cmd.execute();
+					cmd = null;
+				}
+			} catch (Exception e) {
+				Logger.e(TalkAcceptorHandler.class, "Unknown error in ServerDialogueCommand : " + e.getMessage());
 			}
 		}
 		else if (TalkDefinition.isHeartbeat(tag)) {
-			ServerHeartbeatCommand cmd = borrowHeartbeatCommand(session, packet);
-			if (null != cmd) {
-				cmd.execute();
-				returnHeartbeatCommand(cmd);
+			try {
+				ServerHeartbeatCommand cmd = borrowHeartbeatCommand(session, packet);
+				if (null != cmd) {
+					cmd.execute();
+					returnHeartbeatCommand(cmd);
+				}
+				else {
+					cmd = new ServerHeartbeatCommand(this.talkService, session, packet);
+					cmd.execute();
+					cmd = null;
+				}
+			} catch (Exception e) {
+				Logger.e(TalkAcceptorHandler.class, "Unknown error in ServerHeartbeatCommand : " + e.getMessage());
 			}
-			else {
-				cmd = new ServerHeartbeatCommand(this.talkService, session, packet);
+		}
+		else if (TalkDefinition.isSuspend(tag)) {
+			try {
+				ServerSuspendCommand cmd = new ServerSuspendCommand(this.talkService, session, packet);
 				cmd.execute();
 				cmd = null;
+			} catch (Exception e) {
+				Logger.e(TalkAcceptorHandler.class, "Unknown error in ServerSuspendCommand : " + e.getMessage());
+			}
+		}
+		else if (TalkDefinition.isResume(tag)) {
+			try {
+				ServerResumeCommand cmd = new ServerResumeCommand(this.talkService, session, packet);
+				cmd.execute();
+				cmd = null;
+			} catch (Exception e) {
+				Logger.e(TalkAcceptorHandler.class, "Unknown error in ServerResumeCommand : " + e.getMessage());
 			}
 		}
 		else if (TalkDefinition.isConsult(tag)) {
-			ServerConsultCommand cmd = new ServerConsultCommand(this.talkService, session, packet);
-			cmd.execute();
-			cmd = null;
+			try {
+				ServerConsultCommand cmd = new ServerConsultCommand(this.talkService, session, packet);
+				cmd.execute();
+				cmd = null;
+			} catch (Exception e) {
+				Logger.e(TalkAcceptorHandler.class, "Unknown error in ServerConsultCommand : " + e.getMessage());
+			}
 		}
 		else if (TalkDefinition.isRequest(tag)) {
-			ServerRequestCommand cmd = new ServerRequestCommand(this.talkService, session, packet);
-			cmd.execute();
-			cmd = null;
+			try {
+				ServerRequestCommand cmd = new ServerRequestCommand(this.talkService, session, packet);
+				cmd.execute();
+				cmd = null;
+			} catch (Exception e) {
+				Logger.e(TalkAcceptorHandler.class, "Unknown error in ServerRequestCommand : " + e.getMessage());
+			}
 		}
 		else if (TalkDefinition.isCheck(tag)) {
-			ServerCheckCommand cmd = new ServerCheckCommand(this.talkService, session, packet);
-			cmd.execute();
-			cmd = null;
+			try {
+				ServerCheckCommand cmd = new ServerCheckCommand(this.talkService, session, packet);
+				cmd.execute();
+				cmd = null;
+			} catch (Exception e) {
+				Logger.e(TalkAcceptorHandler.class, "Unknown error in ServerCheckCommand : " + e.getMessage());
+			}
 		}
 	}
 

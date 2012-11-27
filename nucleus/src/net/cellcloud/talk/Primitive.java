@@ -24,15 +24,21 @@ THE SOFTWARE.
 -----------------------------------------------------------------------------
 */
 
-package net.cellcloud.talk.stuff;
+package net.cellcloud.talk;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.util.ArrayList;
 import java.util.List;
 
-import net.cellcloud.core.Cellet;
 import net.cellcloud.talk.dialect.Dialect;
+import net.cellcloud.talk.stuff.AdverbialStuff;
+import net.cellcloud.talk.stuff.AttributiveStuff;
+import net.cellcloud.talk.stuff.ComplementStuff;
+import net.cellcloud.talk.stuff.ObjectiveStuff;
+import net.cellcloud.talk.stuff.PredicateStuff;
+import net.cellcloud.talk.stuff.PrimitiveSerializer;
+import net.cellcloud.talk.stuff.SubjectStuff;
 
 /** 原语描述类。
  * 
@@ -41,6 +47,7 @@ import net.cellcloud.talk.dialect.Dialect;
 public class Primitive {
 
 	private String ownerTag;
+	private String celletIdentifier;
 	private ArrayList<SubjectStuff> subjectList;
 	private ArrayList<PredicateStuff> predicateList;
 	private ArrayList<ObjectiveStuff> objectiveList;
@@ -48,20 +55,19 @@ public class Primitive {
 	private ArrayList<AdverbialStuff> adverbialList;
 	private ArrayList<ComplementStuff> complementList;
 
-	private Cellet cellet;
 	private Dialect dialect;
 
 	/** 构造函数。 */
 	public Primitive() {
 		this.ownerTag = null;
-		this.cellet = null;
+		this.celletIdentifier = null;
 		this.dialect = null;
 	}
 
 	/** 构造函数。 */
 	public Primitive(String ownerTag) {
 		this.ownerTag = ownerTag;
-		this.cellet = null;
+		this.celletIdentifier = null;
 		this.dialect = null;
 	}
 
@@ -71,15 +77,15 @@ public class Primitive {
 		return this.ownerTag;
 	}
 
-	/** 设置 Cellet 。
+	/** 设置 Cellet 标识。
 	 */
-	public void setCellet(Cellet cellet) {
-		this.cellet = cellet;
+	protected void setCelletIdentifier(String celletIdentifier) {
+		this.celletIdentifier = celletIdentifier;
 	}
-	/** 返回 Cellet 。
+	/** 返回 Cellet 标识。
 	 */
-	public Cellet getCellet() {
-		return this.cellet;
+	public String getCelletIdentifier() {
+		return this.celletIdentifier;
 	}
 
 	/** 判断是否具有方言属性。

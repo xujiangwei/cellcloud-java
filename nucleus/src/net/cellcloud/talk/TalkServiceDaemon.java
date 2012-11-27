@@ -41,11 +41,11 @@ public final class TalkServiceDaemon extends Thread {
 	private boolean spinning = false;
 	private long tickTime = 0;
 
-	private Queue<Runnable> simpleTasks;
+	private Queue<Runnable> tasks;
 
 	public TalkServiceDaemon() {
 		super("TalkServiceDaemon");
-		this.simpleTasks = new LinkedList<Runnable>();
+		this.tasks = new LinkedList<Runnable>();
 	}
 
 	/** 返回周期时间点。
@@ -54,9 +54,9 @@ public final class TalkServiceDaemon extends Thread {
 		return this.tickTime;
 	}
 
-	protected void addSimpleTask(Runnable task) {
-		synchronized (this.simpleTasks) {
-			this.simpleTasks.offer(task);
+	protected void joinTask(Runnable task) {
+		synchronized (this.tasks) {
+			this.tasks.offer(task);
 		}
 	}
 
@@ -74,9 +74,9 @@ public final class TalkServiceDaemon extends Thread {
 			this.tickTime = System.currentTimeMillis();
 
 			++heartbeatCount;
-			if (heartbeatCount >= 20) {
+			if (heartbeatCount >= 30) {
 
-				// 20 秒一次心跳
+				// 30 秒一次心跳
 
 				if (null != service.speakers) {
 					Iterator<Speaker> iter = service.speakers.values().iterator();
@@ -117,19 +117,19 @@ public final class TalkServiceDaemon extends Thread {
 			// 处理未识别 Session
 			service.processUnidentifiedSessions(this.tickTime);
 
-			// 5 分钟检查一次
+			// 1 分钟检查一次
 			++checkSuspendedCount;
-			if (checkSuspendedCount >= 300) {
+			if (checkSuspendedCount >= 60) {
 				// 检查并删除挂起的会话
 				service.checkAndDeleteSuspendedTalk();
 				checkSuspendedCount = 0;
 			}
 
 			// 执行简单任务
-			synchronized (this.simpleTasks) {
-				if (!this.simpleTasks.isEmpty()) {
-					for (int i = 0, size = this.simpleTasks.size(); i < size; ++i) {
-						Runnable task = this.simpleTasks.poll();
+			synchronized (this.tasks) {
+				if (!this.tasks.isEmpty()) {
+					for (int i = 0, size = this.tasks.size(); i < size; ++i) {
+						Runnable task = this.tasks.poll();
 						task.run();
 					}
 				}

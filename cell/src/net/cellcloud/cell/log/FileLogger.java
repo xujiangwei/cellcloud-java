@@ -93,7 +93,8 @@ public final class FileLogger implements LogHandle {
 		}
 
 		// 设置日志操作器
-		LoggerManager.getInstance().setHandle(this);
+		LoggerManager.getInstance().removeAllHandles();
+		LoggerManager.getInstance().addHandle(this);
 	}
 
 	/** 关闭日志文件。

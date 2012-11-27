@@ -64,6 +64,8 @@ public class NonblockingConnector extends MessageService implements
 	// 待发送消息列表
 	private Vector<Message> messages;
 
+	private boolean closed = false;
+
 	public NonblockingConnector() {
 		this.connectTimeout = 10000;
 		this.readBuffer = ByteBuffer.allocate(BLOCK);
@@ -278,12 +280,16 @@ public class NonblockingConnector extends MessageService implements
 	}
 	private void fireSessionOpened() {
 		if (null != this.handler) {
+			this.closed = false;
 			this.handler.sessionOpened(this.session);
 		}
 	}
 	private void fireSessionClosed() {
 		if (null != this.handler) {
-			this.handler.sessionClosed(this.session);
+			if (!this.closed) {
+				this.closed = true;
+				this.handler.sessionClosed(this.session);
+			}
 		}
 	}
 	private void fireSessionDestroyed() {

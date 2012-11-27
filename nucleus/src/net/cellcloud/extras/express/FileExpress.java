@@ -40,7 +40,7 @@ import net.cellcloud.common.MessageHandler;
 import net.cellcloud.common.NonblockingAcceptor;
 import net.cellcloud.common.Packet;
 import net.cellcloud.common.Session;
-import net.cellcloud.storage.Storage;
+import net.cellcloud.storage.FileStorage;
 import net.cellcloud.util.Util;
 
 /** 文件传输服务类。
@@ -55,7 +55,7 @@ public final class FileExpress extends MessageHandler implements ExpressTaskList
 	private ConcurrentHashMap<String, FileExpressServoContext> servoContexts;
 
 	private ExecutorService executor;
-	private Storage mainStorage;
+	private FileStorage mainStorage;
 
 	private ArrayList<FileExpressListener> listeners;
 	private byte[] listenerMonitor = new byte[0];
@@ -141,7 +141,7 @@ public final class FileExpress extends MessageHandler implements ExpressTaskList
 	/** 启动为服务器模式。
 	 */
 	public void startServer(InetSocketAddress address, int maxConnNum,
-			Storage storage) {
+			FileStorage storage) {
 		if (null == this.sessionRecords) {
 			this.sessionRecords = new ConcurrentHashMap<Long, SessionRecord>();
 		}

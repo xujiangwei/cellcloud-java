@@ -26,8 +26,8 @@ THE SOFTWARE.
 
 package net.cellcloud.core;
 
+import net.cellcloud.talk.Primitive;
 import net.cellcloud.talk.TalkService;
-import net.cellcloud.talk.stuff.Primitive;
 
 /** Cellet 管理单元。
  * 
@@ -73,22 +73,32 @@ public abstract class Cellet {
 	public abstract void deactivate();
 
 	/** Talk 会话回调。
+	 * 
+	 * @param tag 对端的内核标签。
 	 */
 	public abstract void dialogue(final String tag, final Primitive primitive);
 
 	/** 当消费者连接服务时回调此方法。
+	 * 
+	 * @param tag 对端的内核标签。
 	 */
 	public abstract void contacted(final String tag);
 
 	/** 当消费者退出服务时回调此方法。
+	 * 
+	 * @param tag 对端的内核标签。
 	 */
 	public abstract void quitted(final String tag);
 
 	/** 当消费者被挂起时回调此方法。
+	 * 
+	 * @param tag 对端的内核标签。
 	 */
 	public abstract void suspended(final String tag);
 
 	/** 当消费者从挂起状态恢复时回调此方法。
+	 * 
+	 * @param tag 对端的内核标签。
 	 */
 	public abstract void resumed(final String tag);
 }

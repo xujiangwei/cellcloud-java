@@ -26,50 +26,28 @@ THE SOFTWARE.
 
 package net.cellcloud.cell.command;
 
-import net.cellcloud.cell.Console;
-
-/** 退出命令。
+/** Talk 服务命令。
  * 
  * @author Jiangwei Xu
  */
-public final class ExitCommand extends ConsoleCommand {
+public final class TalkCommand extends ConsoleCommand {
 
-	private Console console;
-	private byte state;
-
-	public ExitCommand(Console console) {
-		super("exit", "Exit cell console and shutdown application.", "");
-		this.state = ConsoleCommand.CCS_FINISHED;
-		this.console = console;
+	public TalkCommand() {
+		super("talk", "Talk service command, sub command:suspmap", "");
 	}
 
 	@Override
 	public byte getState() {
-		return this.state;
+		return 0;
 	}
 
 	@Override
 	public boolean execute(String arg) {
-		if (null != arg) {
-			print("This command does not support this argument.");
-			this.state = ConsoleCommand.CCS_FINISHED;
-			return false;
-		}
-
-		this.state = ConsoleCommand.CCS_EXECUTING;
-		print("Are you sure exit cell console and shutdown application? [y/n] ");
-		return true;
+		return false;
 	}
 
 	@Override
 	public void input(String input) {
-		if (input.equalsIgnoreCase("Y")) {
-			println("\nShutdown, please wait...");
-			this.console.quit();
-			this.console.getApp().stop();
-		}
-		else {
-			this.state = ConsoleCommand.CCS_FINISHED;
-		}
+
 	}
 }

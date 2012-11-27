@@ -112,6 +112,28 @@ public final class TalkDefinition {
 		}
 	}
 
+	/** 判断是否是 SUSPEND 包。
+	 */
+	public static boolean isSuspend(final byte[] ptg) {
+		if (ptg[2] == TPT_SUSPEND[2] && ptg[3] == TPT_SUSPEND[3]) {
+			return true;
+		}
+		else {
+			return false;
+		}
+	}
+
+	/** 判断是否是 RESUME 包。
+	 */
+	public static boolean isResume(final byte[] ptg) {
+		if (ptg[2] == TPT_RESUME[2] && ptg[3] == TPT_RESUME[3]) {
+			return true;
+		}
+		else {
+			return false;
+		}
+	}
+
 	/** 判断是否是 DIALOGUE 包。
 	 */
 	public static boolean isDialogue(final byte[] ptg) {

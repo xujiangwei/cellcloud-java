@@ -26,7 +26,7 @@ THE SOFTWARE.
 
 package net.cellcloud.talk.dialect;
 
-import net.cellcloud.talk.stuff.Primitive;
+import net.cellcloud.talk.Primitive;
 
 /** 原语方言
  * 
