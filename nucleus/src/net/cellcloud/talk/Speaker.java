@@ -125,7 +125,7 @@ public class Speaker {
 		if (this.state == SpeakerState.CALLED) {
 			// 包格式：内核标签|有效时长
 
-			Packet packet = new Packet(TalkDefinition.TPT_SUSPEND, 9, 1, 0);
+			Packet packet = new Packet(TalkDefinition.TPT_SUSPEND, 5, 1, 0);
 			packet.appendSubsegment(this.nucleusTag);
 			packet.appendSubsegment(Util.string2Bytes(Long.toString(duration)));
 
@@ -135,6 +135,7 @@ public class Speaker {
 				Message message = new Message(data);
 				this.connector.write(message);
 
+				// 更新状态
 				this.state = SpeakerState.SUSPENDED;
 			}
 		}
@@ -147,7 +148,7 @@ public class Speaker {
 			|| this.state == SpeakerState.CALLED) {
 			// 包格式：内核标签|需要回复的原语起始时间戳
 
-			Packet packet = new Packet(TalkDefinition.TPT_RESUME, 10, 1, 0);
+			Packet packet = new Packet(TalkDefinition.TPT_RESUME, 6, 1, 0);
 			packet.appendSubsegment(this.nucleusTag);
 			packet.appendSubsegment(Util.string2Bytes(Long.toString(startTime)));
 
@@ -186,7 +187,7 @@ public class Speaker {
 		ByteArrayOutputStream stream = primitive.write();
 
 		// 封装数据包
-		Packet packet = new Packet(TalkDefinition.TPT_DIALOGUE, 99);
+		Packet packet = new Packet(TalkDefinition.TPT_DIALOGUE, 99, 1, 0);
 		packet.appendSubsegment(stream.toByteArray());
 		packet.appendSubsegment(this.nucleusTag);
 
@@ -212,7 +213,7 @@ public class Speaker {
 	/** 发送心跳。 */
 	protected void heartbeat() {
 		if (this.authenticated) {
-			Packet packet = new Packet(TalkDefinition.TPT_HEARTBEAT, 99);
+			Packet packet = new Packet(TalkDefinition.TPT_HEARTBEAT, 9, 1, 0);
 			byte[] data = Packet.pack(packet);
 			Message message = new Message(data);
 			this.connector.write(message);
@@ -224,7 +225,7 @@ public class Speaker {
 		if (null != this.capacity && SpeakerState.CALLED == this.state) {
 			if (this.capacity.autoSuspend) {
 				this.state = SpeakerState.SUSPENDED;
-				this.fireSuspended(System.currentTimeMillis(), TalkCapacity.SUSPENDED_PASSIVE);
+				this.fireSuspended(System.currentTimeMillis(), SuspendMode.PASSIVE);
 			}
 		}
 
@@ -269,7 +270,7 @@ public class Speaker {
 		byte[] plaintext = Cryptology.getInstance().simpleDecrypt(ciphertext, key);
 
 		// 发送响应数据
-		Packet response = new Packet(TalkDefinition.TPT_CHECK, 1);
+		Packet response = new Packet(TalkDefinition.TPT_CHECK, 2, 1, 0);
 		response.appendSubsegment(plaintext);
 		// 数据打包
 		byte[] data = Packet.pack(response);
@@ -280,7 +281,7 @@ public class Speaker {
 	protected void requestCellet(Session session) {
 		// 包格式：Cellet标识串|标签
 
-		Packet packet = new Packet(TalkDefinition.TPT_REQUEST, 2);
+		Packet packet = new Packet(TalkDefinition.TPT_REQUEST, 3, 1, 0);
 		packet.appendSubsegment(this.celletIdentifier.getBytes());
 		packet.appendSubsegment(this.nucleusTag);
 
@@ -399,7 +400,7 @@ public class Speaker {
 			this.state = SpeakerState.SUSPENDED;
 
 			long timestamp = Long.parseLong(Util.bytes2String(packet.getSubsegment(2)));
-			this.fireSuspended(timestamp, TalkCapacity.SUSPENDED_INITATIVE);
+			this.fireSuspended(timestamp, SuspendMode.INITATIVE);
 		}
 		else {
 			this.state = SpeakerState.CALLED;
@@ -426,7 +427,7 @@ public class Speaker {
 	private void consult(TalkCapacity capacity) {
 		// 包格式：源标签|能力描述序列化数据
 
-		Packet packet = new Packet(TalkDefinition.TPT_CONSULT, 5, 1, 0);
+		Packet packet = new Packet(TalkDefinition.TPT_CONSULT, 4, 1, 0);
 		packet.appendSubsegment(Util.string2Bytes(Nucleus.getInstance().getTagAsString()));
 		packet.appendSubsegment(TalkCapacity.serialize(capacity));
 

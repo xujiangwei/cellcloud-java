@@ -55,13 +55,13 @@ public final class ServerSuspendCommand extends ServerCommand {
 		Packet response = null;
 		// 包格式：请求方标签|成功码|时间戳
 		if (ret) {
-			response = new Packet(TalkDefinition.TPT_SUSPEND, 50, 1, 0);
+			response = new Packet(TalkDefinition.TPT_SUSPEND, 5, 1, 0);
 			response.appendSubsegment(this.packet.getSubsegment(0));
 			response.appendSubsegment(TalkDefinition.SC_SUCCESS);
 			response.appendSubsegment(Util.string2Bytes(Long.toString(System.currentTimeMillis())));
 		}
 		else {
-			response = new Packet(TalkDefinition.TPT_SUSPEND, 50, 1, 0);
+			response = new Packet(TalkDefinition.TPT_SUSPEND, 5, 1, 0);
 			response.appendSubsegment(this.packet.getSubsegment(0));
 			response.appendSubsegment(TalkDefinition.SC_FAIL);
 			response.appendSubsegment(Util.string2Bytes(Long.toString(System.currentTimeMillis())));

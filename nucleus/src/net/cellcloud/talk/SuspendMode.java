@@ -26,53 +26,15 @@ THE SOFTWARE.
 
 package net.cellcloud.talk;
 
-import net.cellcloud.common.Message;
-import net.cellcloud.common.Packet;
-import net.cellcloud.common.Session;
-import net.cellcloud.core.Logger;
-import net.cellcloud.util.Util;
-
-/** Consult Command
+/** 挂起模式。
  * 
  * @author Jiangwei Xu
  */
-public final class ServerConsultCommand extends ServerCommand {
+public final class SuspendMode {
 
-	public ServerConsultCommand(TalkService service, Session session,
-			Packet packet) {
-		super(service, session, packet);
-	}
+	/** 主动挂起。 */
+	public final static int INITATIVE = 10;
 
-	@Override
-	public void execute() {
-		// 包格式：源标签|能力描述序列化数据
-
-		// 标签
-		String tag = Util.bytes2String(this.packet.getSubsegment(0));
-
-		// 能力描述
-		TalkCapacity capacity = TalkCapacity.deserialize(this.packet.getSubsegment(1));
-
-		if (null == capacity) {
-			Logger.w(ServerConsultCommand.class, "Error talk capacity data format");
-			return;
-		}
-
-		TalkCapacity ret = this.service.processConsult(this.session, tag, capacity);
-
-		// 应答		
-		// 包格式：源标签|能力描述序列化数据
-
-		byte[] capdata = TalkCapacity.serialize(ret);
-
-		Packet response = new Packet(TalkDefinition.TPT_CONSULT, 4, 1, 0);
-		response.appendSubsegment(this.packet.getSubsegment(0));
-		response.appendSubsegment(capdata);
-
-		byte[] data = Packet.pack(response);
-		if (null != data) {
-			Message message = new Message(data);
-			this.session.write(message);
-		}
-	}
+	/** 被动挂起。 */
+	public final static int PASSIVE = 20;
 }

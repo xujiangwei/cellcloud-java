@@ -80,7 +80,7 @@ public final class ServerCheckCommand extends ServerCommand {
 			// 包格式：成功码|内核标签
 
 			// 数据打包
-			Packet packet = new Packet(TalkDefinition.TPT_CHECK, 2);
+			Packet packet = new Packet(TalkDefinition.TPT_CHECK, 2, 1, 0);
 			packet.appendSubsegment(TalkDefinition.SC_SUCCESS);
 			packet.appendSubsegment(Nucleus.getInstance().getTagAsString().getBytes());
 

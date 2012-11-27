@@ -71,7 +71,7 @@ public final class SuspendedTracker {
 		if (this.records.containsKey(cellet.getFeature().getIdentifier())) {
 			Record r = this.records.get(cellet.getFeature().getIdentifier());
 			// 如果是主动模式，则不能重置为被动模式
-			if (r.suspendMode == TalkCapacity.SUSPENDED_PASSIVE) {
+			if (r.suspendMode == SuspendMode.PASSIVE) {
 				r.suspendMode = suspendMode;
 			}
 
@@ -143,7 +143,7 @@ public final class SuspendedTracker {
 	/** 记录封装类。
 	 */
 	protected class Record {
-		protected int suspendMode = TalkCapacity.SUSPENDED_PASSIVE;
+		protected int suspendMode = SuspendMode.PASSIVE;
 		protected Cellet cellet = null;
 		protected Queue<Long> timestamps = null;
 		protected Queue<Primitive> primitives = null;

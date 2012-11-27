@@ -578,7 +578,7 @@ public final class TalkService implements Service {
 				// 判断是否需要进行挂起
 				if (tracker.isAutoSuspend()) {
 					// 将消费者挂起，被动挂起
-					this.suspendTalk(tracker, TalkCapacity.SUSPENDED_PASSIVE);
+					this.suspendTalk(tracker, SuspendMode.PASSIVE);
 					if (null != tracker.activeCellet) {
 						// 通知 Cellet 对端挂起
 						tracker.activeCellet.suspended(tag);
@@ -708,7 +708,7 @@ public final class TalkService implements Service {
 
 		if (null != cellet) {
 			// 尝试恢复被动挂起的 Talk
-			if (this.tryResumeTalk(tag, cellet, TalkCapacity.SUSPENDED_PASSIVE, 0)) {
+			if (this.tryResumeTalk(tag, cellet, SuspendMode.PASSIVE, 0)) {
 				// 回调 resumed
 				cellet.resumed(tag);
 			}
@@ -770,7 +770,7 @@ public final class TalkService implements Service {
 		TalkTracker talkTracker = ctx.getTracker(speakerTag);
 		if (null != talkTracker) {
 			// 进行主动挂起
-			SuspendedTracker st = this.suspendTalk(talkTracker, TalkCapacity.SUSPENDED_INITATIVE);
+			SuspendedTracker st = this.suspendTalk(talkTracker, SuspendMode.INITATIVE);
 			if (null != st) {
 				// 更新有效时长
 				st.liveDuration = duration;
@@ -799,7 +799,7 @@ public final class TalkService implements Service {
 		}
 
 		// 尝试回送原语
-		if (this.tryResumeTalk(speakerTag, tt.activeCellet, TalkCapacity.SUSPENDED_INITATIVE, startTime)) {
+		if (this.tryResumeTalk(speakerTag, tt.activeCellet, SuspendMode.INITATIVE, startTime)) {
 			// 回调恢复
 			tt.activeCellet.resumed(speakerTag);
 		}
@@ -1007,7 +1007,7 @@ public final class TalkService implements Service {
 
 		byte[] ciphertext = Cryptology.getInstance().simpleEncrypt(text.getBytes(), key.getBytes());
 
-		Packet packet = new Packet(TalkDefinition.TPT_INTERROGATE, 1);
+		Packet packet = new Packet(TalkDefinition.TPT_INTERROGATE, 1, 1, 0);
 		packet.appendSubsegment(ciphertext);
 		packet.appendSubsegment(key.getBytes());
 
@@ -1028,7 +1028,7 @@ public final class TalkService implements Service {
 		ByteArrayOutputStream stream = primitive.write();
 
 		// 封装数据包
-		Packet packet = new Packet(TalkDefinition.TPT_RESUME, 50);
+		Packet packet = new Packet(TalkDefinition.TPT_RESUME, 6, 1, 0);
 		packet.appendSubsegment(Util.string2Bytes(targetTag));
 		packet.appendSubsegment(Util.string2Bytes(timestamp.toString()));
 		packet.appendSubsegment(stream.toByteArray());
@@ -1048,7 +1048,7 @@ public final class TalkService implements Service {
 		ByteArrayOutputStream stream = primitive.write();
 
 		// 封装数据包
-		Packet packet = new Packet(TalkDefinition.TPT_DIALOGUE, 99);
+		Packet packet = new Packet(TalkDefinition.TPT_DIALOGUE, 99, 1, 0);
 		packet.setBody(stream.toByteArray());
 
 		// 打包数据

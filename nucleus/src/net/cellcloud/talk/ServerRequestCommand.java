@@ -53,7 +53,7 @@ public final class ServerRequestCommand extends ServerCommand {
 		// 成功：请求方标签|成功码|Cellet识别串|Cellet版本
 		// 失败：请求方标签|失败码
 
-		Packet packet = new Packet(TalkDefinition.TPT_REQUEST, 1);
+		Packet packet = new Packet(TalkDefinition.TPT_REQUEST, 3, 1, 0);
 		// 请求方标签
 		packet.appendSubsegment(talkTag);
 

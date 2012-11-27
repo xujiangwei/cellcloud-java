@@ -45,11 +45,11 @@ public interface TalkListener {
 	*/
 	public void quitted(String identifier, String tag);
 
-	/** 在对端被挂起。
+	/** 当前访问会话被挂起。
 	 */
 	public void suspended(String identifier, String tag, long timestamp, int mode);
 
-	/** 从对端恢复之前被挂起的会话原语。
+	/** 恢复之前被挂起的会话原语。
 	 */
 	public void resumed(String identifier, String tag, long timestamp, Primitive primitive);
 

@@ -277,7 +277,7 @@ public final class FileExpress extends MessageHandler implements ExpressTaskList
 		FileAttribute attr = servoctx.getAttribute(filename);
 		byte[] attrseri = attr.serialize();
 
-		Packet response = new Packet(FileExpressDefinition.PT_ATTR, 2);
+		Packet response = new Packet(FileExpressDefinition.PT_ATTR, 2, 1, 0);
 		response.appendSubsegment(packet.getSubsegment(1));
 		response.appendSubsegment(attrseri);
 		byte[] data = Packet.pack(response);
@@ -316,7 +316,7 @@ public final class FileExpress extends MessageHandler implements ExpressTaskList
 
 		// 包格式：授权码能力描述
 
-		Packet response = new Packet(FileExpressDefinition.PT_AUTH, 1);
+		Packet response = new Packet(FileExpressDefinition.PT_AUTH, 1, 1, 0);
 
 		if (auth) {
 			// 添加上下文

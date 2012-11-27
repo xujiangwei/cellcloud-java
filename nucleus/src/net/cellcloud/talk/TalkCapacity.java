@@ -34,11 +34,6 @@ import java.nio.charset.Charset;
  */
 public final class TalkCapacity {
 
-	/** 主动挂起。 */
-	public final static int SUSPENDED_INITATIVE = 10;
-	/** 被动挂起。 */
-	public final static int SUSPENDED_PASSIVE = 20;
-
 	/// 是否自动挂起已经被关闭的连接
 	public boolean autoSuspend = false;
 	/// 自动挂起时，连接挂起的有效时长，单位：毫秒
