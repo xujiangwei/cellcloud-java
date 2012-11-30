@@ -28,6 +28,8 @@ package net.cellcloud.extras.express;
 
 import java.util.concurrent.ConcurrentHashMap;
 
+import net.cellcloud.core.LogLevel;
+import net.cellcloud.core.Logger;
 import net.cellcloud.exception.StorageException;
 import net.cellcloud.storage.ResultSet;
 import net.cellcloud.storage.Storage;
@@ -68,7 +70,7 @@ public final class FileExpressServoContext extends FileExpressContext {
 			try {
 				rs = this.storage.store(this.getAuthCode().getContextPath() + filename);
 			} catch (StorageException e) {
-				e.printStackTrace();
+				Logger.logException(e, LogLevel.ERROR);
 			}
 			rs.close();
 		}

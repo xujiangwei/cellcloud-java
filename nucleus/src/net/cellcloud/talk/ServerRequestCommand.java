@@ -72,7 +72,7 @@ public final class ServerRequestCommand extends ServerCommand {
 		}
 		else {
 			// 失败码
-			packet.appendSubsegment(TalkDefinition.SC_FAIL_NOCELLET);
+			packet.appendSubsegment(TalkDefinition.SC_FAILURE_NOCELLET);
 		}
 
 		// 打包数据

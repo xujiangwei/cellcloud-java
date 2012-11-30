@@ -32,6 +32,7 @@ import java.nio.channels.SelectionKey;
 import java.nio.channels.SocketChannel;
 import java.util.Vector;
 
+import net.cellcloud.core.LogLevel;
 import net.cellcloud.core.Logger;
 
 /** 非阻塞网络接收器工作线程。
@@ -89,7 +90,7 @@ public final class NonblockingAcceptorWorker extends Thread {
 					try {
 						this.mutex.wait();
 					} catch (InterruptedException e) {
-						e.printStackTrace();
+						Logger.logException(e, LogLevel.DEBUG);
 					}
 				}
 			}
@@ -114,7 +115,7 @@ public final class NonblockingAcceptorWorker extends Thread {
 				try {
 					Thread.sleep(10);
 				} catch (InterruptedException e) {
-					e.printStackTrace();
+					Logger.logException(e, LogLevel.DEBUG);
 				}
 			}
 		}
@@ -201,16 +202,22 @@ public final class NonblockingAcceptorWorker extends Thread {
 		do {
 			synchronized (buf) {
 				try {
-					read = channel.read(buf);
+					if (channel.isOpen())
+						read = channel.read(buf);
+					else
+						read = -1;
 				} catch (IOException e) {
+					Logger.d(this.getClass(), "Remote host has closed the connection.");
+
 					if (null != session.socket) {
 						this.acceptor.fireSessionClosed(session);
 					}
 
 					try {
-						channel.close();
+						if (channel.isOpen())
+							channel.close();
 					} catch (IOException ioe) {
-						ioe.printStackTrace();
+						Logger.logException(ioe, LogLevel.DEBUG);
 					}
 
 					// 移除 Session
@@ -232,9 +239,10 @@ public final class NonblockingAcceptorWorker extends Thread {
 					}
 
 					try {
-						channel.close();
+						if (channel.isOpen())
+							channel.close();
 					} catch (IOException ioe) {
-						ioe.printStackTrace();
+						Logger.logException(ioe, LogLevel.DEBUG);
 					}
 
 					// 移除 Session
@@ -300,8 +308,7 @@ public final class NonblockingAcceptorWorker extends Thread {
 					try {
 						channel.write(buf);
 					} catch (IOException e) {
-						e.printStackTrace();
-						Logger.e(NonblockingAcceptorWorker.class, e.getMessage());
+						Logger.logException(e, LogLevel.WARNING);
 					}
 
 					buf.clear();

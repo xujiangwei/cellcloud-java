@@ -37,6 +37,7 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
+import net.cellcloud.core.LogLevel;
 import net.cellcloud.core.Logger;
 
 /** 非阻塞网络接收器。
@@ -100,9 +101,9 @@ public class NonblockingAcceptor extends MessageService implements
 			this.bindAddress = address;
 
 		} catch (IOException e) {
-			Logger.e(NonblockingAcceptor.class, e.getMessage());
+			Logger.logException(e, LogLevel.ERROR);
 
-			// 失败
+			// 返回失败
 			return false;
 		}
 
@@ -115,15 +116,17 @@ public class NonblockingAcceptor extends MessageService implements
 
 				// 启动工作线程
 				for (int i = 0; i < workerNum; ++i) {
-					if (false == workers[i].isWorking())
+					if (!workers[i].isWorking())
 						workers[i].start();
 				}
 
 				// 进入事件分发循环
 				try {
 					loopDispatch();
-				} catch (IOException e) {
-					Logger.e(NonblockingAcceptor.class, e.getMessage());
+				} catch (IOException ioe) {
+					Logger.logException(ioe, LogLevel.WARNING);
+				} catch (Exception e) {
+					Logger.logException(e, LogLevel.ERROR);
 				}
 
 				running = false;
@@ -153,12 +156,12 @@ public class NonblockingAcceptor extends MessageService implements
 			this.channel.close();
 			this.channel.socket().close();
 		} catch (IOException e) {
-			Logger.w(this.getClass(), "Closing channel warning " + e.getMessage());
+			Logger.logException(e, LogLevel.DEBUG);
 		}
 		try {
 			this.selector.close();
 		} catch (IOException e) {
-			Logger.w(this.getClass(), "Closing selector warning " + e.getMessage());
+			Logger.logException(e, LogLevel.DEBUG);
 		}
 
 		// 关闭工作线程
@@ -174,7 +177,7 @@ public class NonblockingAcceptor extends MessageService implements
 				try {
 					Thread.sleep(100);
 				} catch (InterruptedException e) {
-					e.printStackTrace();
+					Logger.logException(e, LogLevel.DEBUG);
 				}
 
 				for (NonblockingAcceptorWorker worker : this.workers) {
@@ -196,7 +199,7 @@ public class NonblockingAcceptor extends MessageService implements
 				try {
 					Thread.sleep(10);
 				} catch (InterruptedException e) {
-					e.printStackTrace();
+					Logger.logException(e, LogLevel.DEBUG);
 				}
 
 				if (count >= timeout) {
@@ -207,14 +210,14 @@ public class NonblockingAcceptor extends MessageService implements
 			try {
 				Thread.sleep(10);
 			} catch (InterruptedException e) {
-				e.printStackTrace();
+				Logger.logException(e, LogLevel.DEBUG);
 			}
 
 			if (count >= timeout) {
 				try {
 					this.handleThread.interrupt();
 				} catch (Exception e) {
-					// Nothing
+					Logger.logException(e, LogLevel.DEBUG);
 				}
 			}
 
@@ -233,7 +236,7 @@ public class NonblockingAcceptor extends MessageService implements
 				try {
 					nas.socket.close();
 				} catch (IOException e) {
-					Logger.w(this.getClass(), "#close(Session) - " + e.getMessage());
+					Logger.logException(e, LogLevel.DEBUG);
 				}
 				break;
 			}
@@ -354,38 +357,34 @@ public class NonblockingAcceptor extends MessageService implements
 	}
 
 	/** 事件循环。 */
-	private void loopDispatch() throws IOException {
-		try {
-			while (this.spinning) {
-				while (this.selector.select() > 0) {
-					Iterator<SelectionKey> it = this.selector.selectedKeys().iterator();
-					while (it.hasNext()) {
-						SelectionKey key = (SelectionKey) it.next();
-						it.remove();
+	private void loopDispatch() throws IOException, Exception {
+		while (this.spinning) {
+			while (this.selector.isOpen() && this.selector.select() > 0) {
+				Iterator<SelectionKey> it = this.selector.selectedKeys().iterator();
+				while (it.hasNext()) {
+					SelectionKey key = (SelectionKey) it.next();
+					it.remove();
 
-						if (key.isAcceptable()) {
-							accept(key);
-						}
-						else if (key.isReadable()) {
-							receive(key);
-						}
-						else if (key.isWritable()) {
-							send(key);
-						}
+					if (key.isAcceptable()) {
+						accept(key);
 					}
-
-					try {
-						Thread.sleep(1);
-					} catch (InterruptedException e) {
-						e.printStackTrace();
+					else if (key.isReadable()) {
+						receive(key);
 					}
-				} // # while
+					else if (key.isWritable()) {
+						send(key);
+					}
+				}
 
-				Thread.yield();
+				try {
+					Thread.sleep(1);
+				} catch (InterruptedException e) {
+					Logger.logException(e, LogLevel.DEBUG);
+				}
 			} // # while
-		} catch (Exception e) {
-			Logger.w(this.getClass(), "#loopDispatch() - " + e.getMessage());
-		}
+
+			Thread.yield();
+		} // # while
 	}
 
 	/** 处理 Accept */
@@ -418,11 +417,9 @@ public class NonblockingAcceptor extends MessageService implements
 			// 回调事件
 			this.fireSessionOpened(session);
 		} catch (IOException e) {
-//			e.printStackTrace();
-			Logger.w(this.getClass(), "#accept() - IOException : " + e.getMessage());
+			// Nothing
 		} catch (Exception e) {
-//			e.printStackTrace();
-			Logger.w(this.getClass(), "#accept() - " + e.getMessage());
+			// Nothing
 		}
 	}
 
@@ -444,9 +441,10 @@ public class NonblockingAcceptor extends MessageService implements
 		this.selectWorkerForReceive(session, key);
 
 		try {
-			channel.register(this.selector, SelectionKey.OP_WRITE | SelectionKey.OP_READ);
+			if (channel.isOpen())
+				channel.register(this.selector, SelectionKey.OP_WRITE | SelectionKey.OP_READ);
 		} catch (IOException e) {
-			// Nothing
+			Logger.logException(e, LogLevel.WARNING);
 		}
 	}
 
@@ -468,9 +466,10 @@ public class NonblockingAcceptor extends MessageService implements
 		this.selectWorkerForSend(session, key);
 
 		try {
-			channel.register(this.selector, SelectionKey.OP_WRITE | SelectionKey.OP_READ);
+			if (channel.isOpen())
+				channel.register(this.selector, SelectionKey.OP_WRITE | SelectionKey.OP_READ);
 		} catch (IOException e) {
-			// Nothing
+			Logger.logException(e, LogLevel.WARNING);
 		}
 	}
 

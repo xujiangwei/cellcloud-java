@@ -31,6 +31,7 @@ import net.cellcloud.common.MessageHandler;
 import net.cellcloud.common.NonblockingConnector;
 import net.cellcloud.common.Packet;
 import net.cellcloud.common.Session;
+import net.cellcloud.core.LogLevel;
 import net.cellcloud.core.Logger;
 import net.cellcloud.exception.StorageException;
 import net.cellcloud.storage.ResultSet;
@@ -111,6 +112,8 @@ public final class FileExpressTask extends MessageHandler implements Runnable {
 		}
 	}
 
+	/** 放弃任务执行。
+	 */
 	public void abort() {
 		synchronized (this.monitor) {
 			this.state = EXPRESS_STATE_EXIT;
@@ -134,7 +137,7 @@ public final class FileExpressTask extends MessageHandler implements Runnable {
 				return;
 			}
 		} catch (StorageException e) {
-			e.printStackTrace();
+			Logger.logException(e, LogLevel.DEBUG);
 			return;
 		}
 

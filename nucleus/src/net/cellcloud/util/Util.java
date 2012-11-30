@@ -32,6 +32,9 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Random;
 
+import net.cellcloud.core.LogLevel;
+import net.cellcloud.core.Logger;
+
 /** 实用函数库。
  * 
  * @author Jiangwei Xu
@@ -94,7 +97,7 @@ public final class Util {
 		try {
 			return sDateFormat.parse(string);
 		} catch (ParseException e) {
-			e.printStackTrace();
+			Logger.logException(e, LogLevel.ERROR);
 		}
 
 		return null;

@@ -32,4 +32,11 @@ package net.cellcloud.storage;
  */
 public interface FileStorage extends Storage {
 
+	/** 创建读语句。
+	 */
+	public String createReadStatement(final String file);
+
+	/** 创建写语句。
+	 */
+	public String createWriteStatement(final String file);
 }

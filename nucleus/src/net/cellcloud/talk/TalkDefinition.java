@@ -64,8 +64,8 @@ public final class TalkDefinition {
 
 	// 状态码
 	protected static final byte[] SC_SUCCESS = {'0', '0', '0', '0'};
-	protected static final byte[] SC_FAIL = {'0', '0', '0', '1'};
-	protected static final byte[] SC_FAIL_NOCELLET = {'0', '0', '1', '0'};
+	protected static final byte[] SC_FAILURE = {'0', '0', '0', '1'};
+	protected static final byte[] SC_FAILURE_NOCELLET = {'0', '0', '1', '0'};
 
 
 	/** 判断是否是 INTERROGATE 包。

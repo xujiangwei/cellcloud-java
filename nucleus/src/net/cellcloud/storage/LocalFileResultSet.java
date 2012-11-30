@@ -26,6 +26,8 @@ THE SOFTWARE.
 
 package net.cellcloud.storage;
 
+import net.cellcloud.core.LogLevel;
+import net.cellcloud.core.Logger;
 import net.cellcloud.exception.StorageException;
 import net.cellcloud.storage.LocalFileStorage.ChunkBuffer;
 import net.cellcloud.storage.LocalFileStorage.FileWrapper;
@@ -223,7 +225,7 @@ public final class LocalFileResultSet implements ResultSet {
 			try {
 				System.arraycopy(this.buffer.data, (int)(offset - this.buffer.offset), fileData, 0, len);
 			} catch (Exception e) {
-				e.printStackTrace();
+				Logger.logException(e, LogLevel.ERROR);
 			}
 			return fileData;
 		}

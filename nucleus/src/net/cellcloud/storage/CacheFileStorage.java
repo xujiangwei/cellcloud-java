@@ -32,7 +32,7 @@ import net.cellcloud.util.Properties;
  * 
  * @author Jiangwei Xu
  */
-public class CacheFileStorage implements Storage {
+public class CacheFileStorage implements FileStorage {
 
 	public final static String TYPE_NAME = "CacheFileStorage";
 
@@ -68,6 +68,16 @@ public class CacheFileStorage implements Storage {
 
 	@Override
 	public ResultSet store(Schema schema) {
+		return null;
+	}
+
+	@Override
+	public String createReadStatement(String file) {
+		return null;
+	}
+
+	@Override
+	public String createWriteStatement(String file) {
 		return null;
 	}
 }

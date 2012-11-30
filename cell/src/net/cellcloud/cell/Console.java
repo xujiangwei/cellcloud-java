@@ -134,7 +134,7 @@ public final class Console {
 		try {
 			System.in.close();
 		} catch (IOException e) {
-			e.printStackTrace();
+			// Nothing
 		}
 
 		this.scanner.close();

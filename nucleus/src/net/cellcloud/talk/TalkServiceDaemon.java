@@ -30,6 +30,7 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.Queue;
 
+import net.cellcloud.core.LogLevel;
 import net.cellcloud.core.Logger;
 
 /** Talk Service 守护线程。
@@ -147,7 +148,7 @@ public final class TalkServiceDaemon extends Thread {
 
 				Thread.sleep(dt);
 			} catch (InterruptedException e) {
-				e.printStackTrace();
+				Logger.logException(e, LogLevel.ERROR);
 			}
 
 		} while (this.spinning);

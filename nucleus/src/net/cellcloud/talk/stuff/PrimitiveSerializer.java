@@ -33,6 +33,8 @@ import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
 import java.util.Iterator;
 
+import net.cellcloud.core.LogLevel;
+import net.cellcloud.core.Logger;
 import net.cellcloud.talk.Primitive;
 import net.cellcloud.talk.dialect.Dialect;
 import net.cellcloud.talk.dialect.DialectEnumerator;
@@ -246,7 +248,7 @@ public final class PrimitiveSerializer {
 
 			stream.flush();
 		} catch (IOException e) {
-			e.printStackTrace();
+			Logger.logException(e, LogLevel.ERROR);
 		}
 	}
 
@@ -401,7 +403,7 @@ public final class PrimitiveSerializer {
 			buf.clear();
 
 		} catch (IOException e) {
-			e.printStackTrace();
+			Logger.logException(e, LogLevel.ERROR);
 		}
 	}
 

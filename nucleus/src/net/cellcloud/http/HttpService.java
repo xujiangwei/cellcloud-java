@@ -32,6 +32,8 @@ import java.util.Iterator;
 import java.util.List;
 
 import net.cellcloud.common.Service;
+import net.cellcloud.core.LogLevel;
+import net.cellcloud.core.Logger;
 import net.cellcloud.core.NucleusContext;
 import net.cellcloud.exception.SingletonException;
 
@@ -98,9 +100,9 @@ public final class HttpService implements Service {
 		try {
 			this.server.start();
 		} catch (InterruptedException e) {
-			e.printStackTrace();
+			Logger.logException(e, LogLevel.ERROR);
 		} catch (Exception e) {
-			e.printStackTrace();
+			Logger.logException(e, LogLevel.ERROR);
 		}
 
 		return true;
@@ -111,7 +113,7 @@ public final class HttpService implements Service {
 		try {
 			this.server.stop();
 		} catch (Exception e) {
-			e.printStackTrace();
+			Logger.logException(e, LogLevel.WARNING);
 		}
 	}
 

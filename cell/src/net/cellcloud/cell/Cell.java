@@ -31,6 +31,8 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 
+import net.cellcloud.core.LogLevel;
+import net.cellcloud.core.Logger;
 import net.cellcloud.core.Nucleus;
 
 /** Cell Cloud 容器。
@@ -99,9 +101,9 @@ public final class Cell {
 			fos.flush();
 			fos.close();
 		} catch (FileNotFoundException e) {
-			e.printStackTrace();
+			Logger.logException(e, LogLevel.ERROR);
 		} catch (IOException e) {
-			e.printStackTrace();
+			Logger.logException(e, LogLevel.ERROR);
 		}
 
 		Thread daemon = new Thread() {
@@ -113,7 +115,7 @@ public final class Cell {
 					try {
 						Thread.sleep(10000);
 					} catch (InterruptedException e) {
-						e.printStackTrace();
+						Logger.logException(e, LogLevel.WARNING);
 					}
 
 					Cell.tick();
@@ -133,7 +135,7 @@ public final class Cell {
 			fos.flush();
 			fos.close();
 		} catch (IOException e) {
-			e.printStackTrace();
+			Logger.logException(e, LogLevel.ERROR);
 		}
 	}
 
@@ -183,7 +185,7 @@ public final class Cell {
 						try {
 							Thread.sleep(1000);
 						} catch (InterruptedException e) {
-							e.printStackTrace();
+							Logger.logException(e, LogLevel.INFO);
 						}
 
 						File testFile = new File("bin/tag");

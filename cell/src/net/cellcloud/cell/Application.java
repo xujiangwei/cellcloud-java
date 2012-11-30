@@ -37,6 +37,7 @@ import javax.xml.parsers.ParserConfigurationException;
 
 import net.cellcloud.Version;
 import net.cellcloud.cell.log.FileLogger;
+import net.cellcloud.core.LogLevel;
 import net.cellcloud.core.Logger;
 import net.cellcloud.core.Nucleus;
 import net.cellcloud.core.NucleusConfig;
@@ -104,7 +105,7 @@ public final class Application {
 				this.nucleus = new Nucleus(config);
 			}
 		} catch (SingletonException e) {
-			Logger.e(Application.class, e.getMessage());
+			Logger.logException(e, LogLevel.ERROR);
 			return false;
 		}
 
@@ -149,7 +150,7 @@ public final class Application {
 				try {
 					this.monitor.wait();
 				} catch (InterruptedException e) {
-					e.printStackTrace();
+					Logger.logException(e, LogLevel.ERROR);
 				}
 			}
 
@@ -235,11 +236,11 @@ public final class Application {
 
 			return true;
 		} catch (ParserConfigurationException e) {
-			e.printStackTrace();
+			Logger.logException(e, LogLevel.ERROR);
 		} catch (SAXException e) {
-			e.printStackTrace();
+			Logger.logException(e, LogLevel.ERROR);
 		} catch (IOException e) {
-			e.printStackTrace();
+			Logger.logException(e, LogLevel.ERROR);
 		}
 
 		return false;

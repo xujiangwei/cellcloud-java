@@ -26,6 +26,9 @@ THE SOFTWARE.
 
 package net.cellcloud.core;
 
+import java.io.PrintWriter;
+import java.io.StringWriter;
+
 /** 系统通用日志接口。
  * 
  * @author Jiangwei Xu
@@ -60,5 +63,22 @@ public final class Logger {
 	 */
 	public static boolean isDebugLevel() {
 		return (LoggerManager.getInstance().getLevel() == LogLevel.DEBUG);
+	}
+
+	/** 记录异常。
+	 */
+	public static void logException(Exception e, byte level) {
+		if (LoggerManager.getInstance().getLevel() > level) {
+			return;
+		}
+
+		try {
+			StringWriter sw = new StringWriter();
+			PrintWriter pw = new PrintWriter(sw);
+			e.printStackTrace(pw);
+			LoggerManager.getInstance().log(level, "Catched exception: ", sw.toString());
+		} catch (Exception ie) {
+			// Nothing
+		}
 	}
 }

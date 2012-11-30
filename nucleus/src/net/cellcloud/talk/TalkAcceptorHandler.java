@@ -33,6 +33,7 @@ import net.cellcloud.common.Message;
 import net.cellcloud.common.MessageHandler;
 import net.cellcloud.common.Packet;
 import net.cellcloud.common.Session;
+import net.cellcloud.core.LogLevel;
 import net.cellcloud.core.Logger;
 
 /** Talk 服务句柄。
@@ -113,7 +114,7 @@ public final class TalkAcceptorHandler extends MessageHandler {
 					cmd = null;
 				}
 			} catch (Exception e) {
-				Logger.e(TalkAcceptorHandler.class, "Unknown error in ServerDialogueCommand : " + e.getMessage());
+				Logger.logException(e, LogLevel.ERROR);
 			}
 		}
 		else if (TalkDefinition.isHeartbeat(tag)) {
@@ -129,7 +130,7 @@ public final class TalkAcceptorHandler extends MessageHandler {
 					cmd = null;
 				}
 			} catch (Exception e) {
-				Logger.e(TalkAcceptorHandler.class, "Unknown error in ServerHeartbeatCommand : " + e.getMessage());
+				Logger.logException(e, LogLevel.ERROR);
 			}
 		}
 		else if (TalkDefinition.isSuspend(tag)) {
@@ -138,7 +139,7 @@ public final class TalkAcceptorHandler extends MessageHandler {
 				cmd.execute();
 				cmd = null;
 			} catch (Exception e) {
-				Logger.e(TalkAcceptorHandler.class, "Unknown error in ServerSuspendCommand : " + e.getMessage());
+				Logger.logException(e, LogLevel.ERROR);
 			}
 		}
 		else if (TalkDefinition.isResume(tag)) {
@@ -147,7 +148,7 @@ public final class TalkAcceptorHandler extends MessageHandler {
 				cmd.execute();
 				cmd = null;
 			} catch (Exception e) {
-				Logger.e(TalkAcceptorHandler.class, "Unknown error in ServerResumeCommand : " + e.getMessage());
+				Logger.logException(e, LogLevel.ERROR);
 			}
 		}
 		else if (TalkDefinition.isConsult(tag)) {
@@ -156,7 +157,7 @@ public final class TalkAcceptorHandler extends MessageHandler {
 				cmd.execute();
 				cmd = null;
 			} catch (Exception e) {
-				Logger.e(TalkAcceptorHandler.class, "Unknown error in ServerConsultCommand : " + e.getMessage());
+				Logger.logException(e, LogLevel.ERROR);
 			}
 		}
 		else if (TalkDefinition.isRequest(tag)) {
@@ -165,7 +166,7 @@ public final class TalkAcceptorHandler extends MessageHandler {
 				cmd.execute();
 				cmd = null;
 			} catch (Exception e) {
-				Logger.e(TalkAcceptorHandler.class, "Unknown error in ServerRequestCommand : " + e.getMessage());
+				Logger.logException(e, LogLevel.ERROR);
 			}
 		}
 		else if (TalkDefinition.isCheck(tag)) {
@@ -174,7 +175,7 @@ public final class TalkAcceptorHandler extends MessageHandler {
 				cmd.execute();
 				cmd = null;
 			} catch (Exception e) {
-				Logger.e(TalkAcceptorHandler.class, "Unknown error in ServerCheckCommand : " + e.getMessage());
+				Logger.logException(e, LogLevel.ERROR);
 			}
 		}
 	}

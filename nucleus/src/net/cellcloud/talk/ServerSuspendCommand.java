@@ -63,7 +63,7 @@ public final class ServerSuspendCommand extends ServerCommand {
 		else {
 			response = new Packet(TalkDefinition.TPT_SUSPEND, 5, 1, 0);
 			response.appendSubsegment(this.packet.getSubsegment(0));
-			response.appendSubsegment(TalkDefinition.SC_FAIL);
+			response.appendSubsegment(TalkDefinition.SC_FAILURE);
 			response.appendSubsegment(Util.string2Bytes(Long.toString(System.currentTimeMillis())));
 		}
 

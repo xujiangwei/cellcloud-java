@@ -116,7 +116,7 @@ public final class Nucleus {
 				try {
 					this.httpService = new HttpService(this.context);
 				} catch (SingletonException e) {
-					Logger.w(Nucleus.class, "Creates web service singleton exception!");
+					Logger.logException(e, LogLevel.WARNING);
 				}
 			}
 
@@ -257,7 +257,7 @@ public final class Nucleus {
 			sandbox.sealOff(cellet.getFeature());
 			this.sandboxes.put(cellet.getFeature().getIdentifier(), sandbox);
 		} catch (CelletSandboxException e) {
-			Logger.e(Nucleus.class, "Error in prepareCellet() - Cellet:" + cellet.getFeature().getIdentifier());
+			Logger.logException(e, LogLevel.ERROR);
 		}
 	}
 
@@ -305,7 +305,7 @@ public final class Nucleus {
 
 				jarFile.close();
 			} catch (IOException ioe) {
-				ioe.printStackTrace();
+				Logger.logException(ioe, LogLevel.DEBUG);
 				continue;
 			}
 
@@ -314,7 +314,7 @@ public final class Nucleus {
 			try {
 				url = new URL("file:" + jarFilename);
 			} catch (MalformedURLException e) {
-				e.printStackTrace();
+				Logger.logException(e, LogLevel.WARNING);
 				continue;
 			}
 
@@ -336,7 +336,7 @@ public final class Nucleus {
 						classes.add(clazz);
 					}
 				} catch (ClassNotFoundException e) {
-					e.printStackTrace();
+					Logger.logException(e, LogLevel.ERROR);
 				}
 			}
 
@@ -348,10 +348,10 @@ public final class Nucleus {
 					// 存入列表
 					this.cellets.put(cellet.getFeature().getIdentifier(), cellet);
 				} catch (InstantiationException e) {
-					e.printStackTrace();
+					Logger.logException(e, LogLevel.ERROR);
 					continue;
 				} catch (IllegalAccessException e) {
-					e.printStackTrace();
+					Logger.logException(e, LogLevel.ERROR);
 					continue;
 				}
 			}
@@ -360,7 +360,7 @@ public final class Nucleus {
 			try {
 				loader.close();
 			} catch (IOException e) {
-				e.printStackTrace();
+				Logger.logException(e, LogLevel.ERROR);
 			}
 			*/
 		}

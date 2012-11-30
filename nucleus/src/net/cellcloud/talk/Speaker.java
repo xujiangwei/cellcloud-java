@@ -146,7 +146,7 @@ public class Speaker {
 	public void resume(long startTime) {
 		if (this.state == SpeakerState.SUSPENDED
 			|| this.state == SpeakerState.CALLED) {
-			// 包格式：内核标签|需要回复的原语起始时间戳
+			// 包格式：内核标签|需要恢复的原语起始时间戳
 
 			Packet packet = new Packet(TalkDefinition.TPT_RESUME, 6, 1, 0);
 			packet.appendSubsegment(this.nucleusTag);
@@ -179,7 +179,9 @@ public class Speaker {
 	/** 向 Cellet 发送原语数据。
 	 */
 	public synchronized void speak(Primitive primitive) {
-		if (this.state != SpeakerState.CALLED) {
+		if (null == this.connector
+			|| !this.connector.isConnected()
+			|| this.state != SpeakerState.CALLED) {
 			return;
 		}
 
@@ -397,6 +399,7 @@ public class Speaker {
 		byte[] code = packet.getSubsegment(1);
 		if (TalkDefinition.SC_SUCCESS[0] == code[0] && TalkDefinition.SC_SUCCESS[1] == code[1]
 			&& TalkDefinition.SC_SUCCESS[2] == code[2] && TalkDefinition.SC_SUCCESS[3] == code[3]) {
+			// 更新状态
 			this.state = SpeakerState.SUSPENDED;
 
 			long timestamp = Long.parseLong(Util.bytes2String(packet.getSubsegment(2)));

@@ -37,6 +37,7 @@ import java.util.Iterator;
 import java.util.Set;
 import java.util.Vector;
 
+import net.cellcloud.core.LogLevel;
 import net.cellcloud.core.Logger;
 
 /** 非阻塞式网络连接器。
@@ -98,14 +99,14 @@ public class NonblockingConnector extends MessageService implements
 					this.selector.close();
 				}
 			} catch (IOException e) {
-				e.printStackTrace();
+				Logger.logException(e, LogLevel.DEBUG);
 			}
 
 			while (this.running) {
 				try {
 					Thread.sleep(10);
 				} catch (InterruptedException e) {
-					e.printStackTrace();
+					Logger.logException(e, LogLevel.DEBUG);
 					break;
 				}
 			}
@@ -137,7 +138,7 @@ public class NonblockingConnector extends MessageService implements
 			// 连接
 			this.channel.connect(this.address);
 		} catch (IOException e) {
-			Logger.e(NonblockingConnector.class, e.getMessage());
+			Logger.logException(e, LogLevel.DEBUG);
 
 			// 回调错误
 			this.fireErrorOccurred(MessageErrorCode.SOCKET_FAILED);
@@ -146,14 +147,14 @@ public class NonblockingConnector extends MessageService implements
 				if (null != this.channel) {
 					this.channel.close();
 				}
-			} catch (Exception e1) {
+			} catch (Exception ce) {
 				// Nothing
 			}
 			try {
 				if (null != this.selector) {
 					this.selector.close();
 				}
-			} catch (Exception e1) {
+			} catch (Exception se) {
 				// Nothing
 			}
 
@@ -176,6 +177,7 @@ public class NonblockingConnector extends MessageService implements
 					loopDispatch();
 				} catch (Exception e) {
 					spinning = false;
+					Logger.logException(e, LogLevel.DEBUG);
 				}
 
 				// 通知 Session 销毁。
@@ -189,7 +191,7 @@ public class NonblockingConnector extends MessageService implements
 					if (null != selector)
 						selector.close();
 				} catch (IOException e) {
-					e.printStackTrace();
+					Logger.logException(e, LogLevel.DEBUG);
 				}
 			}
 		};
@@ -214,7 +216,7 @@ public class NonblockingConnector extends MessageService implements
 					this.channel.close();
 				}
 			} catch (IOException e) {
-				e.printStackTrace();
+				Logger.logException(e, LogLevel.DEBUG);
 			}
 		}
 
@@ -223,7 +225,7 @@ public class NonblockingConnector extends MessageService implements
 				try {
 					this.selector.close();
 				} catch (IOException e) {
-					e.printStackTrace();
+					Logger.logException(e, LogLevel.DEBUG);
 				}
 			}
 		}
@@ -232,7 +234,7 @@ public class NonblockingConnector extends MessageService implements
 			try {
 				Thread.sleep(10);
 			} catch (InterruptedException e) {
-				e.printStackTrace();
+				Logger.logException(e, LogLevel.DEBUG);
 			}
 		}
 
@@ -334,7 +336,7 @@ public class NonblockingConnector extends MessageService implements
 				try {
 					Thread.sleep(0);
 				} catch (InterruptedException e) {
-					e.printStackTrace();
+					Logger.logException(e, LogLevel.DEBUG);
 				}
 			} //# while
 
@@ -353,13 +355,13 @@ public class NonblockingConnector extends MessageService implements
 			try {
 				channel.finishConnect();
 			} catch (IOException e) {
-//				e.printStackTrace();
+				Logger.logException(e, LogLevel.DEBUG);
 
 				try {
 					this.channel.close();
 					this.selector.close();
-				} catch (IOException e1) {
-					e1.printStackTrace();
+				} catch (IOException ce) {
+					Logger.logException(ce, LogLevel.DEBUG);
 				}
 
 				// 连接失败
@@ -374,7 +376,7 @@ public class NonblockingConnector extends MessageService implements
 		try {
 			channel.register(this.selector, SelectionKey.OP_READ | SelectionKey.OP_WRITE);
 		} catch (ClosedChannelException e) {
-			e.printStackTrace();
+			Logger.logException(e, LogLevel.DEBUG);
 		}
 
 		return true;
@@ -392,13 +394,15 @@ public class NonblockingConnector extends MessageService implements
 			try {
 				read = channel.read(this.readBuffer);
 			} catch (IOException e) {
+				Logger.logException(e, LogLevel.DEBUG);
+
 				fireSessionClosed();
 
 				try {
 					this.channel.close();
 					this.selector.close();
-				} catch (IOException e1) {
-					e1.printStackTrace();
+				} catch (IOException ce) {
+					Logger.logException(ce, LogLevel.DEBUG);
 				}
 
 				return;
@@ -413,8 +417,8 @@ public class NonblockingConnector extends MessageService implements
 				try {
 					this.channel.close();
 					this.selector.close();
-				} catch (IOException e1) {
-					e1.printStackTrace();
+				} catch (IOException ce) {
+					Logger.logException(ce, LogLevel.DEBUG);
 				}
 
 				return;
@@ -434,6 +438,7 @@ public class NonblockingConnector extends MessageService implements
 			// 注册
 			channel.register(this.selector, SelectionKey.OP_WRITE | SelectionKey.OP_READ);
 		} catch (IOException e) {
+			Logger.logException(e, LogLevel.DEBUG);
 			this.fireErrorOccurred(MessageErrorCode.READ_FAILED);
 		}
 	}
@@ -483,11 +488,12 @@ public class NonblockingConnector extends MessageService implements
 			try {
 				// 注册
 				channel.register(this.selector, SelectionKey.OP_READ | SelectionKey.OP_WRITE);
-			} catch (ClosedChannelException e1) {
+			} catch (ClosedChannelException ce) {
+				Logger.logException(ce, LogLevel.DEBUG);
 				this.fireErrorOccurred(MessageErrorCode.WRITE_FAILED);
 			}
 		} catch (IOException e) {
-			Logger.e(NonblockingConnector.class, e.getMessage());
+			Logger.logException(e, LogLevel.WARNING);
 		}
 	}
 

@@ -153,14 +153,12 @@ public final class LocalFileStorage implements FileStorage {
 		return f;
 	}
 
-	/** 返回读文件操作声明。
-	 */
+	@Override
 	public String createReadStatement(final String file) {
 		return "read|" + file;
 	}
 
-	/** 返回写文件操作声明。
-	*/
+	@Override
 	public String createWriteStatement(final String file) {
 		return "write|" + file;
 	}

@@ -28,6 +28,7 @@ package net.cellcloud.common;
 
 import java.util.ArrayList;
 
+import net.cellcloud.core.LogLevel;
 import net.cellcloud.core.Logger;
 
 /** 数据包类。描述在网络上进行投递的数据包格式。
@@ -280,6 +281,7 @@ public final class Packet {
 			minor = Integer.parseInt(new String(bMinor));
 			major = Integer.parseInt(new String(bMajor));
 		} catch (NumberFormatException e) {
+			Logger.logException(e, LogLevel.ERROR);
 			return null;
 		}
 

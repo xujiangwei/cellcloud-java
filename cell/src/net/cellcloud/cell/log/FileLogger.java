@@ -34,6 +34,8 @@ import java.io.IOException;
 import java.util.Date;
 
 import net.cellcloud.core.LogHandle;
+import net.cellcloud.core.LogLevel;
+import net.cellcloud.core.Logger;
 import net.cellcloud.core.LoggerManager;
 import net.cellcloud.util.Util;
 
@@ -89,7 +91,7 @@ public final class FileLogger implements LogHandle {
 			this.outputStream = new FileOutputStream(file);
 			this.buffer = new BufferedOutputStream(this.outputStream);
 		} catch (FileNotFoundException e) {
-			e.printStackTrace();
+			Logger.logException(e, LogLevel.ERROR);
 		}
 
 		// 设置日志操作器
@@ -117,7 +119,7 @@ public final class FileLogger implements LogHandle {
 				this.outputStream = null;
 				this.buffer = null;
 			} catch (IOException e) {
-				e.printStackTrace();
+				Logger.logException(e, LogLevel.ERROR);
 			}
 		}
 	}
