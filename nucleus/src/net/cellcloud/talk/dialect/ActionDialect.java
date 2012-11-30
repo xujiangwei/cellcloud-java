@@ -41,11 +41,13 @@ import net.cellcloud.talk.stuff.SubjectStuff;
  */
 public final class ActionDialect extends Dialect {
 
+	public final static String DIALECT_NAME = "ActionDialect";
+
 	private String action;
 	private HashMap<String, String> params;
 
 	public ActionDialect(String tracker) {
-		super(ActionDialectFactory.FACTORY_NAME, tracker);
+		super(ActionDialect.DIALECT_NAME, tracker);
 		this.params = new HashMap<String, String>();
 	}
 
@@ -148,7 +150,7 @@ public final class ActionDialect extends Dialect {
 	/** 执行动作委派（异步）。
 	 */
 	public void act(ActionDelegate delegate) {
-		ActionDialectFactory factory = (ActionDialectFactory) DialectEnumerator.getInstance().getFactory(ActionDialectFactory.FACTORY_NAME);
+		ActionDialectFactory factory = (ActionDialectFactory) DialectEnumerator.getInstance().getFactory(ActionDialect.DIALECT_NAME);
 		if (null != factory) {
 			factory.doAction(this, delegate);
 		}

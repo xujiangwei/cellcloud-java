@@ -35,14 +35,12 @@ import java.util.concurrent.Executors;
  */
 public final class ActionDialectFactory extends DialectFactory {
 
-	public final static String FACTORY_NAME = "ActionDialect";
-
 	private DialectMetaData metaData;
 
 	private ExecutorService executor;
 
 	public ActionDialectFactory() {
-		this.metaData = new DialectMetaData(FACTORY_NAME, "Action Dialect");
+		this.metaData = new DialectMetaData(ActionDialect.DIALECT_NAME, "Action Dialect");
 	}
 
 	@Override
@@ -73,8 +71,7 @@ public final class ActionDialectFactory extends DialectFactory {
 	/** 动作任务。
 	*/
 	protected class ActionTask implements Runnable {
-		/**
-		 */
+
 		public ActionTask() {
 		}
 
