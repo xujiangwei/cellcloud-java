@@ -138,8 +138,11 @@ public final class LocalFileResultSet implements ResultSet {
 			return -1;
 		}
 
-		if (label.equals(LocalFileStorage.FIELD_SIZE_LONG)) {
+		if (label.equals(LocalFileStorage.LABEL_LONG_SIZE)) {
 			return this.fileWrapper.filesize;
+		}
+		else if (label.equals(LocalFileStorage.LABEL_LONG_LASTMODIFIED)) {
+			return this.fileWrapper.lastModified;
 		}
 
 		return 0;
@@ -156,7 +159,7 @@ public final class LocalFileResultSet implements ResultSet {
 			return null;
 		}
 
-		if (label.equals(LocalFileStorage.FIELD_FILENAME_STRING)) {
+		if (label.equals(LocalFileStorage.LABEL_STRING_FILENAME)) {
 			return this.fileWrapper.filename;
 		}
 
@@ -174,7 +177,7 @@ public final class LocalFileResultSet implements ResultSet {
 			return false;
 		}
 
-		if (label.equals(LocalFileStorage.FIELD_EXIST_BOOL)) {
+		if (label.equals(LocalFileStorage.LABEL_BOOL_EXIST)) {
 			return this.fileWrapper.filesize > 0;
 		}
 
@@ -184,7 +187,7 @@ public final class LocalFileResultSet implements ResultSet {
 	@Override
 	public byte[] getRaw(String label, long offset, long length) {
 		if (this.cursor != 0
-			|| !label.equals(LocalFileStorage.FIELD_DATA_RAW)) {
+			|| !label.equals(LocalFileStorage.LABEL_RAW_DATA)) {
 			return null;
 		}
 		else if (offset < 0 || length <= 0 || offset >= this.fileWrapper.filesize) {
@@ -229,61 +232,6 @@ public final class LocalFileResultSet implements ResultSet {
 			}
 			return fileData;
 		}
-
-//		if (this.fileSize > this.storage.fetchSize) {
-//			boolean invalid = false;
-//
-//			long bufEnd = this.bufOffset + this.buffer.capacity();
-//			if (offset > bufEnd || offset < this.bufOffset) {
-//				invalid = true;
-//			}
-//			else if (offset + length > bufEnd || length > this.buffer.capacity()) {
-//				invalid = true;
-//			}
-//
-//			if (invalid) {
-//				long remaining = this.fileSize - offset;
-//				int bufLength = (int)((this.storage.fetchSize < remaining) ? this.storage.fetchSize : remaining);
-//				this.bufOffset = offset;
-//				this.buffer = null;
-//
-//				this.buffer = ByteBuffer.allocate(bufLength);
-//
-//				// 使用 NIO 读取文件。
-//				FileInputStream fis = null;
-//				FileChannel fc = null;
-//				try {
-//					fis = new FileInputStream(this.fileName);
-//					fc = fis.getChannel();
-//					fc.read(this.buffer, this.bufOffset);
-//					this.buffer.flip();
-//				} catch (Exception e) {
-//					e.printStackTrace();
-//					this.buffer = null;
-//				} finally {
-//					try {
-//						fis.close();
-//						fc.close();
-//					} catch (Exception e) {
-//						// Nothing
-//					}
-//				}
-//			}
-//
-//			// 调整 Offset
-//			offset = offset - this.bufOffset;
-//		}
-//
-//		if (offset + length > this.buffer.capacity()) {
-//			length = this.buffer.capacity() - offset;
-//		}
-//		if (length <= 0) {
-//			return null;
-//		}
-//		byte[] dst = new byte[(int)length];
-//		this.buffer.position((int)offset);
-//		this.buffer.get(dst, 0, (int)length);
-//		return dst;
 	}
 
 	@Override
@@ -318,7 +266,7 @@ public final class LocalFileResultSet implements ResultSet {
 			return;
 		}
 
-		if (label.equals(LocalFileStorage.FIELD_SIZE_LONG)) {
+		if (label.equals(LocalFileStorage.LABEL_LONG_SIZE)) {
 			this.fileWrapper.filesize = value;
 		}
 	}
@@ -354,7 +302,7 @@ public final class LocalFileResultSet implements ResultSet {
 			throws StorageException {
 		if (this.cursor != 0
 			|| !this.operate.equals("write")
-			|| !label.equals(LocalFileStorage.FIELD_DATA_RAW)) {
+			|| !label.equals(LocalFileStorage.LABEL_RAW_DATA)) {
 			return;
 		}
 

@@ -53,7 +53,7 @@ public final class SpeakerConnectorHandler extends MessageHandler {
 	 */
 	@Override
 	public void sessionCreated(Session session) {
-//		Logger.d(SpeakerConnectorHandler.class, "sessionCreated");
+		// Nothing
 	}
 
 	/**
@@ -61,7 +61,7 @@ public final class SpeakerConnectorHandler extends MessageHandler {
 	 */
 	@Override
 	public void sessionDestroyed(Session session) {
-//		Logger.d(SpeakerConnectorHandler.class, "sessionDestroyed");
+		// Nothing
 	}
 
 	/**
@@ -69,7 +69,7 @@ public final class SpeakerConnectorHandler extends MessageHandler {
 	 */
 	@Override
 	public void sessionOpened(Session session) {
-//		Logger.d(SpeakerConnectorHandler.class, "sessionOpened");
+		// Nothing
 	}
 
 	/**
@@ -77,7 +77,6 @@ public final class SpeakerConnectorHandler extends MessageHandler {
 	 */
 	@Override
 	public void sessionClosed(Session session) {
-//		Logger.d(SpeakerConnectorHandler.class, "sessionClosed");
 		this.speaker.notifySessionClosed();
 	}
 

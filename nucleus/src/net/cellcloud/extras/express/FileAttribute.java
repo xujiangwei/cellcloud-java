@@ -40,28 +40,43 @@ public final class FileAttribute {
 
 	protected boolean exist = false;
 	protected long size = -1;
+	protected Date lastModifyTime = null;
 	protected String hashCode = "7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f";
-	protected Date lastModifyTime;
 
-	public FileAttribute() {
+	public FileAttribute(boolean exist) {
+		this.exist = exist;
 	}
 
+	public FileAttribute(byte[] bytes) {
+		this.deserialize(bytes);
+	}
+
+	/**
+	 */
 	public boolean exist() {
 		return this.exist;
 	}
 
+	/**
+	 */
 	public long size() {
 		return this.size;
 	}
 
+	/**
+	 */
 	public Date lastModifyTime() {
 		return this.lastModifyTime;
 	}
 
+	/**
+	 */
 	public String fileHashCode() {
 		return this.hashCode;
 	}
 
+	/**
+	 */
 	public byte[] serialize() {
 		// 序列化格式：是否存在|文件长度|最后修改日期|MD5码
 
@@ -83,6 +98,8 @@ public final class FileAttribute {
 		}
 	}
 
+	/**
+	 */
 	public void deserialize(byte[] bytes) {
 		// 序列化格式：是否存在|文件长度|最后修改日期|MD5码
 		String str = new String(bytes);

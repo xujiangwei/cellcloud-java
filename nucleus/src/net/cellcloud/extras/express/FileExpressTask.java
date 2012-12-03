@@ -34,9 +34,9 @@ import net.cellcloud.common.Session;
 import net.cellcloud.core.LogLevel;
 import net.cellcloud.core.Logger;
 import net.cellcloud.exception.StorageException;
-import net.cellcloud.storage.ResultSet;
 import net.cellcloud.storage.LocalFileProperties;
 import net.cellcloud.storage.LocalFileStorage;
+import net.cellcloud.storage.ResultSet;
 import net.cellcloud.storage.StorageEnumerator;
 import net.cellcloud.util.Util;
 
@@ -156,8 +156,8 @@ public final class FileExpressTask extends MessageHandler implements Runnable {
 		resultSet.next();
 
 		// 检查文件是否存在并确定起始下载位置
-		if (resultSet.getBool(LocalFileStorage.FIELD_EXIST_BOOL)) {
-			this.progress = resultSet.getLong(LocalFileStorage.FIELD_SIZE_LONG);
+		if (resultSet.getBool(LocalFileStorage.LABEL_BOOL_EXIST)) {
+			this.progress = resultSet.getLong(LocalFileStorage.LABEL_LONG_SIZE);
 		}
 		else {
 			this.progress = 0;
@@ -441,7 +441,7 @@ public final class FileExpressTask extends MessageHandler implements Runnable {
 		resultSet.next();
 
 		// 检查文件是否存在
-		if (!resultSet.getBool(LocalFileStorage.FIELD_EXIST_BOOL)) {
+		if (!resultSet.getBool(LocalFileStorage.LABEL_BOOL_EXIST)) {
 			// 文件不存在
 
 			resultSet.close();
@@ -467,7 +467,7 @@ public final class FileExpressTask extends MessageHandler implements Runnable {
 		byte[] headMark = {0x10, 0x04, 0x11, 0x24};
 		byte[] tailMark = {0x11, 0x24, 0x10, 0x04};
 		connector.defineDataMark(headMark, tailMark);
-		connector.setConnectTimeout(5000);
+		connector.setConnectTimeout(10000);
 		connector.setHandler(this);
 
 		// 设置初始状态
@@ -580,7 +580,7 @@ public final class FileExpressTask extends MessageHandler implements Runnable {
 				synchronized (this.monitor) {
 					if (!this.context.getAttribute().exist()) {
 						// 设置文件大小
-						this.context.getAttribute().size = resultSet.getLong(LocalFileStorage.FIELD_SIZE_LONG);
+						this.context.getAttribute().size = resultSet.getLong(LocalFileStorage.LABEL_LONG_SIZE);
 
 						// 新上传
 						this.progress = 0;
@@ -591,7 +591,7 @@ public final class FileExpressTask extends MessageHandler implements Runnable {
 					else {
 						// 文件存在，判断是否续传
 						long remoteFileSize = this.context.getAttribute().size();
-						long localFileSize = resultSet.getLong(LocalFileStorage.FIELD_SIZE_LONG);
+						long localFileSize = resultSet.getLong(LocalFileStorage.LABEL_LONG_SIZE);
 						if (remoteFileSize == localFileSize) {
 							this.state = EXPRESS_STATE_EXIT;
 
@@ -752,7 +752,7 @@ public final class FileExpressTask extends MessageHandler implements Runnable {
 
 	private void offerDownload(Session session, ResultSet resultSet) {
 		// 设置文件长度
-		resultSet.updateLong(LocalFileStorage.FIELD_SIZE_LONG, this.context.getAttribute().size());
+		resultSet.updateLong(LocalFileStorage.LABEL_LONG_SIZE, this.context.getAttribute().size());
 
 		// 包格式：授权码|文件名|文件操作起始位置
 		Packet packet = new Packet(FileExpressDefinition.PT_OFFER, 4, 1, 0);
@@ -798,7 +798,7 @@ public final class FileExpressTask extends MessageHandler implements Runnable {
 	private void processDownloadData(Session session, ResultSet resultSet)
 			throws StorageException {
 		// 写数据
-		resultSet.updateRaw(LocalFileStorage.FIELD_DATA_RAW, this.dataCache,
+		resultSet.updateRaw(LocalFileStorage.LABEL_RAW_DATA, this.dataCache,
 				this.progress, (long)this.dataCache.length);
 
 		// 更新进度
@@ -829,7 +829,7 @@ public final class FileExpressTask extends MessageHandler implements Runnable {
 		Packet packet = new Packet(FileExpressDefinition.PT_BEGIN, 3, 1, 0);
 		packet.appendSubsegment(this.context.getAuthCode().getCode().getBytes());
 		packet.appendSubsegment(Util.string2Bytes(this.context.getFileName()));
-		packet.appendSubsegment(Long.toString(resultSet.getLong(LocalFileStorage.FIELD_SIZE_LONG)).getBytes());
+		packet.appendSubsegment(Long.toString(resultSet.getLong(LocalFileStorage.LABEL_LONG_SIZE)).getBytes());
 		packet.appendSubsegment(Integer.toString(FileExpressContext.OP_UPLOAD).getBytes());
 
 		byte[] data = Packet.pack(packet);
@@ -839,7 +839,7 @@ public final class FileExpressTask extends MessageHandler implements Runnable {
 		}
 
 		// 设置总字节数
-		this.context.bytesTotal = resultSet.getLong(LocalFileStorage.FIELD_SIZE_LONG) - this.progress;
+		this.context.bytesTotal = resultSet.getLong(LocalFileStorage.LABEL_LONG_SIZE) - this.progress;
 		// 通知开始
 		if (null != this.listener) {
 			this.listener.expressStarted(this.context);
@@ -867,7 +867,7 @@ public final class FileExpressTask extends MessageHandler implements Runnable {
 
 	private boolean processUploadData(Session session, ResultSet resultSet) {
 		// 包格式：授权码|文件名|数据起始位|数据结束位|数据
-		byte[] bytes = resultSet.getRaw(LocalFileStorage.FIELD_DATA_RAW, this.progress, FileExpressDefinition.CHUNK_SIZE);
+		byte[] bytes = resultSet.getRaw(LocalFileStorage.LABEL_RAW_DATA, this.progress, FileExpressDefinition.CHUNK_SIZE);
 		if (null != bytes) {
 			long start = this.progress;
 			long end = this.progress + bytes.length;
@@ -1030,7 +1030,8 @@ public final class FileExpressTask extends MessageHandler implements Runnable {
 
 				String fileName = Util.bytes2String(packet.getSubsegment(0));
 				if (this.context.getFileName().equals(fileName)) {
-					this.context.getAttribute().deserialize(packet.getSubsegment(1));
+					FileAttribute attr = new FileAttribute(packet.getSubsegment(1));
+					this.context.setAttribute(attr);
 					// 变更状态
 					this.state = EXPRESS_STATE_PREPARE;
 				}

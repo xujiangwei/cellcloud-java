@@ -34,8 +34,6 @@ import java.io.IOException;
 import java.util.Date;
 
 import net.cellcloud.core.LogHandle;
-import net.cellcloud.core.LogLevel;
-import net.cellcloud.core.Logger;
 import net.cellcloud.core.LoggerManager;
 import net.cellcloud.util.Util;
 
@@ -64,7 +62,7 @@ public final class FileLogger implements LogHandle {
 
 	/** 返回单例。
 	 */
-	synchronized public static FileLogger getInstance() {
+	public synchronized static FileLogger getInstance() {
 		return instance;
 	}
 
@@ -85,13 +83,45 @@ public final class FileLogger implements LogHandle {
 			return;
 		}
 
+		String[] strings = filename.split("\\\\");
+		if (strings.length > 1) {
+			StringBuilder path = new StringBuilder();
+			for (int i = 0; i < strings.length - 1; ++i) {
+				path.append(strings[i]);
+				path.append(File.separator);
+			}
+
+			File fp = new File(path.toString());
+			if (!fp.exists()) {
+				fp.mkdirs();
+			}
+			path = null;
+		}
+		else {
+			strings = filename.split("/");
+			if (strings.length > 1) {
+				StringBuilder path = new StringBuilder();
+				for (int i = 0; i < strings.length - 1; ++i) {
+					path.append(strings[i]);
+					path.append(File.separator);
+				}
+
+				File fp = new File(path.toString());
+				if (!fp.exists()) {
+					fp.mkdirs();
+				}
+				path = null;
+			}
+		}
+
 		File file = new File(filename);
 
 		try {
 			this.outputStream = new FileOutputStream(file);
 			this.buffer = new BufferedOutputStream(this.outputStream);
 		} catch (FileNotFoundException e) {
-			Logger.logException(e, LogLevel.ERROR);
+			e.printStackTrace(System.out);
+			return;
 		}
 
 		// 设置日志操作器
@@ -119,7 +149,7 @@ public final class FileLogger implements LogHandle {
 				this.outputStream = null;
 				this.buffer = null;
 			} catch (IOException e) {
-				Logger.logException(e, LogLevel.ERROR);
+				// Nothing
 			}
 		}
 	}

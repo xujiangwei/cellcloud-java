@@ -28,8 +28,13 @@ package net.cellcloud.cell;
 
 import java.io.File;
 import java.io.IOException;
+import java.net.MalformedURLException;
 import java.net.URL;
+import java.net.URLClassLoader;
 import java.util.ArrayList;
+import java.util.Enumeration;
+import java.util.jar.JarEntry;
+import java.util.jar.JarFile;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
@@ -55,6 +60,8 @@ import org.xml.sax.SAXException;
 public final class Application {
 
 	private Nucleus nucleus;
+
+	private String logFilename;
 
 	private boolean consoleMode;
 	private boolean spinning;
@@ -86,6 +93,8 @@ public final class Application {
 
 		buf = null;
 
+		this.logFilename = "cell.log";
+
 		this.monitor = new byte[0];
 
 		this.consoleMode = consoleMode;
@@ -94,7 +103,8 @@ public final class Application {
 	/** 启动程序。
 	 */
 	protected boolean startup() {
-		FileLogger.getInstance().open("cell.log");
+		// 使用文件日志
+		FileLogger.getInstance().open("logs" + File.separator + this.logFilename);
 
 		try {
 			if (null == (this.nucleus = Nucleus.getInstance())) {
@@ -244,5 +254,80 @@ public final class Application {
 		}
 
 		return false;
+	}
+
+	/** 加载所有库文件
+	 */
+	protected boolean loadLibraries() {
+		String parentPath = "lib/";
+		File file = new File(parentPath);
+		if (!file.exists()) {
+			parentPath = "../lib/";
+			file = new File(parentPath);
+		}
+
+		if (!file.exists()) {
+			return false;
+		}
+
+		// 枚举 lib 目录下的所有 jar 文件，并进行装载
+
+		ArrayList<URL> urls = new ArrayList<URL>();
+		ArrayList<String> classNameList = new ArrayList<String>();
+
+		File[] files = file.listFiles();
+		for (File f : files) {
+			if (f.getName().endsWith("jar")) {
+				JarFile jarFile = null;
+				try {
+					jarFile = new JarFile(parentPath + f.getName());
+				} catch (IOException e) {
+					e.printStackTrace();
+					continue;
+				}
+
+				Enumeration<JarEntry> entries = jarFile.entries();
+				while (entries.hasMoreElements()) {
+					String name = entries.nextElement().getName();
+					if (name.endsWith("class")) {
+						// 将 net/cellcloud/MyObject.class 转为 net.cellcloud.MyObject
+						name = name.replaceAll("/", ".").substring(0, name.length() - 6);
+						classNameList.add(name);
+					}
+				}
+
+				try {
+					jarFile.close();
+				} catch (IOException ioe) {
+					ioe.printStackTrace();
+				}
+
+				try {
+					URL url = new URL(f.toURI().toURL().toString());
+					urls.add(url);
+				} catch (MalformedURLException e) {
+					e.printStackTrace();
+					continue;
+				}
+			}
+		}
+
+		// 加载 Class
+		URLClassLoader loader = new URLClassLoader(urls.toArray(new URL[urls.size()])
+				, Thread.currentThread().getContextClassLoader());
+
+		for (String className : classNameList) {
+			try {
+				loader.loadClass(className);
+			} catch (ClassNotFoundException e) {
+				e.printStackTrace();
+				continue;
+			} catch (NoClassDefFoundError e) {
+				e.printStackTrace();
+				continue;
+			}
+		}
+
+		return true;
 	}
 }

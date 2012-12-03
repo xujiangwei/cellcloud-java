@@ -76,7 +76,7 @@ public final class Logger {
 			StringWriter sw = new StringWriter();
 			PrintWriter pw = new PrintWriter(sw);
 			e.printStackTrace(pw);
-			LoggerManager.getInstance().log(level, "Catched exception: ", sw.toString());
+			LoggerManager.getInstance().log(level, "Exception catched:", sw.toString());
 		} catch (Exception ie) {
 			// Nothing
 		}

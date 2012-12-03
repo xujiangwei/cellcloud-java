@@ -26,13 +26,14 @@ THE SOFTWARE.
 
 package net.cellcloud.extras.express;
 
+import java.util.Date;
 import java.util.concurrent.ConcurrentHashMap;
 
 import net.cellcloud.core.LogLevel;
 import net.cellcloud.core.Logger;
 import net.cellcloud.exception.StorageException;
+import net.cellcloud.storage.FileStorage;
 import net.cellcloud.storage.ResultSet;
-import net.cellcloud.storage.Storage;
 
 /** 文件快递上下文。
  * 
@@ -40,12 +41,12 @@ import net.cellcloud.storage.Storage;
  */
 public final class FileExpressServoContext extends FileExpressContext {
 
-	private Storage storage;
+	private FileStorage storage;
 	private long timestamp;
 
 	private ConcurrentHashMap<String, FileAttribute> attributes;
 
-	public FileExpressServoContext(ExpressAuthCode authCode, Storage storage) {
+	public FileExpressServoContext(ExpressAuthCode authCode, FileStorage storage) {
 		super(authCode);
 		this.storage = storage;
 		this.timestamp = System.currentTimeMillis();
@@ -66,13 +67,26 @@ public final class FileExpressServoContext extends FileExpressContext {
 	public FileAttribute getAttribute(final String filename) {
 		FileAttribute attr = this.attributes.get(filename);
 		if (null == attr) {
-			ResultSet rs = null;
+			ResultSet resultSet = null;
 			try {
-				rs = this.storage.store(this.getAuthCode().getContextPath() + filename);
+				resultSet = this.storage.store(this.storage.createReadStatement(
+						new StringBuilder(this.getAuthCode().getContextPath()).append(filename).toString()));
 			} catch (StorageException e) {
 				Logger.logException(e, LogLevel.ERROR);
 			}
-			rs.close();
+			// 移动游标
+			resultSet.next();
+
+			attr = new FileAttribute(resultSet.getBool(FileStorage.LABEL_BOOL_EXIST));
+			if (attr.exist) {
+				// 文件存在则读取其他属性
+				attr.size = resultSet.getLong(FileStorage.LABEL_LONG_SIZE);
+				attr.lastModifyTime = new Date(resultSet.getLong(FileStorage.LABEL_LONG_LASTMODIFIED));
+			}
+
+			resultSet.close();
+
+			this.attributes.put(filename, attr);
 		}
 
 		return attr;

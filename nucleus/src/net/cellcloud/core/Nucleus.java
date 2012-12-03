@@ -312,7 +312,7 @@ public final class Nucleus {
 			// 定位文件
 			URL url = null;
 			try {
-				url = new URL("file:" + jarFilename);
+				url = new URL(file.toURI().toURL().toString());
 			} catch (MalformedURLException e) {
 				Logger.logException(e, LogLevel.WARNING);
 				continue;

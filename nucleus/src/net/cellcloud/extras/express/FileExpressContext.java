@@ -150,9 +150,6 @@ public class FileExpressContext {
 	}
 
 	public FileAttribute getAttribute() {
-		if (null == this.attribute) {
-			this.attribute = new FileAttribute();
-		}
 		return this.attribute;
 	}
 
@@ -166,5 +163,9 @@ public class FileExpressContext {
 
 	public int getErrorCode() {
 		return this.errorCode;
+	}
+
+	protected void setAttribute(FileAttribute attr) {
+		this.attribute = attr;
 	}
 }

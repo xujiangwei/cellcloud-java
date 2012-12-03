@@ -33,8 +33,11 @@ import java.io.RandomAccessFile;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Iterator;
 
+import net.cellcloud.core.LogLevel;
+import net.cellcloud.core.Logger;
 import net.cellcloud.exception.StorageException;
 import net.cellcloud.util.Properties;
 
@@ -46,23 +49,21 @@ public final class LocalFileStorage implements FileStorage {
 
 	public final static String TYPE_NAME = "LocalFileStorage";
 
-	public final static String FIELD_FILENAME_STRING = "filename";
-	public final static String FIELD_EXIST_BOOL = "exist";
-	public final static String FIELD_SIZE_LONG = "size";
-	public final static String FIELD_DATA_RAW = "data";
-
 	private String instanceName;
 	private byte[] monitor = new byte[0];
 
-	// 默认文件块大小：256 KB
+	// 默认文件块大小：256KB
 	protected int chunkSize = 262144;
 
-	// 写缓存
-	private ArrayList<FileWrapper> fileList;
+	// 默认内存门限：1MB
+	private long memoryLimit = 1024 * 1024;
+
+	// 文件列表
+	private HashMap<String, FileWrapper> files;
 
 	protected LocalFileStorage(String name) {
 		this.instanceName = name;
-		this.fileList = new ArrayList<FileWrapper>();
+		this.files = new HashMap<String, FileWrapper>();
 	}
 
 	@Override
@@ -85,11 +86,13 @@ public final class LocalFileStorage implements FileStorage {
 	@Override
 	public void close() throws StorageException {
 		synchronized (this.monitor) {
-			for (FileWrapper fw : this.fileList) {
+			Iterator<FileWrapper> iter = this.files.values().iterator();
+			while (iter.hasNext()) {
+				FileWrapper fw = iter.next();
 				fw.close();
 			}
 
-			this.fileList.clear();
+			this.files.clear();
 		}
 	}
 
@@ -115,6 +118,9 @@ public final class LocalFileStorage implements FileStorage {
 					throw new StorageException("LocalFileStorage ("+ this.instanceName +") load file '" + filename + "' failed.");
 				}
 
+				// 更新时间戳
+				file.timestamp = System.currentTimeMillis();
+
 				LocalFileResultSet rs = new LocalFileResultSet(this, operate, file);
 				return rs;
 			}
@@ -135,22 +141,41 @@ public final class LocalFileStorage implements FileStorage {
 	 * 如果文件不存在返回空指针。
 	 */
 	private FileWrapper findFileWrapper(String fullpath) {
-		for (FileWrapper f : this.fileList) {
-			if (f.filename.equals(fullpath)) {
-				return f;
+		if (!this.files.isEmpty()) {
+			// 判断内存大小是否超过门限
+			if (this.files.size() * this.chunkSize > this.memoryLimit) {
+				long minTime = Long.MAX_VALUE;
+				FileWrapper oldest = null;
+				Iterator<FileWrapper> iter = this.files.values().iterator();
+				while (iter.hasNext()) {
+					FileWrapper fw = iter.next();
+					if (fw.timestamp < minTime) {
+						minTime = fw.timestamp;
+						oldest = fw;
+					}
+				}
+				// 移除最旧的文件
+				this.files.remove(oldest.filename);
 			}
 		}
 
-		return null;
+		return this.files.get(fullpath);
 	}
 
 	/** 加载文件数据。
 	 */
 	private FileWrapper loadFile(String fullpath) {
-		FileWrapper f = new FileWrapper(fullpath);
-		this.fileList.add(f);
-		f.open();
-		return f;
+		if (this.files.containsKey(fullpath)) {
+			return this.files.get(fullpath);
+		}
+		else {
+			FileWrapper f = new FileWrapper(fullpath);
+			if (f.open()) {
+				// 文件存在，将文件记录缓存
+				this.files.put(fullpath, f);
+			}
+			return f;
+		}
 	}
 
 	@Override
@@ -203,14 +228,22 @@ public final class LocalFileStorage implements FileStorage {
 	/** 存储器内部文件结构。
 	 */
 	protected class FileWrapper {
+		protected long timestamp;
+
 		protected String filename = null;
 		protected long filesize = -1;
+		protected long lastModified = 0;
 		private ChunkBuffer readBuffer = null;
 		private ArrayList<ChunkBuffer> writeBuffers = null;
 		private long writedLength = 0;
 
 		protected FileWrapper(String filename) {
+			this.timestamp = System.currentTimeMillis();
 			this.filename = filename;
+		}
+
+		protected long getBufferSize() {
+			return this.readBuffer.length;
 		}
 
 		protected boolean open() {
@@ -218,6 +251,7 @@ public final class LocalFileStorage implements FileStorage {
 				File file = new File(this.filename);
 				if (file.exists()) {
 					this.filesize = file.length();
+					this.lastModified = file.lastModified();
 				}
 				else {
 					// 文件不存在则返回 false
@@ -250,7 +284,7 @@ public final class LocalFileStorage implements FileStorage {
 				buf.clear();
 				buf = null;
 			} catch (Exception e) {
-				e.printStackTrace();
+				Logger.logException(e, LogLevel.ERROR);
 				return false;
 			} finally {
 				try {

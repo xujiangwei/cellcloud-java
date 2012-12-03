@@ -228,6 +228,8 @@ public class Speaker {
 			if (this.capacity.autoSuspend) {
 				this.state = SpeakerState.SUSPENDED;
 				this.fireSuspended(System.currentTimeMillis(), SuspendMode.PASSIVE);
+
+				TalkService.getInstance().markLostSpeaker(this);
 			}
 		}
 

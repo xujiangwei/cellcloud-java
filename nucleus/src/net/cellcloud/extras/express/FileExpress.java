@@ -44,7 +44,33 @@ import net.cellcloud.storage.FileStorage;
 import net.cellcloud.util.Util;
 
 /** 文件传输服务类。
+ * 
  * @author Jiangwei Xu
+ * 
+ * Upload 流程：
+ * C-S Auth
+ * S-C Auth
+ * C-S Attr
+ * S-C Attr
+ * C-S Begin
+ * S-C Begin
+ * C-S Data *
+ * S-C Data-Receipt *
+ * C-S End
+ * S-C End
+ * 
+ * Download 流程：
+ * C-S Auth
+ * S-C Auth
+ * C-S Attr
+ * S-C Attr
+ * C-S Begin
+ * S-C Begin
+ * C-S Offer
+ * S-C Data *
+ * C-S Data-Receipt *
+ * S-C End
+ * C-S End
  */
 public final class FileExpress extends MessageHandler implements ExpressTaskListener {
 
@@ -271,6 +297,10 @@ public final class FileExpress extends MessageHandler implements ExpressTaskList
 		}
 
 		FileExpressServoContext servoctx = this.servoContexts.get(authCode);
+		if (null == servoctx) {
+			return;
+		}
+
 		String filename = Util.bytes2String(packet.getSubsegment(1));
 
 		// 包格式：文件名|属性序列
@@ -310,7 +340,6 @@ public final class FileExpress extends MessageHandler implements ExpressTaskList
 				record = new SessionRecord();
 				this.sessionRecords.put(session.getId(), record);
 			}
-
 			record.addAuthCode(authCodeStr);
 		}
 
@@ -441,6 +470,7 @@ public final class FileExpress extends MessageHandler implements ExpressTaskList
 		Iterator<FileExpressServoContext> iter = this.servoContexts.values().iterator();
 		while (iter.hasNext()) {
 			FileExpressServoContext ctx = iter.next();
+			// 检查剩余时间，并删除过期的上下文
 			if (ctx.getRemainingTime() <= 0) {
 				iter.remove();
 			}

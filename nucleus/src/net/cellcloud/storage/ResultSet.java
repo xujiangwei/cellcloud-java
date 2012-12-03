@@ -119,44 +119,44 @@ public interface ResultSet {
 	*/
 	void updateChar(final String label, char value);
 
-	/**
+	/** 更新指定索引处整数值。
 	*/
 	void updateInt(int index, int value);
 
-	/**
+	/** 更新指定标签处整数值。
 	*/
 	void updateInt(final String label, int value);
 
-	/**
+	/** 更新指定索引处的长整型值。
 	*/
 	void updateLong(int index, long value);
 
-	/**
+	/** 更新指定标签处的长整型值。
 	*/
 	void updateLong(final String label, long value);
 
-	/**
+	/** 更新指定索引处的字符串型值。
 	*/
 	void updateString(int index, final String value);
 
-	/**
+	/** 更新指定标签处的字符串型值。
 	*/
 	void updateString(final String label, final String value);
 
-	/**
+	/** 更新指定索引处的布尔型值。
 	*/
 	void updateBool(int index, boolean value);
 
-	/**
+	/** 更新指定标签处的布尔型值。
 	*/
 	void updateBool(final String label, boolean value);
 
-	/**
+	/** 更新指定标签处的原始数据值。
 	*/
 	void updateRaw(final String label, byte[] src, int offset, int length)
 			throws StorageException;
 
-	/**
+	/** 更新指定标签处的原始数据值。
 	*/
 	void updateRaw(final String label, byte[] src, long offset, long length)
 			throws StorageException;

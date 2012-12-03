@@ -32,6 +32,17 @@ package net.cellcloud.storage;
  */
 public interface FileStorage extends Storage {
 
+	/// 文件名标签
+	public final static String LABEL_STRING_FILENAME = "filename";
+	/// 文件是否存在标签
+	public final static String LABEL_BOOL_EXIST = "exist";
+	/// 文件大小标签
+	public final static String LABEL_LONG_SIZE = "size";
+	/// 文件最后修改时间
+	public final static String LABEL_LONG_LASTMODIFIED = "lastModified";
+	/// 文件数据标签
+	public final static String LABEL_RAW_DATA = "data";
+
 	/** 创建读语句。
 	 */
 	public String createReadStatement(final String file);
