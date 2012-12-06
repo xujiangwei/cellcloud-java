@@ -36,6 +36,8 @@ import java.util.Queue;
 import java.util.Vector;
 import java.util.concurrent.ConcurrentHashMap;
 
+import net.cellcloud.common.Cryptology;
+import net.cellcloud.common.Logger;
 import net.cellcloud.common.Message;
 import net.cellcloud.common.NonblockingAcceptor;
 import net.cellcloud.common.Packet;
@@ -43,8 +45,6 @@ import net.cellcloud.common.Service;
 import net.cellcloud.common.Session;
 import net.cellcloud.core.Cellet;
 import net.cellcloud.core.CelletSandbox;
-import net.cellcloud.core.Cryptology;
-import net.cellcloud.core.Logger;
 import net.cellcloud.core.Nucleus;
 import net.cellcloud.core.NucleusContext;
 import net.cellcloud.exception.SingletonException;
@@ -299,6 +299,17 @@ public final class TalkService implements Service {
 		return (null != message);
 	}
 
+	/** 通知对端 Speaker 方言。
+	 */
+	public boolean notice(final String targetTag, final Dialect dialect,
+			final Cellet cellet, final CelletSandbox sandbox) {
+		Primitive primitive = dialect.translate(Nucleus.getInstance().getTagAsString());
+		if (null != primitive) {
+			return this.notice(targetTag, primitive, cellet, sandbox);
+		}
+		return false;
+	}
+
 	/** 申请调用 Cellet 服务。
 	 * 
 	 * @note Client
@@ -315,14 +326,22 @@ public final class TalkService implements Service {
 		if (null == this.speakers)
 			this.speakers = new ConcurrentHashMap<String, Speaker>();
 
-		if (this.speakers.containsKey(identifier))
-			return false;
+		Speaker speaker = null;
 
-		Speaker speaker = new Speaker(identifier, capacity);
+		if (this.speakers.containsKey(identifier)) {
+			// 检查 Lost 列表里是否有该 Speaker
+			speaker = this.speakers.get(identifier);
+			if (null != this.lostSpeakers && this.lostSpeakers.contains(speaker)) {
+				this.lostSpeakers.remove(speaker);
+			}
+		}
+		else {
+			speaker = new Speaker(identifier, capacity);
+			this.speakers.put(identifier, speaker);
+		}
+
+		// Call
 		speaker.call(address);
-
-		this.speakers.put(identifier, speaker);
-
 		return true;
 	}
 

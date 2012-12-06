@@ -33,8 +33,8 @@ import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
 import java.util.Iterator;
 
-import net.cellcloud.core.LogLevel;
-import net.cellcloud.core.Logger;
+import net.cellcloud.common.LogLevel;
+import net.cellcloud.common.Logger;
 import net.cellcloud.talk.Primitive;
 import net.cellcloud.talk.dialect.Dialect;
 import net.cellcloud.talk.dialect.DialectEnumerator;
@@ -529,7 +529,7 @@ public final class PrimitiveSerializer {
 
 		// 创建方言
 		Dialect dialect = DialectEnumerator.getInstance().createDialect(dialectName, tracker);
-		dialect.setTag(primitive.getOwnerTag());
+		dialect.setOwnerTag(primitive.getOwnerTag());
 
 		// 分析数据
 		dialect.build(primitive);

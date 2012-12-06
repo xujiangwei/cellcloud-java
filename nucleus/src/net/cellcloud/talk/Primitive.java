@@ -71,6 +71,13 @@ public class Primitive {
 		this.dialect = null;
 	}
 
+	/** 构造函数。 */
+	public Primitive(String ownerTag, Dialect dialect) {
+		this.ownerTag = ownerTag;
+		this.celletIdentifier = null;
+		this.dialect = dialect;
+	}
+
 	/** 返回原语所属端的标签。
 	*/
 	public String getOwnerTag() {
@@ -90,7 +97,7 @@ public class Primitive {
 
 	/** 判断是否具有方言属性。
 	 */
-	public boolean hasDialect() {
+	public boolean isDialectal() {
 		return (null != this.dialect);
 	}
 

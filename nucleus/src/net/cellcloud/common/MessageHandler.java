@@ -30,33 +30,33 @@ package net.cellcloud.common;
  * 
  * @author Jiangwei Xu
  */
-public abstract class MessageHandler {
+public interface MessageHandler {
 
 	/** 创建连接会话。
 	*/
-	public abstract void sessionCreated(Session session);
+	public void sessionCreated(Session session);
 	
 	/** 销毁连接会话。
 	*/
-	public abstract void sessionDestroyed(Session session);
+	public void sessionDestroyed(Session session);
 
 	/** 开启连接会话。
 	*/
-	public abstract void sessionOpened(Session session);
+	public void sessionOpened(Session session);
 
 	/** 关闭连接会话。
 	*/
-	public abstract void sessionClosed(Session session);
+	public void sessionClosed(Session session);
 
 	/** 接收到消息。
 	*/
-	public abstract void messageReceived(Session session, Message message);
+	public void messageReceived(Session session, Message message);
 
 	/** 消息已发送。
 	*/
-	public abstract void messageSent(Session session, Message message);
+	public void messageSent(Session session, Message message);
 
 	/** 发生错误。
 	*/
-	public abstract void errorOccurred(int errorCode, Session session);
+	public void errorOccurred(int errorCode, Session session);
 }

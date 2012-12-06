@@ -28,9 +28,9 @@ package net.cellcloud.talk;
 
 import java.io.ByteArrayInputStream;
 
+import net.cellcloud.common.Logger;
 import net.cellcloud.common.Packet;
 import net.cellcloud.common.Session;
-import net.cellcloud.core.Logger;
 import net.cellcloud.util.Util;
 
 /** Dialogue Command

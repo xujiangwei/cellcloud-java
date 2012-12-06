@@ -24,7 +24,7 @@ THE SOFTWARE.
 -----------------------------------------------------------------------------
 */
 
-package net.cellcloud.core;
+package net.cellcloud.http;
 
 import org.eclipse.jetty.util.log.Logger;
 
@@ -42,7 +42,7 @@ public class JettyLoggerPuppet implements org.eclipse.jetty.util.log.Logger {
 	}
 
 	@Override
-	public Logger getLogger(String arg0) {
+	public Logger getLogger(String name) {
 		return this;
 	}
 
@@ -53,7 +53,7 @@ public class JettyLoggerPuppet implements org.eclipse.jetty.util.log.Logger {
 
 	@Override
 	public void debug(Throwable throwable) {
-		net.cellcloud.core.Logger.d(this.getClass(), throwable.getMessage());
+		net.cellcloud.common.Logger.d(this.getClass(), throwable.getMessage());
 	}
 
 	@Override
@@ -65,19 +65,19 @@ public class JettyLoggerPuppet implements org.eclipse.jetty.util.log.Logger {
 				this.buffer.append(out);
 			}
 
-			net.cellcloud.core.Logger.d(this.getClass(), this.buffer.toString());
+			net.cellcloud.common.Logger.d(this.getClass(), this.buffer.toString());
 			this.buffer.delete(0, this.buffer.length());
 		}
 	}
 
 	@Override
 	public void debug(String format, Throwable throwable) {
-		net.cellcloud.core.Logger.d(this.getClass(), format);
+		net.cellcloud.common.Logger.d(this.getClass(), format);
 	}
 
 	@Override
 	public void info(Throwable throwable) {
-		net.cellcloud.core.Logger.i(this.getClass(), throwable.getMessage());
+		net.cellcloud.common.Logger.i(this.getClass(), throwable.getMessage());
 	}
 
 	@Override
@@ -89,19 +89,19 @@ public class JettyLoggerPuppet implements org.eclipse.jetty.util.log.Logger {
 				this.buffer.append(out);
 			}
 
-			net.cellcloud.core.Logger.i(this.getClass(), this.buffer.toString());
+			net.cellcloud.common.Logger.i(this.getClass(), this.buffer.toString());
 			this.buffer.delete(0, this.buffer.length());
 		}
 	}
 
 	@Override
 	public void info(String format, Throwable throwable) {
-		net.cellcloud.core.Logger.i(this.getClass(), format);
+		net.cellcloud.common.Logger.i(this.getClass(), format);
 	}
 
 	@Override
 	public void warn(Throwable throwable) {
-		net.cellcloud.core.Logger.w(this.getClass(), throwable.getMessage());
+		net.cellcloud.common.Logger.w(this.getClass(), throwable.getMessage());
 	}
 
 	@Override
@@ -113,18 +113,18 @@ public class JettyLoggerPuppet implements org.eclipse.jetty.util.log.Logger {
 				this.buffer.append(out);
 			}
 
-			net.cellcloud.core.Logger.w(this.getClass(), this.buffer.toString());
+			net.cellcloud.common.Logger.w(this.getClass(), this.buffer.toString());
 			this.buffer.delete(0, this.buffer.length());
 		}
 	}
 
 	@Override
 	public void warn(String format, Throwable throwable) {
-		net.cellcloud.core.Logger.w(this.getClass(), format);
+		net.cellcloud.common.Logger.w(this.getClass(), format);
 	}
 
 	@Override
-	public void ignore(Throwable arg0) {
+	public void ignore(Throwable throwable) {
 		// Nothing
 	}
 

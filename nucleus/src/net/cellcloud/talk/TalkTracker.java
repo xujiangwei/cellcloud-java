@@ -48,7 +48,7 @@ public final class TalkTracker {
 
 	public TalkTracker(String tag, InetSocketAddress address) {
 		this.tag = tag;
-		this.endpoint = new Endpoint(tag, NucleusConfig.Role.CONSUMER, address);
+		this.endpoint = new Endpoint(tag, NucleusConfig.Role.CONSUMER, address.getAddress());
 	}
 
 	/** 返回标签。

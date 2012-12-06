@@ -24,15 +24,26 @@ THE SOFTWARE.
 -----------------------------------------------------------------------------
 */
 
-package net.cellcloud.core;
+package net.cellcloud.common;
 
-/** 云图。
+/** 日志等级。
  * 
  * @author Jiangwei Xu
  */
-public final class CloudGraph {
+public final class LogLevel {
 
-	protected CloudGraph() {
+	// Debug
+	public final static byte DEBUG = 1;
+	
+	// Info
+	public final static byte INFO = 2;
+	
+	// Warning
+	public final static byte WARNING = 3;
+
+	// Error
+	public final static byte ERROR = 4;
+
+	private LogLevel() {
 	}
-
 }

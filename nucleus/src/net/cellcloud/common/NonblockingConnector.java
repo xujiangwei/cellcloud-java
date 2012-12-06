@@ -37,15 +37,12 @@ import java.util.Iterator;
 import java.util.Set;
 import java.util.Vector;
 
-import net.cellcloud.core.LogLevel;
-import net.cellcloud.core.Logger;
 
 /** 非阻塞式网络连接器。
  * 
  * @author Jiangwei Xu
  */
-public class NonblockingConnector extends MessageService implements
-	MessageConnector {
+public class NonblockingConnector extends MessageService implements MessageConnector {
 
 	protected static final int BLOCK = 8192;
 

@@ -32,8 +32,6 @@ import java.nio.channels.SelectionKey;
 import java.nio.channels.SocketChannel;
 import java.util.Vector;
 
-import net.cellcloud.core.LogLevel;
-import net.cellcloud.core.Logger;
 
 /** 非阻塞网络接收器工作线程。
  * 

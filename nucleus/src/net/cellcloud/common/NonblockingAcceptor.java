@@ -37,15 +37,12 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
-import net.cellcloud.core.LogLevel;
-import net.cellcloud.core.Logger;
 
 /** 非阻塞网络接收器。
  * 
  * @author Jiangwei Xu
  */
-public class NonblockingAcceptor extends MessageService implements
-		MessageAcceptor {
+public class NonblockingAcceptor extends MessageService implements MessageAcceptor {
 
 	// 缓存数据块大小
 	protected static final int BLOCK = 8192;

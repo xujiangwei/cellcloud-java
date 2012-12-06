@@ -29,18 +29,18 @@ package net.cellcloud.talk;
 import java.util.LinkedList;
 import java.util.Queue;
 
+import net.cellcloud.common.LogLevel;
+import net.cellcloud.common.Logger;
 import net.cellcloud.common.Message;
 import net.cellcloud.common.MessageHandler;
 import net.cellcloud.common.Packet;
 import net.cellcloud.common.Session;
-import net.cellcloud.core.LogLevel;
-import net.cellcloud.core.Logger;
 
 /** Talk 服务句柄。
  * 
  * @author Jiangwei Xu
  */
-public final class TalkAcceptorHandler extends MessageHandler {
+public final class TalkAcceptorHandler implements MessageHandler {
 
 	private TalkService talkService;
 	private Queue<ServerDialogueCommand> dialogueCmdQueue;

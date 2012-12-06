@@ -29,6 +29,7 @@ package net.cellcloud.talk.dialect;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 
 import net.cellcloud.talk.Primitive;
 import net.cellcloud.talk.stuff.ObjectiveStuff;
@@ -57,15 +58,13 @@ public final class ActionDialect extends Dialect {
 			return null;
 		}
 
-		String name = null;
-		String value = null;
+		Primitive primitive = new Primitive(tag, this);
 
-		Primitive primitive = new Primitive(tag);
-
-		Iterator<String> iter = this.params.keySet().iterator();
+		Iterator<Map.Entry<String, String>> iter = this.params.entrySet().iterator();
 		while (iter.hasNext()) {
-			name = iter.next();
-			value = this.params.get(name);
+			Map.Entry<String, String> entry = iter.next();
+			String name = entry.getKey();
+			String value = entry.getValue();
 
 			SubjectStuff nameStuff = new SubjectStuff(name);
 			ObjectiveStuff valueStuff = new ObjectiveStuff(value);
@@ -75,8 +74,6 @@ public final class ActionDialect extends Dialect {
 
 		PredicateStuff actionStuff = new PredicateStuff(this.action);
 		primitive.commit(actionStuff);
-
-		primitive.capture(this);
 
 		return primitive;
 	}

@@ -30,8 +30,8 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.Queue;
 
-import net.cellcloud.core.LogLevel;
-import net.cellcloud.core.Logger;
+import net.cellcloud.common.LogLevel;
+import net.cellcloud.common.Logger;
 
 /** Talk Service 守护线程。
  * 
@@ -75,9 +75,9 @@ public final class TalkServiceDaemon extends Thread {
 			this.tickTime = System.currentTimeMillis();
 
 			++heartbeatCount;
-			if (heartbeatCount >= 30) {
+			if (heartbeatCount >= 60) {
 
-				// 30 秒一次心跳
+				// 60 秒一次心跳
 
 				if (null != service.speakers) {
 					Iterator<Speaker> iter = service.speakers.values().iterator();

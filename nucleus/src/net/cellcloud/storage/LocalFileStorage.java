@@ -36,8 +36,8 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
 
-import net.cellcloud.core.LogLevel;
-import net.cellcloud.core.Logger;
+import net.cellcloud.common.LogLevel;
+import net.cellcloud.common.Logger;
 import net.cellcloud.exception.StorageException;
 import net.cellcloud.util.Properties;
 

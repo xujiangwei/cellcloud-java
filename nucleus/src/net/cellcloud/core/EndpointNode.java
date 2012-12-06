@@ -26,59 +26,35 @@ THE SOFTWARE.
 
 package net.cellcloud.core;
 
-import java.io.PrintWriter;
-import java.io.StringWriter;
+import java.net.InetAddress;
+import java.util.zip.CRC32;
 
-/** 系统通用日志接口。
+import net.cellcloud.util.Util;
+
+/** 终端节点。
  * 
  * @author Jiangwei Xu
  */
-public final class Logger {
+public final class EndpointNode extends Endpoint {
 
-	/** 打印 DEBUG 级别日志。
+	private long hashCode;
+
+	/** 构造函数。
 	 */
-	public static void d(Class<?> clazz, String log) {
-		LoggerManager.getInstance().log(LogLevel.DEBUG, clazz.getName(), log);
+	public EndpointNode(int service, InetAddress addr) {
+		super(Nucleus.getInstance().getTag(), NucleusConfig.Role.NODE, addr);
+
+		String stay = new StringBuilder(addr.getHostAddress().toString())
+			.append(":").append(service).toString();
+		CRC32 crc = new CRC32();
+		crc.update(Util.string2Bytes(stay));
+		this.hashCode = crc.getValue();
+		crc = null;
 	}
 
-	/** 打印 INFO 级别日志。
+	/** 节点 Hash 值。
 	 */
-	public static void i(Class<?> clazz, String log) {
-		LoggerManager.getInstance().log(LogLevel.INFO, clazz.getName(), log);
-	}
-
-	/** 打印 WARNING 级别日志。
-	 */
-	public static void w(Class<?> clazz, String log) {
-		LoggerManager.getInstance().log(LogLevel.WARNING, clazz.getName(), log);
-	}
-
-	/** 打印 ERROR 级别日志。
-	 */
-	public static void e(Class<?> clazz, String log) {
-		LoggerManager.getInstance().log(LogLevel.ERROR, clazz.getName(), log);
-	}
-
-	/** 日志管理器是否设置为 DEBUG 等级。
-	 */
-	public static boolean isDebugLevel() {
-		return (LoggerManager.getInstance().getLevel() == LogLevel.DEBUG);
-	}
-
-	/** 记录异常。
-	 */
-	public static void logException(Exception e, byte level) {
-		if (LoggerManager.getInstance().getLevel() > level) {
-			return;
-		}
-
-		try {
-			StringWriter sw = new StringWriter();
-			PrintWriter pw = new PrintWriter(sw);
-			e.printStackTrace(pw);
-			LoggerManager.getInstance().log(level, "Exception catched:", sw.toString());
-		} catch (Exception ie) {
-			// Nothing
-		}
+	public long getHashCode() {
+		return this.hashCode;
 	}
 }

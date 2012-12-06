@@ -30,12 +30,12 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.net.InetSocketAddress;
 
+import net.cellcloud.common.Cryptology;
+import net.cellcloud.common.Logger;
 import net.cellcloud.common.Message;
 import net.cellcloud.common.NonblockingConnector;
 import net.cellcloud.common.Packet;
 import net.cellcloud.common.Session;
-import net.cellcloud.core.Cryptology;
-import net.cellcloud.core.Logger;
 import net.cellcloud.core.Nucleus;
 import net.cellcloud.util.Util;
 
@@ -229,6 +229,7 @@ public class Speaker {
 				this.state = SpeakerState.SUSPENDED;
 				this.fireSuspended(System.currentTimeMillis(), SuspendMode.PASSIVE);
 
+				// 自动重连
 				TalkService.getInstance().markLostSpeaker(this);
 			}
 		}
@@ -307,9 +308,9 @@ public class Speaker {
 			if (newCapacity.autoSuspend != this.capacity.autoSuspend
 				|| newCapacity.suspendDuration != this.capacity.suspendDuration) {
 				StringBuilder buf = new StringBuilder();
-				buf.append("Talk capacity has changed from ");
+				buf.append("Talk capacity has changed from '");
 				buf.append(this.celletIdentifier);
-				buf.append(" : AutoSuspend=");
+				buf.append("' : AutoSuspend=");
 				buf.append(newCapacity.autoSuspend);
 				buf.append(" SuspendDuration=");
 				buf.append(newCapacity.suspendDuration);

@@ -2,7 +2,7 @@
 -----------------------------------------------------------------------------
 This source file is part of Cell Cloud.
 
-Copyright (c) 2009-2012 Cell Cloud Team (cellcloudproject@gmail.com)
+Copyright (c) 2009-2013 Cell Cloud Team (cellcloudproject@gmail.com)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -24,33 +24,12 @@ THE SOFTWARE.
 -----------------------------------------------------------------------------
 */
 
-package net.cellcloud.adapter;
+package net.cellcloud.core;
 
-/** 适配器管理器。
+/** 节点连接图通信模块。
  * 
  * @author Jiangwei Xu
  */
-public final class AdapterManager {
+public final class ClusterProtocol {
 
-	private final static AdapterManager instance = new AdapterManager();
-
-	private AdapterManager() {
-		
-	}
-
-	public synchronized static AdapterManager getInstance() {
-		return AdapterManager.instance;
-	}
-
-	public RelationNucleusAdapter getAdapter() {
-		return null;
-	}
-
-	public void addAdapter(RelationNucleusAdapter adapter) {
-		
-	}
-
-	public void removeAdapter(RelationNucleusAdapter adapter) {
-		
-	}
 }

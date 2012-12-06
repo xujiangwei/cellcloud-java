@@ -31,9 +31,9 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 
+import net.cellcloud.common.LogLevel;
+import net.cellcloud.common.Logger;
 import net.cellcloud.common.Service;
-import net.cellcloud.core.LogLevel;
-import net.cellcloud.core.Logger;
 import net.cellcloud.core.NucleusContext;
 import net.cellcloud.exception.SingletonException;
 
@@ -59,6 +59,9 @@ public final class HttpService implements Service {
 			throws SingletonException {
 		if (null == HttpService.instance) {
 			HttpService.instance = this;
+
+			// 设置 Jetty 的日志傀儡
+			org.eclipse.jetty.util.log.Log.setLog(new JettyLoggerPuppet());
 
 			this.server = new Server();
 			this.handler = new JettyHandler(HttpService.instance);

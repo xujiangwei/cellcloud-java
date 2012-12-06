@@ -60,23 +60,11 @@ public final class ActionDialectFactory extends DialectFactory {
 			this.executor = Executors.newCachedThreadPool();
 		}
 
-		this.executor.execute(new ActionTask() {
+		this.executor.execute(new Runnable() {
 			@Override
 			public void run() {
 				delegate.doAction(dialect);
 			}
 		});
-	}
-
-	/** 动作任务。
-	*/
-	protected class ActionTask implements Runnable {
-
-		public ActionTask() {
-		}
-
-		@Override
-		public void run() {
-		}
 	}
 }

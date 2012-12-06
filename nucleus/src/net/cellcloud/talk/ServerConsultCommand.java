@@ -26,10 +26,10 @@ THE SOFTWARE.
 
 package net.cellcloud.talk;
 
+import net.cellcloud.common.Logger;
 import net.cellcloud.common.Message;
 import net.cellcloud.common.Packet;
 import net.cellcloud.common.Session;
-import net.cellcloud.core.Logger;
 import net.cellcloud.util.Util;
 
 /** Consult Command

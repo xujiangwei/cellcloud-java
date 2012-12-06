@@ -28,7 +28,7 @@ package net.cellcloud.talk.dialect;
 
 import net.cellcloud.talk.Primitive;
 
-/** 原语方言
+/** 原语方言。
  * 
  * @author Jiangwei Xu
  */
@@ -57,13 +57,13 @@ public abstract class Dialect {
 
 	/** 设置源标签。
 	 */
-	public void setTag(final String tag) {
+	public void setOwnerTag(final String tag) {
 		this.tag = tag;
 	}
 
 	/** 返回源标签。
 	 */
-	public String getTag() {
+	public String getOwnerTag() {
 		return this.tag;
 	}
 

@@ -26,19 +26,19 @@ THE SOFTWARE.
 
 package net.cellcloud.talk;
 
+import net.cellcloud.common.Logger;
 import net.cellcloud.common.Message;
 import net.cellcloud.common.MessageErrorCode;
 import net.cellcloud.common.MessageHandler;
 import net.cellcloud.common.Packet;
 import net.cellcloud.common.Session;
-import net.cellcloud.core.Logger;
 import net.cellcloud.util.Util;
 
 /** Speaker 连接处理器。
  * 
  * @author Jiangwei Xu
  */
-public final class SpeakerConnectorHandler extends MessageHandler {
+public final class SpeakerConnectorHandler implements MessageHandler {
 
 	private Speaker speaker;
 

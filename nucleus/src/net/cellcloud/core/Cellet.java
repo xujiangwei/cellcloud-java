@@ -28,6 +28,7 @@ package net.cellcloud.core;
 
 import net.cellcloud.talk.Primitive;
 import net.cellcloud.talk.TalkService;
+import net.cellcloud.talk.dialect.Dialect;
 
 /** Cellet 管理单元。
  * 
@@ -54,13 +55,17 @@ public abstract class Cellet {
 	/** 发送原语到消费端进行会话。
 	 */
 	public void talk(final String targetTag, final Primitive primitive) {
-		// 发送原语到指定的终端
 		TalkService.getInstance().notice(targetTag, primitive, this, this.sandbox);
+	}
+	/** 发送方言到消费端进行会话。
+	 */
+	public void talk(final String targetTag, final Dialect dialect) {
+		TalkService.getInstance().notice(targetTag, dialect, this, this.sandbox);
 	}
 
 	/** 进行激活前准备。
 	 */
-	protected void prepare() {
+	protected final void prepare() {
 		Nucleus.getInstance().prepareCellet(this, this.sandbox);
 	}
 

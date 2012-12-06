@@ -2,7 +2,7 @@
 -----------------------------------------------------------------------------
 This source file is part of Cell Cloud.
 
-Copyright (c) 2009-2012 Cell Cloud Team (cellcloudproject@gmail.com)
+Copyright (c) 2009-2013 Cell Cloud Team (cellcloudproject@gmail.com)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -24,19 +24,16 @@ THE SOFTWARE.
 -----------------------------------------------------------------------------
 */
 
-package net.cellcloud.talk.dialect;
+package net.cellcloud.extras.adapter.shrmem;
 
-/** 方言工厂。
+/** 内存虚节点。
  * 
  * @author Jiangwei Xu
  */
-public abstract class DialectFactory {
+public class MemoryVirtualNode {
 
-	/** 返回元数据。
-	 */
-	abstract public DialectMetaData getMetaData();
+	protected long hashCode;
 
-	/** 创建方言。
-	 */
-	abstract public Dialect create(final String tracker);
+	public MemoryVirtualNode() {
+	}
 }

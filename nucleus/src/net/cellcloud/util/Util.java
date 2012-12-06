@@ -32,8 +32,8 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Random;
 
-import net.cellcloud.core.LogLevel;
-import net.cellcloud.core.Logger;
+import net.cellcloud.common.LogLevel;
+import net.cellcloud.common.Logger;
 
 /** 实用函数库。
  * 
@@ -119,5 +119,16 @@ public final class Util {
 	public static boolean isWindowsOS() {
 		String os = System.getProperties().getProperty("os.name");
 		return os.startsWith("Win") || os.startsWith("win");
+	}
+
+	/** 生成字符串的 Hash 编码。
+	 */
+	public static int hashCode(String string) {
+		int h = 0;
+		byte[] bytes = string.getBytes(Charset.forName("UTF-8"));
+		for (byte b : bytes) {
+			h = 31*h + b;
+		}
+		return h;
 	}
 }

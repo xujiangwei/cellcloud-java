@@ -26,8 +26,8 @@ THE SOFTWARE.
 
 package net.cellcloud.storage;
 
-import net.cellcloud.core.LogLevel;
-import net.cellcloud.core.Logger;
+import net.cellcloud.common.LogLevel;
+import net.cellcloud.common.Logger;
 import net.cellcloud.exception.StorageException;
 import net.cellcloud.storage.LocalFileStorage.ChunkBuffer;
 import net.cellcloud.storage.LocalFileStorage.FileWrapper;

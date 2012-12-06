@@ -26,13 +26,13 @@ THE SOFTWARE.
 
 package net.cellcloud.extras.express;
 
+import net.cellcloud.common.LogLevel;
+import net.cellcloud.common.Logger;
 import net.cellcloud.common.Message;
 import net.cellcloud.common.MessageHandler;
 import net.cellcloud.common.NonblockingConnector;
 import net.cellcloud.common.Packet;
 import net.cellcloud.common.Session;
-import net.cellcloud.core.LogLevel;
-import net.cellcloud.core.Logger;
 import net.cellcloud.exception.StorageException;
 import net.cellcloud.storage.LocalFileProperties;
 import net.cellcloud.storage.LocalFileStorage;
@@ -44,7 +44,7 @@ import net.cellcloud.util.Util;
  * 
  * @author Jiangwei Xu
  */
-public final class FileExpressTask extends MessageHandler implements Runnable {
+public final class FileExpressTask implements MessageHandler, Runnable {
 
 	/// 未知状态
 	protected final static int EXPRESS_STATE_UNKNOWN = 0;

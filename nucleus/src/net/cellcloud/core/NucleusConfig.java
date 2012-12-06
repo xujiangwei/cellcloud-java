@@ -34,7 +34,7 @@ public final class NucleusConfig {
 
 	/** 内核工作角色定义。
 	 */
-	public class Role {
+	public final class Role {
 
 		/// 计算。
 		/// 内核启动标准的 Talk 服务和 Cellet 管理器。
@@ -55,7 +55,7 @@ public final class NucleusConfig {
 
 	/** 设备平台。
 	 */
-	public class Device {
+	public final class Device {
 		/// 手机
 		public static final byte PHONE = 1;
 

@@ -2,7 +2,7 @@
 -----------------------------------------------------------------------------
 This source file is part of Cell Cloud.
 
-Copyright (c) 2009-2012 Cell Cloud Team (cellcloudproject@gmail.com)
+Copyright (c) 2009-2013 Cell Cloud Team (cellcloudproject@gmail.com)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -24,32 +24,18 @@ THE SOFTWARE.
 -----------------------------------------------------------------------------
 */
 
-package net.cellcloud.adapter;
+package net.cellcloud.extras.adapter.shrmem;
 
-public class RemoteTransmitterAdapter implements RelationNucleusAdapter {
+public class AbstractSharedObject implements SharedObject {
 
-	@Override
-	public String getName() {
-		// TODO Auto-generated method stub
-		return null;
+	public AbstractSharedObject() {
+		// TODO Auto-generated constructor stub
 	}
 
 	@Override
-	public void setup() {
+	public long getHashCode() {
 		// TODO Auto-generated method stub
-
-	}
-
-	@Override
-	public void teardown() {
-		// TODO Auto-generated method stub
-
-	}
-
-	@Override
-	public String getNucleusTag() {
-		// TODO Auto-generated method stub
-		return null;
+		return 0;
 	}
 
 }

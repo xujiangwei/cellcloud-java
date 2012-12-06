@@ -35,6 +35,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
+import net.cellcloud.common.Logger;
 import net.cellcloud.common.Message;
 import net.cellcloud.common.MessageHandler;
 import net.cellcloud.common.NonblockingAcceptor;
@@ -72,7 +73,7 @@ import net.cellcloud.util.Util;
  * S-C End
  * C-S End
  */
-public final class FileExpress extends MessageHandler implements ExpressTaskListener {
+public final class FileExpress implements MessageHandler, ExpressTaskListener {
 
 	private NonblockingAcceptor acceptor;
 
@@ -279,7 +280,41 @@ public final class FileExpress extends MessageHandler implements ExpressTaskList
 	}
 
 	private void responseOffer(final Session session, final Packet packet) {
+		// 包格式：授权码|文件名|文件操作起始位置
 		
+		if (packet.getSubsegmentNumber() < 3) {
+			return;
+		}
+
+		// 获取授权码
+		String authCode = Util.bytes2String(packet.getSubsegment(0));
+
+		// 验证 Session
+		if (false == checkSession(session, authCode)) {
+			reject(session);
+			return;
+		}
+
+		FileExpressServoContext servoctx = this.servoContexts.get(authCode);
+		if (null == servoctx) {
+			Logger.e(this.getClass(),
+					new StringBuilder("Can not find servo context with '").append(authCode).append("'").toString());
+			return;
+		}
+
+		// 包格式：授权码|文件名|数据起始位|数据结束位|数据
+
+		String filename = Util.bytes2String(packet.getSubsegment(1));
+		long offset = Long.parseLong(Util.bytes2String(packet.getSubsegment(2)));
+		byte[] fileData = servoctx.readFile(filename, offset, FileExpressDefinition.CHUNK_SIZE);
+		if (null == fileData) {
+			Logger.e(this.getClass(),
+					new StringBuilder("Read file error - file:'").append(filename).append("'").toString());
+			return;
+		}
+
+		Packet response = new Packet(FileExpressDefinition.PT_OFFER, 3, 1, 0);
+		response.appendSubsegment(packet.getSubsegment(0));
 	}
 
 	private void responseAttribute(final Session session, final Packet packet) {
@@ -291,6 +326,7 @@ public final class FileExpress extends MessageHandler implements ExpressTaskList
 		// 获取授权码
 		String authCode = Util.bytes2String(packet.getSubsegment(0));
 
+		// 验证 Session
 		if (false == checkSession(session, authCode)) {
 			reject(session);
 			return;

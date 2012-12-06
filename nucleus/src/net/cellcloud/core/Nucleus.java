@@ -38,6 +38,9 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 
+import net.cellcloud.adapter.RelationNucleusAdapter;
+import net.cellcloud.common.LogLevel;
+import net.cellcloud.common.Logger;
 import net.cellcloud.exception.CelletSandboxException;
 import net.cellcloud.exception.SingletonException;
 import net.cellcloud.http.HttpService;
@@ -55,14 +58,21 @@ public final class Nucleus {
 	private NucleusConfig config = null;
 	private NucleusContext context = null;
 
-	// 核心服务
+	// 集群网络控制
+	private ClusterController clusterController = null;
+
+	// Talk 服务
 	private TalkService talkService = null;
+	// Web 服务
 	private HttpService httpService = null;
 
 	// Cellet
 	private ConcurrentHashMap<String, ArrayList<String>> celletJarClasses = null;
 	private ConcurrentHashMap<String, Cellet> cellets = null;
 	private ConcurrentHashMap<String, CelletSandbox> sandboxes = null;
+
+	// RNA
+	private ConcurrentHashMap<String, RelationNucleusAdapter> adapters = null;
 
 	/** 构造函数。
 	 */
@@ -80,7 +90,6 @@ public final class Nucleus {
 				this.tag = new NucleusTag();
 
 			this.context = new NucleusContext();
-			this.talkService = new TalkService(this.context);
 		}
 		else {
 			throw new SingletonException(Nucleus.class.getName());
@@ -92,6 +101,10 @@ public final class Nucleus {
 		return Nucleus.instance;
 	}
 
+	/** 返回内核标签。 */
+	public NucleusTag getTag() {
+		return this.tag;
+	}
 	/** 返回内核标签。 */
 	public String getTagAsString() {
 		return this.tag.asString();
@@ -106,11 +119,19 @@ public final class Nucleus {
 	public boolean startup() {
 		Logger.i(Nucleus.class, "*-*-* Cell Initializing *-*-*");
 
-		// 设置 Jetty 的日志傀儡
-		org.eclipse.jetty.util.log.Log.setLog(new JettyLoggerPuppet());
-
 		// 角色：节点
 		if ((this.config.role & NucleusConfig.Role.NODE) != 0) {
+			// 启动集群控制器
+			if (null == this.clusterController) {
+				this.clusterController = new ClusterController();
+			}
+			if (this.clusterController.startup()) {
+				Logger.i(Nucleus.class, "Starting cluster controller service success.");
+			}
+			else {
+				Logger.e(Nucleus.class, "Starting cluster controller service failure.");
+			}
+
 			if (this.config.http) {
 				// 创建 Web Service
 				try {
@@ -120,12 +141,21 @@ public final class Nucleus {
 				}
 			}
 
+			try {
+				// 创建 Talk Service
+				if (null == this.talkService) {
+					this.talkService = new TalkService(this.context);
+				}
+			} catch (SingletonException e) {
+				Logger.logException(e, LogLevel.ERROR);
+			}
+
 			// 启动 Talk Service
 			if (this.talkService.startup()) {
 				Logger.i(Nucleus.class, "Starting talk service success.");
 			}
 			else {
-				Logger.i(Nucleus.class, "Starting talk service fail.");
+				Logger.e(Nucleus.class, "Starting talk service failure.");
 			}
 
 			// 加载外部 Jar 包
@@ -159,6 +189,11 @@ public final class Nucleus {
 
 		// 角色：节点
 		if ((this.config.role & NucleusConfig.Role.NODE) != 0) {
+			// 关闭集群服务
+			if (null != this.clusterController) {
+				this.clusterController.shutdown();
+			}
+
 			// 停止所有 Cellet
 			this.deactivateCellets();
 
@@ -177,7 +212,7 @@ public final class Nucleus {
 		}
 	}
 
-	/** 返回指定的 Cellet 。
+	/** 返回注册在该内核上的指定的 Cellet 。
 	 */
 	public Cellet getCellet(final String identifier, final NucleusContext context) {
 		if (null == this.cellets) {
@@ -239,6 +274,26 @@ public final class Nucleus {
 		}
 
 		return false;
+	}
+
+	/** TODO
+	 */
+	public RelationNucleusAdapter getAdapter(final String name) {
+		return null;
+	}
+
+	/** TODO
+	 */
+	public void addAdapter(RelationNucleusAdapter adapter) {
+		if (null == this.adapters) {
+			this.adapters = new ConcurrentHashMap<String, RelationNucleusAdapter>();
+		}
+	}
+
+	/** TODO
+	 */
+	public void removeAdapter(RelationNucleusAdapter adapter) {
+		
 	}
 
 	protected synchronized void prepareCellet(Cellet cellet, CelletSandbox sandbox) {

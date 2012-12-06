@@ -24,7 +24,7 @@ THE SOFTWARE.
 -----------------------------------------------------------------------------
 */
 
-package net.cellcloud.core;
+package net.cellcloud.common;
 
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;

@@ -24,19 +24,27 @@ THE SOFTWARE.
 -----------------------------------------------------------------------------
 */
 
-package net.cellcloud.talk.dialect;
+package net.cellcloud.common;
 
-/** 方言工厂。
+/** 日志操作器。
  * 
  * @author Jiangwei Xu
  */
-public abstract class DialectFactory {
+public interface LogHandle {
 
-	/** 返回元数据。
+	/** 记录 DEBUG 记录。
 	 */
-	abstract public DialectMetaData getMetaData();
+	public void logDebug(String tag, String log);
 
-	/** 创建方言。
+	/** 记录 INFO 记录。
 	 */
-	abstract public Dialect create(final String tracker);
+	public void logInfo(String tag, String log);
+
+	/** 记录 WARNING 记录。
+	 */
+	public void logWarning(String tag, String log);
+
+	/** 记录 ERROR 记录。
+	 */
+	public void logError(String tag, String log);
 }

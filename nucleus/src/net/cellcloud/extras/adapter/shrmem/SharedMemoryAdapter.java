@@ -2,7 +2,7 @@
 -----------------------------------------------------------------------------
 This source file is part of Cell Cloud.
 
-Copyright (c) 2009-2012 Cell Cloud Team (cellcloudproject@gmail.com)
+Copyright (c) 2009-2013 Cell Cloud Team (cellcloudproject@gmail.com)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -24,19 +24,46 @@ THE SOFTWARE.
 -----------------------------------------------------------------------------
 */
 
-package net.cellcloud.talk.dialect;
+package net.cellcloud.extras.adapter.shrmem;
 
-/** 方言工厂。
+import java.util.LinkedList;
+
+import net.cellcloud.adapter.RelationNucleusAdapter;
+import net.cellcloud.util.BTree;
+
+/** 共享内存适配器。
  * 
  * @author Jiangwei Xu
  */
-public abstract class DialectFactory {
+public final class SharedMemoryAdapter extends RelationNucleusAdapter {
 
-	/** 返回元数据。
-	 */
-	abstract public DialectMetaData getMetaData();
+	private static final SharedMemoryAdapter instance = new SharedMemoryAdapter();
 
-	/** 创建方言。
+	private BTree<Long, MemoryVirtualNode> nodes;
+	private LinkedList<MemoryVirtualNode> nodeRing;
+
+	private SharedMemoryAdapter() {
+		super("SharedMemoryAdapter");
+		this.nodes = new BTree<Long, MemoryVirtualNode>();
+		this.nodeRing = new LinkedList<MemoryVirtualNode>();
+	}
+
+	public synchronized static SharedMemoryAdapter getInstance() {
+		return SharedMemoryAdapter.instance;
+	}
+
+	@Override
+	public void setup() {
+	}
+
+	@Override
+	public void teardown() {
+	}
+
+	/** TODO
 	 */
-	abstract public Dialect create(final String tracker);
+	public void addNode(MemoryVirtualNode node) {
+		this.nodes.put(node.hashCode, node);
+		this.nodeRing.add(node);
+	}
 }
