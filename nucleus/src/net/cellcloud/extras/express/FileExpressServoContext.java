@@ -46,16 +46,12 @@ public final class FileExpressServoContext {
 	private ExpressAuthCode authCode;
 
 	private ConcurrentHashMap<String, FileAttribute> attributes;
-	private ConcurrentHashMap<String, FileExpressContext> contexts;
-	private ConcurrentHashMap<String, ResultSet> resultSetMap;
 
 	public FileExpressServoContext(ExpressAuthCode authCode, FileStorage storage) {
 		this.authCode = authCode;
 		this.storage = storage;
 		this.timestamp = System.currentTimeMillis();
 		this.attributes = new ConcurrentHashMap<String, FileAttribute>();
-		this.contexts = new ConcurrentHashMap<String, FileExpressContext>();
-		this.resultSetMap = new ConcurrentHashMap<String, ResultSet>();
 	}
 
 	public long getRemainingTime() {
@@ -72,77 +68,32 @@ public final class FileExpressServoContext {
 	public FileAttribute getAttribute(final String filename) {
 		FileAttribute attr = this.attributes.get(filename);
 		if (null == attr) {
-			ResultSet resultSet = null;
-			try {
-				resultSet = this.storage.store(this.storage.createReadStatement(
-						new StringBuilder(this.authCode.getContextPath()).append(filename).toString()));
-			} catch (StorageException e) {
-				Logger.logException(e, LogLevel.ERROR);
-			}
-			// 移动游标
-			resultSet.next();
-
+			ResultSet resultSet = createResultSet(filename);
 			attr = new FileAttribute(resultSet.getBool(FileStorage.LABEL_BOOL_EXIST));
 			if (attr.exist) {
 				// 文件存在则读取其他属性
 				attr.size = resultSet.getLong(FileStorage.LABEL_LONG_SIZE);
 				attr.lastModifyTime = new Date(resultSet.getLong(FileStorage.LABEL_LONG_LASTMODIFIED));
 			}
-
-			resultSet.close();
-
 			this.attributes.put(filename, attr);
+			resultSet.close();
 		}
 
 		return attr;
 	}
 
-	/** 读文件。
+	/** 创建结果集。
 	 */
-	public byte[] readFile(final String filename, final long offset, final long length) {
-		FileExpressContext ctx = null;
-		
-		// 获取对应的上下文
-		if (!this.contexts.containsKey(filename)) {
-			ctx = new FileExpressContext(this.authCode);
-			// 设置属性
-			ctx.setAttribute(this.attributes.get(filename));
-			this.contexts.put(filename, ctx);
-		}
-		else {
-			ctx = this.contexts.get(filename);
-		}
-
-		// 获取 ResultSet
+	private ResultSet createResultSet(final String filename) {
 		ResultSet resultSet = null;
-		if (!this.resultSetMap.containsKey(filename)) {
-			String statement = this.storage.createReadStatement(
-					new StringBuilder(this.authCode.getContextPath()).append(filename).toString());
-			try {
-				resultSet = this.storage.store(statement);
-				resultSet.next();
-			} catch (StorageException e) {
-				Logger.logException(e, LogLevel.ERROR);
-				return null;
-			}
+		try {
+			resultSet = this.storage.store(this.storage.createReadStatement(
+					new StringBuilder(this.authCode.getContextPath()).append(filename).toString()));
+		} catch (StorageException e) {
+			Logger.logException(e, LogLevel.ERROR);
 		}
-		else {
-			resultSet = this.resultSetMap.get(filename);
-		}
-
-		// 读文件数据
-		return resultSet.getRaw(FileStorage.LABEL_RAW_DATA, offset, length);
-	}
-
-	/** 返回指定文件的上下文。
-	 */
-	public FileExpressContext getContext(final String filename) {
-		return this.contexts.get(filename);
-	}
-
-	/** 关闭指定文件。
-	 */
-	public void closeFile(final String filename) {
-		// TODO
+		// 移动游标
+		resultSet.next();
+		return resultSet;
 	}
 }

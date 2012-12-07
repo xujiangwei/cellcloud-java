@@ -49,9 +49,9 @@ public class FileExpressContext {
 	public final static int EC_PACKET_ERROR = 5;
 	/// 存储器故障
 	public final static int EC_STORAGE_FAULT = 6;
+	/// 操作被中止
+	public final static int EC_ABORT = 9;
 
-	/// 文件伺服
-	protected final static int OP_SERVO = 0;
 	/// 文件上载
 	protected final static int OP_UPLOAD = 1;
 	/// 文件下载
@@ -72,9 +72,21 @@ public class FileExpressContext {
 
 	/** 用于伺服操作的构造函数。
 	 */
-	public FileExpressContext(ExpressAuthCode authCode) {
+	public FileExpressContext(ExpressAuthCode authCode,
+			String path, String file, int operate) {
 		this.authCode = authCode;
-		this.operate = OP_SERVO;
+		this.operate = operate;
+
+		this.fileName = file;
+		this.filePath = new String(path);
+		this.fullPath = new String(path);
+
+		if (!path.endsWith("\\")
+			&& !path.endsWith("/")) {
+			this.filePath += File.separator;
+			this.fullPath += File.separator;
+		}
+		this.fullPath += file;
 	}
 
 	/** 用于上载操作的构造函数。

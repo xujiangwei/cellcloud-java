@@ -169,7 +169,7 @@ public final class Packet {
 
 	/** 返回子段数量。
 	 */
-	public int getSubsegmentNumber() {
+	public int getSubsegmentCount() {
 		return this.subsegments.size();
 	}
 
@@ -195,7 +195,7 @@ public final class Packet {
 
 	/** 打包。 */
 	public static byte[] pack(Packet packet) {
-		int ssNum = packet.getSubsegmentNumber();
+		int ssNum = packet.getSubsegmentCount();
 
 		// 计算总长度
 		int bodyLength = (ssNum == 0 ? (null != packet.body ? packet.body.length : 0) : PSL_SUBSEGMENT_NUM + (ssNum * PSL_SUBSEGMENT_LENGTH));

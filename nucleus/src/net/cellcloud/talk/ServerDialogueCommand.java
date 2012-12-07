@@ -52,7 +52,7 @@ public final class ServerDialogueCommand extends ServerCommand {
 	public void execute() {
 		// 包格式：序列化的原语|源标签
 
-		if (this.packet.getSubsegmentNumber() < 2) {
+		if (this.packet.getSubsegmentCount() < 2) {
 			Logger.e(ServerDialogueCommand.class, "Dialogue packet format error");
 			return;
 		}

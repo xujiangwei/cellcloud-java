@@ -79,7 +79,7 @@ public final class NucleusConfig {
 	public byte device = Device.SERVER;
 
 	/// 是否使用 HTTP 服务
-	public boolean http = false;
+	public boolean httpd = false;
 
 	public NucleusConfig() {
 	}

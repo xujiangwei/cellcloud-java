@@ -132,7 +132,7 @@ public final class Nucleus {
 				Logger.e(Nucleus.class, "Starting cluster controller service failure.");
 			}
 
-			if (this.config.http) {
+			if (this.config.httpd) {
 				// 创建 Web Service
 				try {
 					this.httpService = new HttpService(this.context);

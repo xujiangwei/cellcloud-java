@@ -29,19 +29,22 @@ package net.cellcloud.extras.express;
 import java.io.File;
 import java.net.InetSocketAddress;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Iterator;
-import java.util.Vector;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
+import net.cellcloud.common.LogLevel;
 import net.cellcloud.common.Logger;
 import net.cellcloud.common.Message;
 import net.cellcloud.common.MessageHandler;
 import net.cellcloud.common.NonblockingAcceptor;
 import net.cellcloud.common.Packet;
 import net.cellcloud.common.Session;
+import net.cellcloud.exception.StorageException;
 import net.cellcloud.storage.FileStorage;
+import net.cellcloud.storage.ResultSet;
 import net.cellcloud.util.Util;
 
 /** 文件传输服务类。
@@ -264,25 +267,147 @@ public final class FileExpress implements MessageHandler, ExpressTaskListener {
 	}
 
 	private void responseData(final Session session, final Packet packet) {
-		
+		// 包格式：授权码|文件名|数据起始位|数据结束位|数据
+		if (packet.getSubsegmentCount() != 5) {
+			Logger.w(this.getClass(), "Packet format error in responseData()");
+			return;
+		}
+
+		// 获取授权码
+		String authCode = Util.bytes2String(packet.getSubsegment(0));
+
+		// 验证 Session
+		if (false == checkSession(session, authCode)) {
+			reject(session);
+			return;
+		}
+
+		String filename = Util.bytes2String(packet.getSubsegment(1));
+		long start = Long.parseLong(Util.bytes2String(packet.getSubsegment(2)));
+		long end = Long.parseLong(Util.bytes2String(packet.getSubsegment(3)));
+		byte[] fileData = packet.getSubsegment(4);
+
+		// 保存数据
+		SessionRecord record = this.sessionRecords.get(session.getId());
+		if (record.writeFile(filename, fileData, start, end - start) > 0) {
+			// 包格式：文件名|数据进度
+			Packet response = new Packet(FileExpressDefinition.PT_DATA_RECEIPT, 6, 1, 0);
+			response.appendSubsegment(packet.getSubsegment(1));
+			response.appendSubsegment(packet.getSubsegment(3));
+			byte[] data = Packet.pack(packet);
+			Message message = new Message(data);
+			session.write(message);
+
+			FileExpressContext ctx = record.getContext(filename);
+			ctx.bytesLoaded = end;
+			this.expressProgress(ctx);
+		}
+		else {
+			FileExpressContext ctx = record.getContext(filename);
+			ctx.errorCode = FileExpressContext.EC_STORAGE_FAULT;
+			this.expressError(ctx);
+
+			// 服务器出错，关闭与该 Session 的连接
+			this.reject(session);
+		}
 	}
 
 	private void responseDataReceipt(final Session session, final Packet packet) {
-		
+		// 包格式：授权码|文件名|新数据进度
+		if (packet.getSubsegmentCount() < 3) {
+			Logger.w(this.getClass(), "Packet format error in responseDataReceipt()");
+			return;
+		}
+
+		// 获取授权码
+		String authCode = Util.bytes2String(packet.getSubsegment(0));
+
+		// 验证 Session
+		if (false == checkSession(session, authCode)) {
+			reject(session);
+			return;
+		}
+
+		SessionRecord record = this.sessionRecords.get(session.getId());
+
+		String filename = Util.bytes2String(packet.getSubsegment(1));
+		long offset = Long.parseLong(Util.bytes2String(packet.getSubsegment(2)));
+		// 读文件
+		byte[] fileData = record.readFile(filename, offset, FileExpressDefinition.CHUNK_SIZE);
+		if (null != fileData) {
+			long end = offset + fileData.length;
+
+			// 包格式：授权码|文件名|数据起始位|数据结束位|数据
+			Packet response = new Packet(FileExpressDefinition.PT_DATA, 5, 1, 0);
+			response.appendSubsegment(packet.getSubsegment(0));
+			response.appendSubsegment(packet.getSubsegment(1));
+			response.appendSubsegment(Util.string2Bytes(Long.toString(offset)));
+			response.appendSubsegment(Util.string2Bytes(Long.toString(end)));
+			response.appendSubsegment(fileData);
+			byte[] data = Packet.pack(response);
+			Message message = new Message(data);
+			session.write(message);
+
+			FileExpressContext ctx = record.getContext(filename);
+			ctx.bytesLoaded = end;
+			this.expressProgress(ctx);
+		}
+		else {
+			// 文件发送完毕
+
+			FileExpressContext ctx = record.getContext(filename);
+
+			// 包格式：文件名|文件长度
+			Packet response = new Packet(FileExpressDefinition.PT_END, 7, 1, 0);
+			response.appendSubsegment(packet.getSubsegment(0));
+			response.appendSubsegment(Util.string2Bytes(Long.toString(ctx.getAttribute().size())));
+			byte[] data = Packet.pack(response);
+			Message message = new Message(data);
+			session.write(message);
+		}
 	}
 
 	private void responseBegin(final Session session, final Packet packet) {
-		
+		// 包格式：授权码|文件名|文件长度|操作
+		if (packet.getSubsegmentCount() < 4) {
+			Logger.w(this.getClass(), "Packet format error in responseBegin()");
+			return;
+		}
+
+		// 获取授权码
+		String authCode = Util.bytes2String(packet.getSubsegment(0));
+
+		// 验证 Session
+		if (false == checkSession(session, authCode)) {
+			reject(session);
+			return;
+		}
+
+		SessionRecord record = this.sessionRecords.get(session.getId());
+		FileExpressServoContext ctx = this.servoContexts.get(authCode);
+
+		// 准备文件
+		String filename = Util.bytes2String(packet.getSubsegment(1));
+		long fileSize = Long.parseLong(Util.bytes2String(packet.getSubsegment(2)));
+		int operate = Integer.parseInt(Util.bytes2String(packet.getSubsegment(3)));
+		FileExpressContext fec = record.prepareFile(authCode, ctx.getAttribute(filename), filename, fileSize, operate);
+
+		// 包格式：文件名|文件长度
+		Packet response = new Packet(FileExpressDefinition.PT_BEGIN, 3, 1, 0);
+		response.appendSubsegment(packet.getSubsegment(1));
+		response.appendSubsegment(packet.getSubsegment(2));
+		byte[] data = Packet.pack(response);
+		Message message = new Message(data);
+		session.write(message);
+
+		// 回调-开始
+		this.expressStarted(fec);
 	}
 
 	private void responseEnd(final Session session, final Packet packet) {
-		
-	}
-
-	private void responseOffer(final Session session, final Packet packet) {
-		// 包格式：授权码|文件名|文件操作起始位置
-		
-		if (packet.getSubsegmentNumber() < 3) {
+		// 包结构：授权码|文件名|文件长度|操作
+		if (packet.getSubsegmentCount() < 4) {
+			Logger.w(this.getClass(), "Packet format error in responseEnd()");
 			return;
 		}
 
@@ -299,27 +424,81 @@ public final class FileExpress implements MessageHandler, ExpressTaskListener {
 		if (null == servoctx) {
 			Logger.e(this.getClass(),
 					new StringBuilder("Can not find servo context with '").append(authCode).append("'").toString());
+			reject(session);
 			return;
 		}
+
+		// 提取文件名
+		String filename = Util.bytes2String(packet.getSubsegment(1));
+
+		// 关闭对应的记录
+		SessionRecord record = this.sessionRecords.get(session.getId());
+		FileExpressContext ctx = record.closeFile(filename);
+
+		// 如果是上传，则向客户端回包
+		if (ctx.getOperate() == FileExpressContext.OP_UPLOAD) {
+			// 包格式：文件名|文件长度
+			Packet response = new Packet(FileExpressDefinition.PT_END, 7, 1, 0);
+			response.appendSubsegment(packet.getSubsegment(1));
+			response.appendSubsegment(packet.getSubsegment(2));
+			byte[] data = Packet.pack(response);
+			Message message = new Message(data);
+			session.write(message);
+		}
+
+		// 回调-完成
+		this.expressCompleted(ctx);
+	}
+
+	private void responseOffer(final Session session, final Packet packet) {
+		// 包格式：授权码|文件名|文件操作起始位置
+		if (packet.getSubsegmentCount() < 3) {
+			Logger.w(this.getClass(), "Packet format error in responseOffer()");
+			return;
+		}
+
+		// 获取授权码
+		String authCode = Util.bytes2String(packet.getSubsegment(0));
+
+		// 验证 Session
+		if (false == checkSession(session, authCode)) {
+			reject(session);
+			return;
+		}
+
+		SessionRecord record = this.sessionRecords.get(session.getId());
 
 		// 包格式：授权码|文件名|数据起始位|数据结束位|数据
 
 		String filename = Util.bytes2String(packet.getSubsegment(1));
 		long offset = Long.parseLong(Util.bytes2String(packet.getSubsegment(2)));
-		byte[] fileData = servoctx.readFile(filename, offset, FileExpressDefinition.CHUNK_SIZE);
+		byte[] fileData = record.readFile(filename, offset, FileExpressDefinition.CHUNK_SIZE);
 		if (null == fileData) {
 			Logger.e(this.getClass(),
 					new StringBuilder("Read file error - file:'").append(filename).append("'").toString());
 			return;
 		}
 
+		long end = offset + fileData.length;
+
 		Packet response = new Packet(FileExpressDefinition.PT_OFFER, 3, 1, 0);
 		response.appendSubsegment(packet.getSubsegment(0));
+		response.appendSubsegment(packet.getSubsegment(1));
+		response.appendSubsegment(packet.getSubsegment(2));
+		response.appendSubsegment(Util.string2Bytes(Long.toString(end)));
+		response.appendSubsegment(fileData);
+
+		byte[] data = Packet.pack(response);
+		if (data != null) {
+			Message message = new Message(data);
+			session.write(message);
+		}
 	}
 
 	private void responseAttribute(final Session session, final Packet packet) {
 		// 包格式：授权码|文件名
-		if (packet.getSubsegmentNumber() != 2) {
+		if (packet.getSubsegmentCount() != 2) {
+			Logger.w(this.getClass(), "Packet format error in responseAttribute()");
 			return;
 		}
 
@@ -376,7 +555,7 @@ public final class FileExpress implements MessageHandler, ExpressTaskListener {
 				record = new SessionRecord();
 				this.sessionRecords.put(session.getId(), record);
 			}
-			record.addAuthCode(authCodeStr);
+			record.addAuthCode(eac);
 		}
 
 		// 包格式：授权码能力描述
@@ -439,7 +618,7 @@ public final class FileExpress implements MessageHandler, ExpressTaskListener {
 		return false;
 	}
 
-	/** 终端传输。
+	/** 中断传输。
 	 */
 	private void interrupt(Session session) {
 		SessionRecord record = this.sessionRecords.get(session.getId());
@@ -450,18 +629,16 @@ public final class FileExpress implements MessageHandler, ExpressTaskListener {
 		// 移除 Session 记录
 		this.sessionRecords.remove(session.getId());
 
-		// 根据授权码查找到上下文
-		Vector<String> list = record.getAuthCodeList();
-		for (String ac : list) {
-			FileExpressServoContext ctx = this.servoContexts.get(ac);
-
-			// 关闭上下文里的文件
-			Vector<String> filenames = record.getFileNameList();
-			for (String fn : filenames) {
-				expressError(ctx.getContext(fn));
-				ctx.closeFile(fn);
-			}
+		// 回调-发生错误
+		Iterator<FileExpressContext> iter = record.getContextList().iterator();
+		while (iter.hasNext()) {
+			FileExpressContext ctx = iter.next();
+			ctx.errorCode = FileExpressContext.EC_ABORT;
+			this.expressError(ctx);
 		}
+
+		// 关闭对应记录上的所有文件
+		record.closeAllFiles();
 	}
 
 	@Override
@@ -499,7 +676,9 @@ public final class FileExpress implements MessageHandler, ExpressTaskListener {
 
 	@Override
 	public void errorOccurred(int errorCode, Session session) {
-		// TODO 错误处理
+		// 错误处理
+		Logger.e(this.getClass(), new StringBuilder("File express a session error occurred - code=")
+			.append(errorCode).append(" session=").append(session.getAddress().getAddress().getHostAddress()).toString());
 	}
 
 	private void maintainSevoContext() {
@@ -575,54 +754,145 @@ public final class FileExpress implements MessageHandler, ExpressTaskListener {
 
 	/** 会话工作记录
 	*/
-	protected class SessionRecord {
+	protected final class SessionRecord {
 
-		private Vector<String> authCodes;
-		private Vector<String> fileNames;
+		// Key: auth code string, value: express auth code instance
+		private ConcurrentHashMap<String, ExpressAuthCode> authCodes;
+		// Key: filename
+		private ConcurrentHashMap<String, FileExpressContext> contexts;
+		// Key: filename
+		private ConcurrentHashMap<String, ResultSet> resultSets;
 
 		protected SessionRecord() {
-			this.authCodes = new Vector<String>();
-			this.fileNames = new Vector<String>();
+			this.authCodes = new ConcurrentHashMap<String, ExpressAuthCode>();
+			this.contexts = new ConcurrentHashMap<String, FileExpressContext>();
+			this.resultSets = new ConcurrentHashMap<String, ResultSet>();
 		}
 
 		protected boolean containsAuthCode(final String authCode) {
-			return this.authCodes.contains(authCode);
+			return this.authCodes.containsKey(authCode);
 		}
 
-		protected Vector<String> getAuthCodeList() {
-			return this.authCodes;
+		protected void addAuthCode(final ExpressAuthCode authCode) {
+			this.authCodes.put(authCode.getCode(), authCode);
 		}
 
-		protected void addAuthCode(final String authCode) {
-			if (this.authCodes.contains(authCode)) {
-				return;
-			}
-
-			this.authCodes.add(authCode);
-		}
-
-		protected void removeAuthCode(final String authCode) {
-			if (this.authCodes.contains(authCode)) {
-				this.authCodes.remove(authCode);
+		protected void removeAuthCode(final ExpressAuthCode authCode) {
+			if (this.authCodes.containsKey(authCode.getCode())) {
+				this.authCodes.remove(authCode.getCode());
 			}
 		}
 
-		protected void addFileName(final String fileName) {
-			if (this.fileNames.contains(fileName)) {
-				return;
-			}
-
-			this.fileNames.add(fileName);
+		protected Collection<FileExpressContext> getContextList() {
+			return this.contexts.values();
 		}
 
-		protected void removeFileName(final String fileName) {
-			if (this.fileNames.contains(fileName)) {
-				this.fileNames.remove(fileName);
+		/** 返回指定文件的上下文。
+		 */
+		protected FileExpressContext getContext(final String filename) {
+			return this.contexts.get(filename);
+		}
+
+		/** 准备文件。
+		 */
+		protected FileExpressContext prepareFile(final String authCode, final FileAttribute attribute
+				, final String filename, final long fileSize, final int operate) {
+			// 创建对应的上下文
+			FileExpressContext ctx = null;
+			if (this.contexts.containsKey(filename)) {
+				ctx = this.contexts.get(filename);
+			}
+			else {
+				ExpressAuthCode ac = this.authCodes.get(authCode);
+				ctx = new FileExpressContext(ac, ac.getContextPath(), filename, operate);
+				// 设置属性
+				ctx.setAttribute(attribute);
+				this.contexts.put(filename, ctx);
+			}
+
+			if (operate == FileExpressContext.OP_UPLOAD) {
+				// 如果是上传操作，则更新文件大小
+				ResultSet rs = this.findOrCreateResultSet(filename);
+				rs.updateLong(FileStorage.LABEL_LONG_SIZE, fileSize);
+			}
+
+			// 设置总进度
+			ctx.bytesTotal = fileSize;
+
+			return ctx;
+		}
+
+		/** 关闭指定文件。
+		 */
+		protected FileExpressContext closeFile(final String filename) {
+			ResultSet resultSet = this.resultSets.get(filename);
+			if (null != resultSet) {
+				resultSet.close();
+				this.resultSets.remove(filename);
+			}
+
+			FileExpressContext ctx = this.contexts.get(filename);
+			this.contexts.remove(filename);
+			return ctx;
+		}
+
+		/** 读文件。
+		 */
+		protected byte[] readFile(final String filename, final long offset, final long length) {
+			// 获取 ResultSet
+			ResultSet resultSet = this.findOrCreateResultSet(filename);
+			// 读文件数据
+			return resultSet.getRaw(FileStorage.LABEL_RAW_DATA, offset, length);
+		}
+
+		/** 写文件。
+		 */
+		protected long writeFile(final String filename, byte[] data, final long offset,
+				final long length) {
+			// 获取 ResultSet
+			ResultSet resultSet = this.findOrCreateResultSet(filename);
+			// 写文件数据
+			try {
+				resultSet.updateRaw(FileStorage.LABEL_RAW_DATA, data, offset, length);
+				return length;
+			} catch (StorageException e) {
+				Logger.logException(e, LogLevel.ERROR);
+				return 0;
 			}
 		}
 
-		protected Vector<String> getFileNameList() {
-			return this.fileNames;
+		/** 关闭所有文件。
+		 */
+		protected void closeAllFiles() {
+			Iterator<ResultSet> iter = this.resultSets.values().iterator();
+			while (iter.hasNext()) {
+				ResultSet rs = iter.next();
+				rs.close();
+			}
+
+			this.contexts.clear();
+			this.resultSets.clear();
+		}
+
+		private ResultSet findOrCreateResultSet(final String filename) {
+			if (this.resultSets.containsKey(filename)) {
+				return this.resultSets.get(filename);
+			}
+			else {
+				ResultSet resultSet = null;
+				try {
+					FileExpressContext ctx = this.contexts.get(filename);
+					resultSet = mainStorage.store(mainStorage.createWriteStatement(ctx.getFullPath()));
+				} catch (StorageException e) {
+					Logger.logException(e, LogLevel.ERROR);
+					return null;
+				}
+				// 移动游标
+				resultSet.next();
+				// 记录
+				this.resultSets.put(filename, resultSet);
+				return resultSet;
+			}
 		}
 	}
 }
