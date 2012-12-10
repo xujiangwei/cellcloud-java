@@ -26,7 +26,7 @@ THE SOFTWARE.
 
 package net.cellcloud.core;
 
-import java.net.InetAddress;
+import java.net.InetSocketAddress;
 
 /** 终端节点。
  * 
@@ -40,7 +40,7 @@ public class Endpoint {
 
 	/** 构造函数。
 	 */
-	public Endpoint(String tag, byte role, InetAddress address) {
+	public Endpoint(String tag, byte role, InetSocketAddress address) {
 		this.tag = new NucleusTag(tag);
 		this.role = role;
 		this.coordinate = new Coordinate(address);
@@ -48,7 +48,7 @@ public class Endpoint {
 
 	/** 构造函数。
 	 */
-	public Endpoint(NucleusTag tag, byte role, InetAddress address) {
+	public Endpoint(NucleusTag tag, byte role, InetSocketAddress address) {
 		this.tag = tag;
 		this.role = role;
 		this.coordinate = new Coordinate(address);
@@ -75,15 +75,15 @@ public class Endpoint {
 	/** 终端坐标。
 	 */
 	public class Coordinate {
-		private InetAddress address;
+		private InetSocketAddress address;
 
-		public Coordinate(InetAddress address) {
+		public Coordinate(InetSocketAddress address) {
 			this.address = address;
 		}
 
 		/** 返回访问地址。
 		 */
-		public InetAddress getAddress() {
+		public InetSocketAddress getAddress() {
 			return this.address;
 		}
 	}

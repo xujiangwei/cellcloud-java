@@ -111,6 +111,10 @@ public class NonblockingConnector extends MessageService implements MessageConne
 			Thread.yield();
 		}
 
+		// 状态初始化
+		this.readBuffer.clear();
+		this.writeBuffer.clear();
+		this.messages.clear();
 		this.address = address;
 
 		try {

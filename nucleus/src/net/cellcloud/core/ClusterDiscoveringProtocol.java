@@ -24,19 +24,34 @@ THE SOFTWARE.
 -----------------------------------------------------------------------------
 */
 
-package net.cellcloud.extras.adapter.shrmem;
+package net.cellcloud.core;
 
-/** 抽象共享对象。
+import java.util.Map;
+
+/** 发现协议。
  * 
  * @author Jiangwei Xu
  */
-public class AbstractSharedObject implements SharedObject {
+public class ClusterDiscoveringProtocol extends ClusterProtocol {
 
-	public AbstractSharedObject() {
+	public final static String NAME = "discovering";
+
+	// 动作
+	public final static String KEY_ACTION = "Action";
+
+	public final static String ACTION_PROBE = "Probe";
+
+	private String action;
+
+	public ClusterDiscoveringProtocol(Map<String, String> prop) {
+		super(ClusterDiscoveringProtocol.NAME);
+		this.action = prop.get(KEY_ACTION);
 	}
 
 	@Override
-	public long getHashCode() {
-		return 0;
+	public void stack(ClusterProtocolContext context) {
+		if (this.action.equalsIgnoreCase(ACTION_PROBE)) {
+			
+		}
 	}
 }

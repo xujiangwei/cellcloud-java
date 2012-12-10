@@ -26,6 +26,10 @@ THE SOFTWARE.
 
 package net.cellcloud.common;
 
+import java.nio.charset.Charset;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+
 /** 加解密库。
  * 
  * @author Jiangwei Xu
@@ -33,6 +37,9 @@ package net.cellcloud.common;
 public final class Cryptology {
 
 	private static final Cryptology instance = new Cryptology();
+
+	private static final char HEX_DIGITS[] = {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
+		'a', 'b', 'c', 'd', 'e', 'f'};
 
 	private Cryptology() {
 	}
@@ -105,5 +112,52 @@ public final class Cryptology {
 		}
 
 		return out;
+	}
+
+	/** 快速生成 Hash 编码。
+	 */
+	public long fastHash(String string) {
+		long h = 0;
+		byte[] bytes = string.getBytes(Charset.forName("UTF-8"));
+		for (byte b : bytes) {
+			h = 31*h + b;
+		}
+		return h;
+	}
+	/** 快速生成 Hash 编码。
+	 */
+	public long fastHash(byte[] input) {
+		long h = 0;
+		for (byte b : input) {
+			h = 31*h + b;
+		}
+		return h;
+	}
+
+	/** 生成 MD5 散列码。
+	 */
+	public byte[] hashWithMD5(byte[] input) {
+		byte[] bytes = null;
+		try {
+			MessageDigest md = MessageDigest.getInstance("MD5");
+			md.update(input);
+			bytes = md.digest();
+		} catch (NoSuchAlgorithmException e) {
+			Logger.logException(e, LogLevel.ERROR);
+		}
+		return bytes;
+	}
+	/** 生成 MD5 散列码。
+	 */
+	public String hashWithMD5AsString(byte[] input) {
+		byte[] md5 = this.hashWithMD5(input);
+		char[] str = new char[md5.length * 2];
+		int index = 0;
+		for (int i = 0, size = md5.length; i < size; ++i) {
+			byte b = md5[i];
+			str[index++] = HEX_DIGITS[b >> 4 & 0xF];
+			str[index++] = HEX_DIGITS[b & 0xF];
+		}
+		return new String(str);
 	}
 }

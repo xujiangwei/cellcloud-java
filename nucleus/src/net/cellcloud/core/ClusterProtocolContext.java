@@ -26,26 +26,23 @@ THE SOFTWARE.
 
 package net.cellcloud.core;
 
-/** 集群协议。
+import net.cellcloud.common.Session;
+
+/** 集群协议上下文。
  * 
  * @author Jiangwei Xu
  */
-public abstract class ClusterProtocol {
+public final class ClusterProtocolContext {
 
-	// 协议名
-	public final static String KEY_PROTOCOL = "Protocol";
+	protected Session session;
 
-	private String name;
-
-	public ClusterProtocol(String name) {
-		this.name = name;
+	public ClusterProtocolContext(Session session) {
+		this.session = session;
 	}
 
-	/** 返回协议名。
+	/** 返回对应的 Session
 	 */
-	public final String getName() {
-		return this.name;
+	public Session getSession() {
+		return this.session;
 	}
-
-	abstract public void stack(ClusterProtocolContext context);
 }

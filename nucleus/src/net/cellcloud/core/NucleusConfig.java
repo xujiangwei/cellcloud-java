@@ -26,6 +26,9 @@ THE SOFTWARE.
 
 package net.cellcloud.core;
 
+import java.net.InetAddress;
+import java.util.List;
+
 /** 内核参数配置描述。
  * 
  * @author Jiangwei Xu
@@ -80,6 +83,9 @@ public final class NucleusConfig {
 
 	/// 是否使用 HTTP 服务
 	public boolean httpd = false;
+
+	/// 集群地址表
+	public List<InetAddress> clusterAddressList = null;
 
 	public NucleusConfig() {
 	}

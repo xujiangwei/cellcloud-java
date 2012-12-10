@@ -26,26 +26,26 @@ THE SOFTWARE.
 
 package net.cellcloud.core;
 
-/** 集群协议。
+import java.util.Map;
+
+/** 协议工厂。
  * 
  * @author Jiangwei Xu
  */
-public abstract class ClusterProtocol {
+public final class ClusterProtocolFactory {
 
-	// 协议名
-	public final static String KEY_PROTOCOL = "Protocol";
-
-	private String name;
-
-	public ClusterProtocol(String name) {
-		this.name = name;
+	public ClusterProtocolFactory() {
 	}
 
-	/** 返回协议名。
+	/** 根据属性键值对创建协议。
 	 */
-	public final String getName() {
-		return this.name;
+	public ClusterProtocol create(Map<String, String> prop) {
+		String protocol = prop.get(ClusterProtocol.KEY_PROTOCOL);
+		if (protocol.equals(ClusterDiscoveringProtocol.NAME)) {
+			return new ClusterDiscoveringProtocol(prop);
+		}
+		else {
+			return null;
+		}
 	}
-
-	abstract public void stack(ClusterProtocolContext context);
 }

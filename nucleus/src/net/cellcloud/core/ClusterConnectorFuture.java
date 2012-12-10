@@ -24,19 +24,19 @@ THE SOFTWARE.
 -----------------------------------------------------------------------------
 */
 
-package net.cellcloud.extras.adapter.shrmem;
+package net.cellcloud.core;
 
-/** 抽象共享对象。
+/** 连接器状态追踪器。
  * 
  * @author Jiangwei Xu
  */
-public class AbstractSharedObject implements SharedObject {
+public final class ClusterConnectorFuture {
 
-	public AbstractSharedObject() {
-	}
+	protected String subject;
+	protected boolean started = false;
+	protected boolean completed = false;
 
-	@Override
-	public long getHashCode() {
-		return 0;
+	public ClusterConnectorFuture(String subject) {
+		this.subject = subject;
 	}
 }

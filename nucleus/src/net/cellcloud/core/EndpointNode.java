@@ -26,35 +26,62 @@ THE SOFTWARE.
 
 package net.cellcloud.core;
 
-import java.net.InetAddress;
-import java.util.zip.CRC32;
-
-import net.cellcloud.util.Util;
+import java.net.InetSocketAddress;
+import java.util.Vector;
 
 /** 终端节点。
  * 
  * @author Jiangwei Xu
  */
-public final class EndpointNode extends Endpoint {
+public final class EndpointNode extends Endpoint implements Comparable<EndpointNode> {
 
 	private long hashCode;
+	private Vector<EndpointNode> children;
+	private Vector<ClusterConnector> connectors;
 
 	/** 构造函数。
 	 */
-	public EndpointNode(int service, InetAddress addr) {
-		super(Nucleus.getInstance().getTag(), NucleusConfig.Role.NODE, addr);
-
-		String stay = new StringBuilder(addr.getHostAddress().toString())
-			.append(":").append(service).toString();
-		CRC32 crc = new CRC32();
-		crc.update(Util.string2Bytes(stay));
-		this.hashCode = crc.getValue();
-		crc = null;
+	public EndpointNode(long hash, InetSocketAddress address) {
+		super(Nucleus.getInstance().getTag(), NucleusConfig.Role.NODE, address);
+		this.hashCode = hash;
+		this.children = new Vector<EndpointNode>();
+		this.connectors = new Vector<ClusterConnector>();
 	}
 
 	/** 节点 Hash 值。
 	 */
 	public long getHashCode() {
 		return this.hashCode;
+	}
+
+	/** 添加子节点。
+	 */
+	public void addChild(EndpointNode node, ClusterConnector connector) {
+		if (!this.children.contains(node)) {
+			this.children.add(node);
+			this.connectors.add(connector);
+		}
+	}
+
+	@Override
+	public int compareTo(EndpointNode other) {
+		return (int)(this.hashCode - other.hashCode);
+	}
+
+	@Override
+	public int hashCode() {
+		return (int)this.hashCode;
+	}
+
+	@Override
+	public boolean equals(Object other) {
+		if (other instanceof EndpointNode) {
+			EndpointNode node = (EndpointNode)other;
+			if (node.hashCode == this.hashCode) {
+				return true;
+			}
+		}
+
+		return false;
 	}
 }

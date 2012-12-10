@@ -121,14 +121,42 @@ public final class Util {
 		return os.startsWith("Win") || os.startsWith("win");
 	}
 
-	/** 生成字符串的 Hash 编码。
+	/** 判断地址是否是 IPv4 格式。
 	 */
-	public static int hashCode(String string) {
-		int h = 0;
-		byte[] bytes = string.getBytes(Charset.forName("UTF-8"));
-		for (byte b : bytes) {
-			h = 31*h + b;
+	public static boolean isIPv4(String address) {
+		if (address.replaceAll("\\d", "").length() == 3) {
+			return true;
 		}
-		return h;
+		else {
+			return false;
+		}
+	}
+
+	/** 拆分 IPv4 地址。
+	 */
+	public static int[] splitIPv4Address(String ipAddress) {
+		String[] ipSplit = ipAddress.split("\\.");
+		int[] ip = new int[ipSplit.length];
+		if (ipSplit.length == 4) {
+			for (int i = 0; i < ipSplit.length; ++i) {
+				ip[i] = Integer.parseInt(ipSplit[i]);
+			}
+		}
+		return ip;  
+    }
+
+	/** 转换 IPv4 掩码为 IPv4 格式。
+	 */
+	public static int[] convertIPv4NetworkPrefixLength(short length) {
+		switch (length) {
+		case 8:
+			return new int[]{255, 0, 0, 0};
+		case 16:
+			return new int[]{255, 255, 0, 0};
+		case 24:
+			return new int[]{255, 255, 255, 0};
+		default:
+			return new int[]{255, 255, 255, 255};
+		}
 	}
 }

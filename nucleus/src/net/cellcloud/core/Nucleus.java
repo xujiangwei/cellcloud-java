@@ -55,7 +55,7 @@ public final class Nucleus {
 	private static Nucleus instance = null;
 
 	private NucleusTag tag = null;
-	private NucleusConfig config = null;
+	protected NucleusConfig config = null;
 	private NucleusContext context = null;
 
 	// 集群网络控制
@@ -84,10 +84,13 @@ public final class Nucleus {
 			this.config = config;
 
 			// 生成标签
-			if (null != config.tag)
+			if (null != config.tag) {
 				this.tag = new NucleusTag(config.tag);
-			else
+			}
+			else {
 				this.tag = new NucleusTag();
+				Logger.w(Nucleus.class, "Nucleus Warning: No nucleus tag setting, use random tag: " + this.tag.asString());
+			}
 
 			this.context = new NucleusContext();
 		}
@@ -124,6 +127,10 @@ public final class Nucleus {
 			// 启动集群控制器
 			if (null == this.clusterController) {
 				this.clusterController = new ClusterController();
+			}
+			// 添加集群地址
+			if (null != this.config.clusterAddressList) {
+				this.clusterController.addClusterAddress(this.config.clusterAddressList);
 			}
 			if (this.clusterController.startup()) {
 				Logger.i(Nucleus.class, "Starting cluster controller service success.");
