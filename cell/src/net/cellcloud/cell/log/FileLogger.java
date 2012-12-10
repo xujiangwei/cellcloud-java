@@ -33,8 +33,8 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.Date;
 
-import net.cellcloud.core.LogHandle;
-import net.cellcloud.core.LoggerManager;
+import net.cellcloud.common.LogHandle;
+import net.cellcloud.common.LoggerManager;
 import net.cellcloud.util.Util;
 
 /** 文件日志。

@@ -26,8 +26,8 @@ THE SOFTWARE.
 
 package net.cellcloud.cell.command;
 
-import net.cellcloud.core.LogHandle;
-import net.cellcloud.core.LoggerManager;
+import net.cellcloud.common.LogHandle;
+import net.cellcloud.common.LoggerManager;
 
 /** 日志操作命令。
  * 
@@ -55,7 +55,7 @@ public class LogCommand extends ConsoleCommand {
 		LoggerManager.getInstance().addHandle(this.logHandle);
 
 		this.state = ConsoleCommand.CCS_EXECUTING;
-		println("Input 'Q'/'q' and enter to stop print log.");
+		println("Enter 'Q'/'q' to stop print log.");
 		println("Print log text");
 
 		return true;
@@ -70,7 +70,7 @@ public class LogCommand extends ConsoleCommand {
 			println("\nStop print log to console screen.");
 		}
 		else {
-			println("Command 'log' : input 'Q'/'q' and enter to stop print log.");
+			println("Command 'log' : enter 'Q'/'q' to stop print log.");
 		}
 	}
 }

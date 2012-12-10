@@ -42,8 +42,8 @@ import javax.xml.parsers.ParserConfigurationException;
 
 import net.cellcloud.Version;
 import net.cellcloud.cell.log.FileLogger;
-import net.cellcloud.core.LogLevel;
-import net.cellcloud.core.Logger;
+import net.cellcloud.common.LogLevel;
+import net.cellcloud.common.Logger;
 import net.cellcloud.core.Nucleus;
 import net.cellcloud.core.NucleusConfig;
 import net.cellcloud.exception.SingletonException;
