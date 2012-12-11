@@ -28,6 +28,10 @@ package net.cellcloud.core;
 
 import java.util.Map;
 
+import net.cellcloud.common.Message;
+import net.cellcloud.common.NonblockingConnector;
+import net.cellcloud.common.Session;
+
 /** 发现协议。
  * 
  * @author Jiangwei Xu
@@ -36,22 +40,70 @@ public class ClusterDiscoveringProtocol extends ClusterProtocol {
 
 	public final static String NAME = "discovering";
 
-	// 动作
-	public final static String KEY_ACTION = "Action";
+	// 开启的服务端口。
+	public final static String KEY_PORT = "Port";
 
-	public final static String ACTION_PROBE = "Probe";
+	private int port;
+	private Map<String, String> prop;
 
-	private String action;
+	/**
+	 */
+	public ClusterDiscoveringProtocol(int port) {
+		super(ClusterDiscoveringProtocol.NAME);
+		this.port = port;
+	}
 
+	/**
+	 */
 	public ClusterDiscoveringProtocol(Map<String, String> prop) {
 		super(ClusterDiscoveringProtocol.NAME);
-		this.action = prop.get(KEY_ACTION);
+		this.prop = prop;
+	}
+
+	/** 返回协议内传输的标签。
+	 */
+	public String getTag() {
+		return this.prop.get(KEY_TAG);
+	}
+
+	/** 返回协议状态。
+	 */
+	public int getState() {
+		String szState = this.prop.get(KEY_STATE);
+		if (null != szState) {
+			return Integer.parseInt(szState);
+		}
+
+		return -1;
 	}
 
 	@Override
-	public void stack(ClusterProtocolContext context) {
-		if (this.action.equalsIgnoreCase(ACTION_PROBE)) {
-			
-		}
+	public void launch(NonblockingConnector connector) {
+		StringBuilder buf = new StringBuilder();
+		buf.append(KEY_PROTOCOL).append(": ").append(ClusterDiscoveringProtocol.NAME).append("\n");
+		buf.append(KEY_TAG).append(": ").append(Nucleus.getInstance().getTagAsString()).append("\n");
+		buf.append(KEY_DATE).append(": ").append(super.getStandardDate()).append("\n");
+		buf.append(KEY_PORT).append(": ").append(this.port).append("\n");
+		buf.append("\r\n\r\n");
+
+		Message message = new Message(buf.toString());
+		connector.write(message);
+
+		buf = null;
+	}
+
+	@Override
+	public void stackReject(Session session) {
+		StringBuilder buf = new StringBuilder();
+		buf.append(KEY_PROTOCOL).append(": ").append(ClusterDiscoveringProtocol.NAME).append("\n");
+		buf.append(KEY_TAG).append(": ").append(Nucleus.getInstance().getTagAsString()).append("\n");
+		buf.append(KEY_DATE).append(": ").append(super.getStandardDate()).append("\n");
+		buf.append(KEY_STATE).append(": ").append(ClusterProtocol.StateCode.REJECT).append("\n");
+		buf.append("\r\n\r\n");
+
+		Message message = new Message(buf.toString());
+		session.write(message);
+
+		buf = null;
 	}
 }

@@ -26,6 +26,12 @@ THE SOFTWARE.
 
 package net.cellcloud.core;
 
+import java.util.Date;
+
+import net.cellcloud.common.NonblockingConnector;
+import net.cellcloud.common.Session;
+import net.cellcloud.util.Util;
+
 /** 集群协议。
  * 
  * @author Jiangwei Xu
@@ -34,6 +40,12 @@ public abstract class ClusterProtocol {
 
 	// 协议名
 	public final static String KEY_PROTOCOL = "Protocol";
+	// 内核标签
+	public final static String KEY_TAG = "Tag";
+	// 本地时间
+	public final static String KEY_DATE = "Date";
+	// 状态
+	public final static String KEY_STATE = "State";
 
 	private String name;
 
@@ -47,5 +59,27 @@ public abstract class ClusterProtocol {
 		return this.name;
 	}
 
-	abstract public void stack(ClusterProtocolContext context);
+	/** 返回标准日期。
+	 */
+	public final String getStandardDate() {
+		return Util.sDateFormat.format(new Date());
+	}
+
+	/** 启动协议。
+	 */
+	abstract public void launch(NonblockingConnector connector);
+
+	/** 排斥处理。
+	 */
+	abstract public void stackReject(Session session);
+
+	/** 协议状态。
+	 */
+	public final class StateCode {
+		/// 拒绝操作
+		public final static int REJECT = 201;
+
+		private StateCode() {
+		}
+	}
 }

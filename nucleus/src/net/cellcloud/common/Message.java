@@ -42,6 +42,12 @@ public class Message {
 		this.data = data;
 	}
 
+	/** 构造函数。
+	 */
+	public Message(String data) {
+		this.data = data.getBytes(Charset.forName("UTF-8"));
+	}
+
 	/** 返回消息数据。
 	 */
 	public byte[] get() {

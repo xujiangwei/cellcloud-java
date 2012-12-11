@@ -187,16 +187,20 @@ public class NonblockingConnector extends MessageService implements MessageConne
 				running = false;
 
 				try {
-					if (null != channel)
-						channel.close();
-					if (null != selector)
+					if (null != selector && selector.isOpen())
 						selector.close();
+					if (null != channel && channel.isOpen())
+						channel.close();
+
+					channel = null;
 				} catch (IOException e) {
-					Logger.logException(e, LogLevel.DEBUG);
+					// Nothing
+					channel = null;
 				}
 			}
 		};
-		this.handleThread.setName("NonblockingConnector@" + this.address.getAddress().getHostAddress() + ":" + this.address.getPort());
+		this.handleThread.setName(new StringBuilder("NonblockingConnector[").append(this.handleThread).append("]@")
+			.append(this.address.getAddress().getHostAddress()).append(":").append(this.address.getPort()).toString());
 		// 启动线程
 		this.handleThread.start();
 
@@ -205,11 +209,17 @@ public class NonblockingConnector extends MessageService implements MessageConne
 
 	@Override
 	public void disconnect() {
-		if (null != this.channel) {
-			this.spinning = false;
+		this.spinning = false;
 
+		if (null != this.channel) {
 			if (this.channel.isConnected()) {
 				fireSessionClosed();
+			}
+
+			try {
+				this.channel.socket().close();
+			} catch (IOException sioe) {
+				Logger.logException(sioe, LogLevel.DEBUG);
 			}
 
 			try {
@@ -221,25 +231,28 @@ public class NonblockingConnector extends MessageService implements MessageConne
 			}
 		}
 
-		if (null != this.selector) {
-			if (this.selector.isOpen()) {
-				try {
-					this.selector.close();
-				} catch (IOException e) {
-					Logger.logException(e, LogLevel.DEBUG);
-				}
+		if (null != this.selector && this.selector.isOpen()) {
+			try {
+				this.selector.wakeup();
+				this.selector.close();
+			} catch (IOException e) {
+				Logger.logException(e, LogLevel.DEBUG);
 			}
 		}
 
+		int count = 0;
 		while (this.running) {
 			try {
 				Thread.sleep(10);
 			} catch (InterruptedException e) {
 				Logger.logException(e, LogLevel.DEBUG);
 			}
-		}
 
-		this.channel = null;
+			if (++count >= 300) {
+				this.handleThread.interrupt();
+				this.running = false;
+			}
+		}
 	}
 
 	@Override
@@ -307,12 +320,13 @@ public class NonblockingConnector extends MessageService implements MessageConne
 	}
 
 	/** 事件循环。 */
-	private void loopDispatch() throws IOException {
+	private void loopDispatch() throws Exception {
 		// 自旋
 		this.spinning = true;
 
 		while (this.spinning) {
-			while (this.selector.select(this.connectTimeout) > 0) {
+			while (this.selector.isOpen()
+					&& this.selector.select(this.channel.isConnected() ? 0 : this.connectTimeout) > 0) {
 				Set<SelectionKey> keys = this.selector.selectedKeys();
 				Iterator<SelectionKey> it = keys.iterator();
 				while (it.hasNext()) {
@@ -335,14 +349,15 @@ public class NonblockingConnector extends MessageService implements MessageConne
 				} //# while
 
 				try {
-					Thread.sleep(0);
+					if (!this.spinning) {
+						return;
+					}
+
+					Thread.sleep(1);
 				} catch (InterruptedException e) {
 					Logger.logException(e, LogLevel.DEBUG);
 				}
 			} //# while
-
-			Thread.yield();
-
 		} // # while
 	}
 
@@ -366,7 +381,7 @@ public class NonblockingConnector extends MessageService implements MessageConne
 				}
 
 				// 连接失败
-				fireErrorOccurred(MessageErrorCode.CONNECT_FAILED);
+				fireErrorOccurred(MessageErrorCode.CONNECT_TIMEOUT);
 				return false;
 			}
 

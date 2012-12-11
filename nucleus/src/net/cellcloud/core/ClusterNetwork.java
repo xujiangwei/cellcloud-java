@@ -58,7 +58,7 @@ import net.cellcloud.util.Util;
  */
 public final class ClusterNetwork extends Observable implements Service, MessageHandler {
 
-	protected final static int FIRST_PORT = 11099;
+	protected final static int PREFERRED_PORT = 11099;
 
 	private int port = -1;
 	private NonblockingAcceptor acceptor;
@@ -69,13 +69,11 @@ public final class ClusterNetwork extends Observable implements Service, Message
 	private boolean scanReachable = false;
 
 	private ConcurrentHashMap<Long, Queue<byte[]>> sessionMessageCache;
-	private ClusterProtocolFactory protocolFactory;
 
 	/** 构造函数。
 	 */
 	public ClusterNetwork() {
 		this.sessionMessageCache = new ConcurrentHashMap<Long, Queue<byte[]>>();
-		this.protocolFactory = new ClusterProtocolFactory();
 	}
 
 	@Override
@@ -87,7 +85,7 @@ public final class ClusterNetwork extends Observable implements Service, Message
 		this.interrupted = false;
 
 		// 检测可用的端口号
-		this.port = this.detectUsablePort(FIRST_PORT);
+		this.port = this.detectUsablePort(PREFERRED_PORT);
  
 		// 启动接收器
 		this.acceptor = new NonblockingAcceptor();
@@ -190,9 +188,9 @@ public final class ClusterNetwork extends Observable implements Service, Message
 
 	@Override
 	public void messageReceived(Session session, Message message) {
-		ByteBuffer buffer = this.processMessage(session, message);
+		ByteBuffer buffer = this.parseMessage(session, message);
 		if (null != buffer) {
-			this.distribute(session, buffer);
+			this.process(session, buffer);
 		}
 	}
 
@@ -206,9 +204,9 @@ public final class ClusterNetwork extends Observable implements Service, Message
 		// Nothing
 	}
 
-	/** 分发协议。
+	/** 处理解析后的数据。
 	 */
-	private void distribute(Session session, ByteBuffer buf) {
+	private void process(Session session, ByteBuffer buf) {
 		byte[] bytes = new byte[buf.limit()];
 		buf.get(bytes);
 		String str = Util.bytes2String(bytes);
@@ -216,19 +214,42 @@ public final class ClusterNetwork extends Observable implements Service, Message
 		HashMap<String, String> prop = new HashMap<String, String>();
 		for (int i = 0, size = array.length; i < size; ++i) {
 			String[] p = array[i].split(":");
-			prop.put(p[0], p[1]);
+			if (p.length < 2) {
+				continue;
+			}
+			prop.put(p[0].trim(), p[1].trim());
 		}
 
-		ClusterProtocolContext context = new ClusterProtocolContext(session);
-		ClusterProtocol protocol = this.protocolFactory.create(prop);
+		// 创建协议
+		ClusterProtocol protocol = ClusterProtocolFactory.create(prop);
 		if (null != protocol) {
-			protocol.stack(context);
+			// 处理具体协议逻辑
+			this.distribute(session, protocol);
+		}
+		else {
+			Logger.w(this.getClass(), new StringBuilder("Unknown protocol:\n").append(str).toString());
+		}
+	}
+
+	/** 分发协议。
+	 */
+	private void distribute(Session session, ClusterProtocol protocol) {
+		if (protocol instanceof ClusterDiscoveringProtocol) {
+			ClusterDiscoveringProtocol discovering = (ClusterDiscoveringProtocol)protocol;
+			String tag = discovering.getTag();
+			if (tag.equals(Nucleus.getInstance().getTagAsString())) {
+				// 标签相同是同一内核，不能与自己集群
+				discovering.stackReject(session);
+			}
+			else {
+				// TODO
+			}
 		}
 	}
 
 	/** 处理消息。
 	 */
-	private ByteBuffer processMessage(Session session, Message message) {
+	private ByteBuffer parseMessage(Session session, Message message) {
 		byte[] data = message.get();
 		// 判断数据是否结束
 		int endIndex = -1;
@@ -238,7 +259,7 @@ public final class ClusterNetwork extends Observable implements Service, Message
 				if (i + 3 < size
 					&& data[i+1] == '\n'
 					&& data[i+2] == '\r'
-					&& data[i+3] == 'n') {
+					&& data[i+3] == '\n') {
 					endIndex = i - 1;
 					break;
 				}
@@ -249,7 +270,7 @@ public final class ClusterNetwork extends Observable implements Service, Message
 			ByteBuffer buf = ByteBuffer.allocate(this.cacheSize);
 			Queue<byte[]> queue = this.sessionMessageCache.get(session.getId());
 			if (null != queue) {
-				for (int i = 0, size = queue.size(); i < size; ++i) {
+				while (!queue.isEmpty()) {
 					byte[] bytes = queue.poll();
 					buf.put(bytes);
 				}

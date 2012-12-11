@@ -30,13 +30,13 @@ package net.cellcloud.core;
  * 
  * @author Jiangwei Xu
  */
-public final class ClusterConnectorFuture {
+public final class ClusterConnectorSubject {
 
 	protected String subject;
-	protected boolean started = false;
 	protected boolean completed = false;
+	protected int state = 0;
 
-	public ClusterConnectorFuture(String subject) {
+	public ClusterConnectorSubject(String subject) {
 		this.subject = subject;
 	}
 }

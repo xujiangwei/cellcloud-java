@@ -29,6 +29,7 @@ package net.cellcloud.core;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Observable;
 import java.util.Observer;
@@ -82,7 +83,7 @@ public final class ClusterController implements Service, Observer {
 		if (null != this.timer) {
 			this.timer.cancel();
 		}
-		this.timer = new Timer();
+		this.timer = new Timer("ClusterControllerTimer");
 		this.timer.schedule(new TimerTask() {
 			@Override
 			public void run() {
@@ -90,7 +91,7 @@ public final class ClusterController implements Service, Observer {
 				network.scanNetwork();
 
 				// 定时器任务
-				timerTick();
+				timerHandle();
 			}
 		}, 10 * 1000, 5 * 60 * 1000);
 
@@ -105,6 +106,21 @@ public final class ClusterController implements Service, Observer {
 		}
 
 		this.network.shutdown();
+
+		// 清理连接器
+		Iterator<ClusterConnector> iter = this.discoveringConnectors.values().iterator();
+		while (iter.hasNext()) {
+			ClusterConnector c = iter.next();
+			c.closeConnector();
+		}
+		this.discoveringConnectors.clear();
+
+		Iterator<EndpointNode> niter = this.endpoints.values().iterator();
+		while (niter.hasNext()) {
+			EndpointNode node = niter.next();
+			node.closeAllConnectors();
+		}
+		this.endpoints.clear();
 	}
 
 	@Override
@@ -112,27 +128,8 @@ public final class ClusterController implements Service, Observer {
 		if (observable instanceof ClusterConnector) {
 			// 接收来自 ClusterConnector 的通知
 			ClusterConnector connector = (ClusterConnector)observable;
-			ClusterConnectorFuture future = (ClusterConnectorFuture)arg;
-			if (future.subject.equals(ClusterConnector.SUBJECT_DISCOVERING)) {
-				// 主题：发现
-				synchronized (this.monitor) {
-					if (future.completed) {
-						// 发现操作结束，成功发现
-						this.discoveringConnectors.remove(connector.getHashCode());
-						connector.deleteObserver(this);
-						long hash = connector.getHashCode();
-						// 挂接节点到根
-						EndpointNode node = new EndpointNode(hash, connector.getAddress());
-						this.root.addChild(node, connector);
-						this.endpoints.put(hash, node);
-					}
-					else {
-						// 发现操作终止，没有发现
-						this.discoveringConnectors.remove(connector.getHashCode());
-						connector.deleteObserver(this);
-					}
-				}
-			}
+			ClusterConnectorSubject subject = (ClusterConnectorSubject)arg;
+			this.update(connector, subject);
 		}
 	}
 
@@ -190,22 +187,41 @@ public final class ClusterController implements Service, Observer {
 				this.discoveringConnectors.put(hash, connector);
 			}
 			// 连接器执行发现协议
-			ClusterConnectorFuture future = connector.discover();
-			if (!future.started) {
+			if (!connector.discover(this.network.getPort())) {
 				this.discoveringConnectors.remove(hash);
 				connector.deleteObserver(this);
 			}
 		} // #for
 	}
 
-	private void timerTick() {
+	/** 对指定地址进行端口猜测并进行发现。
+	 */
+	private boolean guessDiscover(InetSocketAddress oldAddress) {
+		if (oldAddress.getPort() == ClusterNetwork.PREFERRED_PORT) {
+			// 首选端口的下一个端口号
+			InetSocketAddress newAddress = new InetSocketAddress(oldAddress.getAddress().getHostAddress(), ClusterNetwork.PREFERRED_PORT + 1);
+			Logger.i(this.getClass(), "Guess address " + newAddress.getAddress().getHostAddress() + ":" + newAddress.getPort()
+					+ " to discover.");
+			ArrayList<InetSocketAddress> list = new ArrayList<InetSocketAddress>();
+			list.add(newAddress);
+			// 执行发现
+			doDiscover(list);
+			return true;
+		}
+
+		return false;
+	}
+
+	/** 定时器操作。
+	 */
+	private void timerHandle() {
 		// 检查种子地址
 		synchronized (this.monitor) {
 			if (!this.seedAddressList.isEmpty()) {
 				ArrayList<InetSocketAddress> list = new ArrayList<InetSocketAddress>();
 				for (InetAddress address : this.seedAddressList) {
 					// 通过地址的散列码判断是否已经加入节点
-					InetSocketAddress sa = new InetSocketAddress(address, ClusterNetwork.FIRST_PORT);
+					InetSocketAddress sa = new InetSocketAddress(address, ClusterNetwork.PREFERRED_PORT);
 					Long hash = this.hashSocketAddress(sa);
 					if (!this.endpoints.containsKey(hash)) {
 						// 未加入集群的地址
@@ -215,6 +231,52 @@ public final class ClusterController implements Service, Observer {
 				if (!list.isEmpty()) {
 					doDiscover(list);
 				}
+			}
+		}
+	}
+
+	private void update(ClusterConnector connector, ClusterConnectorSubject subject) {
+		if (subject.subject.equals(ClusterConnector.SUBJECT_DISCOVERING)) {
+			// 主题：发现
+			synchronized (this.monitor) {
+				if (subject.completed) {
+					// 发现操作结束，成功发现
+					this.discoveringConnectors.remove(connector.getHashCode());
+					connector.deleteObserver(this);
+
+					long hash = connector.getHashCode();
+					// 挂接节点到根
+					EndpointNode node = new EndpointNode(hash, connector.getAddress());
+					this.root.addChild(node, connector);
+					this.endpoints.put(hash, node);
+
+					if (Logger.isDebugLevel()) {
+						Logger.d(this.getClass(), "Add cluster physical node: "
+								+ connector.getAddress().getAddress().getHostAddress() + ":"
+								+ connector.getAddress().getPort());
+					}
+				}
+				else {
+					// 发现操作终止，没有发现
+					this.discoveringConnectors.remove(connector.getHashCode());
+					connector.deleteObserver(this);
+
+					if (Logger.isDebugLevel()) {
+						Logger.d(this.getClass(), "No cluster Physical node: "
+								+ connector.getAddress().getAddress().getHostAddress() + ":"
+								+ connector.getAddress().getPort());
+					}
+				}
+			}
+		}
+		else if (subject.subject.equals(ClusterConnector.SUBJECT_FAILURE)) {
+			// 检查是否是正在执行发现协议
+			if (this.discoveringConnectors.containsKey(connector.getHashCode())) {
+				this.discoveringConnectors.remove(connector.getHashCode());
+				connector.deleteObserver(this);
+
+				// 尝试进行猜测发现
+				this.guessDiscover(connector.getAddress());
 			}
 		}
 	}

@@ -34,12 +34,12 @@ import java.util.Map;
  */
 public final class ClusterProtocolFactory {
 
-	public ClusterProtocolFactory() {
+	private ClusterProtocolFactory() {
 	}
 
 	/** 根据属性键值对创建协议。
 	 */
-	public ClusterProtocol create(Map<String, String> prop) {
+	public static ClusterProtocol create(Map<String, String> prop) {
 		String protocol = prop.get(ClusterProtocol.KEY_PROTOCOL);
 		if (protocol.equals(ClusterDiscoveringProtocol.NAME)) {
 			return new ClusterDiscoveringProtocol(prop);

@@ -63,6 +63,14 @@ public final class EndpointNode extends Endpoint implements Comparable<EndpointN
 		}
 	}
 
+	/** 关闭所有连接器。
+	 */
+	public void closeAllConnectors() {
+		for (ClusterConnector c : this.connectors) {
+			c.closeConnector();
+		}
+	}
+
 	@Override
 	public int compareTo(EndpointNode other) {
 		return (int)(this.hashCode - other.hashCode);
