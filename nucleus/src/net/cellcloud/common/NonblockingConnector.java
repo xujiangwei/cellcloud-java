@@ -440,6 +440,9 @@ public class NonblockingConnector extends MessageService implements MessageConne
 					Logger.logException(ce, LogLevel.DEBUG);
 				}
 
+				// 不能继续进行数据接收
+				this.spinning = false;
+
 				return;
 			}
 
