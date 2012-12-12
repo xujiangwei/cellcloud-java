@@ -168,9 +168,7 @@ public class Speaker {
 	*/
 	public void hangUp() {
 		if (null != this.connector) {
-			if (this.connector.isConnected()) {
-				this.connector.disconnect();
-			}
+			this.connector.disconnect();
 		}
 
 		this.state = SpeakerState.HANGUP;
