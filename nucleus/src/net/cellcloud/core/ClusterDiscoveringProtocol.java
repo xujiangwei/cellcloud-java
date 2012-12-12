@@ -28,8 +28,6 @@ package net.cellcloud.core;
 
 import java.util.Map;
 
-import net.cellcloud.common.Message;
-import net.cellcloud.common.NonblockingConnector;
 import net.cellcloud.common.Session;
 
 /** 发现协议。
@@ -46,14 +44,16 @@ public class ClusterDiscoveringProtocol extends ClusterProtocol {
 	private int port;
 	private Map<String, String> prop;
 
-	/**
+	private ClusterNode root;
+
+	/** 指定源端的端口创建协议。
 	 */
 	public ClusterDiscoveringProtocol(int port) {
 		super(ClusterDiscoveringProtocol.NAME);
 		this.port = port;
 	}
 
-	/**
+	/** 指定数据键值对创建协议。
 	 */
 	public ClusterDiscoveringProtocol(Map<String, String> prop) {
 		super(ClusterDiscoveringProtocol.NAME);
@@ -77,18 +77,34 @@ public class ClusterDiscoveringProtocol extends ClusterProtocol {
 		return -1;
 	}
 
+	/** 指定根节点。
+	 */
+	public void setRootNode(ClusterNode node) {
+		this.root = node;
+	}
+
 	@Override
-	public void launch(NonblockingConnector connector) {
+	public void launch(Session session) {
 		StringBuilder buf = new StringBuilder();
 		buf.append(KEY_PROTOCOL).append(": ").append(ClusterDiscoveringProtocol.NAME).append("\n");
 		buf.append(KEY_TAG).append(": ").append(Nucleus.getInstance().getTagAsString()).append("\n");
 		buf.append(KEY_DATE).append(": ").append(super.getStandardDate()).append("\n");
 		buf.append(KEY_PORT).append(": ").append(this.port).append("\n");
-		buf.append("\r\n\r\n");
 
-		Message message = new Message(buf.toString());
-		connector.write(message);
+		this.touch(session, buf);
+		buf = null;
+	}
 
+	@Override
+	public void stack(Session session) {
+		StringBuilder buf = new StringBuilder();
+		buf.append(KEY_PROTOCOL).append(": ").append(ClusterDiscoveringProtocol.NAME).append("\n");
+		buf.append(KEY_TAG).append(": ").append(Nucleus.getInstance().getTagAsString()).append("\n");
+		buf.append(KEY_DATE).append(": ").append(super.getStandardDate()).append("\n");
+		buf.append(KEY_STATE).append(": ").append(ClusterProtocol.StateCode.SUCCESS).append("\n");
+		buf.append(KEY_HASHCODE).append(": ").append(this.root.getHashCode()).append("\n");
+
+		this.touch(session, buf);
 		buf = null;
 	}
 
@@ -99,11 +115,8 @@ public class ClusterDiscoveringProtocol extends ClusterProtocol {
 		buf.append(KEY_TAG).append(": ").append(Nucleus.getInstance().getTagAsString()).append("\n");
 		buf.append(KEY_DATE).append(": ").append(super.getStandardDate()).append("\n");
 		buf.append(KEY_STATE).append(": ").append(ClusterProtocol.StateCode.REJECT).append("\n");
-		buf.append("\r\n\r\n");
 
-		Message message = new Message(buf.toString());
-		session.write(message);
-
+		this.touch(session, buf);
 		buf = null;
 	}
 }

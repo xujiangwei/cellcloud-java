@@ -28,7 +28,7 @@ package net.cellcloud.core;
 
 import java.util.Date;
 
-import net.cellcloud.common.NonblockingConnector;
+import net.cellcloud.common.Message;
 import net.cellcloud.common.Session;
 import net.cellcloud.util.Util;
 
@@ -46,8 +46,13 @@ public abstract class ClusterProtocol {
 	public final static String KEY_DATE = "Date";
 	// 状态
 	public final static String KEY_STATE = "State";
+	// 节点散列码
+	public final static String KEY_HASHCODE = "HashCode";
 
 	private String name;
+
+	// 上下文会话
+	protected Session contextSession;
 
 	public ClusterProtocol(String name) {
 		this.name = name;
@@ -67,15 +72,29 @@ public abstract class ClusterProtocol {
 
 	/** 启动协议。
 	 */
-	abstract public void launch(NonblockingConnector connector);
+	abstract public void launch(Session session);
 
-	/** 排斥处理。
+	/** 向指定 Session 回送执行结果。
+	 */
+	abstract public void stack(Session session);
+
+	/** 向指定 Session 回送拒绝。
 	 */
 	abstract public void stackReject(Session session);
+
+	/** 协议收尾处理。
+	 */
+	protected void touch(Session session, StringBuilder buffer) {
+		buffer.append("\r\n\r\n");
+		Message message = new Message(buffer.toString());
+		session.write(message);
+	}
 
 	/** 协议状态。
 	 */
 	public final class StateCode {
+		/// 成功
+		public final static int SUCCESS = 200;
 		/// 拒绝操作
 		public final static int REJECT = 201;
 

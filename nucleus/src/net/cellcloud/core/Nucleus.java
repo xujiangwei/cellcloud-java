@@ -113,7 +113,14 @@ public final class Nucleus {
 		return this.tag.asString();
 	}
 
-	/** 返回 Talk Service 实例。 */
+	/** 返回集群控制器实例。
+	 */
+	public ClusterController getClusterController() {
+		return this.clusterController;
+	}
+
+	/** 返回 Talk Service 实例。
+	 */
 	public TalkService getTalkService() {
 		return this.talkService;
 	}

@@ -234,17 +234,11 @@ public final class ClusterNetwork extends Observable implements Service, Message
 	/** 分发协议。
 	 */
 	private void distribute(Session session, ClusterProtocol protocol) {
-		if (protocol instanceof ClusterDiscoveringProtocol) {
-			ClusterDiscoveringProtocol discovering = (ClusterDiscoveringProtocol)protocol;
-			String tag = discovering.getTag();
-			if (tag.equals(Nucleus.getInstance().getTagAsString())) {
-				// 标签相同是同一内核，不能与自己集群
-				discovering.stackReject(session);
-			}
-			else {
-				// TODO
-			}
-		}
+		protocol.contextSession = session;
+
+		this.setChanged();
+		this.notifyObservers(protocol);
+		this.clearChanged();
 	}
 
 	/** 处理消息。

@@ -26,26 +26,27 @@ THE SOFTWARE.
 
 package net.cellcloud.core;
 
-import java.net.InetSocketAddress;
-import java.util.Vector;
+import java.util.Collection;
+import java.util.TreeMap;
 
-/** 终端节点。
+/** 集群节点。
  * 
  * @author Jiangwei Xu
  */
-public final class EndpointNode extends Endpoint implements Comparable<EndpointNode> {
+public final class ClusterNode extends Endpoint implements Comparable<ClusterNode> {
 
 	private long hashCode;
-	private Vector<EndpointNode> children;
-	private Vector<ClusterConnector> connectors;
+	private TreeMap<Long, ClusterNode> children;
+	private ClusterConnector connector;
 
 	/** 构造函数。
 	 */
-	public EndpointNode(long hash, InetSocketAddress address) {
-		super(Nucleus.getInstance().getTag(), NucleusConfig.Role.NODE, address);
+	public ClusterNode(long hash, ClusterConnector connector) {
+		super(Nucleus.getInstance().getTag(), NucleusConfig.Role.NODE
+				, null != connector ? connector.getAddress() : null);
 		this.hashCode = hash;
-		this.children = new Vector<EndpointNode>();
-		this.connectors = new Vector<ClusterConnector>();
+		this.children = new TreeMap<Long, ClusterNode>();
+		this.connector = connector;
 	}
 
 	/** 节点 Hash 值。
@@ -56,23 +57,46 @@ public final class EndpointNode extends Endpoint implements Comparable<EndpointN
 
 	/** 添加子节点。
 	 */
-	public void addChild(EndpointNode node, ClusterConnector connector) {
-		if (!this.children.contains(node)) {
-			this.children.add(node);
-			this.connectors.add(connector);
+	public void addChild(ClusterNode node) {
+		synchronized (this) {
+			if (!this.children.containsKey(node.getHashCode())) {
+				this.children.put(node.getHashCode(), node);
+			}
 		}
 	}
 
-	/** 关闭所有连接器。
+	/** 返回所有子节点。
 	 */
-	public void closeAllConnectors() {
-		for (ClusterConnector c : this.connectors) {
-			c.closeConnector();
+	public Collection<ClusterNode> getChildren() {
+		synchronized (this) {
+			return this.children.values();
 		}
+	}
+
+	/** 是否包含指定散列码的节点。
+	 */
+	public boolean contains(long hashCode) {
+		synchronized (this) {
+			return this.children.containsKey(hashCode);
+		}
+	}
+
+	/** 清空所有子节点。
+	 */
+	public void clear() {
+		synchronized (this) {
+			this.children.clear();
+		}
+	}
+
+	/** 关闭连接器。
+	 */
+	public void closeConnector() {
+		this.connector.close();
 	}
 
 	@Override
-	public int compareTo(EndpointNode other) {
+	public int compareTo(ClusterNode other) {
 		return (int)(this.hashCode - other.hashCode);
 	}
 
@@ -83,8 +107,8 @@ public final class EndpointNode extends Endpoint implements Comparable<EndpointN
 
 	@Override
 	public boolean equals(Object other) {
-		if (other instanceof EndpointNode) {
-			EndpointNode node = (EndpointNode)other;
+		if (other instanceof ClusterNode) {
+			ClusterNode node = (ClusterNode)other;
 			if (node.hashCode == this.hashCode) {
 				return true;
 			}

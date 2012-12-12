@@ -371,7 +371,7 @@ public class NonblockingConnector extends MessageService implements MessageConne
 			try {
 				channel.finishConnect();
 			} catch (IOException e) {
-				Logger.logException(e, LogLevel.DEBUG);
+				//Logger.logException(e, LogLevel.DEBUG);
 
 				try {
 					this.channel.close();

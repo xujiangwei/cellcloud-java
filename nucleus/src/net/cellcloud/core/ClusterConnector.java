@@ -82,7 +82,7 @@ public final class ClusterConnector extends Observable implements MessageHandler
 
 	/** 关闭连接。
 	 */
-	public void closeConnector() {
+	public void close() {
 		this.connector.disconnect();
 	}
 
@@ -91,7 +91,7 @@ public final class ClusterConnector extends Observable implements MessageHandler
 	public boolean discover(int selfPort) {
 		if (this.connector.isConnected()) {
 			ClusterDiscoveringProtocol protocol = new ClusterDiscoveringProtocol(selfPort);
-			protocol.launch(this.connector);
+			protocol.launch(this.connector.getSession());
 			return true;
 		}
 		else {
@@ -137,7 +137,7 @@ public final class ClusterConnector extends Observable implements MessageHandler
 	public void sessionOpened(Session session) {
 		while (!this.protocolQueue.isEmpty()) {
 			ClusterProtocol protocol = this.protocolQueue.poll();
-			protocol.launch(this.connector);
+			protocol.launch(session);
 		}
 	}
 
@@ -166,8 +166,8 @@ public final class ClusterConnector extends Observable implements MessageHandler
 			// 清空待执行协议
 			this.protocolQueue.clear();
 
-			ClusterConnectorSubject subject = new ClusterConnectorSubject(SUBJECT_FAILURE);
-			this.notify(subject);
+			ConnectorFailure failure = new ConnectorFailure(errorCode);
+			this.distribute(failure);
 		}
 	}
 
@@ -231,26 +231,34 @@ public final class ClusterConnector extends Observable implements MessageHandler
 	/** 处理具体协议。
 	 */
 	private void distribute(ClusterProtocol protocol) {
-		if (protocol instanceof ClusterDiscoveringProtocol) {
-			ClusterDiscoveringProtocol discovering = (ClusterDiscoveringProtocol)protocol;
-			if (ClusterProtocol.StateCode.REJECT == discovering.getState()) {
-				// 被服务器拒绝
-				ClusterConnectorSubject subject = new ClusterConnectorSubject(SUBJECT_DISCOVERING);
-				subject.completed = false;
-				subject.state = ClusterProtocol.StateCode.REJECT;
-				this.notify(subject);
+		protocol.contextSession = this.connector.getSession();
 
-				// 关闭连接
-				this.connector.disconnect();
-			}
-		}
+		this.setChanged();
+		this.notifyObservers(protocol);
+		this.clearChanged();
 	}
 
-	/** 发送通知。
+	/** 连接器故障。
 	 */
-	private synchronized void notify(ClusterConnectorSubject subject) {
-		this.setChanged();
-		this.notifyObservers(subject);
-		this.clearChanged();
+	protected final class ConnectorFailure extends ClusterProtocol {
+
+		protected int errorCode;
+
+		protected ConnectorFailure(int errorCode) {
+			super("ConnectorFailure");
+			this.errorCode = errorCode;
+		}
+
+		@Override
+		public void launch(Session session) {
+		}
+
+		@Override
+		public void stack(Session session) {
+		}
+
+		@Override
+		public void stackReject(Session session) {
+		}
 	}
 }
