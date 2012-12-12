@@ -49,6 +49,7 @@ import net.cellcloud.core.Nucleus;
 import net.cellcloud.core.NucleusContext;
 import net.cellcloud.exception.SingletonException;
 import net.cellcloud.http.HttpService;
+import net.cellcloud.talk.dialect.ActionDialect;
 import net.cellcloud.talk.dialect.ActionDialectFactory;
 import net.cellcloud.talk.dialect.Dialect;
 import net.cellcloud.talk.dialect.DialectEnumerator;
@@ -193,6 +194,20 @@ public final class TalkService implements Service {
 		}
 
 		stopDaemon();
+
+		ActionDialectFactory factory =
+				(ActionDialectFactory) DialectEnumerator.getInstance().getFactory(ActionDialect.DIALECT_NAME);
+		factory.shutdown();
+
+		// 关闭所有会话
+		if (null != this.speakers) {
+			Iterator<Speaker> iter = this.speakers.values().iterator();
+			while (iter.hasNext()) {
+				Speaker s = iter.next();
+				s.hangUp();
+			}
+			this.speakers.clear();
+		}
 	}
 
 	/** 设置是否激活 HTTP 服务。

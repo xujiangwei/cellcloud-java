@@ -67,4 +67,10 @@ public final class ActionDialectFactory extends DialectFactory {
 			}
 		});
 	}
+
+	public void shutdown() {
+		if (null != this.executor) {
+			this.executor.shutdown();
+		}
+	}
 }
