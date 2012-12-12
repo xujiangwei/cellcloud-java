@@ -47,9 +47,23 @@ public final class ActionDialect extends Dialect {
 	private String action;
 	private HashMap<String, String> params;
 
+	private Object customContext;
+
 	public ActionDialect(String tracker) {
 		super(ActionDialect.DIALECT_NAME, tracker);
 		this.params = new HashMap<String, String>();
+	}
+
+	/** 设置自定义上下文。
+	 */
+	public void setCustomContext(Object obj) {
+		this.customContext = obj;
+	}
+
+	/** 返回自定义上下文。
+	 */
+	public Object getCustomContext() {
+		return this.customContext;
 	}
 
 	@Override
