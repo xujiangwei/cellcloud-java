@@ -155,13 +155,13 @@ public final class Nucleus {
 				}
 			}
 
-			try {
-				// 创建 Talk Service
-				if (null == this.talkService) {
+			// 创建 Talk Service
+			if (null == this.talkService) {
+				try {
 					this.talkService = new TalkService(this.context);
+				} catch (SingletonException e) {
+					Logger.logException(e, LogLevel.ERROR);
 				}
-			} catch (SingletonException e) {
-				Logger.logException(e, LogLevel.ERROR);
 			}
 
 			// 启动 Talk Service
@@ -191,6 +191,15 @@ public final class Nucleus {
 
 		// 角色：消费者
 		if ((this.config.role & NucleusConfig.Role.CONSUMER) != 0) {
+			if (null == this.talkService) {
+				try {
+					// 创建 Talk Service
+					this.talkService = new TalkService(this.context);
+				} catch (SingletonException e) {
+					Logger.logException(e, LogLevel.ERROR);
+				}
+			}
+
 			this.talkService.startDaemon();
 		}
 
