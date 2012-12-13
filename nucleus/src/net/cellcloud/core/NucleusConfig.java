@@ -86,6 +86,8 @@ public final class NucleusConfig {
 
 	/// 集群地址表
 	public List<InetAddress> clusterAddressList = null;
+	/// 是否自定扫描地址
+	public boolean clusterAutoScan = false;
 
 	public NucleusConfig() {
 	}

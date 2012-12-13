@@ -32,6 +32,9 @@ import java.util.Queue;
 
 import net.cellcloud.common.LogLevel;
 import net.cellcloud.common.Logger;
+import net.cellcloud.talk.dialect.ActionDialect;
+import net.cellcloud.talk.dialect.ActionDialectFactory;
+import net.cellcloud.talk.dialect.DialectEnumerator;
 
 /** Talk Service 守护线程。
  * 
@@ -40,6 +43,7 @@ import net.cellcloud.common.Logger;
 public final class TalkServiceDaemon extends Thread {
 
 	private boolean spinning = false;
+	protected boolean running = false;
 	private long tickTime = 0;
 
 	private Queue<Runnable> tasks;
@@ -63,6 +67,7 @@ public final class TalkServiceDaemon extends Thread {
 
 	@Override
 	public void run() {
+		this.running = true;
 		this.spinning = true;
 
 		TalkService service = TalkService.getInstance();
@@ -160,7 +165,15 @@ public final class TalkServiceDaemon extends Thread {
 				Speaker speaker = iter.next();
 				speaker.hangUp();
 			}
+			service.speakers.clear();
 		}
+
+		ActionDialectFactory factory =
+				(ActionDialectFactory) DialectEnumerator.getInstance().getFactory(ActionDialect.DIALECT_NAME);
+		factory.shutdown();
+
+		Logger.i(this.getClass(), "Talk service daemon quit.");
+		this.running = false;
 	}
 
 	public void stopSpinning() {

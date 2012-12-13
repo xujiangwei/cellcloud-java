@@ -117,34 +117,50 @@ public final class ActionDialect extends Dialect {
 		return this.action;
 	}
 
+	/** 添加动作参数键值对。
+	 */
 	public void appendParam(final String name, final String value) {
 		this.params.put(name, value);
 	}
+	/** 添加动作参数键值对。
+	 */
 	public void appendParam(final String name, final int value) {
 		this.params.put(name, Integer.toString(value));
 	}
+	/** 添加动作参数键值对。
+	 */
 	public void appendParam(final String name, final long value) {
 		this.params.put(name, Long.toString(value));
 	}
+	/** 添加动作参数键值对。
+	 */
 	public void appendParam(final String name, final boolean value) {
 		this.params.put(name, Boolean.toString(value));
 	}
 
+	/** 返回指定名称的参数值。
+	 */
 	public String getParamAsString(final String name) {
 		return this.params.get(name);
 	}
+	/** 返回指定名称的参数值。
+	 */
 	public int getParamAsInt(final String name) {
 		if (this.params.containsKey(name))
 			return Integer.parseInt(this.params.get(name));
 		else
 			return 0;
 	}
+	/** 返回指定名称的参数值。
+	 */
 	public long getParamAsLong(final String name) {
 		if (this.params.containsKey(name))
 			return Long.parseLong(this.params.get(name));
 		else
 			return 0;
 	}
+	/** 返回指定名称的参数值。
+	 */
 	public boolean getParamAsBoolean(final String name) {
 		if (this.params.containsKey(name))
 			return Boolean.parseBoolean(this.params.get(name));

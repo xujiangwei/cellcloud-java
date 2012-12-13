@@ -218,15 +218,15 @@ public class NonblockingConnector extends MessageService implements MessageConne
 
 			try {
 				this.channel.socket().close();
-			} catch (IOException sioe) {
-				Logger.logException(sioe, LogLevel.DEBUG);
+			} catch (Exception e) {
+				Logger.logException(e, LogLevel.DEBUG);
 			}
 
 			try {
 				if (this.channel.isOpen()) {
 					this.channel.close();
 				}
-			} catch (IOException e) {
+			} catch (Exception e) {
 				Logger.logException(e, LogLevel.DEBUG);
 			}
 		}
@@ -235,7 +235,7 @@ public class NonblockingConnector extends MessageService implements MessageConne
 			try {
 				this.selector.wakeup();
 				this.selector.close();
-			} catch (IOException e) {
+			} catch (Exception e) {
 				Logger.logException(e, LogLevel.DEBUG);
 			}
 		}

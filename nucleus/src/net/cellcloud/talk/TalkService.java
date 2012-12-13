@@ -37,6 +37,7 @@ import java.util.Vector;
 import java.util.concurrent.ConcurrentHashMap;
 
 import net.cellcloud.common.Cryptology;
+import net.cellcloud.common.LogLevel;
 import net.cellcloud.common.Logger;
 import net.cellcloud.common.Message;
 import net.cellcloud.common.NonblockingAcceptor;
@@ -49,7 +50,6 @@ import net.cellcloud.core.Nucleus;
 import net.cellcloud.core.NucleusContext;
 import net.cellcloud.exception.SingletonException;
 import net.cellcloud.http.HttpService;
-import net.cellcloud.talk.dialect.ActionDialect;
 import net.cellcloud.talk.dialect.ActionDialectFactory;
 import net.cellcloud.talk.dialect.Dialect;
 import net.cellcloud.talk.dialect.DialectEnumerator;
@@ -194,20 +194,6 @@ public final class TalkService implements Service {
 		}
 
 		stopDaemon();
-
-		ActionDialectFactory factory =
-				(ActionDialectFactory) DialectEnumerator.getInstance().getFactory(ActionDialect.DIALECT_NAME);
-		factory.shutdown();
-
-		// 关闭所有会话
-		if (null != this.speakers) {
-			Iterator<Speaker> iter = this.speakers.values().iterator();
-			while (iter.hasNext()) {
-				Speaker s = iter.next();
-				s.hangUp();
-			}
-			this.speakers.clear();
-		}
 	}
 
 	/** 设置是否激活 HTTP 服务。
@@ -221,8 +207,9 @@ public final class TalkService implements Service {
 	public void startDaemon() {
 		if (null == this.daemon) {
 			this.daemon = new TalkServiceDaemon();
-			this.daemon.start();
 		}
+
+		this.daemon.start();
 	}
 
 	/** 关闭任务表守护线程。
@@ -230,6 +217,15 @@ public final class TalkService implements Service {
 	public void stopDaemon() {
 		if (null != this.daemon) {
 			this.daemon.stopSpinning();
+
+			// 阻塞等待线程退出
+			while (this.daemon.running) {
+				try {
+					Thread.sleep(10);
+				} catch (InterruptedException e) {
+					Logger.logException(e, LogLevel.DEBUG);
+				}
+			}
 		}
 	}
 

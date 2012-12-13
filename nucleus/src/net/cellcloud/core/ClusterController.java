@@ -49,6 +49,7 @@ public final class ClusterController implements Service, Observer {
 
 	private Timer timer;
 	private ClusterNetwork network;
+	protected boolean autoScanNetwork = true;
 
 	// 种子地址
 	private ArrayList<InetAddress> seedAddressList;
@@ -85,8 +86,10 @@ public final class ClusterController implements Service, Observer {
 		this.timer.schedule(new TimerTask() {
 			@Override
 			public void run() {
-				//扫描网络
-				network.scanNetwork();
+				if (autoScanNetwork) {
+					// 扫描网络
+					network.scanNetwork();
+				}
 
 				// 定时器任务
 				timerHandle();
@@ -220,8 +223,7 @@ public final class ClusterController implements Service, Observer {
 		if (oldAddress.getPort() == ClusterNetwork.PREFERRED_PORT) {
 			// 首选端口的下一个端口号
 			InetSocketAddress newAddress = new InetSocketAddress(oldAddress.getAddress().getHostAddress(), ClusterNetwork.PREFERRED_PORT + 1);
-			Logger.i(this.getClass(), "Guess address " + newAddress.getAddress().getHostAddress() + ":" + newAddress.getPort()
-					+ " to discover.");
+			Logger.i(this.getClass(), "Guess discovering address: " + newAddress.getAddress().getHostAddress() + ":" + newAddress.getPort());
 			ArrayList<InetSocketAddress> list = new ArrayList<InetSocketAddress>();
 			list.add(newAddress);
 			// 执行发现
@@ -312,6 +314,10 @@ public final class ClusterController implements Service, Observer {
 			// 发生错误或者故障
 			// 检查是否是正在执行发现协议
 			if (this.discoveringConnectors.containsKey(connector.getHashCode())) {
+				Logger.i(this.getClass(), "Discovering failure: "
+						+ connector.getAddress().getAddress().getHostAddress() + ":"
+						+ connector.getAddress().getPort());
+
 				this.discoveringConnectors.remove(connector.getHashCode());
 				connector.deleteObserver(this);
 

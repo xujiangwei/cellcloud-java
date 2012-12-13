@@ -55,7 +55,7 @@ public final class Nucleus {
 	private static Nucleus instance = null;
 
 	private NucleusTag tag = null;
-	protected NucleusConfig config = null;
+	private NucleusConfig config = null;
 	private NucleusContext context = null;
 
 	// 集群网络控制
@@ -113,6 +113,12 @@ public final class Nucleus {
 		return this.tag.asString();
 	}
 
+	/** 返回配置。
+	 */
+	public NucleusConfig getConfig() {
+		return this.config;
+	}
+
 	/** 返回集群控制器实例。
 	 */
 	public ClusterController getClusterController() {
@@ -131,7 +137,6 @@ public final class Nucleus {
 
 		// 角色：节点
 		if ((this.config.role & NucleusConfig.Role.NODE) != 0) {
-			// 启动集群控制器
 			if (null == this.clusterController) {
 				this.clusterController = new ClusterController();
 			}
@@ -139,6 +144,11 @@ public final class Nucleus {
 			if (null != this.config.clusterAddressList) {
 				this.clusterController.addClusterAddress(this.config.clusterAddressList);
 			}
+			// 设置自动扫描网络
+			this.clusterController.autoScanNetwork = this.config.clusterAutoScan
+					&& (this.config.device == NucleusConfig.Device.SERVER
+						|| this.config.device == NucleusConfig.Device.DESKTOP);
+			// 启动集群控制器
 			if (this.clusterController.startup()) {
 				Logger.i(Nucleus.class, "Starting cluster controller service success.");
 			}

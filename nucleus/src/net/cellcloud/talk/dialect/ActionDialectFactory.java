@@ -26,6 +26,7 @@ THE SOFTWARE.
 
 package net.cellcloud.talk.dialect;
 
+import java.util.Vector;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -38,9 +39,17 @@ public final class ActionDialectFactory extends DialectFactory {
 	private DialectMetaData metaData;
 
 	private ExecutorService executor;
+	private int maxThreadCount;
+	private int threadCount;
+	private Vector<ActionDialect> dialects;
+	private Vector<ActionDelegate> delegates;
 
 	public ActionDialectFactory() {
 		this.metaData = new DialectMetaData(ActionDialect.DIALECT_NAME, "Action Dialect");
+		this.maxThreadCount = 16;
+		this.threadCount = 0;
+		this.dialects = new Vector<ActionDialect>();
+		this.delegates = new Vector<ActionDelegate>();
 	}
 
 	@Override
@@ -60,15 +69,45 @@ public final class ActionDialectFactory extends DialectFactory {
 			this.executor = Executors.newCachedThreadPool();
 		}
 
-		this.executor.execute(new Runnable() {
-			@Override
-			public void run() {
-				delegate.doAction(dialect);
-			}
-		});
+		synchronized (this.metaData) {
+			this.dialects.add(dialect);
+			this.delegates.add(delegate);
+		}
+
+		if (this.threadCount < this.maxThreadCount) {
+			// 线程数量未达到最大线程数，启动新线程
+
+			this.executor.execute(new Runnable() {
+				@Override
+				public void run() {
+					++threadCount;
+
+					while (!dialects.isEmpty()) {
+						ActionDelegate adg = null;
+						ActionDialect adl = null;
+						synchronized (metaData) {
+							adg = delegates.remove(0);
+							adl = dialects.remove(0);
+						}
+
+						// Do action
+						if (null != adg) {
+							adg.doAction(adl);
+						}
+					}
+
+					--threadCount;
+				}
+			});
+		}
 	}
 
 	public void shutdown() {
+		synchronized (this.metaData) {
+			this.dialects.clear();
+			this.delegates.clear();
+		}
+
 		if (null != this.executor) {
 			this.executor.shutdown();
 		}
