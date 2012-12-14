@@ -38,7 +38,7 @@ public final class ExitCommand extends ConsoleCommand {
 	private byte state;
 
 	public ExitCommand(Console console) {
-		super("exit", "Exit cell console and shutdown application.", "");
+		super("exit", "Exit cell console and quit program.", "");
 		this.state = ConsoleCommand.CCS_FINISHED;
 		this.console = console;
 	}
@@ -57,7 +57,7 @@ public final class ExitCommand extends ConsoleCommand {
 		}
 
 		this.state = ConsoleCommand.CCS_EXECUTING;
-		print("Are you sure exit cell console and shutdown application? [y/n] ");
+		print("Are you sure exit cell console and quit program? [y/n] ");
 		return true;
 	}
 

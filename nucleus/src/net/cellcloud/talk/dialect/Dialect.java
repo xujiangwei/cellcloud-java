@@ -37,6 +37,7 @@ public abstract class Dialect {
 	private String name;
 	private String tracker;
 	private String tag;
+	private String celletIdentifier;
 
 	public Dialect(String name, String tracker) {
 		this.name = name;
@@ -45,31 +46,43 @@ public abstract class Dialect {
 
 	/** 返回方言名。
 	 */
-	public String getName() {
+	public final String getName() {
 		return this.name;
 	}
 
 	/** 返回方言追踪名。
 	 */
-	public String getTracker() {
+	public final String getTracker() {
 		return this.tracker;
 	}
 
 	/** 设置源标签。
 	 */
-	public void setOwnerTag(final String tag) {
+	public final void setOwnerTag(final String tag) {
 		this.tag = tag;
 	}
 
 	/** 返回源标签。
 	 */
-	public String getOwnerTag() {
+	public final String getOwnerTag() {
 		return this.tag;
+	}
+
+	/** 设置 Cellet 标识。
+	 */
+	public final void setCelletIdentifier(final String identifier) {
+		this.celletIdentifier = identifier;
+	}
+
+	/** 返回 Cellet 标识。
+	 */
+	public final String getCelletIdentifier() {
+		return this.celletIdentifier;
 	}
 
 	/** 翻译原语为方言。
 	 */
-	abstract public Primitive translate(final String tag);
+	abstract public Primitive translate();
 
 	/** 从原语构建方言。
 	 */

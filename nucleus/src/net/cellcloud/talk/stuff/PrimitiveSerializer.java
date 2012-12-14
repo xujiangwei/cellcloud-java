@@ -53,6 +53,7 @@ public final class PrimitiveSerializer {
 	private static final byte TOKEN_OPERATE_ASSIGN = '=';
 	private static final byte TOKEN_OPERATE_DECLARE = ':';
 	private static final byte TOKEN_AT = '@';
+	private static final String TOKEN_AT_STR = "@";
 
 	private static final byte PARSE_PHASE_UNKNOWN = 0;
 	private static final byte PARSE_PHASE_VERSION = 1;
@@ -519,7 +520,7 @@ public final class PrimitiveSerializer {
 	/** 反序列化方言
 	 */
 	private static void deserializeDialect(Primitive primitive, final String dialectStr) {
-		String[] sections = dialectStr.split("@");
+		String[] sections = dialectStr.split(TOKEN_AT_STR);
 		if (sections.length != 2) {
 			return;
 		}
@@ -529,11 +530,15 @@ public final class PrimitiveSerializer {
 
 		// 创建方言
 		Dialect dialect = DialectEnumerator.getInstance().createDialect(dialectName, tracker);
-		dialect.setOwnerTag(primitive.getOwnerTag());
+		if (null == dialect) {
+			Logger.w(PrimitiveSerializer.class, "Can't create '" +  dialectName + "' dialect.");
+			return;
+		}
+
+		// 关联
+		primitive.capture(dialect);
 
 		// 分析数据
 		dialect.build(primitive);
-		// 关联
-		primitive.capture(dialect);
 	}
 }

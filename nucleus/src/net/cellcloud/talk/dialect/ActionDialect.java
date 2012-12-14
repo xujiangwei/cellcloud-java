@@ -67,12 +67,12 @@ public final class ActionDialect extends Dialect {
 	}
 
 	@Override
-	public Primitive translate(final String tag) {
+	public Primitive translate() {
 		if (null == this.action || this.action.isEmpty()) {
 			return null;
 		}
 
-		Primitive primitive = new Primitive(tag, this);
+		Primitive primitive = new Primitive(this);
 
 		Iterator<Map.Entry<String, String>> iter = this.params.entrySet().iterator();
 		while (iter.hasNext()) {

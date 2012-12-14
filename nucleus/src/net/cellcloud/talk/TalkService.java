@@ -314,7 +314,7 @@ public final class TalkService implements Service {
 	 */
 	public boolean notice(final String targetTag, final Dialect dialect,
 			final Cellet cellet, final CelletSandbox sandbox) {
-		Primitive primitive = dialect.translate(Nucleus.getInstance().getTagAsString());
+		Primitive primitive = dialect.translate();
 		if (null != primitive) {
 			return this.notice(targetTag, primitive, cellet, sandbox);
 		}
@@ -428,7 +428,7 @@ public final class TalkService implements Service {
 		if (null == this.speakers)
 			return false;
 
-		Primitive primitive = dialect.translate(Nucleus.getInstance().getTagAsString());
+		Primitive primitive = dialect.translate();
 		if (null != primitive) {
 			return this.talk(identifier, primitive);
 		}

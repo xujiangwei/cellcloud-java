@@ -72,8 +72,8 @@ public class Primitive {
 	}
 
 	/** 构造函数。 */
-	public Primitive(String ownerTag, Dialect dialect) {
-		this.ownerTag = ownerTag;
+	public Primitive(Dialect dialect) {
+		this.ownerTag = null;
 		this.celletIdentifier = null;
 		this.dialect = dialect;
 	}
@@ -88,6 +88,9 @@ public class Primitive {
 	 */
 	protected void setCelletIdentifier(String celletIdentifier) {
 		this.celletIdentifier = celletIdentifier;
+		if (null != this.dialect) {
+			this.dialect.setCelletIdentifier(celletIdentifier);
+		}
 	}
 	/** 返回 Cellet 标识。
 	 */
@@ -111,6 +114,8 @@ public class Primitive {
 	 */
 	public void capture(Dialect dialect) {
 		this.dialect = dialect;
+		this.dialect.setOwnerTag(this.ownerTag);
+		this.dialect.setCelletIdentifier(this.celletIdentifier);
 	}
 
 	/** 提交主语。
