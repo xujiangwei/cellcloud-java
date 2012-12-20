@@ -41,7 +41,7 @@ import net.cellcloud.common.Logger;
 import net.cellcloud.exception.StorageException;
 import net.cellcloud.util.Properties;
 
-/** 单文件存储器。
+/** 本地文件存储器。
  * 
  * @author Jiangwei Xu
  */

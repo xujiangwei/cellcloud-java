@@ -30,6 +30,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import net.cellcloud.talk.Primitive;
 import net.cellcloud.talk.stuff.ObjectiveStuff;
@@ -172,6 +173,12 @@ public final class ActionDialect extends Dialect {
 	 */
 	public boolean existParam(final String name) {
 		return this.params.containsKey(name);
+	}
+
+	/** 返回所有参数名。
+	 */
+	public Set<String> getParamNames() {
+		return this.params.keySet();
 	}
 
 	/** 执行动作委派（异步）。

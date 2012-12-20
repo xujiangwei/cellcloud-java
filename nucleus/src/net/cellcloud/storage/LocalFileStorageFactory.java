@@ -26,8 +26,7 @@ THE SOFTWARE.
 
 package net.cellcloud.storage;
 
-
-/** 单文件存储工厂。
+/** 本地文件存储工厂。
  * 
  * @author Jiangwei Xu
  */

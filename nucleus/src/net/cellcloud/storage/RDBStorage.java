@@ -2,7 +2,7 @@
 -----------------------------------------------------------------------------
 This source file is part of Cell Cloud.
 
-Copyright (c) 2009-2012 Cell Cloud Team (cellcloudproject@gmail.com)
+Copyright (c) 2009-2013 Cell Cloud Team (cellcloudproject@gmail.com)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -26,16 +26,10 @@ THE SOFTWARE.
 
 package net.cellcloud.storage;
 
-import net.cellcloud.util.Properties;
-
-/** 本地文件存储器属性集。
+/** 关系型数据库存储器接口。
  * 
  * @author Jiangwei Xu
  */
-public final class LocalFileProperties extends Properties {
+public interface RDBStorage extends Storage {
 
-	public final static LocalFileProperties DEFAULT = new LocalFileProperties();
-
-	public LocalFileProperties() {
-	}
 }

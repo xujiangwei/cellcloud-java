@@ -71,7 +71,7 @@ public final class TalkTracker {
 
 	/** 设置是否支持自动挂起。
 	 */
-	public void setAutoSuspend(boolean value) {
+	protected void setAutoSuspend(boolean value) {
 		this.autoSuspend = value;
 	}
 
@@ -83,7 +83,7 @@ public final class TalkTracker {
 
 	/** 设置挂起时长。
 	 */
-	public long setSuspendDuration(long duration) {
+	protected long setSuspendDuration(long duration) {
 		if (duration < 5000)
 			this.suspendDuration = 5000;
 		else

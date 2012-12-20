@@ -74,7 +74,7 @@ public class Endpoint {
 
 	/** 终端坐标。
 	 */
-	public class Coordinate {
+	public final class Coordinate {
 		private InetSocketAddress address;
 
 		public Coordinate(InetSocketAddress address) {

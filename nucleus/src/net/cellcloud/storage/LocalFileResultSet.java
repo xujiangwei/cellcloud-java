@@ -32,7 +32,7 @@ import net.cellcloud.exception.StorageException;
 import net.cellcloud.storage.LocalFileStorage.ChunkBuffer;
 import net.cellcloud.storage.LocalFileStorage.FileWrapper;
 
-/** 单文件存储器结果集。
+/** 本地文件存储器结果集。
  * 
  * @author Jiangwei Xu
  */

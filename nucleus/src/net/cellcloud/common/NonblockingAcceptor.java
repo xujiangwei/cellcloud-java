@@ -28,6 +28,7 @@ package net.cellcloud.common;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
+import java.nio.channels.CancelledKeyException;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.nio.channels.ServerSocketChannel;
@@ -122,6 +123,11 @@ public class NonblockingAcceptor extends MessageService implements MessageAccept
 					loopDispatch();
 				} catch (IOException ioe) {
 					Logger.logException(ioe, LogLevel.WARNING);
+				} catch (CancelledKeyException e) {
+					if (spinning)
+						Logger.logException(e, LogLevel.ERROR);
+					else
+						Logger.logException(e, LogLevel.DEBUG);
 				} catch (Exception e) {
 					Logger.logException(e, LogLevel.ERROR);
 				}

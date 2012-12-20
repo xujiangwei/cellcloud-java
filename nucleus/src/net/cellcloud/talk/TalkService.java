@@ -229,6 +229,29 @@ public final class TalkService implements Service {
 		}
 	}
 
+	///@Server
+	/** 查找指定 Cellet 里的标签对应的服务追踪器。
+	 */
+	public TalkTracker findTracker(Cellet cellet, String tag) {
+		Vector<TalkSessionContext> list = this.tagSessionsMap.get(tag);
+		if (null == list) {
+			return null;
+		}
+
+		for (TalkSessionContext context : list) {
+			TalkTracker tt = context.getTracker(tag);
+			if (null == tt) {
+				continue;
+			}
+
+			if (tt.activeCellet == cellet) {
+				return tt;
+			}
+		}
+
+		return null;
+	}
+
 	/** 添加会话监听器。
 	 */
 	public void addListener(TalkListener listener) {

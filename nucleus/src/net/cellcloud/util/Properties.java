@@ -26,6 +26,7 @@ THE SOFTWARE.
 
 package net.cellcloud.util;
 
+import java.util.Collection;
 import java.util.HashMap;
 
 /** 属性集。
@@ -69,5 +70,11 @@ public class Properties {
 	 */
 	public boolean hasProperty(String key) {
 		return this.properties.containsKey(key);
+	}
+
+	/** 返回属性集合。
+	 */
+	public Collection<PropertyReference> getPropertyCollection() {
+		return this.properties.values();
 	}
 }
