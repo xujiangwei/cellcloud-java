@@ -91,7 +91,13 @@ public final class FileExpress implements MessageHandler, ExpressTaskListener {
 	private byte[] listenerMonitor = new byte[0];
 
 	public FileExpress() {
-		this.executor = Executors.newCachedThreadPool();
+		this.executor = null;
+	}
+
+	/** 设置线程池。
+	 */
+	public void setThreadPool(ExecutorService executorService) {
+		this.executor = executorService;
 	}
 
 	/** 添加监听器。
@@ -145,6 +151,9 @@ public final class FileExpress implements MessageHandler, ExpressTaskListener {
 		task.setListener(this);
 
 		// 提交任务执行
+		if (null == this.executor) {
+			this.executor = Executors.newCachedThreadPool();
+		}
 		this.executor.execute(task);
 
 		return true;
@@ -163,6 +172,9 @@ public final class FileExpress implements MessageHandler, ExpressTaskListener {
 		task.setListener(this);
 
 		// 提交任务执行
+		if (null == this.executor) {
+			this.executor = Executors.newCachedThreadPool();
+		}
 		this.executor.execute(task);
 
 		return true;

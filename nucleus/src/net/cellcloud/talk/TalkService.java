@@ -209,7 +209,8 @@ public final class TalkService implements Service {
 			this.daemon = new TalkServiceDaemon();
 		}
 
-		this.daemon.start();
+		if (!this.daemon.running)
+			this.daemon.start();
 	}
 
 	/** 关闭任务表守护线程。

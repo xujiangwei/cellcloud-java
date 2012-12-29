@@ -160,7 +160,7 @@ public final class FileLogger implements LogHandle {
 			if (null == this.buffer)
 				return;
 
-			this.stringBuf.append(LoggerManager.dateFormat.format(new Date()));
+			this.stringBuf.append(LoggerManager.timeFormat.format(new Date()));
 			this.stringBuf.append(" [DEBUG] ");
 			this.stringBuf.append(tag);
 			this.stringBuf.append(" ");
@@ -189,7 +189,7 @@ public final class FileLogger implements LogHandle {
 			if (null == this.buffer)
 				return;
 
-			this.stringBuf.append(LoggerManager.dateFormat.format(new Date()));
+			this.stringBuf.append(LoggerManager.timeFormat.format(new Date()));
 			this.stringBuf.append(" [INFO]  ");
 			this.stringBuf.append(tag);
 			this.stringBuf.append(" ");
@@ -218,7 +218,7 @@ public final class FileLogger implements LogHandle {
 			if (null == this.buffer)
 				return;
 
-			this.stringBuf.append(LoggerManager.dateFormat.format(new Date()));
+			this.stringBuf.append(LoggerManager.timeFormat.format(new Date()));
 			this.stringBuf.append(" [WARN]  ");
 			this.stringBuf.append(tag);
 			this.stringBuf.append(" ");
@@ -247,7 +247,7 @@ public final class FileLogger implements LogHandle {
 			if (null == this.buffer)
 				return;
 
-			this.stringBuf.append(LoggerManager.dateFormat.format(new Date()));
+			this.stringBuf.append(LoggerManager.timeFormat.format(new Date()));
 			this.stringBuf.append(" [ERROR] ");
 			this.stringBuf.append(tag);
 			this.stringBuf.append(" ");

@@ -101,7 +101,7 @@ public final class TalkServiceDaemon extends Thread {
 				while (iter.hasNext()) {
 					Speaker speaker = iter.next();
 
-					if (this.tickTime - speaker.timestamp >= 6000) {
+					if (this.tickTime - speaker.timestamp >= 5000) {
 						StringBuilder buf = new StringBuilder();
 						buf.append("Retry call cellet ");
 						buf.append(speaker.getIdentifier());

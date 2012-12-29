@@ -41,7 +41,9 @@ import net.cellcloud.common.Logger;
  */
 public final class Util {
 
+	// 常用日期格式
 	public final static SimpleDateFormat sDateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+
 	private final static Random sRandom = new Random(System.currentTimeMillis());
 
 	// 字母表

@@ -38,7 +38,7 @@ public final class LoggerManager {
 
 	private final static LoggerManager instance = new LoggerManager();
 
-	public final static SimpleDateFormat dateFormat = new SimpleDateFormat("HH:mm:ss");
+	public final static SimpleDateFormat timeFormat = new SimpleDateFormat("HH:mm:ss.SSS");
 
 	private ArrayList<LogHandle> handles;
 	private byte level;
@@ -128,7 +128,7 @@ public final class LoggerManager {
 			@Override
 			public void logDebug(String tag, String log) {
 				synchronized (mutex) {
-					buf.append(dateFormat.format(new Date()));
+					buf.append(timeFormat.format(new Date()));
 					buf.append(" [DEBUG] ");
 					buf.append(tag);
 					buf.append(" ");
@@ -143,7 +143,7 @@ public final class LoggerManager {
 			@Override
 			public void logInfo(String tag, String log) {
 				synchronized (mutex) {
-					buf.append(dateFormat.format(new Date()));
+					buf.append(timeFormat.format(new Date()));
 					buf.append(" [INFO]  ");
 					buf.append(tag);
 					buf.append(" ");
@@ -158,7 +158,7 @@ public final class LoggerManager {
 			@Override
 			public void logWarning(String tag, String log) {
 				synchronized (mutex) {
-					buf.append(dateFormat.format(new Date()));
+					buf.append(timeFormat.format(new Date()));
 					buf.append(" [WARN]  ");
 					buf.append(tag);
 					buf.append(" ");
@@ -173,7 +173,7 @@ public final class LoggerManager {
 			@Override
 			public void logError(String tag, String log) {
 				synchronized (mutex) {
-					buf.append(dateFormat.format(new Date()));
+					buf.append(timeFormat.format(new Date()));
 					buf.append(" [ERROR] ");
 					buf.append(tag);
 					buf.append(" ");
