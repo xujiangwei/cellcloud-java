@@ -41,7 +41,7 @@ import net.cellcloud.talk.stuff.SubjectStuff;
  * 
  * @author Jiangwei Xu
  */
-public final class ActionDialect extends Dialect {
+public class ActionDialect extends Dialect {
 
 	public final static String DIALECT_NAME = "ActionDialect";
 

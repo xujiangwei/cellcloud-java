@@ -94,7 +94,7 @@ public class Speaker {
 
 	/** 向指定地址发起请求 Cellet 服务。
 	 */
-	public void call(InetSocketAddress address) {
+	public boolean call(InetSocketAddress address) {
 		if (null == this.connector) {
 			this.connector = new NonblockingConnector();
 
@@ -104,19 +104,28 @@ public class Speaker {
 
 			this.connector.setHandler(new SpeakerConnectorHandler(this));
 		}
+		else {
+			InetSocketAddress curAddr = this.connector.getAddress();
+			if (this.connector.isConnected()
+				&& curAddr.getAddress().getHostAddress().equals(address.getAddress().getHostAddress())
+				&& curAddr.getPort() == address.getPort()) {
+				return false;
+			}
 
-		if (this.connector.isConnected()) {
-			return;
+			this.connector.disconnect();
 		}
 
 		// 设置状态
 		this.state = SpeakerState.HANGUP;
 
 		// 进行连接
-		this.connector.connect(address);
+		boolean ret = this.connector.connect(address);
+		if (ret) {
+			// 开始进行调用
+			this.state = SpeakerState.CALLING;
+		}
 
-		// 开始进行调用
-		this.state = SpeakerState.CALLING;
+		return ret;
 	}
 
 	/** 挂起服务。

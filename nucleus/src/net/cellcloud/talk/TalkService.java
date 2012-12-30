@@ -376,8 +376,7 @@ public final class TalkService implements Service {
 		}
 
 		// Call
-		speaker.call(address);
-		return true;
+		return speaker.call(address);
 	}
 
 	/** 挂起 Cellet 调用。
