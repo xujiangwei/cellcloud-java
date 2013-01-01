@@ -185,11 +185,11 @@ public class Speaker {
 
 	/** 向 Cellet 发送原语数据。
 	 */
-	public synchronized void speak(Primitive primitive) {
+	public synchronized boolean speak(Primitive primitive) {
 		if (null == this.connector
 			|| !this.connector.isConnected()
 			|| this.state != SpeakerState.CALLED) {
-			return;
+			return false;
 		}
 
 		// 序列化原语
@@ -204,6 +204,8 @@ public class Speaker {
 		byte[] data = Packet.pack(packet);
 		Message message = new Message(data);
 		this.connector.write(message);
+
+		return true;
 	}
 
 	/** 是否已接受请求。
