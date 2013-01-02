@@ -110,6 +110,7 @@ public final class ActionDialectFactory extends DialectFactory {
 
 		if (null != this.executor) {
 			this.executor.shutdown();
+			this.executor = null;
 		}
 	}
 }

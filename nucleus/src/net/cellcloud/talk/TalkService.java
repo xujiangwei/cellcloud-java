@@ -227,6 +227,8 @@ public final class TalkService implements Service {
 					Logger.logException(e, LogLevel.DEBUG);
 				}
 			}
+
+			this.daemon = null;
 		}
 	}
 
@@ -647,7 +649,9 @@ public final class TalkService implements Service {
 						}
 						else {
 							// 有记录，对端挂起
-							tracker.activeCellet.suspended(tag);
+							// FIXME 01/01/2013 如果已经挂起说明之前已经是主动挂起了，
+							// 不需要再回调事件。
+							//tracker.activeCellet.suspended(tag);
 						}
 					}
 				}
@@ -806,6 +810,7 @@ public final class TalkService implements Service {
 			if (null != tracker && null != tracker.activeCellet) {
 				// 设置原语的 Cellet 标识
 				primitive.setCelletIdentifier(tracker.activeCellet.getFeature().getIdentifier());
+				primitive.setCellet(tracker.activeCellet);
 				// 回调
 				tracker.activeCellet.dialogue(speakerTag, primitive);
 			}

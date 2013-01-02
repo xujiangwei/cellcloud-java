@@ -219,7 +219,7 @@ public class NonblockingConnector extends MessageService implements MessageConne
 			try {
 				this.channel.socket().close();
 			} catch (Exception e) {
-				Logger.logException(e, LogLevel.DEBUG);
+				//Logger.logException(e, LogLevel.DEBUG);
 			}
 
 			try {

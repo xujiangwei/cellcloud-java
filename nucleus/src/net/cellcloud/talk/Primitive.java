@@ -31,6 +31,7 @@ import java.io.ByteArrayOutputStream;
 import java.util.ArrayList;
 import java.util.List;
 
+import net.cellcloud.core.Cellet;
 import net.cellcloud.talk.dialect.Dialect;
 import net.cellcloud.talk.stuff.AdverbialStuff;
 import net.cellcloud.talk.stuff.AttributiveStuff;
@@ -57,11 +58,14 @@ public class Primitive {
 
 	private Dialect dialect;
 
+	private Cellet cellet;
+
 	/** 构造函数。 */
 	public Primitive() {
 		this.ownerTag = null;
 		this.celletIdentifier = null;
 		this.dialect = null;
+		this.cellet = null;
 	}
 
 	/** 构造函数。 */
@@ -69,6 +73,7 @@ public class Primitive {
 		this.ownerTag = ownerTag;
 		this.celletIdentifier = null;
 		this.dialect = null;
+		this.cellet = null;
 	}
 
 	/** 构造函数。 */
@@ -76,6 +81,7 @@ public class Primitive {
 		this.ownerTag = null;
 		this.celletIdentifier = null;
 		this.dialect = dialect;
+		this.cellet = null;
 	}
 
 	/** 返回原语所属端的标签。
@@ -96,6 +102,20 @@ public class Primitive {
 	 */
 	public String getCelletIdentifier() {
 		return this.celletIdentifier;
+	}
+
+	/** 设置 Cellet 。
+	 */
+	protected void setCellet(Cellet cellet) {
+		this.cellet = cellet;
+		if (null != this.dialect) {
+			this.dialect.setCellet(cellet);
+		}
+	}
+	/** 返回 Cellet 。
+	 */
+	public Cellet getCellet() {
+		return this.cellet;
 	}
 
 	/** 判断是否具有方言属性。

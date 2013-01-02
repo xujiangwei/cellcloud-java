@@ -26,6 +26,7 @@ THE SOFTWARE.
 
 package net.cellcloud.talk.dialect;
 
+import net.cellcloud.core.Cellet;
 import net.cellcloud.talk.Primitive;
 
 /** 原语方言。
@@ -38,10 +39,12 @@ public abstract class Dialect {
 	private String tracker;
 	private String tag;
 	private String celletIdentifier;
+	private Cellet cellet;
 
 	public Dialect(String name, String tracker) {
 		this.name = name;
 		this.tracker = tracker;
+		this.cellet = null;
 	}
 
 	/** 返回方言名。
@@ -78,6 +81,18 @@ public abstract class Dialect {
 	 */
 	public final String getCelletIdentifier() {
 		return this.celletIdentifier;
+	}
+
+	/** 设置 Cellet 。
+	 */
+	public final void setCellet(Cellet cellet) {
+		this.cellet = cellet;
+	}
+
+	/** 返回 Cellet 。
+	 */
+	public final Cellet getCellet() {
+		return this.cellet;
 	}
 
 	/** 翻译原语为方言。
