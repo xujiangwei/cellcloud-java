@@ -208,10 +208,15 @@ public class Speaker {
 		return true;
 	}
 
-	/** 是否已接受请求。
+	/** 是否已经与 Cellet 建立服务。
 	 */
 	public boolean isCalled() {
 		return this.state == SpeakerState.CALLED;
+	}
+	/** Cellet 服务器是否已经被挂起。
+	 */
+	public boolean isSuspended() {
+		return this.state == SpeakerState.SUSPENDED;
 	}
 
 	/** 记录服务端 Tag */

@@ -461,7 +461,7 @@ public final class TalkService implements Service {
 		return false;
 	}
 
-	/** 是否已经可调用指定的 Cellet 。
+	/** 是否已经与 Cellet 建立服务。
 	 * 
 	 * @note Client
 	 */
@@ -472,6 +472,21 @@ public final class TalkService implements Service {
 		Speaker speaker = this.speakers.get(identifier);
 		if (null != speaker) {
 			return speaker.isCalled();
+		}
+
+		return false;
+	}
+	/** Cellet 服务器是否已经被挂起。
+	 * 
+	 * @note Client
+	 */
+	public boolean isSuspended(final String identifier) {
+		if (null == this.speakers)
+			return false;
+
+		Speaker speaker = this.speakers.get(identifier);
+		if (null != speaker) {
+			return speaker.isSuspended();
 		}
 
 		return false;
