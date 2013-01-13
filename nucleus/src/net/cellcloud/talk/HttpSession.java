@@ -26,45 +26,18 @@ THE SOFTWARE.
 
 package net.cellcloud.talk;
 
-import java.io.IOException;
-import java.util.TreeMap;
+import java.net.InetSocketAddress;
 
-import javax.servlet.ServletException;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
+import net.cellcloud.common.MessageService;
+import net.cellcloud.common.Session;
 
-import net.cellcloud.http.HttpHandler;
-
-/** Talk 服务的 HTTP 协议处理器。
+/** Talk Http Session
  * 
  * @author Jiangwei Xu
  */
-public final class TalkHttpHandler implements HttpHandler {
+public class HttpSession extends Session {
 
-	private final String contextPath = "/api/talker";
-
-	private TreeMap<Long, HttpSession> sessions;
-
-	public TalkHttpHandler() {
-		this.sessions = new TreeMap<Long, HttpSession>();
-	}
-
-	@Override
-	public String getContextPath() {
-		return this.contextPath;
-	}
-
-	@Override
-	public void handle(String target, HttpServletRequest request, HttpServletResponse response)
-			throws IOException, ServletException {
-		String identifier = request.getParameter("call");
-		if (null != identifier) {
-			HttpSession session = new HttpSession(null, null);
-			this.sessions.put(session.getId(), session);
-		}
-
-		response.setContentType("text/html;charset=utf-8");
-		response.setStatus(HttpServletResponse.SC_OK);
-		response.getWriter().println("");
+	public HttpSession(MessageService service, InetSocketAddress address) {
+		super(service, address);
 	}
 }

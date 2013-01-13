@@ -27,6 +27,7 @@ THE SOFTWARE.
 package net.cellcloud.http;
 
 import java.io.IOException;
+import java.util.HashMap;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
@@ -41,10 +42,9 @@ import org.eclipse.jetty.server.handler.AbstractHandler;
  */
 public class JettyHandler extends AbstractHandler {
 
-	private HttpService service = null;
+	private HttpHandler[] handlerArray = null;
 
-	protected JettyHandler(HttpService service) {
-		this.service = service;
+	protected JettyHandler() {
 	}
 
 	@Override
@@ -52,7 +52,7 @@ public class JettyHandler extends AbstractHandler {
 			HttpServletRequest request, HttpServletResponse response)
 					throws IOException, ServletException {
 		boolean bingo = false;
-		for (HttpHandler handler : this.service.handlerArray) {
+		for (HttpHandler handler : this.handlerArray) {
 			if (target.indexOf(handler.getContextPath()) == 0) {
 				bingo = true;
 				handler.handle(target, request, response);
@@ -67,5 +67,10 @@ public class JettyHandler extends AbstractHandler {
 		}
 
 		baseRequest.setHandled(true);
+	}
+
+	public void updateHandlers(HashMap<String, HttpHandler> maps) {
+		this.handlerArray = new HttpHandler[maps.size()];
+		maps.values().toArray(this.handlerArray);
 	}
 }

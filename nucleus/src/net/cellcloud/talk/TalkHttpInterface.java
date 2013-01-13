@@ -28,12 +28,15 @@ package net.cellcloud.talk;
 
 /** Talk 服务器 HTTP API 定义。
  * 
+ * POST
+ *    - call
+ * 
  * @author Jiangwei Xu
  */
 public final class TalkHttpInterface {
 
-	protected final static String contact = "/api/talk/contact";
-
 	public TalkHttpInterface() {
 	}
+
+	
 }

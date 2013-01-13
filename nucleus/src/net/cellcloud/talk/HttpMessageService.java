@@ -26,45 +26,27 @@ THE SOFTWARE.
 
 package net.cellcloud.talk;
 
-import java.io.IOException;
-import java.util.TreeMap;
+import net.cellcloud.common.Message;
+import net.cellcloud.common.MessageService;
+import net.cellcloud.common.Session;
 
-import javax.servlet.ServletException;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-
-import net.cellcloud.http.HttpHandler;
-
-/** Talk 服务的 HTTP 协议处理器。
+/** 用于模拟 Message Service 的 HTTP 消息服务。
  * 
  * @author Jiangwei Xu
  */
-public final class TalkHttpHandler implements HttpHandler {
+public class HttpMessageService extends MessageService {
 
-	private final String contextPath = "/api/talker";
-
-	private TreeMap<Long, HttpSession> sessions;
-
-	public TalkHttpHandler() {
-		this.sessions = new TreeMap<Long, HttpSession>();
+	public HttpMessageService() {
+		
 	}
 
 	@Override
-	public String getContextPath() {
-		return this.contextPath;
+	public void write(Session session, Message message) {
+		
 	}
 
 	@Override
-	public void handle(String target, HttpServletRequest request, HttpServletResponse response)
-			throws IOException, ServletException {
-		String identifier = request.getParameter("call");
-		if (null != identifier) {
-			HttpSession session = new HttpSession(null, null);
-			this.sessions.put(session.getId(), session);
-		}
-
-		response.setContentType("text/html;charset=utf-8");
-		response.setStatus(HttpServletResponse.SC_OK);
-		response.getWriter().println("");
+	public void read(Message message, Session session) {
+		
 	}
 }

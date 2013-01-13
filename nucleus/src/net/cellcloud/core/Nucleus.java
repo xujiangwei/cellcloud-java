@@ -195,7 +195,7 @@ public final class Nucleus {
 					Logger.i(Nucleus.class, "Starting web service success.");
 				}
 				else {
-					Logger.i(Nucleus.class, "Starting web service fail.");
+					Logger.i(Nucleus.class, "Starting web service failure.");
 				}
 			}
 		}
@@ -211,6 +211,7 @@ public final class Nucleus {
 				}
 			}
 
+			// 启动守护线程
 			this.talkService.startDaemon();
 		}
 

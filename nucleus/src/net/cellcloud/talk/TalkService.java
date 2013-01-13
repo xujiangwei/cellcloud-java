@@ -101,7 +101,7 @@ public final class TalkService implements Service {
 
 			this.port = 7000;
 			this.httpPort = 8181;
-			this.httpEnabled = false;
+			this.httpEnabled = true;
 			this.unidentifiedSessions = null;
 			this.sessionContexts = null;
 			this.tagSessionsMap = null;
@@ -153,21 +153,21 @@ public final class TalkService implements Service {
 
 		if (null == this.acceptor) {
 			this.acceptor = new NonblockingAcceptor();
+
+			// 定义包标识
+			byte[] head = {0x20, 0x10, 0x11, 0x10};
+			byte[] tail = {0x19, 0x78, 0x10, 0x04};
+			this.acceptor.defineDataMark(head, tail);
+
+			// 设置处理器
+			if (null == this.talkHandler) {
+				this.talkHandler = new TalkAcceptorHandler(this, this.acceptor.getWorkerNum());
+			}
+			this.acceptor.setHandler(this.talkHandler);
 		}
 
 		// 最大连接数
 		this.acceptor.setMaxConnectNum(1024);
-
-		// 定义包标识
-		byte[] head = {0x20, 0x10, 0x11, 0x10};
-		byte[] tail = {0x19, 0x78, 0x10, 0x04};
-		this.acceptor.defineDataMark(head, tail);
-
-		// 设置处理器
-		if (null == this.talkHandler) {
-			this.talkHandler = new TalkAcceptorHandler(this, this.acceptor.getWorkerNum());
-		}
-		this.acceptor.setHandler(this.talkHandler);
 
 		boolean succeeded = this.acceptor.bind(this.port);
 		if (succeeded) {
@@ -476,7 +476,7 @@ public final class TalkService implements Service {
 
 		return false;
 	}
-	/** Cellet 服务器是否已经被挂起。
+	/** Cellet 服务是否已经被挂起。
 	 * 
 	 * @note Client
 	 */
@@ -496,7 +496,7 @@ public final class TalkService implements Service {
 	 */
 	private void startHttpService() {
 		if (null == HttpService.getInstance()) {
-			Logger.e(TalkService.class, "Starts talk web service fail, reason is web model failed to start.");
+			Logger.w(TalkService.class, "Starts talk web service failed, web model failed to start.");
 			return;
 		}
 
@@ -504,7 +504,7 @@ public final class TalkService implements Service {
 		connector.setPort(this.httpPort);
 		connector.setRequestHeaderSize(8192);
 		connector.setThreadPool(new QueuedThreadPool(16));
-		connector.setName("/api/talk");
+		connector.setName("/api/talker");
 
 		HttpService.getInstance().addConnector(connector);
 		HttpService.getInstance().addHandler(new TalkHttpHandler());
@@ -513,7 +513,7 @@ public final class TalkService implements Service {
 	/** 停止 HTTP 服务。
 	 */
 	private void stopHttpService() {
-		// Nothing
+		// TODO
 	}
 
 	/** 将指定 Speaker 标记为丢失连接。

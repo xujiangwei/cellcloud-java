@@ -28,7 +28,6 @@ package net.cellcloud.http;
 
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
 
 import net.cellcloud.common.LogLevel;
@@ -51,7 +50,6 @@ public final class HttpService implements Service {
 	private Server server = null;
 	private List<Connector> connectors = null;
 	private HashMap<String, HttpHandler> httpHandlers = null;
-	protected HttpHandler[] handlerArray = null;
 
 	private JettyHandler handler = null;
 
@@ -64,7 +62,7 @@ public final class HttpService implements Service {
 			org.eclipse.jetty.util.log.Log.setLog(new JettyLoggerPuppet());
 
 			this.server = new Server();
-			this.handler = new JettyHandler(HttpService.instance);
+			this.handler = new JettyHandler();
 			this.connectors = new ArrayList<Connector>();
 			this.httpHandlers = new HashMap<String, HttpHandler>();
 		}
@@ -84,21 +82,15 @@ public final class HttpService implements Service {
 		// 构建错误页
 		ErrorPages.build();
 
-		this.handlerArray = new HttpHandler[this.httpHandlers.size()];
-		Iterator<HttpHandler> iter = this.httpHandlers.values().iterator();
-		int i = 0;
-		while (iter.hasNext()) {
-			HttpHandler handler = iter.next();
-			this.handlerArray[i] = handler;
-			++i;
-		}
-
 		Connector[] array = new Connector[this.connectors.size()];
 		this.connectors.toArray(array);
 		this.server.setConnectors(array);
 		this.server.setHandler(this.handler);
 		this.server.setGracefulShutdown(5000);
 		this.server.setStopAtShutdown(true);
+
+		// 更新 Hanlder 列表
+		this.handler.updateHandlers(this.httpHandlers);
 
 		try {
 			this.server.start();
