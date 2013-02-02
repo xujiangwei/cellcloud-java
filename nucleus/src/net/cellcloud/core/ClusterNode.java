@@ -26,27 +26,56 @@ THE SOFTWARE.
 
 package net.cellcloud.core;
 
+import java.net.InetSocketAddress;
 import java.util.Collection;
+import java.util.List;
 import java.util.TreeMap;
 
 /** 集群节点。
  * 
  * @author Jiangwei Xu
  */
-public final class ClusterNode extends Endpoint implements Comparable<ClusterNode> {
+public class ClusterNode extends Endpoint implements Comparable<ClusterNode> {
 
+	// 节点散列码
 	private long hashCode;
-	private TreeMap<Long, ClusterNode> children;
-	private ClusterConnector connector;
+
+	// 物理节点下的虚拟节点
+	private TreeMap<Long, ClusterVirtualNode> virtualNodes;
+	// 物理兄弟节点
+	private TreeMap<Long, ClusterNode> brotherNodes;
 
 	/** 构造函数。
 	 */
-	public ClusterNode(long hash, ClusterConnector connector) {
-		super(Nucleus.getInstance().getTag(), NucleusConfig.Role.NODE
-				, null != connector ? connector.getAddress() : null);
-		this.hashCode = hash;
-		this.children = new TreeMap<Long, ClusterNode>();
-		this.connector = connector;
+	public ClusterNode(long hashCode, InetSocketAddress address, int numVNode) {
+		super(Nucleus.getInstance().getTag(), NucleusConfig.Role.NODE, address);
+		this.hashCode = hashCode;
+
+		if (numVNode > 0) {
+			// 创建虚节点
+			this.virtualNodes = new TreeMap<Long, ClusterVirtualNode>();
+			for (int i = 0; i < numVNode; ++i) {
+				long hash = ClusterController.hashVNode(address, i + 1);
+				ClusterVirtualNode vn = new ClusterVirtualNode(hash, address);
+				this.virtualNodes.put(vn.getHashCode(), vn);
+			}
+		}
+	}
+
+	/** 构造函数。
+	 */
+	public ClusterNode(long hashCode, InetSocketAddress address, List<Long> vnodeHashList) {
+		super(Nucleus.getInstance().getTag(), NucleusConfig.Role.NODE, address);
+		this.hashCode = hashCode;
+
+		if (!vnodeHashList.isEmpty()) {
+			// 创建虚节点
+			this.virtualNodes = new TreeMap<Long, ClusterVirtualNode>();
+			for (Long hash : vnodeHashList) {
+				ClusterVirtualNode vn = new ClusterVirtualNode(hash.longValue(), address);
+				this.virtualNodes.put(vn.getHashCode(), vn);
+			}
+		}
 	}
 
 	/** 节点 Hash 值。
@@ -55,44 +84,47 @@ public final class ClusterNode extends Endpoint implements Comparable<ClusterNod
 		return this.hashCode;
 	}
 
-	/** 添加子节点。
+	/** 判断是否是兄弟节点。
 	 */
-	public void addChild(ClusterNode node) {
+	public boolean isBrotherNode(long hashCode) {
 		synchronized (this) {
-			if (!this.children.containsKey(node.getHashCode())) {
-				this.children.put(node.getHashCode(), node);
+			return (null != this.brotherNodes) ? this.brotherNodes.containsKey(hashCode) : false;
+		}
+	}
+
+	/** 添加兄弟节点。
+	 */
+	public void addBrother(ClusterNode brother) {
+		if (null == this.brotherNodes) {
+			this.brotherNodes = new TreeMap<Long, ClusterNode>();
+		}
+		this.brotherNodes.put(brother.getHashCode(), brother);
+	}
+
+	/** 返回所有虚拟节点。
+	 */
+	public Collection<ClusterVirtualNode> getVirtualNodes() {
+		synchronized (this) {
+			return (null != this.virtualNodes) ? this.virtualNodes.values() : null;
+		}
+	}
+
+	/** 是否包含指定散列码的虚拟节点。
+	 */
+	public boolean containsVirtualNode(long hashCode) {
+		synchronized (this) {
+			return (null != this.virtualNodes) ? this.virtualNodes.containsKey(hashCode) : false;
+		}
+	}
+
+	/** 清空所有兄弟节点和虚拟节点。
+	 */
+	public void clearup() {
+		synchronized (this) {
+			if (null != this.virtualNodes) {
+				this.virtualNodes.clear();
 			}
 		}
-	}
-
-	/** 返回所有子节点。
-	 */
-	public Collection<ClusterNode> getChildren() {
-		synchronized (this) {
-			return this.children.values();
-		}
-	}
-
-	/** 是否包含指定散列码的节点。
-	 */
-	public boolean contains(long hashCode) {
-		synchronized (this) {
-			return this.children.containsKey(hashCode);
-		}
-	}
-
-	/** 清空所有子节点。
-	 */
-	public void clear() {
-		synchronized (this) {
-			this.children.clear();
-		}
-	}
-
-	/** 关闭连接器。
-	 */
-	public void closeConnector() {
-		this.connector.close();
 	}
 
 	@Override
@@ -102,7 +134,7 @@ public final class ClusterNode extends Endpoint implements Comparable<ClusterNod
 
 	@Override
 	public int hashCode() {
-		return (int)this.hashCode;
+		return (int) (this.hashCode % Integer.MAX_VALUE);
 	}
 
 	@Override

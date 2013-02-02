@@ -26,7 +26,7 @@ THE SOFTWARE.
 
 package net.cellcloud.core;
 
-import java.net.InetAddress;
+import java.net.InetSocketAddress;
 import java.util.List;
 
 /** 内核参数配置描述。
@@ -84,8 +84,12 @@ public final class NucleusConfig {
 	/// 是否使用 HTTP 服务
 	public boolean httpd = false;
 
+	/// 集群绑定主机名
+	public String clusterHostname = "127.0.0.1";
+	/// 集群服务首选端口
+	public int clusterPreferredPort = 11099;
 	/// 集群地址表
-	public List<InetAddress> clusterAddressList = null;
+	public List<InetSocketAddress> clusterAddressList = null;
 	/// 是否自定扫描地址
 	public boolean clusterAutoScan = false;
 

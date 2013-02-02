@@ -45,39 +45,39 @@ import net.cellcloud.util.Util;
  * 
  * @author Jiangwei Xu
  */
-public final class ClusterConnector extends Observable implements MessageHandler, Comparable<ClusterConnector> {
+public final class ClusterConnector extends Observable implements MessageHandler {
 
 	protected final static String SUBJECT_FAILURE = "failure";
 	protected final static String SUBJECT_DISCOVERING = "discovering";
 
 	private final int bufferSize = 8192;
 
-	private long hash;
+	private Long hashCode;
 	private InetSocketAddress address;
 
 	private NonblockingConnector connector;
 	private ByteBuffer buffer;
 	private Queue<ClusterProtocol> protocolQueue;
 
-	public ClusterConnector(InetSocketAddress address, long hash) {
+	public ClusterConnector(InetSocketAddress address, Long hashCode) {
 		this.address = address;
-		this.hash = hash;
+		this.hashCode = hashCode;
 		this.connector = new NonblockingConnector();
 		this.buffer = ByteBuffer.allocate(this.bufferSize);
 		this.connector.setHandler(this);
 		this.protocolQueue = new LinkedList<ClusterProtocol>();
 	}
 
-	/** 返回连接器散列码。
-	 */
-	public long getHashCode() {
-		return this.hash;
-	}
-
 	/** 返回连接器地址。
 	 */
 	public InetSocketAddress getAddress() {
 		return this.address;
+	}
+
+	/** 返回连接器 Hash 码。
+	 */
+	public Long getHashCode() {
+		return this.hashCode;
 	}
 
 	/** 关闭连接。
@@ -88,41 +88,22 @@ public final class ClusterConnector extends Observable implements MessageHandler
 
 	/** 执行发现。
 	 */
-	public boolean discover(int selfPort) {
+	public boolean discover(String sourceIP, int sourcePort, ClusterNode node) {
 		if (this.connector.isConnected()) {
-			ClusterDiscoveringProtocol protocol = new ClusterDiscoveringProtocol(selfPort);
+			ClusterDiscoveringProtocol protocol = new ClusterDiscoveringProtocol(sourceIP, sourcePort, node);
 			protocol.launch(this.connector.getSession());
 			return true;
 		}
 		else {
+			// 连接集群地址
 			if (this.connector.connect(this.address)) {
-				ClusterDiscoveringProtocol protocol = new ClusterDiscoveringProtocol(selfPort);
+				ClusterDiscoveringProtocol protocol = new ClusterDiscoveringProtocol(sourceIP, sourcePort, node);
 				this.protocolQueue.offer(protocol);
 				return true;
 			}
 		}
 
 		return false;
-	}
-
-	@Override
-	public int compareTo(ClusterConnector other) {
-		return (int)(this.hash - other.hash);
-	}
-
-	@Override
-	public int hashCode() {
-		return (int)this.hash;
-	}
-
-	@Override
-	public boolean equals(Object other) {
-		if (other instanceof ClusterConnector) {
-			return this.hash == ((ClusterConnector)other).hash;
-		}
-		else {
-			return false;
-		}
 	}
 
 	@Override
@@ -166,7 +147,7 @@ public final class ClusterConnector extends Observable implements MessageHandler
 			// 清空待执行协议
 			this.protocolQueue.clear();
 
-			ConnectorFailure failure = new ConnectorFailure(errorCode);
+			ClusterFailureProtocol failure = new ClusterFailureProtocol(errorCode);
 			this.distribute(failure);
 		}
 	}
@@ -236,29 +217,5 @@ public final class ClusterConnector extends Observable implements MessageHandler
 		this.setChanged();
 		this.notifyObservers(protocol);
 		this.clearChanged();
-	}
-
-	/** 连接器故障。
-	 */
-	protected final class ConnectorFailure extends ClusterProtocol {
-
-		protected int errorCode;
-
-		protected ConnectorFailure(int errorCode) {
-			super("ConnectorFailure");
-			this.errorCode = errorCode;
-		}
-
-		@Override
-		public void launch(Session session) {
-		}
-
-		@Override
-		public void stack(Session session) {
-		}
-
-		@Override
-		public void stackReject(Session session) {
-		}
 	}
 }

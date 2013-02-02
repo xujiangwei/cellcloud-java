@@ -263,6 +263,12 @@ public class NonblockingAcceptor extends MessageService implements MessageAccept
 		// Nothing
 	}
 
+	/** 返回绑定地址。
+	 */
+	public final InetSocketAddress  getBindAddress() {
+		return this.bindAddress;
+	}
+
 	/** 设置工作器数量。
 	 */
 	public void setWorkerNum(int num) {

@@ -41,7 +41,7 @@ public final class ClusterProtocolFactory {
 	 */
 	public static ClusterProtocol create(Map<String, String> prop) {
 		String protocol = prop.get(ClusterProtocol.KEY_PROTOCOL);
-		if (protocol.equals(ClusterDiscoveringProtocol.NAME)) {
+		if (protocol.equalsIgnoreCase(ClusterDiscoveringProtocol.NAME)) {
 			return new ClusterDiscoveringProtocol(prop);
 		}
 		else {

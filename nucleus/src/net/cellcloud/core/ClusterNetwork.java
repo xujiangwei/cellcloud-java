@@ -28,6 +28,7 @@ package net.cellcloud.core;
 
 import java.io.IOException;
 import java.net.InetAddress;
+import java.net.InetSocketAddress;
 import java.net.InterfaceAddress;
 import java.net.NetworkInterface;
 import java.net.ServerSocket;
@@ -58,9 +59,8 @@ import net.cellcloud.util.Util;
  */
 public final class ClusterNetwork extends Observable implements Service, MessageHandler {
 
-	protected final static int PREFERRED_PORT = 11099;
-
-	private int port = -1;
+	private String hostname = "127.0.0.1";
+	private int port = 11099;
 	private NonblockingAcceptor acceptor;
 	private final int cacheSize = 8192;
 
@@ -72,29 +72,35 @@ public final class ClusterNetwork extends Observable implements Service, Message
 
 	/** 构造函数。
 	 */
-	public ClusterNetwork() {
+	public ClusterNetwork(String hostname, int preferredPort) {
+		this.hostname = hostname;
+		this.port = preferredPort;
 		this.sessionMessageCache = new ConcurrentHashMap<Long, Queue<byte[]>>();
 	}
 
 	@Override
 	public boolean startup() {
-		if (this.port > 0) {
+		if (null != this.acceptor) {
 			return true;
 		}
 
 		this.interrupted = false;
 
 		// 检测可用的端口号
-		this.port = this.detectUsablePort(PREFERRED_PORT);
+		this.port = this.detectUsablePort(this.port);
  
 		// 启动接收器
 		this.acceptor = new NonblockingAcceptor();
 		this.acceptor.setHandler(this);
 		this.acceptor.setMaxConnectNum(1024);
 		this.acceptor.setWorkerNum(2);
-		if (!this.acceptor.bind(this.port)) {
-			Logger.e(this.getClass(),
-					new StringBuilder("Cluster network can not bind socket on ").append(this.port).toString());
+		if (!this.acceptor.bind(new InetSocketAddress(this.hostname, this.port))) {
+			Logger.e(this.getClass(), new StringBuilder("Cluster network can not bind socket on ")
+					.append(this.hostname).append(":").append(this.port).toString());
+
+			this.acceptor.setHandler(null);
+			this.acceptor = null;
+
 			return false;
 		}
 
@@ -111,6 +117,12 @@ public final class ClusterNetwork extends Observable implements Service, Message
 		}
 
 		this.port = -1;
+	}
+
+	/** 返回绑定地址。
+	 */
+	public InetSocketAddress getBindAddress() {
+		return this.acceptor.getBindAddress();
 	}
 
 	/** 返回监听端口。
@@ -152,7 +164,7 @@ public final class ClusterNetwork extends Observable implements Service, Message
 					// 扫描局域网内可用地址
 					List<InetAddress> list = scanReachableAddress();
 					if (!list.isEmpty()) {
-						
+						// TODO
 					}
 
 					Logger.i(ClusterNetwork.class, new StringBuilder("Scan reachable address expended time: ")
@@ -234,6 +246,7 @@ public final class ClusterNetwork extends Observable implements Service, Message
 	/** 分发协议。
 	 */
 	private void distribute(Session session, ClusterProtocol protocol) {
+		// 设置上下文会话
 		protocol.contextSession = session;
 
 		this.setChanged();

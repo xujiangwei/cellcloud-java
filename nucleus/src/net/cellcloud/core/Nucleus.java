@@ -138,8 +138,11 @@ public final class Nucleus {
 
 		// 角色：节点
 		if ((this.config.role & NucleusConfig.Role.NODE) != 0) {
+
+			//---- 配置集群 ----
+
 			if (null == this.clusterController) {
-				this.clusterController = new ClusterController();
+				this.clusterController = new ClusterController(this.config.clusterHostname, this.config.clusterPreferredPort);
 			}
 			// 添加集群地址
 			if (null != this.config.clusterAddressList) {
@@ -157,6 +160,8 @@ public final class Nucleus {
 				Logger.e(Nucleus.class, "Starting cluster controller service failure.");
 			}
 
+			//---- 配置 HTTP 服务  ----
+
 			if (this.config.httpd) {
 				// 创建 Web Service
 				try {
@@ -165,6 +170,8 @@ public final class Nucleus {
 					Logger.logException(e, LogLevel.WARNING);
 				}
 			}
+
+			//---- 配置 Talk Service  ----
 
 			// 创建 Talk Service
 			if (null == this.talkService) {
@@ -182,6 +189,8 @@ public final class Nucleus {
 			else {
 				Logger.e(Nucleus.class, "Starting talk service failure.");
 			}
+
+			//---- 配置结束 ----
 
 			// 加载外部 Jar 包
 			this.loadExternalJar();

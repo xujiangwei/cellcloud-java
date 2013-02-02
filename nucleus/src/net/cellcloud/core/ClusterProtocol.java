@@ -27,6 +27,7 @@ THE SOFTWARE.
 package net.cellcloud.core;
 
 import java.util.Date;
+import java.util.Map;
 
 import net.cellcloud.common.Message;
 import net.cellcloud.common.Session;
@@ -47,15 +48,28 @@ public abstract class ClusterProtocol {
 	// 状态
 	public final static String KEY_STATE = "State";
 	// 节点散列码
-	public final static String KEY_HASHCODE = "HashCode";
+	public final static String KEY_HASH = "Hash";
 
 	private String name;
 
 	// 上下文会话
 	protected Session contextSession;
 
+	// 属性
+	protected Map<String, String> prop;
+
+	/** 指定协议名构建协议。
+	 */
 	public ClusterProtocol(String name) {
 		this.name = name;
+		this.prop = null;
+	}
+
+	/** 指定协议属性值构建协议。
+	 */
+	public ClusterProtocol(String name, Map<String, String> prop) {
+		this.name = name;
+		this.prop = prop;
 	}
 
 	/** 返回协议名。
@@ -70,19 +84,45 @@ public abstract class ClusterProtocol {
 		return Util.sDateFormat.format(new Date());
 	}
 
+	/** 返回协议内传输的标签。
+	 */
+	public final String getTag() {
+		return this.prop.get(KEY_TAG);
+	}
+
+	/** 返回协议状态。
+	 */
+	public int getState() {
+		String szState = this.prop.get(KEY_STATE);
+		return (null != szState) ? Integer.parseInt(szState) : -1;
+	}
+
+	/** 返回物理节点 Hash 。
+	 */
+	public long getHash() {
+		String szHash = this.prop.get(KEY_HASH);
+		return (null != szHash) ? Long.parseLong(szHash) : 0;
+	}
+
+	/** 返回指定键对应的属性值。
+	 */
+	public String getProp(String key) {
+		return (null != this.prop) ? this.prop.get(key) : null;
+	}
+
 	/** 启动协议。
 	 */
 	abstract public void launch(Session session);
 
 	/** 向指定 Session 回送执行结果。
 	 */
-	abstract public void stack(Session session);
+	abstract public void stack(ClusterNode node);
 
 	/** 向指定 Session 回送拒绝。
 	 */
-	abstract public void stackReject(Session session);
+	abstract public void stackReject(ClusterNode node);
 
-	/** 协议收尾处理。
+	/** 协议收尾处理并发送。
 	 */
 	protected void touch(Session session, StringBuilder buffer) {
 		buffer.append("\r\n\r\n");
