@@ -2,7 +2,7 @@
 -----------------------------------------------------------------------------
 This source file is part of Cell Cloud.
 
-Copyright (c) 2009-2012 Cell Cloud Team (cellcloudproject@gmail.com)
+Copyright (c) 2009-2012 Cell Cloud Team (www.cellcloud.net)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -34,7 +34,7 @@ import net.cellcloud.talk.dialect.Dialect;
  * 
  * @author Jiangwei Xu
  */
-public abstract class Cellet {
+public abstract class Cellet extends AbstractCellet {
 
 	private CelletFeature feature;
 	private CelletSandbox sandbox;
@@ -42,6 +42,7 @@ public abstract class Cellet {
 	/** 构造函数。
 	 */
 	public Cellet(CelletFeature feature) {
+		super();
 		this.feature = feature;
 		this.sandbox = new CelletSandbox(feature);
 	}
@@ -69,41 +70,43 @@ public abstract class Cellet {
 		Nucleus.getInstance().prepareCellet(this, this.sandbox);
 	}
 
-	/** Cellet 激活回调。
+	/**
+	 * @copydoc AbstractCellet::dialogue(String,String)
 	 */
-	public abstract void activate();
+	@Override
+	public void dialogue(final String tag, final Primitive primitive) {
+		// Nothing
+	}
 
-	/** Cellet 钝化回调。
+	/**
+	 * @copydoc AbstractCellet::contacted(String)
 	 */
-	public abstract void deactivate();
+	@Override
+	public void contacted(final String tag) {
+		// Nothing
+	}
 
-	/** Talk 会话回调。
-	 * 
-	 * @param tag 对端的内核标签。
+	/**
+	 * @copydoc AbstractCellet::quitted(String)
 	 */
-	public abstract void dialogue(final String tag, final Primitive primitive);
+	@Override
+	public void quitted(final String tag) {
+		// Nothing
+	}
 
-	/** 当消费者连接服务时回调此方法。
-	 * 
-	 * @param tag 对端的内核标签。
+	/**
+	 * @copydoc AbstractCellet::suspended(String)
 	 */
-	public abstract void contacted(final String tag);
+	@Override
+	public void suspended(final String tag) {
+		// Nothing
+	}
 
-	/** 当消费者退出服务时回调此方法。
-	 * 
-	 * @param tag 对端的内核标签。
+	/**
+	 * @copydoc AbstractCellet::resumed(String)
 	 */
-	public abstract void quitted(final String tag);
-
-	/** 当消费者被挂起时回调此方法。
-	 * 
-	 * @param tag 对端的内核标签。
-	 */
-	public abstract void suspended(final String tag);
-
-	/** 当消费者从挂起状态恢复时回调此方法。
-	 * 
-	 * @param tag 对端的内核标签。
-	 */
-	public abstract void resumed(final String tag);
+	@Override
+	public void resumed(final String tag) {
+		// Nothing
+	}
 }

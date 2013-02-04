@@ -2,7 +2,7 @@
 -----------------------------------------------------------------------------
 This source file is part of Cell Cloud.
 
-Copyright (c) 2009-2013 Cell Cloud Team (cellcloudproject@gmail.com)
+Copyright (c) 2009-2013 Cell Cloud Team (www.cellcloud.net)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -27,6 +27,7 @@ THE SOFTWARE.
 package net.cellcloud.core;
 
 import java.net.InetSocketAddress;
+import java.util.HashMap;
 
 /** 集群虚拟节点。
  * 
@@ -34,7 +35,40 @@ import java.net.InetSocketAddress;
  */
 public class ClusterVirtualNode extends ClusterNode {
 
-	public ClusterVirtualNode(long hashCode, InetSocketAddress address) {
+	protected ClusterNode master = null;
+
+	private HashMap<String, Chunk> memoryChunks;
+
+	public ClusterVirtualNode(ClusterNode master, long hashCode, InetSocketAddress address) {
 		super(hashCode, address, -1);
+		this.master = master;
+		this.memoryChunks = new HashMap<String, Chunk>();
+	}
+
+	/** 返回块。
+	 */
+	public Chunk getChunk(String label) {
+		return this.memoryChunks.get(label);
+	}
+
+	/** 插入块。
+	 */
+	public void insertChunk(Chunk chunk) {
+		this.memoryChunks.put(chunk.getLabel(), chunk);
+	}
+
+	/** 删除块。
+	 */
+	public void deleteChunk(Chunk chunk) {
+		this.memoryChunks.remove(chunk);
+	}
+
+	/** 更新块。
+	 */
+	public void updateChunk(Chunk chunk) {
+		if (this.memoryChunks.containsKey(chunk.getLabel())) {
+			this.memoryChunks.remove(chunk);
+		}
+		this.memoryChunks.put(chunk.getLabel(), chunk);
 	}
 }

@@ -34,6 +34,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Scanner;
 
+import net.cellcloud.cell.command.ClusterCommand;
 import net.cellcloud.cell.command.ConsoleCommand;
 import net.cellcloud.cell.command.ExitCommand;
 import net.cellcloud.cell.command.HelpCommand;
@@ -182,10 +183,16 @@ public final class Console {
 		ConsoleCommand cmd = new HelpCommand(this);
 		this.registerCommand(cmd);
 
+		// Exit
 		cmd = new ExitCommand(this);
 		this.registerCommand(cmd);
 
+		// Log
 		cmd = new LogCommand();
+		this.registerCommand(cmd);
+
+		// Cluster
+		cmd = new ClusterCommand();
 		this.registerCommand(cmd);
 	}
 }

@@ -2,7 +2,7 @@
 -----------------------------------------------------------------------------
 This source file is part of Cell Cloud.
 
-Copyright (c) 2009-2013 Cell Cloud Team (cellcloudproject@gmail.com)
+Copyright (c) 2009-2013 Cell Cloud Team (www.cellcloud.net)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -117,7 +117,7 @@ public class ClusterDiscoveringProtocol extends ClusterProtocol {
 		buf.append(KEY_HASH).append(": ").append(this.node.getHashCode()).append("\n");
 
 		// 写入虚拟节点信息
-		Collection<ClusterVirtualNode> vnodes = this.node.getVirtualNodes();
+		Collection<ClusterVirtualNode> vnodes = this.node.getOwnVirtualNodes();
 		if (null != vnodes && !vnodes.isEmpty()) {
 			buf.append(KEY_VNODES).append(": ");
 
@@ -145,7 +145,7 @@ public class ClusterDiscoveringProtocol extends ClusterProtocol {
 		buf.append(KEY_HASH).append(": ").append(node.getHashCode()).append("\n");
 
 		// 写入虚拟节点信息
-		Collection<ClusterVirtualNode> vnodes = node.getVirtualNodes();
+		Collection<ClusterVirtualNode> vnodes = node.getOwnVirtualNodes();
 		if (null != vnodes && !vnodes.isEmpty()) {
 			buf.append(KEY_VNODES).append(": ");
 

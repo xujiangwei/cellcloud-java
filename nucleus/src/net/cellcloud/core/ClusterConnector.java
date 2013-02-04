@@ -2,7 +2,7 @@
 -----------------------------------------------------------------------------
 This source file is part of Cell Cloud.
 
-Copyright (c) 2009-2013 Cell Cloud Team (cellcloudproject@gmail.com)
+Copyright (c) 2009-2013 Cell Cloud Team (www.cellcloud.net)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -191,12 +191,13 @@ public final class ClusterConnector extends Observable implements MessageHandler
 		String str = Util.bytes2String(bytes);
 		String[] array = str.split("\\\n");
 		HashMap<String, String> prop = new HashMap<String, String>();
-		for (int i = 0, size = array.length; i < size; ++i) {
-			String[] p = array[i].split(":");
-			if (p.length < 2) {
-				continue;
+		for (String line : array) {
+			int index = line.indexOf(":");
+			if (index > 0) {
+				String key = line.substring(0, index).trim();
+				String value = line.substring(index + 1, line.length()).trim();
+				prop.put(key, value);
 			}
-			prop.put(p[0].trim(), p[1].trim());
 		}
 
 		ClusterProtocol protocol = ClusterProtocolFactory.create(prop);

@@ -33,7 +33,7 @@ package net.cellcloud.cell.command;
 public final class TalkCommand extends ConsoleCommand {
 
 	public TalkCommand() {
-		super("talk", "Talk service command, sub command:suspmap", "");
+		super("talk", "Talk service command", "");
 	}
 
 	@Override

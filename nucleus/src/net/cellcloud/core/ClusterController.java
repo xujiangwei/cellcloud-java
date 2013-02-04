@@ -2,7 +2,7 @@
 -----------------------------------------------------------------------------
 This source file is part of Cell Cloud.
 
-Copyright (c) 2009-2013 Cell Cloud Team (cellcloudproject@gmail.com)
+Copyright (c) 2009-2013 Cell Cloud Team (www.cellcloud.net)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -83,7 +83,7 @@ public final class ClusterController implements Service, Observer {
 			this.timer.cancel();
 		}
 		this.timer = new Timer("ClusterControllerTimer");
-		this.timer.schedule(new ControllerTimerTask(), 10 * 1000, 5 * 60 * 1000);
+		this.timer.schedule(new ControllerTimerTask(), 5 * 1000, 5 * 60 * 1000);
 
 		return true;
 	}
@@ -131,7 +131,7 @@ public final class ClusterController implements Service, Observer {
 
 	/** 返回根节点。
 	 */
-	public ClusterNode getRootNode() {
+	public ClusterNode getNode() {
 		return this.root;
 	}
 
@@ -170,23 +170,19 @@ public final class ClusterController implements Service, Observer {
 	private void doDiscover(List<InetSocketAddress> addressList) {
 		for (InetSocketAddress address : addressList) {
 			Long hash = ClusterController.hashAddress(address);
-			ClusterConnector connector = this.physicalConnectors.get(hash);
-			if (null == connector) {
-				connector = new ClusterConnector(address, hash);
-				connector.addObserver(this);
-				this.physicalConnectors.put(hash, connector);
-			}
+			// 获取连接器
+			ClusterConnector connector = this.getOrCreateConnector(address, hash);
 
 			// 连接器执行发现协议
 			if (!connector.discover(this.network.getBindAddress().getHostName(), this.network.getPort(), this.root)) {
 				Logger.i(this.getClass(), new StringBuilder("Discovering error: ")
 					.append(address.getAddress().getHostAddress()).append(":").append(address.getPort()).toString());
 
-				this.physicalConnectors.remove(hash);
-				connector.deleteObserver(this);
+				// 执行失败，删除连接器
+				this.closeAndDestroyConnector(connector);
 			}
 			else {
-				Logger.i(this.getClass(), new StringBuilder("Start discovering: ")
+				Logger.i(this.getClass(), new StringBuilder("Discovering: ")
 					.append(address.getAddress().getHostAddress()).append(":").append(address.getPort()).toString());
 			}
 		} // #for
@@ -277,13 +273,6 @@ public final class ClusterController implements Service, Observer {
 		if (protocol instanceof ClusterDiscoveringProtocol) {
 			ClusterDiscoveringProtocol discovering = (ClusterDiscoveringProtocol)protocol;
 			if (ClusterProtocol.StateCode.REJECT == discovering.getState()) {
-				// 关闭连接
-				connector.close();
-
-				// 发现操作终止，没有发现
-				this.physicalConnectors.remove(connector.getHashCode());
-				connector.deleteObserver(this);
-
 				if (Logger.isDebugLevel()) {
 					Logger.d(this.getClass(), new StringBuilder("No cluster node: ")
 							.append(connector.getAddress().getAddress().getHostAddress()).append(":")
@@ -314,6 +303,9 @@ public final class ClusterController implements Service, Observer {
 					}
 				}
 			}
+
+			// 关闭并销毁连接器
+			this.closeAndDestroyConnector(connector);
 		}
 		else if (protocol instanceof ClusterFailureProtocol) {
 			// 发生错误或者故障
@@ -323,11 +315,30 @@ public final class ClusterController implements Service, Observer {
 //				Logger.i(this.getClass(), "Discovering failure: "
 //						+ connector.getAddress().getAddress().getHostAddress() + ":"
 //						+ connector.getAddress().getPort());
-//
-//				this.physicalConnectors.remove(connector.getHashCode());
-//				connector.deleteObserver(this);
 //			}
 		}
+	}
+
+	/** 返回或创建连接器。 */
+	private ClusterConnector getOrCreateConnector(InetSocketAddress address, Long hash) {
+		ClusterConnector connector = this.physicalConnectors.get(hash);
+		if (null == connector) {
+			connector = new ClusterConnector(address, hash);
+			connector.addObserver(this);
+			this.physicalConnectors.put(hash, connector);
+		}
+
+		return connector;
+	}
+
+	/** 关闭并销毁连接器。 */
+	private void closeAndDestroyConnector(ClusterConnector connector) {
+		// 关闭连接
+		connector.close();
+
+		// 删除物理连接
+		this.physicalConnectors.remove(connector.getHashCode());
+		connector.deleteObserver(this);
 	}
 
 	/** 生成地址 Hash 。

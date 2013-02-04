@@ -2,7 +2,7 @@
 -----------------------------------------------------------------------------
 This source file is part of Cell Cloud.
 
-Copyright (c) 2009-2012 Cell Cloud Team (cellcloudproject@gmail.com)
+Copyright (c) 2009-2012 Cell Cloud Team (www.cellcloud.net)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -220,17 +220,17 @@ public class NonblockingConnector extends MessageService implements MessageConne
 			}
 
 			try {
-				this.channel.socket().close();
-			} catch (Exception e) {
-				//Logger.logException(e, LogLevel.DEBUG);
-			}
-
-			try {
 				if (this.channel.isOpen()) {
 					this.channel.close();
 				}
 			} catch (Exception e) {
 				Logger.logException(e, LogLevel.DEBUG);
+			}
+
+			try {
+				this.channel.socket().close();
+			} catch (Exception e) {
+				//Logger.logException(e, LogLevel.DEBUG);
 			}
 		}
 
@@ -413,7 +413,7 @@ public class NonblockingConnector extends MessageService implements MessageConne
 			try {
 				read = channel.read(this.readBuffer);
 			} catch (IOException e) {
-				Logger.logException(e, LogLevel.DEBUG);
+//				Logger.logException(e, LogLevel.DEBUG);
 
 				fireSessionClosed();
 
