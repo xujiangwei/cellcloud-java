@@ -32,9 +32,10 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Observable;
 import java.util.Observer;
-import java.util.Timer;
-import java.util.TimerTask;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 
 import net.cellcloud.common.Cryptology;
 import net.cellcloud.common.Logger;
@@ -46,7 +47,7 @@ import net.cellcloud.common.Service;
  */
 public final class ClusterController implements Service, Observer {
 
-	private Timer timer;
+	private ScheduledExecutorService executor;
 	private ClusterNetwork network;
 	protected boolean autoScanNetwork = true;
 
@@ -79,20 +80,23 @@ public final class ClusterController implements Service, Observer {
 				, this.network.getBindAddress(), 3);
 
 		// 启动定时器，间隔 5 分钟
-		if (null != this.timer) {
-			this.timer.cancel();
+		if (null != this.executor) {
+			this.executor.shutdown();
 		}
-		this.timer = new Timer("ClusterControllerTimer");
-		this.timer.schedule(new ControllerTimerTask(), 5 * 1000, 5 * 60 * 1000);
+		else {
+			this.executor = new ScheduledThreadPoolExecutor(4);
+		}
+		// 执行守护定时任务
+		this.executor.scheduleAtFixedRate(new ControllerTimerTask(), 5, 5 * 60, TimeUnit.SECONDS);
 
 		return true;
 	}
 
 	@Override
 	public void shutdown() {
-		if (null != this.timer) {
-			this.timer.cancel();
-			this.timer = null;
+		if (null != this.executor) {
+			this.executor.shutdown();
+			this.executor = null;
 		}
 
 		this.network.shutdown();
@@ -165,6 +169,49 @@ public final class ClusterController implements Service, Observer {
 		}
 	}
 
+	/** 以异步方式向集群内写入数据块。
+	 */
+	public boolean writeChunk(Chunk chunk) {
+		// 获得目标 Hash
+		long hash = ClusterController.hashChunk(chunk);
+		Long targetHash = this.root.findVNodeHash(hash);
+		if (null == targetHash) {
+			return false;
+		}
+
+		// 判断是否是本地节点
+		if (this.root.containsOwnVirtualNode(targetHash)) {
+			if (Logger.isDebugLevel()) {
+				Logger.d(this.getClass(), new StringBuilder("Hit local target hash: ").append(targetHash).toString());
+			}
+
+			// 是否本地节点
+			ClusterVirtualNode vnode = this.root.getOwnVirtualNode(targetHash);
+			vnode.insertChunk(chunk);
+
+			return true;
+		}
+		else {
+			// 不是本地节点
+			ClusterVirtualNode vnode = this.root.selectVNode(targetHash);
+			if (null != vnode) {
+				ClusterConnector connector = this.getOrCreateConnector(vnode.master.getCoordinate().getAddress(), hash);
+				connector.doPush(targetHash, chunk);
+				return true;
+			}
+			else {
+				Logger.e(this.getClass(), new StringBuilder("Virtual node hash code error: ").append(targetHash).toString());
+				return false;
+			}
+		}
+	}
+
+	/** 以异步方式从集群内读取数据块。
+	 */
+	public Chunk readChunk() {
+		return null;
+	}
+
 	/** 执行发现。
 	 */
 	private void doDiscover(List<InetSocketAddress> addressList) {
@@ -174,7 +221,7 @@ public final class ClusterController implements Service, Observer {
 			ClusterConnector connector = this.getOrCreateConnector(address, hash);
 
 			// 连接器执行发现协议
-			if (!connector.discover(this.network.getBindAddress().getHostName(), this.network.getPort(), this.root)) {
+			if (!connector.doDiscover(this.network.getBindAddress().getHostName(), this.network.getPort(), this.root)) {
 				Logger.i(this.getClass(), new StringBuilder("Discovering error: ")
 					.append(address.getAddress().getHostAddress()).append(":").append(address.getPort()).toString());
 
@@ -229,13 +276,41 @@ public final class ClusterController implements Service, Observer {
 					// 尝试进行发现
 					doDiscover(list);
 				}
+				list = null;
 			}
 		}
 	}
 
 	/** 处理适配器网络句柄函数 */
 	private void update(ClusterNetwork network, ClusterProtocol protocol) {
-		if (protocol instanceof ClusterDiscoveringProtocol) {
+		if (protocol instanceof ClusterPullProtocol) {
+			
+		}
+		else if (protocol instanceof ClusterPushProtocol) {
+			ClusterPushProtocol prtl = (ClusterPushProtocol)protocol;
+			// 获取目标 Hash
+			long hash = prtl.getTargetHash();
+			if (this.root.containsOwnVirtualNode(hash)) {
+				if (Logger.isDebugLevel()) {
+					Logger.d(this.getClass(), new StringBuilder("Hit target hash: ").append(hash).append(" at ")
+							.append(this.root.getCoordinate().getAddress().getHostName())
+							.append(this.root.getCoordinate().getAddress().getPort()).toString());
+				}
+
+				// 插入数据块
+				Chunk chunk = prtl.getChunk();
+				ClusterVirtualNode vnode = this.root.getOwnVirtualNode(hash);
+				vnode.insertChunk(chunk);
+			}
+			else {
+				if (Logger.isDebugLevel()) {
+					Logger.d(this.getClass(), new StringBuilder("Don't hit target hash: ").append(hash).append(" at ")
+							.append(this.root.getCoordinate().getAddress().getHostName())
+							.append(this.root.getCoordinate().getAddress().getPort()).toString());
+				}
+			}
+		}
+		else if (protocol instanceof ClusterDiscoveringProtocol) {
 			ClusterDiscoveringProtocol discovering = (ClusterDiscoveringProtocol)protocol;
 			String tag = discovering.getTag();
 			if (tag.equals(Nucleus.getInstance().getTagAsString())) {
@@ -303,19 +378,11 @@ public final class ClusterController implements Service, Observer {
 					}
 				}
 			}
-
-			// 关闭并销毁连接器
-			this.closeAndDestroyConnector(connector);
 		}
 		else if (protocol instanceof ClusterFailureProtocol) {
-			// 发生错误或者故障
-			// TODO 根据错误码判断是否是进行发现
-			// 检查是否是正在执行发现协议
-//			if (this.physicalConnectors.containsKey(connector.getHashCode())) {
-//				Logger.i(this.getClass(), "Discovering failure: "
-//						+ connector.getAddress().getAddress().getHostAddress() + ":"
-//						+ connector.getAddress().getPort());
-//			}
+			// 故障处理
+			this.closeAndDestroyConnector(connector);
+			// TODO
 		}
 	}
 
@@ -341,7 +408,7 @@ public final class ClusterController implements Service, Observer {
 		connector.deleteObserver(this);
 	}
 
-	/** 生成地址 Hash 。
+	/** 计算地址 Hash 。
 	 */
 	public static long hashAddress(InetSocketAddress address) {
 		String str = new StringBuilder().append(address.getAddress().getHostAddress())
@@ -351,7 +418,7 @@ public final class ClusterController implements Service, Observer {
 		return hash;
 	}
 
-	/** 生成节点 Hash 。
+	/** 计算节点 Hash 。
 	 */
 	public static long hashVNode(InetSocketAddress address, int sequence) {
 		String str = new StringBuilder().append(address.getAddress().getHostAddress())
@@ -361,9 +428,18 @@ public final class ClusterController implements Service, Observer {
 		return hash;
 	}
 
+	/** 计算数据块 Hash 。
+	 */
+	public static long hashChunk(Chunk chunk) {
+		String str = chunk.getLabel();
+		byte[] md5 = Cryptology.getInstance().hashWithMD5(str.getBytes());
+		long hash = ((long)(md5[3]&0xFF) << 24) | ((long)(md5[2]&0xFF) << 16) | ((long)(md5[1]&0xFF) << 8) | (long)(md5[0]&0xFF);
+		return hash;
+	}
+
 	/** 控制器定时任务。
 	 */
-	protected class ControllerTimerTask extends TimerTask {
+	protected class ControllerTimerTask implements Runnable {
 		@Override
 		public void run() {
 			if (autoScanNetwork) {

@@ -26,32 +26,12 @@ THE SOFTWARE.
 
 package net.cellcloud.core;
 
-import java.util.Map;
-
-/** 协议工厂。
+/** 集群故障。
  * 
  * @author Jiangwei Xu
  */
-public final class ClusterProtocolFactory {
+public enum ClusterFailure {
 
-	private ClusterProtocolFactory() {
-	}
-
-	/** 根据属性键值对创建协议。
-	 */
-	public static ClusterProtocol create(Map<String, String> prop) {
-		String protocol = prop.get(ClusterProtocol.KEY_PROTOCOL);
-		if (protocol.equalsIgnoreCase(ClusterPullProtocol.NAME)) {
-			return new ClusterPullProtocol(prop);
-		}
-		else if (protocol.equalsIgnoreCase(ClusterPushProtocol.NAME)) {
-			return new ClusterPushProtocol(prop);
-		}
-		else if (protocol.equalsIgnoreCase(ClusterDiscoveringProtocol.NAME)) {
-			return new ClusterDiscoveringProtocol(prop);
-		}
-		else {
-			return null;
-		}
-	}
+	// 节点消失
+	DisappearingNode
 }

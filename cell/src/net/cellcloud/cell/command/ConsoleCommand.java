@@ -82,6 +82,24 @@ public abstract class ConsoleCommand {
 		System.out.println(text);
 	}
 
+	/** 将参数解析为子命令。
+	 */
+	protected Subcommand parseSubcommand(String cmdstr) {
+		String[] array = cmdstr.split(" ");
+		String word = array[0];
+		String[] args = null;
+		if (array.length > 1) {
+			args = new String[array.length - 1];
+			System.arraycopy(array, 1, args, 0, args.length);
+//			for (int i = 1, n = 0; i < array.length; ++i, ++n) {
+//				args[n] = 
+//			}
+		}
+
+		Subcommand subcmd = new Subcommand(word, args);
+		return subcmd;
+	}
+
 	/** 返回命令状态。
 	 */
 	public abstract byte getState();

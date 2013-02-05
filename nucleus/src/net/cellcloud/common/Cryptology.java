@@ -26,6 +26,7 @@ THE SOFTWARE.
 
 package net.cellcloud.common;
 
+import java.io.IOException;
 import java.nio.charset.Charset;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -159,5 +160,23 @@ public final class Cryptology {
 			str[index++] = HEX_DIGITS[b & 0xF];
 		}
 		return new String(str);
+	}
+
+	/** Base64 编码数据。
+	 */
+	public String encodeBase64(byte[] source) {
+		return Base64.encodeBytes(source);
+	}
+	/** Base64 解码数据。
+	 */
+	public byte[] decodeBase64(String source) {
+		byte[] result = null;
+		try {
+			result = Base64.decode(source);
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+
+		return result;
 	}
 }

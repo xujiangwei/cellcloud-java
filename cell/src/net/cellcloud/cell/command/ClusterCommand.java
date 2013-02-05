@@ -32,6 +32,9 @@ import net.cellcloud.core.Nucleus;
 
 /** Cluster 命令。
  * 
+ * Subcommand:<br/>
+ * vn <sn> 查看指定虚拟节点数据。
+ * 
  * @author Jiangwei Xu
  */
 public class ClusterCommand extends ConsoleCommand {
@@ -47,25 +50,81 @@ public class ClusterCommand extends ConsoleCommand {
 
 	@Override
 	public boolean execute(String arg) {
-		ClusterController cltr = Nucleus.getInstance().getClusterController();
-		ClusterNode node = cltr.getNode();
-		Long[] hashes = node.getVirtualNodeHashList();
-
-		StringBuilder info = new StringBuilder("Cluster nodes: ");
-		info.append(hashes.length + " virtual nodes\n");
-		info.append("VNode\n");
-		info.append("----------------------------------------------------------------------\n");
-		for (Long h : hashes) {
-			info.append(h).append("\n");
+		if (null != arg && arg.length() > 0) {
+			// 执行子命令
+			Subcommand subcmd = this.parseSubcommand(arg);
+			if (subcmd.getWord().equals("vn")) {
+				SubcommandVN vn = new SubcommandVN(subcmd);
+				vn.execute();
+			}
+			else {
+				this.print("This command does not support this sub command.");
+			}
 		}
-		this.print(info.toString());
+		else {
+			ClusterController cltr = Nucleus.getInstance().getClusterController();
+			ClusterNode node = cltr.getNode();
+			Long[] hashes = node.getVirtualNodeHashList();
 
-		info = null;
+			StringBuilder info = new StringBuilder("Cluster nodes: ");
+			info.append(hashes.length + " virtual nodes\n");
+			info.append("VNode\n");
+			info.append("----------------------------------------------------------------------\n");
+			int sn = 1;
+			for (Long h : hashes) {
+				info.append(sn).append("\t").append(h).append("\t");
+
+				// 判断是否是本地
+				info.append(node.containsOwnVirtualNode(h) ? "L" : "R");
+
+				info.append("\n");
+				++sn;
+			}
+			info.deleteCharAt(info.length() - 1);
+			this.print(info.toString());
+
+			info = null;
+		}
+
 		return false;
 	}
 
 	@Override
 	public void input(String input) {
 		
+	}
+
+	/**
+	 */
+	private class SubcommandVN {
+		private Subcommand subcmd;
+
+		private SubcommandVN(Subcommand subcmd) {
+			this.subcmd = subcmd;
+		}
+
+		protected void execute() {
+			if (this.subcmd.numOfArgs() == 0) {
+				print("Warning: Cluster 'vn' command not input argument.");
+			}
+			else {
+				if (this.subcmd.isIntArg(0)) {
+					ClusterController cltr = Nucleus.getInstance().getClusterController();
+					ClusterNode node = cltr.getNode();
+					Long[] hashes = node.getVirtualNodeHashList();
+					
+					int sn = this.subcmd.getIntArg(0);
+					if (sn < 1 || sn > hashes.length) {
+						print("Virtual node");
+					}
+					else {
+						print("Warning: Cluster 'vn' command argument <sn> error.");
+					}
+				}
+				else {
+					print("Warning: Cluster 'vn' command argument error.");
+				}
+			}
+		}
 	}
 }

@@ -95,15 +95,17 @@ public final class Console {
 				System.out.print(this.prompt);
 			}
 			else {
-				String args = null;
+				StringBuilder args = new StringBuilder();
 				this.currentCommand = findCommand(args, input);
 				if (null == this.currentCommand) {
 					this.currentCommand = this.unknownCommand;
 				}
 
-				if (!this.currentCommand.execute(args)) {
+				if (!this.currentCommand.execute(args.toString())) {
 					System.out.println();
 				}
+
+				args = null;
 
 				if (ConsoleCommand.CCS_FINISHED == this.currentCommand.getState()) {
 					System.out.print("\n" + this.prompt);
@@ -166,12 +168,12 @@ public final class Console {
 
 	/** 查找命令
 	 */
-	private ConsoleCommand findCommand(String outArgs, String cmd) {
+	private ConsoleCommand findCommand(StringBuilder outArgs, String cmd) {
 		String word = cmd;
 		int index = cmd.indexOf(" ");
-		if (index > 0) {
+		if (index >= 0) {
 			word = cmd.substring(0, index);
-			outArgs = cmd.substring(index + 1, cmd.length());
+			outArgs.append(cmd.substring(index + 1, cmd.length()));
 		}
 
 		return this.commands.get(word);

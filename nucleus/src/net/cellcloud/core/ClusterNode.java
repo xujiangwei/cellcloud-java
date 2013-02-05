@@ -118,7 +118,7 @@ public class ClusterNode extends Endpoint implements Comparable<ClusterNode> {
 		}
 	}
 
-	/** 返回所有虚拟节点。
+	/** 返回自己的虚拟节点。
 	 */
 	public Collection<ClusterVirtualNode> getOwnVirtualNodes() {
 		synchronized (this) {
@@ -131,6 +131,19 @@ public class ClusterNode extends Endpoint implements Comparable<ClusterNode> {
 	public boolean containsOwnVirtualNode(long hashCode) {
 		synchronized (this) {
 			return (null != this.ownVirtualNodes) ? this.ownVirtualNodes.containsKey(hashCode) : false;
+		}
+	}
+	public boolean containsOwnVirtualNode(Long hashCode) {
+		synchronized (this) {
+			return (null != this.ownVirtualNodes) ? this.ownVirtualNodes.containsKey(hashCode) : false;
+		}
+	}
+
+	/** 返回自己的虚拟节点。
+	 */
+	public ClusterVirtualNode getOwnVirtualNode(long hashCode) {
+		synchronized (this) {
+			return this.ownVirtualNodes.get(hashCode);
 		}
 	}
 
@@ -178,7 +191,7 @@ public class ClusterNode extends Endpoint implements Comparable<ClusterNode> {
 
 	/** 根据指定 Hash 返回最优虚节点。
 	 */
-	public ClusterVirtualNode selectVNode(long hash) {
+	protected ClusterVirtualNode selectVNode(long hash) {
 		Long vhash = this.findVNodeHash(hash);
 		if (null == vhash) {
 			// 未找到节点

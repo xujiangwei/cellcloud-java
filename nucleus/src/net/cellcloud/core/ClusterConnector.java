@@ -88,22 +88,51 @@ public final class ClusterConnector extends Observable implements MessageHandler
 
 	/** 执行发现。
 	 */
-	public boolean discover(String sourceIP, int sourcePort, ClusterNode node) {
+	public boolean doDiscover(String sourceIP, int sourcePort, ClusterNode node) {
 		if (this.connector.isConnected()) {
 			ClusterDiscoveringProtocol protocol = new ClusterDiscoveringProtocol(sourceIP, sourcePort, node);
 			protocol.launch(this.connector.getSession());
 			return true;
 		}
 		else {
-			// 连接集群地址
-			if (this.connector.connect(this.address)) {
-				ClusterDiscoveringProtocol protocol = new ClusterDiscoveringProtocol(sourceIP, sourcePort, node);
-				this.protocolQueue.offer(protocol);
+			ClusterDiscoveringProtocol protocol = new ClusterDiscoveringProtocol(sourceIP, sourcePort, node);
+			this.protocolQueue.offer(protocol);
+
+			// 连接
+			if (!this.connector.connect(this.address)) {
+				// 请求连接失败
+				this.protocolQueue.poll();
+				return false;
+			}
+			else {
+				// 请求连接成功
 				return true;
 			}
 		}
+	}
 
-		return false;
+	/** 执行数据推送。
+	 */
+	public boolean doPush(long targetHash, Chunk chunk) {
+		if (this.connector.isConnected()) {
+			ClusterPushProtocol protocol = new ClusterPushProtocol(targetHash, chunk);
+			protocol.launch(this.connector.getSession());
+			return true;
+		}
+		else {
+			ClusterPushProtocol protocol = new ClusterPushProtocol(targetHash, chunk);
+			this.protocolQueue.offer(protocol);
+
+			// 连接
+			if (!this.connector.connect(this.address)) {
+				// 请求连接失败
+				this.protocolQueue.poll();
+				return false;
+			}
+			else {
+				return true;
+			}
+		}
 	}
 
 	@Override
@@ -144,11 +173,10 @@ public final class ClusterConnector extends Observable implements MessageHandler
 	public void errorOccurred(int errorCode, Session session) {
 		if (errorCode == MessageErrorCode.CONNECT_TIMEOUT
 			|| errorCode == MessageErrorCode.CONNECT_FAILED) {
-			// 清空待执行协议
-			this.protocolQueue.clear();
-
-			ClusterFailureProtocol failure = new ClusterFailureProtocol(errorCode);
-			this.distribute(failure);
+			while (!this.protocolQueue.isEmpty()) {
+				ClusterFailureProtocol failure = new ClusterFailureProtocol(ClusterFailure.DisappearingNode, this.protocolQueue.poll());
+				this.distribute(failure);
+			}
 		}
 	}
 

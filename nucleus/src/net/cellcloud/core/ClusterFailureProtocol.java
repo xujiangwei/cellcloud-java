@@ -34,11 +34,13 @@ import net.cellcloud.common.Session;
  */
 public class ClusterFailureProtocol extends ClusterProtocol {
 
-	protected int errorCode;
+	protected ClusterFailure failure;
+	protected ClusterProtocol protocol;
 
-	protected ClusterFailureProtocol(int errorCode) {
-		super("ConnectorFailure");
-		this.errorCode = errorCode;
+	protected ClusterFailureProtocol(ClusterFailure failure, ClusterProtocol protocol) {
+		super("Failure");
+		this.failure = failure;
+		this.protocol = protocol;
 	}
 
 	@Override

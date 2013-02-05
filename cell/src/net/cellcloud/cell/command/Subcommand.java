@@ -2,7 +2,7 @@
 -----------------------------------------------------------------------------
 This source file is part of Cell Cloud.
 
-Copyright (c) 2009-2013 Cell Cloud Team (www.cellcloud.net)
+Copyright (c) 2009-2012 Cell Cloud Team (cellcloudproject@gmail.com)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -24,34 +24,56 @@ THE SOFTWARE.
 -----------------------------------------------------------------------------
 */
 
-package net.cellcloud.core;
+package net.cellcloud.cell.command;
 
-import java.util.Map;
+import java.util.regex.Pattern;
 
-/** 协议工厂。
+/** 子命令。
  * 
  * @author Jiangwei Xu
  */
-public final class ClusterProtocolFactory {
+public final class Subcommand {
 
-	private ClusterProtocolFactory() {
+	private String cmdWord;
+	private String[] args;
+
+	public Subcommand(String cmdWord, String[] args) {
+		this.cmdWord = cmdWord;
+		this.args = args;
 	}
 
-	/** 根据属性键值对创建协议。
+	/** 返回命令字。
 	 */
-	public static ClusterProtocol create(Map<String, String> prop) {
-		String protocol = prop.get(ClusterProtocol.KEY_PROTOCOL);
-		if (protocol.equalsIgnoreCase(ClusterPullProtocol.NAME)) {
-			return new ClusterPullProtocol(prop);
+	public String getWord() {
+		return this.cmdWord;
+	}
+
+	/** 返回参数个数。
+	 */
+	public int numOfArgs() {
+		return (null != this.args) ? this.args.length : 0;
+	}
+
+	/** 返回字符串参数。
+	 */
+	public String getStringArg(int index) {
+		return this.args[index];
+	}
+
+	/** 指定索引处是否是整数型参数。
+	 */
+	public boolean isIntArg(int index) {
+		if (null == this.args) {
+			return false;
 		}
-		else if (protocol.equalsIgnoreCase(ClusterPushProtocol.NAME)) {
-			return new ClusterPushProtocol(prop);
-		}
-		else if (protocol.equalsIgnoreCase(ClusterDiscoveringProtocol.NAME)) {
-			return new ClusterDiscoveringProtocol(prop);
-		}
-		else {
-			return null;
-		}
+
+		Pattern pattern = Pattern.compile("^[-\\+]?[\\d]*$");
+		return pattern.matcher(this.args[index]).matches();
+	}
+
+	/** 返回整数型参数。
+	 */
+	public int getIntArg(int index) {
+		return Integer.parseInt(this.args[index]);
 	}
 }
