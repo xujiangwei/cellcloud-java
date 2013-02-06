@@ -45,6 +45,12 @@ public class ClusterVirtualNode extends ClusterNode {
 		this.memoryChunks = new HashMap<String, Chunk>();
 	}
 
+	/** 返回数据块数量。
+	 */
+	public int numOfChunk() {
+		return this.memoryChunks.size();
+	}
+
 	/** 返回块。
 	 */
 	public Chunk getChunk(String label) {

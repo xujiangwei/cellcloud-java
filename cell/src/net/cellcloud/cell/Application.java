@@ -2,7 +2,7 @@
 -----------------------------------------------------------------------------
 This source file is part of Cell Cloud.
 
-Copyright (c) 2009-2012 Cell Cloud Team (cellcloudproject@gmail.com)
+Copyright (c) 2009-2013 Cell Cloud Team (www.cellcloud.net)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -61,15 +61,12 @@ public final class Application {
 
 	private Nucleus nucleus;
 
-	private String logFilename;
-
-	private boolean consoleMode;
 	private boolean spinning;
 	private byte[] monitor;
 
 	private Console console;
 
-	public Application(boolean consoleMode) {
+	public Application(boolean consoleMode, String logFile) {
 		StringBuilder buf = new StringBuilder();
 		buf.append("Cell Cloud ");
 		buf.append(Version.MAJOR);
@@ -90,22 +87,23 @@ public final class Application {
 		buf.append("-----------------------------------------------------------------------");
 
 		System.out.println(buf);
-
 		buf = null;
-
-		this.logFilename = "cell.log";
 
 		this.monitor = new byte[0];
 
-		this.consoleMode = consoleMode;
+		if (consoleMode)
+			this.console = new Console(this);
+		else
+			this.console = null;
+
+		// 使用文件日志
+		if (null != logFile)
+			FileLogger.getInstance().open("logs" + File.separator + logFile);
 	}
 
 	/** 启动程序。
 	 */
 	protected boolean startup() {
-		// 使用文件日志
-		FileLogger.getInstance().open("logs" + File.separator + this.logFilename);
-
 		try {
 			if (null == (this.nucleus = Nucleus.getInstance())) {
 				NucleusConfig config = new NucleusConfig();
@@ -146,14 +144,12 @@ public final class Application {
 	/** 运行（阻塞线程）。
 	 */
 	protected void run() {
-		if (this.consoleMode) {
-			this.console = new Console(this);
+		if (null != this.console) {
 			while (this.spinning) {
 				if (!this.console.processInput()) {
 					this.spinning = false;
 				}
 			}
-			this.console = null;
 		}
 		else {
 			synchronized (this.monitor) {
@@ -164,7 +160,7 @@ public final class Application {
 				}
 			}
 
-			System.out.println("Exit cell application...");
+			System.out.println("Exit cell...");
 		}
 	}
 
@@ -175,6 +171,7 @@ public final class Application {
 
 		if (null != this.console) {
 			this.console.quitAndClose();
+			this.console = null;
 		}
 
 		try {

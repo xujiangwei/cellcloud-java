@@ -81,6 +81,9 @@ public final class NucleusConfig {
 	/// 设备
 	public byte device = Device.SERVER;
 
+	/// 是否启用 Talk 服务
+	public boolean talking = true;
+
 	/// 是否使用 HTTP 服务
 	public boolean httpd = false;
 

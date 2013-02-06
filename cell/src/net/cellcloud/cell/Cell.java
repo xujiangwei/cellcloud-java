@@ -2,7 +2,7 @@
 -----------------------------------------------------------------------------
 This source file is part of Cell Cloud.
 
-Copyright (c) 2009-2012 Cell Cloud Team (cellcloudproject@gmail.com)
+Copyright (c) 2009-2013 Cell Cloud Team (www.cellcloud.net)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -45,30 +45,45 @@ public final class Cell {
 	private static Thread daemon = null;
 	private static boolean spinning = true;
 
+	private static Object signal = null;
+
 	private Cell() {
 	}
 
 	/** 启动 Cell 容器。
 	 */
 	public static boolean start() {
+		return Cell.start(false, "cell.log");
+	}
+
+	/** 启动 Cell 容器。
+	 */
+	public static boolean start(final boolean console, final String logFile) {
 		if (null != Cell.daemon) {
 			return false;
 		}
 
+		// 实例化 App
+		Cell.app = new Application(console, logFile);
+
 		Cell.daemon = new Thread() {
 			@Override
 			public void run() {
-				Cell.app = new Application(false);
-
 				if (Cell.app.startup()) {
 					Cell.app.run();
 				}
 
 				Cell.app.shutdown();
 				Cell.app = null;
+
+				if (null != Cell.signal) {
+					synchronized (Cell.signal) {
+						Cell.signal.notifyAll();
+					}
+				}
 			}
 		};
-		Cell.daemon.setName("CellAppMain");
+		Cell.daemon.setName("CellMain");
 		Cell.daemon.start();
 
 		return true;
@@ -84,7 +99,35 @@ public final class Cell {
 			Cell.app.stop();
 		}
 
+		if (null != Cell.signal) {
+			synchronized (Cell.signal) {
+				Cell.signal.notifyAll();
+			}
+		}
+
 		Cell.daemon = null;
+	}
+
+	/** 阻塞当前线程直到 Cell 停止。
+	 */
+	public static void waitForCellStopped() {
+		if (null == Cell.signal) {
+			Cell.signal = new Object();
+		}
+
+		synchronized (Cell.signal) {
+			try {
+				Cell.signal.wait();
+			} catch (InterruptedException e) {
+				e.printStackTrace();
+			}
+		}
+	}
+
+	/** 返回控制台。
+	 */
+	public static Console getConsole() {
+		return Cell.app.getConsole();
 	}
 
 	private static void markStart() {
@@ -113,7 +156,7 @@ public final class Cell {
 				while (spinning) {
 
 					try {
-						Thread.sleep(10000);
+						Thread.sleep(5000);
 					} catch (InterruptedException e) {
 						Logger.logException(e, LogLevel.WARNING);
 					}
@@ -152,8 +195,10 @@ public final class Cell {
 	 */
 	public static void main(String[] args) {
 		if (null != args && args.length > 0) {
+			// 按照指定参数启停 Cell
+
 			if (args[0].equals("start")) {
-				Cell.app = new Application(true);
+				Cell.app = new Application(true, "cell.log");
 
 				if (Cell.app.startup()) {
 
@@ -177,7 +222,7 @@ public final class Cell {
 				if (file.exists()) {
 					file.delete();
 
-					System.out.println("\nStopping Cell Cloud application, please waiting...");
+					System.out.println("\nStopping Cell Cloud process, please waiting...");
 
 					long startTime = System.currentTimeMillis();
 

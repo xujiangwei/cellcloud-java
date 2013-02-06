@@ -28,6 +28,7 @@ package net.cellcloud.cell.command;
 
 import net.cellcloud.core.ClusterController;
 import net.cellcloud.core.ClusterNode;
+import net.cellcloud.core.ClusterVirtualNode;
 import net.cellcloud.core.Nucleus;
 
 /** Cluster 命令。
@@ -112,10 +113,21 @@ public class ClusterCommand extends ConsoleCommand {
 					ClusterController cltr = Nucleus.getInstance().getClusterController();
 					ClusterNode node = cltr.getNode();
 					Long[] hashes = node.getVirtualNodeHashList();
-					
+
 					int sn = this.subcmd.getIntArg(0);
-					if (sn < 1 || sn > hashes.length) {
-						print("Virtual node");
+					if (sn >= 1 && sn <= hashes.length) {
+						Long hash = hashes[sn - 1];
+						StringBuilder buf = new StringBuilder("Virtual node - ").append(hash).append("\n");
+						if (node.containsOwnVirtualNode(hash)) {
+							ClusterVirtualNode vnode = node.getOwnVirtualNode(hash);
+							buf.append("Number of memory chunk: ").append(vnode.numOfChunk()).append("\n");
+						}
+						else {
+							// TODO
+						}
+
+						print(buf.toString());
+						buf = null;
 					}
 					else {
 						print("Warning: Cluster 'vn' command argument <sn> error.");

@@ -174,7 +174,7 @@ public final class Nucleus {
 			//---- 配置 Talk Service  ----
 
 			// 创建 Talk Service
-			if (null == this.talkService) {
+			if (this.config.talking && (null == this.talkService)) {
 				try {
 					this.talkService = new TalkService(this.context);
 				} catch (SingletonException e) {
@@ -183,7 +183,7 @@ public final class Nucleus {
 			}
 
 			// 启动 Talk Service
-			if (this.talkService.startup()) {
+			if (this.config.talking && this.talkService.startup()) {
 				Logger.i(Nucleus.class, "Starting talk service success.");
 			}
 			else {
@@ -242,7 +242,9 @@ public final class Nucleus {
 			this.deactivateCellets();
 
 			// 关闭 Talk Service
-			this.talkService.shutdown();
+			if (null != this.talkService) {
+				this.talkService.shutdown();
+			}
 
 			// 关闭 Web Service
 			if (null != this.httpService) {
