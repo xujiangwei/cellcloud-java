@@ -38,16 +38,16 @@ public final class TalkCommand extends ConsoleCommand {
 
 	@Override
 	public byte getState() {
-		return 0;
+		return ConsoleCommand.CCS_FINISHED;
 	}
 
 	@Override
-	public boolean execute(String arg) {
-		return false;
+	public void execute(String arg) {
+		// TODO
 	}
 
 	@Override
 	public void input(String input) {
-
+		// Nothing
 	}
 }

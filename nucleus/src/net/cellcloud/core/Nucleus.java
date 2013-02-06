@@ -182,12 +182,14 @@ public final class Nucleus {
 				}
 			}
 
-			// 启动 Talk Service
-			if (this.config.talking && this.talkService.startup()) {
-				Logger.i(Nucleus.class, "Starting talk service success.");
-			}
-			else {
-				Logger.e(Nucleus.class, "Starting talk service failure.");
+			if (this.config.talking) {
+				// 启动 Talk Service
+				if (this.talkService.startup()) {
+					Logger.i(Nucleus.class, "Starting talk service success.");
+				}
+				else {
+					Logger.e(Nucleus.class, "Starting talk service failure.");
+				}
 			}
 
 			//---- 配置结束 ----

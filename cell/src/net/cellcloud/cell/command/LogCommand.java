@@ -50,15 +50,13 @@ public class LogCommand extends ConsoleCommand {
 	}
 
 	@Override
-	public boolean execute(String arg) {
+	public void execute(String arg) {
 		LoggerManager.getInstance().removeHandle(this.logHandle);
 		LoggerManager.getInstance().addHandle(this.logHandle);
 
 		this.state = ConsoleCommand.CCS_EXECUTING;
 		println("Enter 'Q'/'q' to stop print log.");
-		println("Print log text");
-
-		return true;
+		print("Start print log text:");
 	}
 
 	@Override
@@ -70,7 +68,7 @@ public class LogCommand extends ConsoleCommand {
 			println("\nStop print log to console screen.");
 		}
 		else {
-			println("Command 'log' : enter 'Q'/'q' to stop print log.");
+			println("[Tips] Command 'log' : enter 'Q'/'q' to stop print log.");
 		}
 	}
 }

@@ -101,14 +101,13 @@ public final class Console {
 					this.currentCommand = this.unknownCommand;
 				}
 
-				if (!this.currentCommand.execute(args.toString())) {
-					System.out.println();
-				}
+				// 执行命令
+				this.currentCommand.execute(args.toString());
 
 				args = null;
 
 				if (ConsoleCommand.CCS_FINISHED == this.currentCommand.getState()) {
-					System.out.print("\n" + this.prompt);
+					System.out.print("\n\n" + this.prompt);
 					this.currentCommand = null;
 				}
 			}

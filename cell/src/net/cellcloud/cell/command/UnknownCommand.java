@@ -42,9 +42,8 @@ public final class UnknownCommand extends ConsoleCommand {
 	}
 
 	@Override
-	public boolean execute(String arg) {
+	public void execute(String arg) {
 		print("Unknown command.");
-		return false;
 	}
 
 	@Override

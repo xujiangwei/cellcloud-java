@@ -50,7 +50,7 @@ public final class HelpCommand extends ConsoleCommand {
 	}
 
 	@Override
-	public boolean execute(String arg) {
+	public void execute(String arg) {
 		StringBuilder buf = new StringBuilder();
 		List<ConsoleCommand> list = this.console.getCommands();
 		Iterator<ConsoleCommand> iter = list.iterator();
@@ -59,12 +59,12 @@ public final class HelpCommand extends ConsoleCommand {
 			buf.append(cmd.getName());
 			buf.append(blankSpace(cmd.getName()));
 			buf.append(cmd.getDesc());
-			// 答应命令
-			println(buf.toString());
-			buf.delete(0, buf.length());
+			buf.append("\n");
 		}
 
-		return true;
+		buf.deleteCharAt(buf.length() - 1);
+		print(buf.toString());
+		buf = null;
 	}
 
 	@Override

@@ -106,7 +106,7 @@ public abstract class ConsoleCommand {
 
 	/** 执行命令。
 	 */
-	public abstract boolean execute(String arg);
+	public abstract void execute(String arg);
 
 	/** 处理交互输入信息。
 	 */

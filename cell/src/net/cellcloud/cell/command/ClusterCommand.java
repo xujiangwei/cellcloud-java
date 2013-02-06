@@ -50,7 +50,7 @@ public class ClusterCommand extends ConsoleCommand {
 	}
 
 	@Override
-	public boolean execute(String arg) {
+	public void execute(String arg) {
 		if (null != arg && arg.length() > 0) {
 			// 执行子命令
 			Subcommand subcmd = this.parseSubcommand(arg);
@@ -86,8 +86,6 @@ public class ClusterCommand extends ConsoleCommand {
 
 			info = null;
 		}
-
-		return false;
 	}
 
 	@Override

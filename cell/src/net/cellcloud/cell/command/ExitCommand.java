@@ -49,16 +49,15 @@ public final class ExitCommand extends ConsoleCommand {
 	}
 
 	@Override
-	public boolean execute(String arg) {
+	public void execute(String arg) {
 		if (null != arg && arg.length() > 0) {
 			print("This command does not support this argument.");
 			this.state = ConsoleCommand.CCS_FINISHED;
-			return false;
+			return;
 		}
 
 		this.state = ConsoleCommand.CCS_EXECUTING;
 		print("Are you sure exit cell console and quit program? [y/n] ");
-		return true;
 	}
 
 	@Override
