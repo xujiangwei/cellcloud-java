@@ -31,6 +31,7 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Random;
+import java.util.regex.Pattern;
 
 import net.cellcloud.common.LogLevel;
 import net.cellcloud.common.Logger;
@@ -114,6 +115,13 @@ public final class Util {
 	 */
 	public static byte[] string2Bytes(String string) {
 		return string.getBytes(Charset.forName("UTF-8"));
+	}
+
+	/** 判断字符串是否是数字。
+	 */
+	public static boolean isNumeral(String string) {
+		Pattern pattern = Pattern.compile("^[-\\+]?[\\d]*$");
+		return pattern.matcher(string).matches();
 	}
 
 	/** 操作系统是否是 Windows 系统。

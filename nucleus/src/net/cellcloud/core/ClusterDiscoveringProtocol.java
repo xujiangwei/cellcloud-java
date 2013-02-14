@@ -136,12 +136,12 @@ public class ClusterDiscoveringProtocol extends ClusterProtocol {
 	}
 
 	@Override
-	public void stack(ClusterNode node) {
+	public void respond(ClusterNode node, StateCode state) {
 		StringBuilder buf = new StringBuilder();
 		buf.append(KEY_PROTOCOL).append(": ").append(ClusterDiscoveringProtocol.NAME).append("\n");
 		buf.append(KEY_TAG).append(": ").append(Nucleus.getInstance().getTagAsString()).append("\n");
 		buf.append(KEY_DATE).append(": ").append(super.getStandardDate()).append("\n");
-		buf.append(KEY_STATE).append(": ").append(ClusterProtocol.StateCode.SUCCESS).append("\n");
+		buf.append(KEY_STATE).append(": ").append(state.getCode()).append("\n");
 		buf.append(KEY_HASH).append(": ").append(node.getHashCode()).append("\n");
 
 		// 写入虚拟节点信息
@@ -163,13 +163,12 @@ public class ClusterDiscoveringProtocol extends ClusterProtocol {
 		buf = null;
 	}
 
-	@Override
-	public void stackReject(ClusterNode node) {
+	public void reject() {
 		StringBuilder buf = new StringBuilder();
 		buf.append(KEY_PROTOCOL).append(": ").append(ClusterDiscoveringProtocol.NAME).append("\n");
 		buf.append(KEY_TAG).append(": ").append(Nucleus.getInstance().getTagAsString()).append("\n");
 		buf.append(KEY_DATE).append(": ").append(super.getStandardDate()).append("\n");
-		buf.append(KEY_STATE).append(": ").append(ClusterProtocol.StateCode.REJECT).append("\n");
+		buf.append(KEY_STATE).append(": ").append(ClusterProtocol.StateCode.REJECT.getCode()).append("\n");
 
 		this.touch(this.contextSession, buf);
 		buf = null;

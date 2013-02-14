@@ -105,7 +105,7 @@ public class ClusterPushProtocol extends ClusterProtocol {
 	@Override
 	public void launch(Session session) {
 		StringBuilder buf = new StringBuilder();
-		buf.append(KEY_PROTOCOL).append(": ").append(ClusterPushProtocol.NAME).append("\n");
+		buf.append(KEY_PROTOCOL).append(": ").append(NAME).append("\n");
 		buf.append(KEY_TAG).append(": ").append(Nucleus.getInstance().getTagAsString()).append("\n");
 		buf.append(KEY_DATE).append(": ").append(super.getStandardDate()).append("\n");
 
@@ -118,12 +118,14 @@ public class ClusterPushProtocol extends ClusterProtocol {
 	}
 
 	@Override
-	public void stack(ClusterNode node) {
-		
-	}
+	public void respond(ClusterNode node, StateCode state) {
+		StringBuilder buf = new StringBuilder();
+		buf.append(KEY_PROTOCOL).append(": ").append(NAME).append("\n");
+		buf.append(KEY_TAG).append(": ").append(Nucleus.getInstance().getTagAsString()).append("\n");
+		buf.append(KEY_DATE).append(": ").append(super.getStandardDate()).append("\n");
+		buf.append(KEY_STATE).append(": ").append(state.getCode()).append("\n");
 
-	@Override
-	public void stackReject(ClusterNode node) {
-		
+		this.touch(this.contextSession, buf);
+		buf = null;
 	}
 }

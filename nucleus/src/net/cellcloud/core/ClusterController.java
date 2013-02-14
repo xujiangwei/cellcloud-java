@@ -169,9 +169,9 @@ public final class ClusterController implements Service, Observer {
 		}
 	}
 
-	/** 以异步方式向集群内写入数据块。
+	/** 以阻塞方式向集群内写入数据块。
 	 */
-	public boolean writeChunk(Chunk chunk) {
+	public boolean writeChunk(Chunk chunk, long timeout) {
 		// 获得目标 Hash
 		long hash = ClusterController.hashChunk(chunk);
 		Long targetHash = this.root.findVNodeHash(hash);
@@ -181,11 +181,12 @@ public final class ClusterController implements Service, Observer {
 
 		// 判断是否是本地节点
 		if (this.root.containsOwnVirtualNode(targetHash)) {
+			// 是本地节点
 			if (Logger.isDebugLevel()) {
 				Logger.d(this.getClass(), new StringBuilder("Hit local target hash: ").append(targetHash).toString());
 			}
 
-			// 是否本地节点
+			// 写入本地节点
 			ClusterVirtualNode vnode = this.root.getOwnVirtualNode(targetHash);
 			vnode.insertChunk(chunk);
 
@@ -196,8 +197,9 @@ public final class ClusterController implements Service, Observer {
 			ClusterVirtualNode vnode = this.root.selectVNode(targetHash);
 			if (null != vnode) {
 				ClusterConnector connector = this.getOrCreateConnector(vnode.master.getCoordinate().getAddress(), hash);
-				connector.doPush(targetHash, chunk);
-				return true;
+				// 阻塞方式执行 Push
+				ProtocolMonitor monitor = connector.doBlockingPush(targetHash, chunk, timeout);
+				return (null != monitor);
 			}
 			else {
 				Logger.e(this.getClass(), new StringBuilder("Virtual node hash code error: ").append(targetHash).toString());
@@ -206,9 +208,9 @@ public final class ClusterController implements Service, Observer {
 		}
 	}
 
-	/** 以异步方式从集群内读取数据块。
+	/** 以阻塞方式从集群内读取数据块。
 	 */
-	public Chunk readChunk() {
+	public Chunk readChunk(long timeout) {
 		return null;
 	}
 
@@ -301,6 +303,9 @@ public final class ClusterController implements Service, Observer {
 				Chunk chunk = prtl.getChunk();
 				ClusterVirtualNode vnode = this.root.getOwnVirtualNode(hash);
 				vnode.insertChunk(chunk);
+
+				// 回包
+				prtl.respond(this.root, ClusterProtocol.StateCode.SUCCESS);
 			}
 			else {
 				if (Logger.isDebugLevel()) {
@@ -315,7 +320,7 @@ public final class ClusterController implements Service, Observer {
 			String tag = discovering.getTag();
 			if (tag.equals(Nucleus.getInstance().getTagAsString())) {
 				// 标签相同是同一内核，不能与自己集群
-				discovering.stackReject(this.root);
+				discovering.reject();
 			}
 			else {
 				// 获取节点信息
@@ -337,7 +342,7 @@ public final class ClusterController implements Service, Observer {
 					}
 
 					// 回应对端
-					discovering.stack(this.root);
+					discovering.respond(this.root, ClusterProtocol.StateCode.SUCCESS);
 				}
 			}
 		}
@@ -347,7 +352,7 @@ public final class ClusterController implements Service, Observer {
 	private void update(ClusterConnector connector, ClusterProtocol protocol) {
 		if (protocol instanceof ClusterDiscoveringProtocol) {
 			ClusterDiscoveringProtocol discovering = (ClusterDiscoveringProtocol)protocol;
-			if (ClusterProtocol.StateCode.REJECT == discovering.getState()) {
+			if (ClusterProtocol.StateCode.REJECT.getCode() == discovering.getStateCode()) {
 				if (Logger.isDebugLevel()) {
 					Logger.d(this.getClass(), new StringBuilder("No cluster node: ")
 							.append(connector.getAddress().getAddress().getHostAddress()).append(":")
@@ -357,7 +362,7 @@ public final class ClusterController implements Service, Observer {
 				// 尝试进行猜测
 				this.guessDiscover(connector.getAddress());
 			}
-			else if (ClusterProtocol.StateCode.SUCCESS == discovering.getState()) {
+			else if (ClusterProtocol.StateCode.SUCCESS.getCode() == discovering.getStateCode()) {
 				// 发现操作结束，成功发现
 				long hash = discovering.getHash();
 

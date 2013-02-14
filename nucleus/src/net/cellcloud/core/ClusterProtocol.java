@@ -92,7 +92,7 @@ public abstract class ClusterProtocol {
 
 	/** 返回协议状态。
 	 */
-	public int getState() {
+	public int getStateCode() {
 		String szState = this.prop.get(KEY_STATE);
 		return (null != szState) ? Integer.parseInt(szState) : -1;
 	}
@@ -116,11 +116,7 @@ public abstract class ClusterProtocol {
 
 	/** 向指定 Session 回送执行结果。
 	 */
-	abstract public void stack(ClusterNode node);
-
-	/** 向指定 Session 回送拒绝。
-	 */
-	abstract public void stackReject(ClusterNode node);
+	abstract public void respond(ClusterNode node, StateCode state);
 
 	/** 协议收尾处理并发送。
 	 */
@@ -132,13 +128,27 @@ public abstract class ClusterProtocol {
 
 	/** 协议状态。
 	 */
-	public final class StateCode {
-		/// 成功
-		public final static int SUCCESS = 200;
-		/// 拒绝操作
-		public final static int REJECT = 201;
+	public enum StateCode {
 
-		private StateCode() {
+		// 成功
+		SUCCESS(200),
+
+		// 操作被拒绝
+		REJECT(201);
+
+		private int code;
+
+		private StateCode(int code) {
+			this.code = code;
+		}
+
+		public int getCode() {
+			return this.code;
+		}
+
+		@Override
+		public String toString() {
+			return String.valueOf(this.code);
 		}
 	}
 }

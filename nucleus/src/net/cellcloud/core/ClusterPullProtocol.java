@@ -28,7 +28,9 @@ package net.cellcloud.core;
 
 import java.util.Map;
 
+import net.cellcloud.common.Cryptology;
 import net.cellcloud.common.Session;
+import net.cellcloud.util.Util;
 
 /** 集群内数据块拉回协议。
  * 
@@ -38,23 +40,54 @@ public class ClusterPullProtocol extends ClusterProtocol {
 
 	public final static String NAME = "Pull";
 
-	public ClusterPullProtocol() {
+	/// 块标签
+	public final static String KEY_LABEL = "Label";
+	/// 块数据
+	public final static String KEY_CHUNK = "Chunk";
+	/// 目标虚节点 Hash
+	public final static String KEY_TARGET_HASH = "Target-Hash";
+
+	private long targetHash = 0;
+	private Chunk chunk = null;
+
+	public ClusterPullProtocol(long targetHash, Chunk chunk) {
 		super(ClusterPullProtocol.NAME);
+		this.targetHash = targetHash;
+		this.chunk = chunk;
 	}
 
 	public ClusterPullProtocol(Map<String, String> prop) {
 		super(ClusterPullProtocol.NAME, prop);
 	}
 
+	/** 返回目标节点 Hash 。
+	 */
+	public long getTargetHash() {
+		if (0 == this.targetHash) {
+			String str = this.getProp(KEY_TARGET_HASH);
+			if (null != str) {
+				this.targetHash = Long.parseLong(str);
+			}
+		}
+
+		return this.targetHash;
+	}
+
 	@Override
 	public void launch(Session session) {
+		StringBuilder buf = new StringBuilder();
+		buf.append(KEY_PROTOCOL).append(": ").append(NAME).append("\n");
+		buf.append(KEY_TAG).append(": ").append(Nucleus.getInstance().getTagAsString()).append("\n");
+		buf.append(KEY_DATE).append(": ").append(super.getStandardDate()).append("\n");
+
+		buf.append(KEY_TARGET_HASH).append(": ").append(this.targetHash).append("\n");
+		buf.append(KEY_LABEL).append(": ").append(Cryptology.getInstance().encodeBase64(Util.string2Bytes(this.chunk.getLabel()))).append("\n");
+
+		this.touch(session, buf);
+		buf = null;
 	}
 
 	@Override
-	public void stack(ClusterNode node) {
-	}
-
-	@Override
-	public void stackReject(ClusterNode node) {
+	public void respond(ClusterNode node, StateCode state) {
 	}
 }

@@ -48,10 +48,6 @@ public class ClusterFailureProtocol extends ClusterProtocol {
 	}
 
 	@Override
-	public void stack(ClusterNode node) {
-	}
-
-	@Override
-	public void stackReject(ClusterNode node) {
+	public void respond(ClusterNode node, StateCode state) {
 	}
 }

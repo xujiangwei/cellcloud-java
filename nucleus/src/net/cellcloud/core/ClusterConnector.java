@@ -32,7 +32,10 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.Observable;
 import java.util.Queue;
+import java.util.concurrent.ConcurrentHashMap;
 
+import net.cellcloud.common.Cryptology;
+import net.cellcloud.common.LogLevel;
 import net.cellcloud.common.Logger;
 import net.cellcloud.common.Message;
 import net.cellcloud.common.MessageErrorCode;
@@ -59,6 +62,8 @@ public final class ClusterConnector extends Observable implements MessageHandler
 	private ByteBuffer buffer;
 	private Queue<ClusterProtocol> protocolQueue;
 
+	private ConcurrentHashMap<Long, ProtocolMonitor> monitors;
+
 	public ClusterConnector(InetSocketAddress address, Long hashCode) {
 		this.address = address;
 		this.hashCode = hashCode;
@@ -66,6 +71,7 @@ public final class ClusterConnector extends Observable implements MessageHandler
 		this.buffer = ByteBuffer.allocate(this.bufferSize);
 		this.connector.setHandler(this);
 		this.protocolQueue = new LinkedList<ClusterProtocol>();
+		this.monitors = new ConcurrentHashMap<Long, ProtocolMonitor>();
 	}
 
 	/** 返回连接器地址。
@@ -96,12 +102,14 @@ public final class ClusterConnector extends Observable implements MessageHandler
 		}
 		else {
 			ClusterDiscoveringProtocol protocol = new ClusterDiscoveringProtocol(sourceIP, sourcePort, node);
-			this.protocolQueue.offer(protocol);
+			synchronized (this.protocolQueue) {
+				this.protocolQueue.offer(protocol);
+			}
 
 			// 连接
 			if (!this.connector.connect(this.address)) {
 				// 请求连接失败
-				this.protocolQueue.poll();
+				this.protocolQueue.remove(protocol);
 				return false;
 			}
 			else {
@@ -111,26 +119,74 @@ public final class ClusterConnector extends Observable implements MessageHandler
 		}
 	}
 
-	/** 执行数据推送。
+	/** 以同步方式执行数据推送。
 	 */
-	public boolean doPush(long targetHash, Chunk chunk) {
+	public ProtocolMonitor doBlockingPush(long targetHash, Chunk chunk, long timeout) {
 		if (this.connector.isConnected()) {
 			ClusterPushProtocol protocol = new ClusterPushProtocol(targetHash, chunk);
 			protocol.launch(this.connector.getSession());
-			return true;
+			ProtocolMonitor monitor = new ProtocolMonitor(protocol);
+			monitor.blocking = true;
+			return monitor;
 		}
 		else {
 			ClusterPushProtocol protocol = new ClusterPushProtocol(targetHash, chunk);
-			this.protocolQueue.offer(protocol);
+			synchronized (this.protocolQueue) {
+				this.protocolQueue.offer(protocol);
+			}
 
 			// 连接
 			if (!this.connector.connect(this.address)) {
 				// 请求连接失败
-				this.protocolQueue.poll();
-				return false;
+				this.protocolQueue.remove(protocol);
+				return null;
 			}
 			else {
-				return true;
+				Long lh = Cryptology.getInstance().fastHash(chunk.getLabel());
+				ProtocolMonitor monitor = this.getOrCreateMonitor(lh, protocol);
+				monitor.blocking = true;
+				synchronized (monitor) {
+					try {
+						monitor.wait(timeout);
+					} catch (InterruptedException e) {
+						Logger.logException(e, LogLevel.ERROR);
+						this.destroyMonitor(lh);
+						return null;
+					}
+				}
+
+				// 删除监听器
+				this.destroyMonitor(lh);
+
+				return monitor;
+			}
+		}
+	}
+
+	/** 以异步方式执行数据推送。
+	 */
+	public ProtocolMonitor doPush(long targetHash, Chunk chunk) {
+		if (this.connector.isConnected()) {
+			ClusterPushProtocol protocol = new ClusterPushProtocol(targetHash, chunk);
+			protocol.launch(this.connector.getSession());
+			return new ProtocolMonitor(protocol);
+		}
+		else {
+			ClusterPushProtocol protocol = new ClusterPushProtocol(targetHash, chunk);
+			synchronized (this.protocolQueue) {
+				this.protocolQueue.offer(protocol);
+			}
+
+			// 连接
+			if (!this.connector.connect(this.address)) {
+				// 请求连接失败
+				this.protocolQueue.remove(protocol);
+				return null;
+			}
+			else {
+				Long lh = Cryptology.getInstance().fastHash(chunk.getLabel());
+				ProtocolMonitor monitor = this.getOrCreateMonitor(lh, protocol);
+				return monitor;
 			}
 		}
 	}
@@ -148,6 +204,26 @@ public final class ClusterConnector extends Observable implements MessageHandler
 		while (!this.protocolQueue.isEmpty()) {
 			ClusterProtocol protocol = this.protocolQueue.poll();
 			protocol.launch(session);
+
+			Chunk chunk = null;
+			if (protocol instanceof ClusterPushProtocol) {
+				ClusterPushProtocol pushPrtl = (ClusterPushProtocol) protocol;
+				chunk = pushPrtl.getChunk();
+			}
+
+			if (null != chunk) {
+				Long lh = Cryptology.getInstance().fastHash(chunk.getLabel());
+				ProtocolMonitor monitor = this.getMonitor(lh);
+				if (null != monitor) {
+					if (monitor.blocking) {
+						synchronized (monitor) {
+							monitor.notifyAll();
+						}
+					}
+
+					this.destroyMonitor(lh);
+				}
+			}
 		}
 	}
 
@@ -174,8 +250,29 @@ public final class ClusterConnector extends Observable implements MessageHandler
 		if (errorCode == MessageErrorCode.CONNECT_TIMEOUT
 			|| errorCode == MessageErrorCode.CONNECT_FAILED) {
 			while (!this.protocolQueue.isEmpty()) {
-				ClusterFailureProtocol failure = new ClusterFailureProtocol(ClusterFailure.DisappearingNode, this.protocolQueue.poll());
+				ClusterProtocol prtl = this.protocolQueue.poll();
+				ClusterFailureProtocol failure = new ClusterFailureProtocol(ClusterFailure.DisappearingNode, prtl);
 				this.distribute(failure);
+
+				Chunk chunk = null;
+				if (prtl instanceof ClusterPushProtocol) {
+					ClusterPushProtocol pushPrtl = (ClusterPushProtocol) prtl;
+					chunk = pushPrtl.getChunk();
+				}
+
+				if (null != chunk) {
+					Long lh = Cryptology.getInstance().fastHash(chunk.getLabel());
+					ProtocolMonitor monitor = this.getMonitor(lh);
+					if (null != monitor) {
+						if (monitor.blocking) {
+							synchronized (monitor) {
+								monitor.notifyAll();
+							}
+						}
+
+						this.destroyMonitor(lh);
+					}
+				}
 			}
 		}
 	}
@@ -246,5 +343,24 @@ public final class ClusterConnector extends Observable implements MessageHandler
 		this.setChanged();
 		this.notifyObservers(protocol);
 		this.clearChanged();
+	}
+
+	private ProtocolMonitor getOrCreateMonitor(Long hash, ClusterProtocol protocol) {
+		if (this.monitors.containsKey(hash)) {
+			return this.monitors.get(hash);
+		}
+		else {
+			ProtocolMonitor m = new ProtocolMonitor(protocol);
+			this.monitors.put(hash, m);
+			return m;
+		}
+	}
+
+	private ProtocolMonitor getMonitor(Long hash) {
+		return this.monitors.get(hash);
+	}
+
+	private void destroyMonitor(Long hash) {
+		this.monitors.remove(hash);
 	}
 }
