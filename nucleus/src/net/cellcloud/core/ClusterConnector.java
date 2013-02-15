@@ -122,15 +122,16 @@ public final class ClusterConnector extends Observable implements MessageHandler
 	/** 以同步方式执行数据推送。
 	 */
 	public ProtocolMonitor doBlockingPush(long targetHash, Chunk chunk, long timeout) {
+		ClusterPushProtocol protocol = new ClusterPushProtocol(targetHash, chunk);
+
 		if (this.connector.isConnected()) {
-			ClusterPushProtocol protocol = new ClusterPushProtocol(targetHash, chunk);
 			protocol.launch(this.connector.getSession());
 			ProtocolMonitor monitor = new ProtocolMonitor(protocol);
 			monitor.blocking = true;
+			monitor.chunk = chunk;
 			return monitor;
 		}
 		else {
-			ClusterPushProtocol protocol = new ClusterPushProtocol(targetHash, chunk);
 			synchronized (this.protocolQueue) {
 				this.protocolQueue.offer(protocol);
 			}
@@ -158,8 +159,77 @@ public final class ClusterConnector extends Observable implements MessageHandler
 				// 删除监听器
 				this.destroyMonitor(lh);
 
+				monitor.chunk = chunk;
 				return monitor;
 			}
+		}
+	}
+
+	/** 以同步方式执行数据拉取。
+	 */
+	public ProtocolMonitor doBlockingPull(long targetHash, String chunkLabel, long timeout) {
+		ClusterPullProtocol protocol = new ClusterPullProtocol(targetHash, chunkLabel);
+
+		if (this.connector.isConnected()) {
+			protocol.launch(this.connector.getSession());
+		}
+		else {
+			synchronized (this.protocolQueue) {
+				this.protocolQueue.offer(protocol);
+			}
+
+			// 连接
+			if (!this.connector.connect(this.address)) {
+				// 请求连接失败
+				this.protocolQueue.remove(protocol);
+				return null;
+			}
+		}
+
+		Long lh = Cryptology.getInstance().fastHash(chunkLabel);
+		ProtocolMonitor monitor = this.getOrCreateMonitor(lh, protocol);
+		monitor.blocking = true;
+		synchronized (monitor) {
+			try {
+				monitor.wait(timeout);
+			} catch (InterruptedException e) {
+				Logger.logException(e, LogLevel.ERROR);
+				this.destroyMonitor(lh);
+				return null;
+			}
+		}
+
+		// 删除监听器
+		this.destroyMonitor(lh);
+
+		return monitor;
+	}
+
+	// 通知阻塞线程
+	protected void notifyBlockingPull(Chunk chunk) {
+		Long lh = Cryptology.getInstance().fastHash(chunk.getLabel());
+		ProtocolMonitor monitor = this.getMonitor(lh);
+		if (null != monitor) {
+			synchronized (monitor) {
+				monitor.chunk = chunk;
+				monitor.notifyAll();
+			}
+
+			// 删除监听器
+			this.destroyMonitor(lh);
+		}
+	}
+	// 通知阻塞线程
+	protected void notifyBlockingPull(String chunkLabel) {
+		Long lh = Cryptology.getInstance().fastHash(chunkLabel);
+		ProtocolMonitor monitor = this.getMonitor(lh);
+		if (null != monitor) {
+			synchronized (monitor) {
+				monitor.notifyAll();
+			}
+
+			// 删除监听器
+			this.destroyMonitor(lh);
 		}
 	}
 

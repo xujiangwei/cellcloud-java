@@ -176,6 +176,14 @@ public class ClusterNode extends Endpoint implements Comparable<ClusterNode> {
 		}
 	}
 
+	/** 返回虚拟节点。
+	 */
+	public ClusterVirtualNode getVirtualNode(Long nodeHash) {
+		synchronized (this) {
+			return this.virtualNodes.get(nodeHash);
+		}
+	}
+
 	/** 根据指定 Hash 返回最优节点的 Hash 。
 	 */
 	public Long findVNodeHash(long hash) {

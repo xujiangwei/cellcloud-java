@@ -134,7 +134,10 @@ public abstract class ClusterProtocol {
 		SUCCESS(200),
 
 		// 操作被拒绝
-		REJECT(201);
+		REJECT(201),
+
+		// 操作失败
+		FAILURE(209);
 
 		private int code;
 

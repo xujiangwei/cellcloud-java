@@ -28,7 +28,12 @@ package net.cellcloud.core;
 
 import java.util.Map;
 
+import org.json.JSONException;
+import org.json.JSONObject;
+
 import net.cellcloud.common.Cryptology;
+import net.cellcloud.common.LogLevel;
+import net.cellcloud.common.Logger;
 import net.cellcloud.common.Session;
 import net.cellcloud.util.Util;
 
@@ -48,12 +53,13 @@ public class ClusterPullProtocol extends ClusterProtocol {
 	public final static String KEY_TARGET_HASH = "Target-Hash";
 
 	private long targetHash = 0;
+	private String chunkLabel = null;
 	private Chunk chunk = null;
 
-	public ClusterPullProtocol(long targetHash, Chunk chunk) {
+	public ClusterPullProtocol(long targetHash, String chunkLabel) {
 		super(ClusterPullProtocol.NAME);
 		this.targetHash = targetHash;
-		this.chunk = chunk;
+		this.chunkLabel = chunkLabel;
 	}
 
 	public ClusterPullProtocol(Map<String, String> prop) {
@@ -73,6 +79,46 @@ public class ClusterPullProtocol extends ClusterProtocol {
 		return this.targetHash;
 	}
 
+	/** 返回 Chunk 标签。
+	 */
+	public String getChunkLabel() {
+		if (null == this.chunkLabel) {
+			this.chunkLabel = this.getProp(KEY_LABEL);
+		}
+
+		return this.chunkLabel;
+	}
+
+	/** 返回数据块。
+	 */
+	public void setChunk(Chunk chunk) {
+		this.chunk = chunk;
+	}
+
+	/** 返回数据块。
+	 */
+	public Chunk getChunk() {
+		if (null == this.chunk) {
+			String strLabel = this.getProp(KEY_LABEL);
+			String strChunk = this.getProp(KEY_CHUNK);
+			if (null != strLabel && null != strChunk) {
+				String label = Util.bytes2String(Cryptology.getInstance().decodeBase64(strLabel));
+				String jsChunk = Util.bytes2String(Cryptology.getInstance().decodeBase64(strChunk));
+				JSONObject json = null;
+				try {
+					json = new JSONObject(jsChunk);
+				} catch (JSONException e) {
+					Logger.logException(e, LogLevel.ERROR);
+				}
+				if (null != json) {
+					this.chunk = new Chunk(label, json);
+				}
+			}
+		}
+
+		return this.chunk;
+	}
+
 	@Override
 	public void launch(Session session) {
 		StringBuilder buf = new StringBuilder();
@@ -81,7 +127,7 @@ public class ClusterPullProtocol extends ClusterProtocol {
 		buf.append(KEY_DATE).append(": ").append(super.getStandardDate()).append("\n");
 
 		buf.append(KEY_TARGET_HASH).append(": ").append(this.targetHash).append("\n");
-		buf.append(KEY_LABEL).append(": ").append(Cryptology.getInstance().encodeBase64(Util.string2Bytes(this.chunk.getLabel()))).append("\n");
+		buf.append(KEY_LABEL).append(": ").append(Cryptology.getInstance().encodeBase64(Util.string2Bytes(this.chunkLabel))).append("\n");
 
 		this.touch(session, buf);
 		buf = null;
@@ -89,5 +135,21 @@ public class ClusterPullProtocol extends ClusterProtocol {
 
 	@Override
 	public void respond(ClusterNode node, StateCode state) {
+		StringBuilder buf = new StringBuilder();
+		buf.append(KEY_PROTOCOL).append(": ").append(NAME).append("\n");
+		buf.append(KEY_TAG).append(": ").append(Nucleus.getInstance().getTagAsString()).append("\n");
+		buf.append(KEY_DATE).append(": ").append(super.getStandardDate()).append("\n");
+		buf.append(KEY_STATE).append(": ").append(state.getCode()).append("\n");
+
+		if (null != this.chunk) {
+			buf.append(KEY_LABEL).append(": ").append(Cryptology.getInstance().encodeBase64(Util.string2Bytes(this.chunk.getLabel()))).append("\n");
+			buf.append(KEY_CHUNK).append(": ").append(Cryptology.getInstance().encodeBase64(Util.string2Bytes(this.chunk.getData().toString()))).append("\n");
+		}
+		else {
+			buf.append(KEY_LABEL).append(": ").append(Cryptology.getInstance().encodeBase64(Util.string2Bytes(this.chunkLabel))).append("\n");
+		}
+
+		this.touch(this.contextSession, buf);
+		buf = null;
 	}
 }

@@ -78,6 +78,10 @@ public class ClusterCommand extends ConsoleCommand {
 				// 判断是否是本地
 				info.append(node.containsOwnVirtualNode(h) ? "L" : "R");
 
+				ClusterVirtualNode vnode = cltr.getNode().getVirtualNode(h);
+				// 虚拟节点物理地址
+				info.append("  ").append(vnode.getCoordinate().getAddress().getHostName()).append(":").append(vnode.getCoordinate().getAddress().getPort());
+
 				info.append("\n");
 				++sn;
 			}

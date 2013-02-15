@@ -181,7 +181,7 @@ public class NonblockingConnector extends MessageService implements MessageConne
 					loopDispatch();
 				} catch (Exception e) {
 					spinning = false;
-					Logger.logException(e, LogLevel.DEBUG);
+//					Logger.logException(e, LogLevel.DEBUG);
 				}
 
 				// 通知 Session 销毁。
