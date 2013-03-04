@@ -41,7 +41,7 @@ import net.cellcloud.http.HttpHandler;
  */
 public final class TalkHttpHandler implements HttpHandler {
 
-	private final String contextPath = "/api/talker";
+	private final String contextPath = "/cc/talker";
 
 	private TreeMap<Long, HttpSession> sessions;
 

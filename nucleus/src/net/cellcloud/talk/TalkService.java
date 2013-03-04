@@ -504,7 +504,7 @@ public final class TalkService implements Service {
 		connector.setPort(this.httpPort);
 		connector.setRequestHeaderSize(8192);
 		connector.setThreadPool(new QueuedThreadPool(16));
-		connector.setName("/api/talker");
+		connector.setName("/cc/talker");
 
 		HttpService.getInstance().addConnector(connector);
 		HttpService.getInstance().addHandler(new TalkHttpHandler());

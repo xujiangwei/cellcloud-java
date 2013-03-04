@@ -109,7 +109,8 @@ public class Speaker {
 			if (this.connector.isConnected()
 				&& curAddr.getAddress().getHostAddress().equals(address.getAddress().getHostAddress())
 				&& curAddr.getPort() == address.getPort()) {
-				return false;
+				// 已经连接，返回 true
+				return true;
 			}
 
 			this.connector.disconnect();

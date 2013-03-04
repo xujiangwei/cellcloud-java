@@ -374,14 +374,25 @@ public class NonblockingAcceptor extends MessageService implements MessageAccept
 					SelectionKey key = (SelectionKey) it.next();
 					it.remove();
 
-					if (key.isAcceptable()) {
-						accept(key);
+					try {
+						if (key.isAcceptable()) {
+							accept(key);
+						}
+						else if (key.isReadable()) {
+							receive(key);
+						}
+						else if (key.isWritable()) {
+							send(key);
+						}
 					}
-					else if (key.isReadable()) {
-						receive(key);
-					}
-					else if (key.isWritable()) {
-						send(key);
+					catch (Exception e) {
+						if (this.spinning) {
+							// 没有被主动终止循环
+							continue;
+						}
+						else {
+							throw e;
+						}
 					}
 				}
 

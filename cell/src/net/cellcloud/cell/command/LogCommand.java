@@ -56,7 +56,7 @@ public class LogCommand extends ConsoleCommand {
 
 		this.state = ConsoleCommand.CCS_EXECUTING;
 		println("Enter 'Q'/'q' to stop print log.");
-		print("Start print log text:");
+		println("Start print log text:");
 	}
 
 	@Override
