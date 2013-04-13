@@ -67,12 +67,15 @@ public final class Util {
 
 	/** 生成指定范围内的随机整数。
 	 */
-	public static int randomInt(int floor, int ceil) {
+	public static int randomInt(final int floor, final int ceil) {
 		if (floor > ceil) {
 			return floor;
 		}
 
-		return sRandom.nextInt(ceil) % (ceil - floor + 1) + floor;
+		int realFloor = floor + 1;
+		int realCeil = ceil + 1;
+
+		return (sRandom.nextInt(realCeil) % (realCeil - realFloor + 1) + realFloor) - 1;
 	}
 
 	/** 生成随机字符串。

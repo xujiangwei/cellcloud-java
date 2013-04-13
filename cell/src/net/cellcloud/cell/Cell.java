@@ -133,7 +133,12 @@ public final class Cell {
 	private static void markStart() {
 		try {
 			// 处理文件
-			File file = new File("bin/tag");
+			File file = new File("bin");
+			if (!file.exists()) {
+				file.mkdir();
+			}
+
+			file = new File("bin/tag");
 			if (file.exists()) {
 				file.delete();
 			}

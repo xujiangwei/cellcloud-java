@@ -53,8 +53,7 @@ public final class FileLogger implements LogHandle {
 
 	private String lineBreak = Util.isWindowsOS() ? "\r\n" : "\n";
 
-	private int flushThreshold = 1024;
-	private int countSize = 0;
+	private int bufSize = 8192;
 
 	private FileLogger() {
 		this.outputStream = null;
@@ -68,12 +67,12 @@ public final class FileLogger implements LogHandle {
 
 	/** 设置日志 Flush 门限。
 	 */
-	public void setFlushThreshold(int value) {
+	public void setBufferSize(int value) {
 		if (value < 0) {
 			return;
 		}
 
-		this.flushThreshold = value;
+		this.bufSize = value;
 	}
 
 	/** 打开日志文件。
@@ -118,7 +117,7 @@ public final class FileLogger implements LogHandle {
 
 		try {
 			this.outputStream = new FileOutputStream(file);
-			this.buffer = new BufferedOutputStream(this.outputStream);
+			this.buffer = new BufferedOutputStream(this.outputStream, this.bufSize);
 		} catch (FileNotFoundException e) {
 			e.printStackTrace(System.out);
 			return;
@@ -137,8 +136,6 @@ public final class FileLogger implements LogHandle {
 		}
 
 		synchronized (this.mutex) {
-			this.countSize = 0;
-
 			try {
 				this.buffer.flush();
 				this.outputStream.flush();
@@ -169,12 +166,6 @@ public final class FileLogger implements LogHandle {
 
 			try {
 				this.buffer.write(Util.string2Bytes(this.stringBuf.toString()));
-
-				this.countSize += this.stringBuf.length();
-				if (this.countSize >= this.flushThreshold) {
-					this.buffer.flush();
-					this.countSize = 0;
-				}
 			} catch (IOException e) {
 				// Nothing
 			}
@@ -198,12 +189,6 @@ public final class FileLogger implements LogHandle {
 
 			try {
 				this.buffer.write(Util.string2Bytes(this.stringBuf.toString()));
-
-				this.countSize += this.stringBuf.length();
-				if (this.countSize >= this.flushThreshold) {
-					this.buffer.flush();
-					this.countSize = 0;
-				}
 			} catch (IOException e) {
 				// Nothing
 			}
@@ -227,12 +212,6 @@ public final class FileLogger implements LogHandle {
 
 			try {
 				this.buffer.write(Util.string2Bytes(this.stringBuf.toString()));
-
-				this.countSize += this.stringBuf.length();
-				if (this.countSize >= this.flushThreshold) {
-					this.buffer.flush();
-					this.countSize = 0;
-				}
 			} catch (IOException e) {
 				// Nothing
 			}
@@ -256,12 +235,6 @@ public final class FileLogger implements LogHandle {
 
 			try {
 				this.buffer.write(Util.string2Bytes(this.stringBuf.toString()));
-
-				this.countSize += this.stringBuf.length();
-				if (this.countSize >= this.flushThreshold) {
-					this.buffer.flush();
-					this.countSize = 0;
-				}
 			} catch (IOException e) {
 				// Nothing
 			}
