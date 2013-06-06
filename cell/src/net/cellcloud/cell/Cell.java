@@ -258,5 +258,9 @@ public final class Cell {
 				VersionInfo.main(args);
 			}
 		}
+		else {
+			System.out.print("cell> No argument");
+			VersionInfo.main(args);
+		}
 	}
 }

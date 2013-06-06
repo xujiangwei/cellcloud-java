@@ -453,7 +453,7 @@ public class NonblockingAcceptor extends MessageService implements MessageAccept
 
 		NonblockingAcceptorSession session = this.sessions.get(channel.socket().hashCode());
 		if (null == session) {
-			Logger.w(NonblockingAcceptor.class, "Not found session");
+			Logger.d(NonblockingAcceptor.class, "Not found session");
 			return;
 		}
 
@@ -464,7 +464,7 @@ public class NonblockingAcceptor extends MessageService implements MessageAccept
 			if (channel.isOpen())
 				channel.register(this.selector, SelectionKey.OP_WRITE | SelectionKey.OP_READ);
 		} catch (IOException e) {
-			Logger.logException(e, LogLevel.WARNING);
+			Logger.logException(e, LogLevel.DEBUG);
 		}
 	}
 
@@ -478,7 +478,7 @@ public class NonblockingAcceptor extends MessageService implements MessageAccept
 
 		NonblockingAcceptorSession session = this.sessions.get(channel.socket().hashCode());
 		if (null == session) {
-			Logger.w(NonblockingAcceptor.class, "Not found session");
+			Logger.d(NonblockingAcceptor.class, "Not found session");
 			return;
 		}
 

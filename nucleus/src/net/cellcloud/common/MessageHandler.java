@@ -26,7 +26,8 @@ THE SOFTWARE.
 
 package net.cellcloud.common;
 
-/** 消息服务处理监听器。
+/**
+ * 消息服务处理监听器。
  * 
  * @author Jiangwei Xu
  */

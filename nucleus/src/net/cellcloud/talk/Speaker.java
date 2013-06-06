@@ -95,6 +95,11 @@ public class Speaker {
 	/** 向指定地址发起请求 Cellet 服务。
 	 */
 	public boolean call(InetSocketAddress address) {
+		if (SpeakerState.CALLING == this.state) {
+			// 正在 Call 返回 true
+			return true;
+		}
+
 		if (null == this.connector) {
 			this.connector = new NonblockingConnector();
 

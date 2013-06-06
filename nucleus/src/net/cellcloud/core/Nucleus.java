@@ -101,7 +101,7 @@ public final class Nucleus {
 	}
 
 	/** 返回单例。 */
-	public synchronized static Nucleus getInstance() {
+	public static Nucleus getInstance() {
 		return Nucleus.instance;
 	}
 
