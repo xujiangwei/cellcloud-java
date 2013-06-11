@@ -28,7 +28,7 @@ package net.cellcloud.extras.express;
 
 import java.io.File;
 
-import net.cellcloud.util.Util;
+import net.cellcloud.util.Utils;
 
 /** 文件快递授权码。
  * 
@@ -55,7 +55,7 @@ public final class ExpressAuthCode {
 	/** 构造函数。
 	 */
 	public ExpressAuthCode(final String path, final int auth, final long duration) {
-		long code = Util.randomString(4).hashCode();
+		long code = Utils.randomString(4).hashCode();
 		long time = System.currentTimeMillis();
 		this.code = Long.toString(time - code);
 

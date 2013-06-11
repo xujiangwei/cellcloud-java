@@ -29,7 +29,7 @@ package net.cellcloud.talk;
 import net.cellcloud.common.Message;
 import net.cellcloud.common.Packet;
 import net.cellcloud.common.Session;
-import net.cellcloud.util.Util;
+import net.cellcloud.util.Utils;
 
 /** Suspend Command
  * 
@@ -46,8 +46,8 @@ public final class ServerSuspendCommand extends ServerCommand {
 	public void execute() {
 		// 包格式：源标签|有效时长
 
-		String tag = Util.bytes2String(this.packet.getSubsegment(0));
-		long duration = Long.parseLong(Util.bytes2String(this.packet.getSubsegment(1)));
+		String tag = Utils.bytes2String(this.packet.getSubsegment(0));
+		long duration = Long.parseLong(Utils.bytes2String(this.packet.getSubsegment(1)));
 
 		// 处理挂起
 		boolean ret = this.service.processSuspend(this.session, tag, duration);
@@ -58,13 +58,13 @@ public final class ServerSuspendCommand extends ServerCommand {
 			response = new Packet(TalkDefinition.TPT_SUSPEND, 5, 1, 0);
 			response.appendSubsegment(this.packet.getSubsegment(0));
 			response.appendSubsegment(TalkDefinition.SC_SUCCESS);
-			response.appendSubsegment(Util.string2Bytes(Long.toString(System.currentTimeMillis())));
+			response.appendSubsegment(Utils.string2Bytes(Long.toString(System.currentTimeMillis())));
 		}
 		else {
 			response = new Packet(TalkDefinition.TPT_SUSPEND, 5, 1, 0);
 			response.appendSubsegment(this.packet.getSubsegment(0));
 			response.appendSubsegment(TalkDefinition.SC_FAILURE);
-			response.appendSubsegment(Util.string2Bytes(Long.toString(System.currentTimeMillis())));
+			response.appendSubsegment(Utils.string2Bytes(Long.toString(System.currentTimeMillis())));
 		}
 
 		byte[] data = Packet.pack(response);

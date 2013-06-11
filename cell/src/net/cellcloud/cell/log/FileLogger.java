@@ -35,7 +35,7 @@ import java.util.Date;
 
 import net.cellcloud.common.LogHandle;
 import net.cellcloud.common.LoggerManager;
-import net.cellcloud.util.Util;
+import net.cellcloud.util.Utils;
 
 /** 文件日志。
  * 
@@ -51,7 +51,7 @@ public final class FileLogger implements LogHandle {
 	private FileOutputStream outputStream = null;
 	private BufferedOutputStream buffer = null;
 
-	private String lineBreak = Util.isWindowsOS() ? "\r\n" : "\n";
+	private String lineBreak = Utils.isWindowsOS() ? "\r\n" : "\n";
 
 	private int bufSize = 8192;
 
@@ -165,7 +165,7 @@ public final class FileLogger implements LogHandle {
 			this.stringBuf.append(lineBreak);
 
 			try {
-				this.buffer.write(Util.string2Bytes(this.stringBuf.toString()));
+				this.buffer.write(Utils.string2Bytes(this.stringBuf.toString()));
 			} catch (IOException e) {
 				// Nothing
 			}
@@ -188,7 +188,7 @@ public final class FileLogger implements LogHandle {
 			this.stringBuf.append(lineBreak);
 
 			try {
-				this.buffer.write(Util.string2Bytes(this.stringBuf.toString()));
+				this.buffer.write(Utils.string2Bytes(this.stringBuf.toString()));
 			} catch (IOException e) {
 				// Nothing
 			}
@@ -211,7 +211,7 @@ public final class FileLogger implements LogHandle {
 			this.stringBuf.append(lineBreak);
 
 			try {
-				this.buffer.write(Util.string2Bytes(this.stringBuf.toString()));
+				this.buffer.write(Utils.string2Bytes(this.stringBuf.toString()));
 			} catch (IOException e) {
 				// Nothing
 			}
@@ -234,7 +234,7 @@ public final class FileLogger implements LogHandle {
 			this.stringBuf.append(lineBreak);
 
 			try {
-				this.buffer.write(Util.string2Bytes(this.stringBuf.toString()));
+				this.buffer.write(Utils.string2Bytes(this.stringBuf.toString()));
 			} catch (IOException e) {
 				// Nothing
 			}

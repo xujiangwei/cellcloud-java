@@ -28,7 +28,7 @@ package net.cellcloud.extras.express;
 
 import java.util.Date;
 
-import net.cellcloud.util.Util;
+import net.cellcloud.util.Utils;
 
 /** 文件属性描述类。
  * 
@@ -86,7 +86,7 @@ public final class FileAttribute {
 			buf.append(ATTR_SEPARATOR);
 			buf.append(this.size);
 			buf.append(ATTR_SEPARATOR);
-			buf.append(Util.convertDateToSimpleString(this.lastModifyTime));
+			buf.append(Utils.convertDateToSimpleString(this.lastModifyTime));
 			buf.append(ATTR_SEPARATOR);
 			buf.append(this.hashCode);
 
@@ -110,7 +110,7 @@ public final class FileAttribute {
 		else {
 			this.exist = true;
 			this.size = Long.parseLong(array[1]);
-			this.lastModifyTime = Util.convertSimpleStringToDate(array[2]);
+			this.lastModifyTime = Utils.convertSimpleStringToDate(array[2]);
 			this.hashCode = array[3];
 		}
 	}

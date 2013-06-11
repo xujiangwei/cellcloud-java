@@ -28,7 +28,7 @@ package net.cellcloud.common;
 
 import java.net.InetSocketAddress;
 
-import net.cellcloud.util.Util;
+import net.cellcloud.util.Utils;
 
 /** 消息会话描述类。
  * 
@@ -41,7 +41,7 @@ public class Session {
 	private InetSocketAddress address;
 
 	public Session(MessageService service, InetSocketAddress address) {
-		this.id = Math.abs(Util.randomLong());
+		this.id = Math.abs(Utils.randomLong());
 		this.service = service;
 		this.address = address;
 	}

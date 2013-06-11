@@ -42,7 +42,7 @@ import net.cellcloud.common.MessageErrorCode;
 import net.cellcloud.common.MessageHandler;
 import net.cellcloud.common.NonblockingConnector;
 import net.cellcloud.common.Session;
-import net.cellcloud.util.Util;
+import net.cellcloud.util.Utils;
 
 /** 集群连接器。
  * 
@@ -383,7 +383,7 @@ public final class ClusterConnector extends Observable implements MessageHandler
 	private void process(ByteBuffer buffer) {
 		byte[] bytes = new byte[buffer.limit()];
 		buffer.get(bytes);
-		String str = Util.bytes2String(bytes);
+		String str = Utils.bytes2String(bytes);
 		String[] array = str.split("\\\n");
 		HashMap<String, String> prop = new HashMap<String, String>();
 		for (String line : array) {

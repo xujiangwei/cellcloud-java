@@ -31,7 +31,7 @@ import java.io.ByteArrayInputStream;
 import net.cellcloud.common.Logger;
 import net.cellcloud.common.Packet;
 import net.cellcloud.common.Session;
-import net.cellcloud.util.Util;
+import net.cellcloud.util.Utils;
 
 /** Dialogue Command
  * 
@@ -61,7 +61,7 @@ public final class ServerDialogueCommand extends ServerCommand {
 		ByteArrayInputStream stream = new ByteArrayInputStream(pridata);
 
 		byte[] tagdata = this.packet.getSubsegment(1);
-		String speakerTag = Util.bytes2String(tagdata);
+		String speakerTag = Utils.bytes2String(tagdata);
 
 		// 反序列化原语
 		Primitive primitive = new Primitive(speakerTag);

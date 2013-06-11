@@ -2,7 +2,7 @@
 -----------------------------------------------------------------------------
 This source file is part of Cell Cloud.
 
-Copyright (c) 2009-2012 Cell Cloud Team (www.cellcloud.net)
+Copyright (c) 2009-2013 Cell Cloud Team (www.cellcloud.net)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -44,7 +44,8 @@ import java.util.Vector;
  */
 public class NonblockingConnector extends MessageService implements MessageConnector {
 
-	protected static final int BLOCK = 8192;
+	// 缓冲块大小，默认：8192
+	private int block = 8192;
 
 	private InetSocketAddress address;
 	private long connectTimeout;
@@ -66,8 +67,8 @@ public class NonblockingConnector extends MessageService implements MessageConne
 
 	public NonblockingConnector() {
 		this.connectTimeout = 10000;
-		this.readBuffer = ByteBuffer.allocate(BLOCK);
-		this.writeBuffer = ByteBuffer.allocate(BLOCK);
+		this.readBuffer = ByteBuffer.allocate(this.block);
+		this.writeBuffer = ByteBuffer.allocate(this.block);
 		this.messages = new Vector<Message>();
 	}
 
@@ -129,8 +130,8 @@ public class NonblockingConnector extends MessageService implements MessageConne
 			*/
 			// 以下为 JDK6 的代码
 			this.channel.socket().setKeepAlive(true);
-			this.channel.socket().setReceiveBufferSize(BLOCK);
-			this.channel.socket().setSendBufferSize(BLOCK);
+			this.channel.socket().setReceiveBufferSize(this.block);
+			this.channel.socket().setSendBufferSize(this.block);
 
 			this.selector = Selector.open();
 			// 注册事件
@@ -265,6 +266,26 @@ public class NonblockingConnector extends MessageService implements MessageConne
 
 	public long getConnectTimeout() {
 		return this.connectTimeout;
+	}
+
+	@Override
+	public void setBlockSize(int size) {
+		this.block = size;
+		this.readBuffer = ByteBuffer.allocate(this.block);
+		this.writeBuffer = ByteBuffer.allocate(this.block);
+
+		if (null != this.channel) {
+			try {
+				this.channel.socket().setReceiveBufferSize(this.block);
+				this.channel.socket().setSendBufferSize(this.block);
+			} catch (Exception e) {
+				// ignore
+			}
+		}
+	}
+
+	public int getBlockSize() {
+		return this.block;
 	}
 
 	/** 是否已连接。
@@ -534,7 +555,7 @@ public class NonblockingConnector extends MessageService implements MessageConne
 			int length = data.length;
 			boolean head = false;
 			boolean tail = false;
-			byte[] buf = new byte[NonblockingConnector.BLOCK];
+			byte[] buf = new byte[this.block];
 			int bufIndex = 0;
 
 			while (cursor < length) {

@@ -38,7 +38,7 @@ import net.cellcloud.storage.LocalFileProperties;
 import net.cellcloud.storage.LocalFileStorage;
 import net.cellcloud.storage.ResultSet;
 import net.cellcloud.storage.StorageEnumerator;
-import net.cellcloud.util.Util;
+import net.cellcloud.util.Utils;
 
 /** 文件传输任务类。
  * 
@@ -729,7 +729,7 @@ public final class FileExpressTask implements MessageHandler, Runnable {
 		// 包格式：授权码|文件名
 		Packet packet = new Packet(FileExpressDefinition.PT_ATTR, 2, 1, 0);
 		packet.appendSubsegment(this.context.getAuthCode().getCode().getBytes());
-		packet.appendSubsegment(Util.string2Bytes(this.context.getFileName()));
+		packet.appendSubsegment(Utils.string2Bytes(this.context.getFileName()));
 
 		byte[] data = Packet.pack(packet);
 		Message message = new Message(data);
@@ -746,7 +746,7 @@ public final class FileExpressTask implements MessageHandler, Runnable {
 		// 包格式：授权码|文件名|文件长度|操作
 		Packet packet = new Packet(FileExpressDefinition.PT_BEGIN, 3, 1, 0);
 		packet.appendSubsegment(this.context.getAuthCode().getCode().getBytes());
-		packet.appendSubsegment(Util.string2Bytes(this.context.getFileName()));
+		packet.appendSubsegment(Utils.string2Bytes(this.context.getFileName()));
 		packet.appendSubsegment(Long.toString(this.context.getAttribute().size()).getBytes());
 		packet.appendSubsegment(Integer.toString(FileExpressContext.OP_DOWNLOAD).getBytes());
 
@@ -764,7 +764,7 @@ public final class FileExpressTask implements MessageHandler, Runnable {
 		// 包格式：授权码|文件名|文件操作起始位置
 		Packet packet = new Packet(FileExpressDefinition.PT_OFFER, 4, 1, 0);
 		packet.appendSubsegment(this.context.getAuthCode().getCode().getBytes());
-		packet.appendSubsegment(Util.string2Bytes(this.context.getFileName()));
+		packet.appendSubsegment(Utils.string2Bytes(this.context.getFileName()));
 		packet.appendSubsegment(Long.toString(this.progress).getBytes());
 
 		byte[] data = Packet.pack(packet);
@@ -786,7 +786,7 @@ public final class FileExpressTask implements MessageHandler, Runnable {
 		// 包结构：授权码|文件名|文件长度|操作
 		Packet packet = new Packet(FileExpressDefinition.PT_END, 7, 1, 0);
 		packet.appendSubsegment(this.context.getAuthCode().getCode().getBytes());
-		packet.appendSubsegment(Util.string2Bytes(this.context.getFileName()));
+		packet.appendSubsegment(Utils.string2Bytes(this.context.getFileName()));
 		packet.appendSubsegment(Long.toString(this.context.getAttribute().size()).getBytes());
 		packet.appendSubsegment(Integer.toString(this.context.getOperate()).getBytes());
 
@@ -821,7 +821,7 @@ public final class FileExpressTask implements MessageHandler, Runnable {
 		// 包格式：授权码|文件名|新数据进度
 		Packet packet = new Packet(FileExpressDefinition.PT_DATA_RECEIPT, 6, 1, 0);
 		packet.appendSubsegment(this.context.getAuthCode().getCode().getBytes());
-		packet.appendSubsegment(Util.string2Bytes(this.context.getFileName()));
+		packet.appendSubsegment(Utils.string2Bytes(this.context.getFileName()));
 		packet.appendSubsegment(Long.toString(this.progress).getBytes());
 
 		byte[] data = Packet.pack(packet);
@@ -835,7 +835,7 @@ public final class FileExpressTask implements MessageHandler, Runnable {
 		// 包格式：授权码|文件名|文件长度|操作
 		Packet packet = new Packet(FileExpressDefinition.PT_BEGIN, 3, 1, 0);
 		packet.appendSubsegment(this.context.getAuthCode().getCode().getBytes());
-		packet.appendSubsegment(Util.string2Bytes(this.context.getFileName()));
+		packet.appendSubsegment(Utils.string2Bytes(this.context.getFileName()));
 		packet.appendSubsegment(Long.toString(resultSet.getLong(LocalFileStorage.LABEL_LONG_SIZE)).getBytes());
 		packet.appendSubsegment(Integer.toString(FileExpressContext.OP_UPLOAD).getBytes());
 
@@ -857,7 +857,7 @@ public final class FileExpressTask implements MessageHandler, Runnable {
 		// 包结构：授权码|文件名|文件长度|操作
 		Packet packet = new Packet(FileExpressDefinition.PT_END, 7, 1, 0);
 		packet.appendSubsegment(this.context.getAuthCode().getCode().getBytes());
-		packet.appendSubsegment(Util.string2Bytes(this.context.getFileName()));
+		packet.appendSubsegment(Utils.string2Bytes(this.context.getFileName()));
 		packet.appendSubsegment(Long.toString(this.context.getAttribute().size()).getBytes());
 		packet.appendSubsegment(Integer.toString(this.context.getOperate()).getBytes());
 
@@ -881,7 +881,7 @@ public final class FileExpressTask implements MessageHandler, Runnable {
 
 			Packet packet = new Packet(FileExpressDefinition.PT_DATA, 5, 1, 0);
 			packet.appendSubsegment(this.context.getAuthCode().getCode().getBytes());
-			packet.appendSubsegment(Util.string2Bytes(this.context.getFileName()));
+			packet.appendSubsegment(Utils.string2Bytes(this.context.getFileName()));
 			packet.appendSubsegment(Long.toString(start).getBytes());
 			packet.appendSubsegment(Long.toString(end).getBytes());
 			packet.appendSubsegment(bytes);
@@ -1035,7 +1035,7 @@ public final class FileExpressTask implements MessageHandler, Runnable {
 					return;
 				}
 
-				String fileName = Util.bytes2String(packet.getSubsegment(0));
+				String fileName = Utils.bytes2String(packet.getSubsegment(0));
 				if (this.context.getFileName().equals(fileName)) {
 					FileAttribute attr = new FileAttribute(packet.getSubsegment(1));
 					this.context.setAttribute(attr);

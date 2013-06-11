@@ -45,7 +45,7 @@ import net.cellcloud.common.Session;
 import net.cellcloud.exception.StorageException;
 import net.cellcloud.storage.FileStorage;
 import net.cellcloud.storage.ResultSet;
-import net.cellcloud.util.Util;
+import net.cellcloud.util.Utils;
 
 /** 文件传输服务类。
  * 
@@ -286,7 +286,7 @@ public final class FileExpress implements MessageHandler, ExpressTaskListener {
 		}
 
 		// 获取授权码
-		String authCode = Util.bytes2String(packet.getSubsegment(0));
+		String authCode = Utils.bytes2String(packet.getSubsegment(0));
 
 		// 验证 Session
 		if (false == checkSession(session, authCode)) {
@@ -294,9 +294,9 @@ public final class FileExpress implements MessageHandler, ExpressTaskListener {
 			return;
 		}
 
-		String filename = Util.bytes2String(packet.getSubsegment(1));
-		long start = Long.parseLong(Util.bytes2String(packet.getSubsegment(2)));
-		long end = Long.parseLong(Util.bytes2String(packet.getSubsegment(3)));
+		String filename = Utils.bytes2String(packet.getSubsegment(1));
+		long start = Long.parseLong(Utils.bytes2String(packet.getSubsegment(2)));
+		long end = Long.parseLong(Utils.bytes2String(packet.getSubsegment(3)));
 		byte[] fileData = packet.getSubsegment(4);
 
 		// 保存数据
@@ -332,7 +332,7 @@ public final class FileExpress implements MessageHandler, ExpressTaskListener {
 		}
 
 		// 获取授权码
-		String authCode = Util.bytes2String(packet.getSubsegment(0));
+		String authCode = Utils.bytes2String(packet.getSubsegment(0));
 
 		// 验证 Session
 		if (false == checkSession(session, authCode)) {
@@ -342,8 +342,8 @@ public final class FileExpress implements MessageHandler, ExpressTaskListener {
 
 		SessionRecord record = this.sessionRecords.get(session.getId());
 
-		String filename = Util.bytes2String(packet.getSubsegment(1));
-		long offset = Long.parseLong(Util.bytes2String(packet.getSubsegment(2)));
+		String filename = Utils.bytes2String(packet.getSubsegment(1));
+		long offset = Long.parseLong(Utils.bytes2String(packet.getSubsegment(2)));
 		// 读文件
 		byte[] fileData = record.readFile(filename, offset, FileExpressDefinition.CHUNK_SIZE);
 		if (null != fileData) {
@@ -353,8 +353,8 @@ public final class FileExpress implements MessageHandler, ExpressTaskListener {
 			Packet response = new Packet(FileExpressDefinition.PT_DATA, 5, 1, 0);
 			response.appendSubsegment(packet.getSubsegment(0));
 			response.appendSubsegment(packet.getSubsegment(1));
-			response.appendSubsegment(Util.string2Bytes(Long.toString(offset)));
-			response.appendSubsegment(Util.string2Bytes(Long.toString(end)));
+			response.appendSubsegment(Utils.string2Bytes(Long.toString(offset)));
+			response.appendSubsegment(Utils.string2Bytes(Long.toString(end)));
 			response.appendSubsegment(fileData);
 			byte[] data = Packet.pack(response);
 			Message message = new Message(data);
@@ -372,7 +372,7 @@ public final class FileExpress implements MessageHandler, ExpressTaskListener {
 			// 包格式：文件名|文件长度
 			Packet response = new Packet(FileExpressDefinition.PT_END, 7, 1, 0);
 			response.appendSubsegment(packet.getSubsegment(0));
-			response.appendSubsegment(Util.string2Bytes(Long.toString(ctx.getAttribute().size())));
+			response.appendSubsegment(Utils.string2Bytes(Long.toString(ctx.getAttribute().size())));
 			byte[] data = Packet.pack(response);
 			Message message = new Message(data);
 			session.write(message);
@@ -387,7 +387,7 @@ public final class FileExpress implements MessageHandler, ExpressTaskListener {
 		}
 
 		// 获取授权码
-		String authCode = Util.bytes2String(packet.getSubsegment(0));
+		String authCode = Utils.bytes2String(packet.getSubsegment(0));
 
 		// 验证 Session
 		if (false == checkSession(session, authCode)) {
@@ -399,9 +399,9 @@ public final class FileExpress implements MessageHandler, ExpressTaskListener {
 		FileExpressServoContext ctx = this.servoContexts.get(authCode);
 
 		// 准备文件
-		String filename = Util.bytes2String(packet.getSubsegment(1));
-		long fileSize = Long.parseLong(Util.bytes2String(packet.getSubsegment(2)));
-		int operate = Integer.parseInt(Util.bytes2String(packet.getSubsegment(3)));
+		String filename = Utils.bytes2String(packet.getSubsegment(1));
+		long fileSize = Long.parseLong(Utils.bytes2String(packet.getSubsegment(2)));
+		int operate = Integer.parseInt(Utils.bytes2String(packet.getSubsegment(3)));
 		FileExpressContext fec = record.prepareFile(authCode, ctx.getAttribute(filename), filename, fileSize, operate);
 
 		// 包格式：文件名|文件长度
@@ -424,7 +424,7 @@ public final class FileExpress implements MessageHandler, ExpressTaskListener {
 		}
 
 		// 获取授权码
-		String authCode = Util.bytes2String(packet.getSubsegment(0));
+		String authCode = Utils.bytes2String(packet.getSubsegment(0));
 
 		// 验证 Session
 		if (false == checkSession(session, authCode)) {
@@ -441,7 +441,7 @@ public final class FileExpress implements MessageHandler, ExpressTaskListener {
 		}
 
 		// 提取文件名
-		String filename = Util.bytes2String(packet.getSubsegment(1));
+		String filename = Utils.bytes2String(packet.getSubsegment(1));
 
 		// 关闭对应的记录
 		SessionRecord record = this.sessionRecords.get(session.getId());
@@ -470,7 +470,7 @@ public final class FileExpress implements MessageHandler, ExpressTaskListener {
 		}
 
 		// 获取授权码
-		String authCode = Util.bytes2String(packet.getSubsegment(0));
+		String authCode = Utils.bytes2String(packet.getSubsegment(0));
 
 		// 验证 Session
 		if (false == checkSession(session, authCode)) {
@@ -482,8 +482,8 @@ public final class FileExpress implements MessageHandler, ExpressTaskListener {
 
 		// 包格式：授权码|文件名|数据起始位|数据结束位|数据
 
-		String filename = Util.bytes2String(packet.getSubsegment(1));
-		long offset = Long.parseLong(Util.bytes2String(packet.getSubsegment(2)));
+		String filename = Utils.bytes2String(packet.getSubsegment(1));
+		long offset = Long.parseLong(Utils.bytes2String(packet.getSubsegment(2)));
 		byte[] fileData = record.readFile(filename, offset, FileExpressDefinition.CHUNK_SIZE);
 		if (null == fileData) {
 			Logger.e(this.getClass(),
@@ -497,7 +497,7 @@ public final class FileExpress implements MessageHandler, ExpressTaskListener {
 		response.appendSubsegment(packet.getSubsegment(0));
 		response.appendSubsegment(packet.getSubsegment(1));
 		response.appendSubsegment(packet.getSubsegment(2));
-		response.appendSubsegment(Util.string2Bytes(Long.toString(end)));
+		response.appendSubsegment(Utils.string2Bytes(Long.toString(end)));
 		response.appendSubsegment(fileData);
 
 		byte[] data = Packet.pack(response);
@@ -515,7 +515,7 @@ public final class FileExpress implements MessageHandler, ExpressTaskListener {
 		}
 
 		// 获取授权码
-		String authCode = Util.bytes2String(packet.getSubsegment(0));
+		String authCode = Utils.bytes2String(packet.getSubsegment(0));
 
 		// 验证 Session
 		if (false == checkSession(session, authCode)) {
@@ -528,7 +528,7 @@ public final class FileExpress implements MessageHandler, ExpressTaskListener {
 			return;
 		}
 
-		String filename = Util.bytes2String(packet.getSubsegment(1));
+		String filename = Utils.bytes2String(packet.getSubsegment(1));
 
 		// 包格式：文件名|属性序列
 		FileAttribute attr = servoctx.getAttribute(filename);
@@ -556,7 +556,7 @@ public final class FileExpress implements MessageHandler, ExpressTaskListener {
 
 		boolean auth = false;
 
-		String authCodeStr = Util.bytes2String(authCode);
+		String authCodeStr = Utils.bytes2String(authCode);
 		ExpressAuthCode eac = this.authCodes.get(authCodeStr);
 		if (null != eac) {
 			auth = true;

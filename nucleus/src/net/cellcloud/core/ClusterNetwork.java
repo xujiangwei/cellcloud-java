@@ -51,7 +51,7 @@ import net.cellcloud.common.MessageHandler;
 import net.cellcloud.common.NonblockingAcceptor;
 import net.cellcloud.common.Service;
 import net.cellcloud.common.Session;
-import net.cellcloud.util.Util;
+import net.cellcloud.util.Utils;
 
 /** 集群网络。
  * 
@@ -221,7 +221,7 @@ public final class ClusterNetwork extends Observable implements Service, Message
 	private void process(Session session, ByteBuffer buf) {
 		byte[] bytes = new byte[buf.limit()];
 		buf.get(bytes);
-		String str = Util.bytes2String(bytes);
+		String str = Utils.bytes2String(bytes);
 		String[] array = str.split("\\\n");
 		HashMap<String, String> prop = new HashMap<String, String>();
 		for (String line : array) {
@@ -324,7 +324,7 @@ public final class ClusterNetwork extends Observable implements Service, Message
 						continue;
 					}
 					// 处理 IPv4 地址
-					if (Util.isIPv4(addr.getAddress().getHostAddress())) {
+					if (Utils.isIPv4(addr.getAddress().getHostAddress())) {
 						// JDK Bug
 						// See http://bugs.sun.com/bugdatabase/view_bug.do?bug_id=6707289
 						short mark = addr.getNetworkPrefixLength();
@@ -337,8 +337,8 @@ public final class ClusterNetwork extends Observable implements Service, Message
 							continue;
 						}
 
-						int[] netaddr = Util.splitIPv4Address(addr.getAddress().getHostAddress());
-						int[] netmark = Util.convertIPv4NetworkPrefixLength(mark);
+						int[] netaddr = Utils.splitIPv4Address(addr.getAddress().getHostAddress());
+						int[] netmark = Utils.convertIPv4NetworkPrefixLength(mark);
 
 						int self = netaddr[3];
 

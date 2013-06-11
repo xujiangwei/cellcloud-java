@@ -32,7 +32,7 @@ import net.cellcloud.common.Cryptology;
 import net.cellcloud.common.LogLevel;
 import net.cellcloud.common.Logger;
 import net.cellcloud.common.Session;
-import net.cellcloud.util.Util;
+import net.cellcloud.util.Utils;
 
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -85,8 +85,8 @@ public class ClusterPushProtocol extends ClusterProtocol {
 			String strLabel = this.getProp(KEY_LABEL);
 			String strChunk = this.getProp(KEY_CHUNK);
 			if (null != strLabel && null != strChunk) {
-				String label = Util.bytes2String(Cryptology.getInstance().decodeBase64(strLabel));
-				String jsChunk = Util.bytes2String(Cryptology.getInstance().decodeBase64(strChunk));
+				String label = Utils.bytes2String(Cryptology.getInstance().decodeBase64(strLabel));
+				String jsChunk = Utils.bytes2String(Cryptology.getInstance().decodeBase64(strChunk));
 				JSONObject json = null;
 				try {
 					json = new JSONObject(jsChunk);
@@ -110,8 +110,8 @@ public class ClusterPushProtocol extends ClusterProtocol {
 		buf.append(KEY_DATE).append(": ").append(super.getStandardDate()).append("\n");
 
 		buf.append(KEY_TARGET_HASH).append(": ").append(this.targetHash).append("\n");
-		buf.append(KEY_LABEL).append(": ").append(Cryptology.getInstance().encodeBase64(Util.string2Bytes(this.chunk.getLabel()))).append("\n");
-		buf.append(KEY_CHUNK).append(": ").append(Cryptology.getInstance().encodeBase64(Util.string2Bytes(this.chunk.getData().toString()))).append("\n");
+		buf.append(KEY_LABEL).append(": ").append(Cryptology.getInstance().encodeBase64(Utils.string2Bytes(this.chunk.getLabel()))).append("\n");
+		buf.append(KEY_CHUNK).append(": ").append(Cryptology.getInstance().encodeBase64(Utils.string2Bytes(this.chunk.getData().toString()))).append("\n");
 
 		this.touch(session, buf);
 		buf = null;

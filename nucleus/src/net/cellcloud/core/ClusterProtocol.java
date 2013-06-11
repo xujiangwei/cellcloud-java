@@ -31,7 +31,7 @@ import java.util.Map;
 
 import net.cellcloud.common.Message;
 import net.cellcloud.common.Session;
-import net.cellcloud.util.Util;
+import net.cellcloud.util.Utils;
 
 /** 集群协议。
  * 
@@ -81,7 +81,7 @@ public abstract class ClusterProtocol {
 	/** 返回标准日期。
 	 */
 	public final String getStandardDate() {
-		return Util.sDateFormat.format(new Date());
+		return Utils.sDateFormat.format(new Date());
 	}
 
 	/** 返回协议内传输的标签。

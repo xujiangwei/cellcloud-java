@@ -2,7 +2,7 @@
 -----------------------------------------------------------------------------
 This source file is part of Cell Cloud.
 
-Copyright (c) 2009-2012 Cell Cloud Team (www.cellcloud.net)
+Copyright (c) 2009-2013 Cell Cloud Team (www.cellcloud.net)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -42,6 +42,9 @@ public interface MessageConnector {
 
 	/** 设置连接超时值。 */
 	public void setConnectTimeout(long timeout);
+
+	/** 设置数据缓存块大小。 */
+	public void setBlockSize(int size);
 
 	/** 返回会话实例。 */
 	public Session getSession();

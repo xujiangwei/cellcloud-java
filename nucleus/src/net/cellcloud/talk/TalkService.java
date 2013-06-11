@@ -53,7 +53,7 @@ import net.cellcloud.http.HttpService;
 import net.cellcloud.talk.dialect.ActionDialectFactory;
 import net.cellcloud.talk.dialect.Dialect;
 import net.cellcloud.talk.dialect.DialectEnumerator;
-import net.cellcloud.util.Util;
+import net.cellcloud.util.Utils;
 
 import org.eclipse.jetty.server.nio.SelectChannelConnector;
 import org.eclipse.jetty.util.thread.QueuedThreadPool;
@@ -62,7 +62,7 @@ import org.eclipse.jetty.util.thread.QueuedThreadPool;
  *
  * @author Jiangwei Xu
  */
-public final class TalkService implements Service {
+public final class TalkService implements Service, SpeakerDelegate {
 
 	private static TalkService instance = null;
 
@@ -84,7 +84,6 @@ public final class TalkService implements Service {
 	private ConcurrentHashMap<String, SuspendedTracker> suspendedTrackers;
 
 	protected ConcurrentHashMap<String, Speaker> speakers;
-	protected Vector<Speaker> lostSpeakers;
 
 	private TalkServiceDaemon daemon;
 	private ArrayList<TalkListener> listeners;
@@ -102,13 +101,6 @@ public final class TalkService implements Service {
 			this.port = 7000;
 			this.httpPort = 8181;
 			this.httpEnabled = true;
-			this.unidentifiedSessions = null;
-			this.sessionContexts = null;
-			this.tagSessionsMap = null;
-
-			this.speakers = null;
-			this.lostSpeakers = null;
-			this.listeners = null;
 
 			// 添加默认方言工厂
 			DialectEnumerator.getInstance().addFactory(new ActionDialectFactory());
@@ -366,14 +358,14 @@ public final class TalkService implements Service {
 		Speaker speaker = null;
 
 		if (this.speakers.containsKey(identifier)) {
-			// 检查 Lost 列表里是否有该 Speaker
+			// 检查 Speaker 是否是 Lost 状态 
 			speaker = this.speakers.get(identifier);
-			if (null != this.lostSpeakers && this.lostSpeakers.contains(speaker)) {
-				this.lostSpeakers.remove(speaker);
+			if (speaker.lost) {
+				speaker.lost = false;
 			}
 		}
 		else {
-			speaker = new Speaker(identifier, capacity);
+			speaker = new Speaker(identifier, this, capacity);
 			this.speakers.put(identifier, speaker);
 		}
 
@@ -421,10 +413,6 @@ public final class TalkService implements Service {
 		if (null != speaker) {
 			speaker.hangUp();
 			this.speakers.remove(identifier);
-
-			if (null != this.lostSpeakers) {
-				this.lostSpeakers.remove(speaker);
-			}
 		}
 	}
 
@@ -516,28 +504,16 @@ public final class TalkService implements Service {
 		// TODO
 	}
 
-	/** 将指定 Speaker 标记为丢失连接。
-	 * 丢失连接的 Speaker 将由 Talk Service 驱动进行重连。
+	/**
+	 * 通知 Dialogue 。
 	 */
-	protected void markLostSpeaker(Speaker speaker) {
-		if (null == this.lostSpeakers) {
-			this.lostSpeakers = new Vector<Speaker>();
-		}
-
-		speaker.timestamp = System.currentTimeMillis();
-
-		if (!this.lostSpeakers.contains(speaker)) {
-			this.lostSpeakers.add(speaker);
-		}
-	}
-
-	/** 通知 Dialogue 。
-	*/
-	protected void fireListenerDialogue(final String identifier, Primitive primitive) {
+	@Override
+	public void onDialogue(Speaker speaker, Primitive primitive) {
 		if (null == this.listeners) {
 			return;
 		}
 
+		String identifier = speaker.getIdentifier();
 		synchronized (this.listeners) {
 			for (TalkListener listener : this.listeners) {
 				listener.dialogue(identifier, primitive);
@@ -545,13 +521,17 @@ public final class TalkService implements Service {
 		}
 	}
 
-	/** 通知新连接。
-	*/
-	protected void fireListenerContacted(final String identifier, final String tag) {
+	/**
+	 * 通知新连接。
+	 */
+	@Override
+	public void onContacted(Speaker speaker) {
 		if (null == this.listeners) {
 			return;
 		}
 
+		String identifier = speaker.getIdentifier();
+		String tag = speaker.remoteTag;
 		synchronized (this.listeners) {
 			for (TalkListener listener : this.listeners) {
 				listener.contacted(identifier, tag);
@@ -559,13 +539,17 @@ public final class TalkService implements Service {
 		}
 	}
 
-	/** 通知断开连接。
-	*/
-	protected void fireListenerQuitted(final String identifier, final String tag) {
+	/**
+	 * 通知断开连接。
+	 */
+	@Override
+	public void onQuitted(Speaker speaker) {
 		if (null == this.listeners) {
 			return;
 		}
 
+		String identifier = speaker.getIdentifier();
+		String tag = speaker.remoteTag;
 		synchronized (this.listeners) {
 			for (TalkListener listener : this.listeners) {
 				listener.quitted(identifier, tag);
@@ -573,14 +557,17 @@ public final class TalkService implements Service {
 		}
 	}
 
-	/** 通知挂起。
+	/**
+	 * 通知挂起。
 	 */
-	protected void fireListenerSuspended(final String identifier, final String tag
-			, final long timestamp, final int mode) {
+	@Override
+	public void onSuspended(Speaker speaker, long timestamp, int mode) {
 		if (null == this.listeners) {
 			return;
 		}
 
+		String identifier = speaker.getIdentifier();
+		String tag = speaker.remoteTag;
 		synchronized (this.listeners) {
 			for (TalkListener listener : this.listeners) {
 				listener.suspended(identifier, tag, timestamp, mode);
@@ -588,14 +575,17 @@ public final class TalkService implements Service {
 		}
 	}
 
-	/** 通知恢复。
+	/**
+	 * 通知恢复。
 	 */
-	protected void fireListenerResumed(final String identifier, final String tag
-			, final long timestamp, final Primitive primitive) {
+	@Override
+	public void onResumed(Speaker speaker, long timestamp, Primitive primitive) {
 		if (null == this.listeners) {
 			return;
 		}
 
+		String identifier = speaker.getIdentifier();
+		String tag = speaker.remoteTag;
 		synchronized (this.listeners) {
 			for (TalkListener listener : this.listeners) {
 				listener.resumed(identifier, tag, timestamp, primitive);
@@ -603,9 +593,11 @@ public final class TalkService implements Service {
 		}
 	}
 
-	/** 通知发生错误。
-	*/
-	protected void fireListenerFailed(final TalkServiceFailure failure) {
+	/**
+	 * 通知发生错误。
+	 */
+	@Override
+	public void onFailed(Speaker speaker, TalkServiceFailure failure) {
 		if (null == this.listeners) {
 			return;
 		}
@@ -627,8 +619,8 @@ public final class TalkService implements Service {
 
 		Certificate cert = new Certificate();
 		cert.session = session;
-		cert.key = Util.randomString(8);
-		cert.plaintext = Util.randomString(16);
+		cert.key = Utils.randomString(8);
+		cert.plaintext = Utils.randomString(16);
 		this.unidentifiedSessions.put(sid, cert);
 	}
 
@@ -1102,8 +1094,8 @@ public final class TalkService implements Service {
 
 		// 封装数据包
 		Packet packet = new Packet(TalkDefinition.TPT_RESUME, 6, 1, 0);
-		packet.appendSubsegment(Util.string2Bytes(targetTag));
-		packet.appendSubsegment(Util.string2Bytes(timestamp.toString()));
+		packet.appendSubsegment(Utils.string2Bytes(targetTag));
+		packet.appendSubsegment(Utils.string2Bytes(timestamp.toString()));
 		packet.appendSubsegment(stream.toByteArray());
 
 		// 打包数据

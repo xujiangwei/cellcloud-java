@@ -27,8 +27,7 @@ THE SOFTWARE.
 package net.cellcloud.talk;
 
 import java.util.Iterator;
-import java.util.LinkedList;
-import java.util.Queue;
+import java.util.Vector;
 
 import net.cellcloud.common.LogLevel;
 import net.cellcloud.common.Logger;
@@ -46,11 +45,11 @@ public final class TalkServiceDaemon extends Thread {
 	protected boolean running = false;
 	private long tickTime = 0;
 
-	private Queue<Runnable> tasks;
+	private Vector<Runnable> tasks;
 
 	public TalkServiceDaemon() {
 		super("TalkServiceDaemon");
-		this.tasks = new LinkedList<Runnable>();
+		this.tasks = new Vector<Runnable>();
 	}
 
 	/** 返回周期时间点。
@@ -60,9 +59,7 @@ public final class TalkServiceDaemon extends Thread {
 	}
 
 	protected void joinTask(Runnable task) {
-		synchronized (this.tasks) {
-			this.tasks.offer(task);
-		}
+		this.tasks.add(task);
 	}
 
 	@Override
@@ -80,9 +77,8 @@ public final class TalkServiceDaemon extends Thread {
 			this.tickTime = System.currentTimeMillis();
 
 			++heartbeatCount;
-			if (heartbeatCount >= 60) {
-
-				// 60 秒一次心跳
+			if (heartbeatCount >= 120) {
+				// 120 秒一次心跳
 
 				if (null != service.speakers) {
 					Iterator<Speaker> iter = service.speakers.values().iterator();
@@ -96,12 +92,12 @@ public final class TalkServiceDaemon extends Thread {
 			}
 
 			// 检查丢失连接的 Speaker
-			if (service.lostSpeakers != null && !service.lostSpeakers.isEmpty()) {
-				Iterator<Speaker> iter = service.lostSpeakers.iterator();
+			if (null != service.speakers) {
+				Iterator<Speaker> iter = service.speakers.values().iterator();
 				while (iter.hasNext()) {
 					Speaker speaker = iter.next();
 
-					if (this.tickTime - speaker.timestamp >= 5000) {
+					if (speaker.lost && this.tickTime - speaker.timestamp >= 5000) {
 						StringBuilder buf = new StringBuilder();
 						buf.append("Retry call cellet ");
 						buf.append(speaker.getIdentifier());
@@ -111,8 +107,6 @@ public final class TalkServiceDaemon extends Thread {
 						buf.append(speaker.getAddress().getPort());
 						Logger.d(TalkServiceDaemon.class, buf.toString());
 						buf = null;
-
-						iter.remove();
 
 						// 重连
 						speaker.call(speaker.getAddress());
@@ -132,13 +126,9 @@ public final class TalkServiceDaemon extends Thread {
 			}
 
 			// 执行简单任务
-			synchronized (this.tasks) {
-				if (!this.tasks.isEmpty()) {
-					for (int i = 0, size = this.tasks.size(); i < size; ++i) {
-						Runnable task = this.tasks.poll();
-						task.run();
-					}
-				}
+			while (!this.tasks.isEmpty()) {
+				Runnable task = this.tasks.remove(0);
+				task.run();
 			}
 
 			// 休眠 1 秒

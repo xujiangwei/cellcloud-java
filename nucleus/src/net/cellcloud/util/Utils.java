@@ -40,7 +40,7 @@ import net.cellcloud.common.Logger;
  * 
  * @author Jiangwei Xu
  */
-public final class Util {
+public final class Utils {
 
 	// 常用日期格式
 	public final static SimpleDateFormat sDateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
