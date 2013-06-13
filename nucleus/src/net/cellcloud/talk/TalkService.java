@@ -602,9 +602,11 @@ public final class TalkService implements Service, SpeakerDelegate {
 			return;
 		}
 
+		String identifier = speaker.getIdentifier();
+		String tag = speaker.remoteTag;
 		synchronized (this.listeners) {
 			for (TalkListener listener : this.listeners) {
-				listener.failed(failure);
+				listener.failed(identifier, tag, failure);
 			}
 		}
 	}

@@ -383,7 +383,7 @@ public class Speaker {
 			buf.append(this.getAddress().getAddress().getHostAddress());
 			buf.append(":");
 			buf.append(this.getAddress().getPort());
-			Logger.d(Speaker.class, buf.toString());
+			Logger.i(Speaker.class, buf.toString());
 			buf = null;
 
 			// 回调事件
