@@ -2,7 +2,7 @@
 -----------------------------------------------------------------------------
 This source file is part of Cell Cloud.
 
-Copyright (c) 2009-2012 Cell Cloud Team (www.cellcloud.net)
+Copyright (c) 2009-2013 Cell Cloud Team (www.cellcloud.net)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -144,7 +144,7 @@ public final class Cryptology {
 			md.update(input);
 			bytes = md.digest();
 		} catch (NoSuchAlgorithmException e) {
-			Logger.logException(e, LogLevel.ERROR);
+			Logger.log(e, LogLevel.ERROR);
 		}
 		return bytes;
 	}

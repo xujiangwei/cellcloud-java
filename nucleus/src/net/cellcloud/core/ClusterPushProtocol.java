@@ -91,7 +91,7 @@ public class ClusterPushProtocol extends ClusterProtocol {
 				try {
 					json = new JSONObject(jsChunk);
 				} catch (JSONException e) {
-					Logger.logException(e, LogLevel.ERROR);
+					Logger.log(e, LogLevel.ERROR);
 				}
 				if (null != json) {
 					this.chunk = new Chunk(label, json);

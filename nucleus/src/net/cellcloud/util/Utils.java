@@ -103,7 +103,7 @@ public final class Utils {
 		try {
 			return sDateFormat.parse(string);
 		} catch (ParseException e) {
-			Logger.logException(e, LogLevel.ERROR);
+			Logger.log(e, LogLevel.ERROR);
 		}
 
 		return null;

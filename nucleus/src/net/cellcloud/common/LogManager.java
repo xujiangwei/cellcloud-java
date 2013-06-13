@@ -2,7 +2,7 @@
 -----------------------------------------------------------------------------
 This source file is part of Cell Cloud.
 
-Copyright (c) 2009-2012 Cell Cloud Team (www.cellcloud.net)
+Copyright (c) 2009-2013 Cell Cloud Team (www.cellcloud.net)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -34,23 +34,23 @@ import java.util.Date;
  * 
  * @author Jiangwei Xu
  */
-public final class LoggerManager {
+public final class LogManager {
 
-	private final static LoggerManager instance = new LoggerManager();
+	private final static LogManager instance = new LogManager();
 
 	public final static SimpleDateFormat timeFormat = new SimpleDateFormat("HH:mm:ss.SSS");
 
 	private ArrayList<LogHandle> handles;
 	private byte level;
 
-	private LoggerManager() {
+	private LogManager() {
 		this.handles = new ArrayList<LogHandle>();
 		this.level = LogLevel.DEBUG;
 
 		this.handles.add(createSystemOutHandle());
 	}
 
-	public synchronized static LoggerManager getInstance() {
+	public static LogManager getInstance() {
 		return instance;
 	}
 
@@ -122,12 +122,11 @@ public final class LoggerManager {
 	public LogHandle createSystemOutHandle() {
 		return new LogHandle() {
 
-			private byte[] mutex = new byte[0];
 			private StringBuilder buf = new StringBuilder();
 
 			@Override
 			public void logDebug(String tag, String log) {
-				synchronized (mutex) {
+				synchronized (buf) {
 					buf.append(timeFormat.format(new Date()));
 					buf.append(" [DEBUG] ");
 					buf.append(tag);
@@ -142,7 +141,7 @@ public final class LoggerManager {
 
 			@Override
 			public void logInfo(String tag, String log) {
-				synchronized (mutex) {
+				synchronized (buf) {
 					buf.append(timeFormat.format(new Date()));
 					buf.append(" [INFO]  ");
 					buf.append(tag);
@@ -157,7 +156,7 @@ public final class LoggerManager {
 
 			@Override
 			public void logWarning(String tag, String log) {
-				synchronized (mutex) {
+				synchronized (buf) {
 					buf.append(timeFormat.format(new Date()));
 					buf.append(" [WARN]  ");
 					buf.append(tag);
@@ -172,7 +171,7 @@ public final class LoggerManager {
 
 			@Override
 			public void logError(String tag, String log) {
-				synchronized (mutex) {
+				synchronized (buf) {
 					buf.append(timeFormat.format(new Date()));
 					buf.append(" [ERROR] ");
 					buf.append(tag);

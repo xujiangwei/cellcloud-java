@@ -27,7 +27,7 @@ THE SOFTWARE.
 package net.cellcloud.cell.command;
 
 import net.cellcloud.common.LogHandle;
-import net.cellcloud.common.LoggerManager;
+import net.cellcloud.common.LogManager;
 
 /** 日志操作命令。
  * 
@@ -41,7 +41,7 @@ public class LogCommand extends ConsoleCommand {
 	public LogCommand() {
 		super("log", "Print log text on screen.", "");
 		this.state = ConsoleCommand.CCS_FINISHED;
-		this.logHandle = LoggerManager.getInstance().createSystemOutHandle();
+		this.logHandle = LogManager.getInstance().createSystemOutHandle();
 	}
 
 	@Override
@@ -51,8 +51,8 @@ public class LogCommand extends ConsoleCommand {
 
 	@Override
 	public void execute(String arg) {
-		LoggerManager.getInstance().removeHandle(this.logHandle);
-		LoggerManager.getInstance().addHandle(this.logHandle);
+		LogManager.getInstance().removeHandle(this.logHandle);
+		LogManager.getInstance().addHandle(this.logHandle);
 
 		this.state = ConsoleCommand.CCS_EXECUTING;
 		println("Enter 'Q'/'q' to stop print log.");
@@ -62,7 +62,7 @@ public class LogCommand extends ConsoleCommand {
 	@Override
 	public void input(String input) {
 		if (input.equalsIgnoreCase("Q")) {			
-			LoggerManager.getInstance().removeHandle(this.logHandle);
+			LogManager.getInstance().removeHandle(this.logHandle);
 
 			this.state = ConsoleCommand.CCS_FINISHED;
 			println("\nStop print log to console screen.");

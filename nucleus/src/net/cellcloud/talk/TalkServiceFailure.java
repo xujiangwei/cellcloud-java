@@ -38,11 +38,11 @@ public final class TalkServiceFailure {
 	private String sourceDescription = "";
 	private String sourceCelletIdentifier = "";
 
-	public TalkServiceFailure(int code, @SuppressWarnings("rawtypes") Class clazz) {
+	public TalkServiceFailure(int code, Class<?> clazz) {
 		construct(code, clazz);
 	}
 
-	private void construct(int code, @SuppressWarnings("rawtypes") Class clazz) {
+	private void construct(int code, Class<?> clazz) {
 		this.code = code;
 		this.reason = "Error in " + clazz.getName();
 

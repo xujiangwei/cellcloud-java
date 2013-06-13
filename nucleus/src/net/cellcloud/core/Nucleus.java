@@ -167,7 +167,7 @@ public final class Nucleus {
 				try {
 					this.httpService = new HttpService(this.context);
 				} catch (SingletonException e) {
-					Logger.logException(e, LogLevel.WARNING);
+					Logger.log(e, LogLevel.WARNING);
 				}
 			}
 
@@ -178,7 +178,7 @@ public final class Nucleus {
 				try {
 					this.talkService = new TalkService(this.context);
 				} catch (SingletonException e) {
-					Logger.logException(e, LogLevel.ERROR);
+					Logger.log(e, LogLevel.ERROR);
 				}
 			}
 
@@ -218,7 +218,7 @@ public final class Nucleus {
 					// 创建 Talk Service
 					this.talkService = new TalkService(this.context);
 				} catch (SingletonException e) {
-					Logger.logException(e, LogLevel.ERROR);
+					Logger.log(e, LogLevel.ERROR);
 				}
 			}
 
@@ -360,7 +360,7 @@ public final class Nucleus {
 			sandbox.sealOff(cellet.getFeature());
 			this.sandboxes.put(cellet.getFeature().getIdentifier(), sandbox);
 		} catch (CelletSandboxException e) {
-			Logger.logException(e, LogLevel.ERROR);
+			Logger.log(e, LogLevel.ERROR);
 		}
 	}
 
@@ -408,7 +408,7 @@ public final class Nucleus {
 
 				jarFile.close();
 			} catch (IOException ioe) {
-				Logger.logException(ioe, LogLevel.DEBUG);
+				Logger.log(ioe, LogLevel.DEBUG);
 				continue;
 			}
 
@@ -417,7 +417,7 @@ public final class Nucleus {
 			try {
 				url = new URL(file.toURI().toURL().toString());
 			} catch (MalformedURLException e) {
-				Logger.logException(e, LogLevel.WARNING);
+				Logger.log(e, LogLevel.WARNING);
 				continue;
 			}
 
@@ -439,7 +439,7 @@ public final class Nucleus {
 						classes.add(clazz);
 					}
 				} catch (ClassNotFoundException e) {
-					Logger.logException(e, LogLevel.ERROR);
+					Logger.log(e, LogLevel.ERROR);
 				}
 			}
 
@@ -451,10 +451,10 @@ public final class Nucleus {
 					// 存入列表
 					this.cellets.put(cellet.getFeature().getIdentifier(), cellet);
 				} catch (InstantiationException e) {
-					Logger.logException(e, LogLevel.ERROR);
+					Logger.log(e, LogLevel.ERROR);
 					continue;
 				} catch (IllegalAccessException e) {
-					Logger.logException(e, LogLevel.ERROR);
+					Logger.log(e, LogLevel.ERROR);
 					continue;
 				}
 			}

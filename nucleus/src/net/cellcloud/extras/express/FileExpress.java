@@ -868,7 +868,7 @@ public final class FileExpress implements MessageHandler, ExpressTaskListener {
 				resultSet.updateRaw(FileStorage.LABEL_RAW_DATA, data, offset, length);
 				return length;
 			} catch (StorageException e) {
-				Logger.logException(e, LogLevel.ERROR);
+				Logger.log(e, LogLevel.ERROR);
 				return 0;
 			}
 		}
@@ -896,7 +896,7 @@ public final class FileExpress implements MessageHandler, ExpressTaskListener {
 					FileExpressContext ctx = this.contexts.get(filename);
 					resultSet = mainStorage.store(mainStorage.createWriteStatement(ctx.getFullPath()));
 				} catch (StorageException e) {
-					Logger.logException(e, LogLevel.ERROR);
+					Logger.log(e, LogLevel.ERROR);
 					return null;
 				}
 				// 移动游标

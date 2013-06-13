@@ -99,7 +99,7 @@ public class NonblockingAcceptor extends MessageService implements MessageAccept
 			this.bindAddress = address;
 
 		} catch (IOException e) {
-			Logger.logException(e, LogLevel.ERROR);
+			Logger.log(e, LogLevel.ERROR);
 
 			// 返回失败
 			return false;
@@ -122,14 +122,14 @@ public class NonblockingAcceptor extends MessageService implements MessageAccept
 				try {
 					loopDispatch();
 				} catch (IOException ioe) {
-					Logger.logException(ioe, LogLevel.WARNING);
+					Logger.log(ioe, LogLevel.WARNING);
 				} catch (CancelledKeyException e) {
 					if (spinning)
-						Logger.logException(e, LogLevel.ERROR);
+						Logger.log(e, LogLevel.ERROR);
 					else
-						Logger.logException(e, LogLevel.DEBUG);
+						Logger.log(e, LogLevel.DEBUG);
 				} catch (Exception e) {
-					Logger.logException(e, LogLevel.ERROR);
+					Logger.log(e, LogLevel.ERROR);
 				}
 
 				running = false;
@@ -159,12 +159,12 @@ public class NonblockingAcceptor extends MessageService implements MessageAccept
 			this.channel.close();
 			this.channel.socket().close();
 		} catch (IOException e) {
-			Logger.logException(e, LogLevel.DEBUG);
+			Logger.log(e, LogLevel.DEBUG);
 		}
 		try {
 			this.selector.close();
 		} catch (IOException e) {
-			Logger.logException(e, LogLevel.DEBUG);
+			Logger.log(e, LogLevel.DEBUG);
 		}
 
 		// 关闭工作线程
@@ -180,7 +180,7 @@ public class NonblockingAcceptor extends MessageService implements MessageAccept
 				try {
 					Thread.sleep(100);
 				} catch (InterruptedException e) {
-					Logger.logException(e, LogLevel.DEBUG);
+					Logger.log(e, LogLevel.DEBUG);
 				}
 
 				for (NonblockingAcceptorWorker worker : this.workers) {
@@ -202,7 +202,7 @@ public class NonblockingAcceptor extends MessageService implements MessageAccept
 				try {
 					Thread.sleep(10);
 				} catch (InterruptedException e) {
-					Logger.logException(e, LogLevel.DEBUG);
+					Logger.log(e, LogLevel.DEBUG);
 				}
 
 				if (count >= timeout) {
@@ -213,14 +213,14 @@ public class NonblockingAcceptor extends MessageService implements MessageAccept
 			try {
 				Thread.sleep(10);
 			} catch (InterruptedException e) {
-				Logger.logException(e, LogLevel.DEBUG);
+				Logger.log(e, LogLevel.DEBUG);
 			}
 
 			if (count >= timeout) {
 				try {
 					this.handleThread.interrupt();
 				} catch (Exception e) {
-					Logger.logException(e, LogLevel.DEBUG);
+					Logger.log(e, LogLevel.DEBUG);
 				}
 			}
 
@@ -239,7 +239,7 @@ public class NonblockingAcceptor extends MessageService implements MessageAccept
 				try {
 					nas.socket.close();
 				} catch (IOException e) {
-					Logger.logException(e, LogLevel.DEBUG);
+					Logger.log(e, LogLevel.DEBUG);
 				}
 				break;
 			}
@@ -399,7 +399,7 @@ public class NonblockingAcceptor extends MessageService implements MessageAccept
 				try {
 					Thread.sleep(1);
 				} catch (InterruptedException e) {
-					Logger.logException(e, LogLevel.DEBUG);
+					Logger.log(e, LogLevel.DEBUG);
 				}
 			} // # while
 
@@ -464,7 +464,7 @@ public class NonblockingAcceptor extends MessageService implements MessageAccept
 			if (channel.isOpen())
 				channel.register(this.selector, SelectionKey.OP_WRITE | SelectionKey.OP_READ);
 		} catch (IOException e) {
-			Logger.logException(e, LogLevel.DEBUG);
+			Logger.log(e, LogLevel.DEBUG);
 		}
 	}
 
@@ -489,7 +489,7 @@ public class NonblockingAcceptor extends MessageService implements MessageAccept
 			if (channel.isOpen())
 				channel.register(this.selector, SelectionKey.OP_WRITE | SelectionKey.OP_READ);
 		} catch (IOException e) {
-			Logger.logException(e, LogLevel.WARNING);
+			Logger.log(e, LogLevel.WARNING);
 		}
 	}
 

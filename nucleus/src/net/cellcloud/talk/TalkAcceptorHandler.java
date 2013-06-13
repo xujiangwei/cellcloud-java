@@ -114,7 +114,7 @@ public final class TalkAcceptorHandler implements MessageHandler {
 					cmd = null;
 				}
 			} catch (Exception e) {
-				Logger.logException(e, LogLevel.ERROR);
+				Logger.log(e, LogLevel.ERROR);
 			}
 		}
 		else if (TalkDefinition.isHeartbeat(tag)) {
@@ -130,7 +130,7 @@ public final class TalkAcceptorHandler implements MessageHandler {
 					cmd = null;
 				}
 			} catch (Exception e) {
-				Logger.logException(e, LogLevel.ERROR);
+				Logger.log(e, LogLevel.ERROR);
 			}
 		}
 		else if (TalkDefinition.isSuspend(tag)) {
@@ -139,7 +139,7 @@ public final class TalkAcceptorHandler implements MessageHandler {
 				cmd.execute();
 				cmd = null;
 			} catch (Exception e) {
-				Logger.logException(e, LogLevel.ERROR);
+				Logger.log(e, LogLevel.ERROR);
 			}
 		}
 		else if (TalkDefinition.isResume(tag)) {
@@ -148,7 +148,7 @@ public final class TalkAcceptorHandler implements MessageHandler {
 				cmd.execute();
 				cmd = null;
 			} catch (Exception e) {
-				Logger.logException(e, LogLevel.ERROR);
+				Logger.log(e, LogLevel.ERROR);
 			}
 		}
 		else if (TalkDefinition.isConsult(tag)) {
@@ -157,7 +157,7 @@ public final class TalkAcceptorHandler implements MessageHandler {
 				cmd.execute();
 				cmd = null;
 			} catch (Exception e) {
-				Logger.logException(e, LogLevel.ERROR);
+				Logger.log(e, LogLevel.ERROR);
 			}
 		}
 		else if (TalkDefinition.isRequest(tag)) {
@@ -166,7 +166,7 @@ public final class TalkAcceptorHandler implements MessageHandler {
 				cmd.execute();
 				cmd = null;
 			} catch (Exception e) {
-				Logger.logException(e, LogLevel.ERROR);
+				Logger.log(e, LogLevel.ERROR);
 			}
 		}
 		else if (TalkDefinition.isCheck(tag)) {
@@ -175,7 +175,7 @@ public final class TalkAcceptorHandler implements MessageHandler {
 				cmd.execute();
 				cmd = null;
 			} catch (Exception e) {
-				Logger.logException(e, LogLevel.ERROR);
+				Logger.log(e, LogLevel.ERROR);
 			}
 		}
 	}

@@ -143,7 +143,7 @@ public final class TalkServiceDaemon extends Thread {
 
 				Thread.sleep(dt);
 			} catch (InterruptedException e) {
-				Logger.logException(e, LogLevel.ERROR);
+				Logger.log(e, LogLevel.ERROR);
 			}
 
 		} while (this.spinning);

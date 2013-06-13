@@ -88,7 +88,7 @@ public final class NonblockingAcceptorWorker extends Thread {
 					try {
 						this.mutex.wait();
 					} catch (InterruptedException e) {
-						Logger.logException(e, LogLevel.DEBUG);
+						Logger.log(e, LogLevel.DEBUG);
 					}
 				}
 			}
@@ -113,7 +113,7 @@ public final class NonblockingAcceptorWorker extends Thread {
 				try {
 					Thread.sleep(10);
 				} catch (InterruptedException e) {
-					Logger.logException(e, LogLevel.DEBUG);
+					Logger.log(e, LogLevel.DEBUG);
 				}
 			}
 		}
@@ -215,7 +215,7 @@ public final class NonblockingAcceptorWorker extends Thread {
 						if (channel.isOpen())
 							channel.close();
 					} catch (IOException ioe) {
-						Logger.logException(ioe, LogLevel.DEBUG);
+						Logger.log(ioe, LogLevel.DEBUG);
 					}
 
 					// 移除 Session
@@ -240,7 +240,7 @@ public final class NonblockingAcceptorWorker extends Thread {
 						if (channel.isOpen())
 							channel.close();
 					} catch (IOException ioe) {
-						Logger.logException(ioe, LogLevel.DEBUG);
+						Logger.log(ioe, LogLevel.DEBUG);
 					}
 
 					// 移除 Session
@@ -306,7 +306,7 @@ public final class NonblockingAcceptorWorker extends Thread {
 					try {
 						channel.write(buf);
 					} catch (IOException e) {
-						Logger.logException(e, LogLevel.WARNING);
+						Logger.log(e, LogLevel.WARNING);
 					}
 
 					buf.clear();

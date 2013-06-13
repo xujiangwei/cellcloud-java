@@ -279,7 +279,7 @@ public final class Packet {
 			minor = Integer.parseInt(new String(bMinor));
 			major = Integer.parseInt(new String(bMajor));
 		} catch (NumberFormatException e) {
-			Logger.logException(e, LogLevel.ERROR);
+			Logger.log(e, LogLevel.ERROR);
 			return null;
 		}
 

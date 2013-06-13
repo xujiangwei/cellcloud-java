@@ -34,7 +34,7 @@ import java.io.IOException;
 import java.util.Date;
 
 import net.cellcloud.common.LogHandle;
-import net.cellcloud.common.LoggerManager;
+import net.cellcloud.common.LogManager;
 import net.cellcloud.util.Utils;
 
 /** 文件日志。
@@ -124,8 +124,8 @@ public final class FileLogger implements LogHandle {
 		}
 
 		// 设置日志操作器
-		LoggerManager.getInstance().removeAllHandles();
-		LoggerManager.getInstance().addHandle(this);
+		LogManager.getInstance().removeAllHandles();
+		LogManager.getInstance().addHandle(this);
 	}
 
 	/** 关闭日志文件。
@@ -157,7 +157,7 @@ public final class FileLogger implements LogHandle {
 			if (null == this.buffer)
 				return;
 
-			this.stringBuf.append(LoggerManager.timeFormat.format(new Date()));
+			this.stringBuf.append(LogManager.timeFormat.format(new Date()));
 			this.stringBuf.append(" [DEBUG] ");
 			this.stringBuf.append(tag);
 			this.stringBuf.append(" ");
@@ -180,7 +180,7 @@ public final class FileLogger implements LogHandle {
 			if (null == this.buffer)
 				return;
 
-			this.stringBuf.append(LoggerManager.timeFormat.format(new Date()));
+			this.stringBuf.append(LogManager.timeFormat.format(new Date()));
 			this.stringBuf.append(" [INFO]  ");
 			this.stringBuf.append(tag);
 			this.stringBuf.append(" ");
@@ -203,7 +203,7 @@ public final class FileLogger implements LogHandle {
 			if (null == this.buffer)
 				return;
 
-			this.stringBuf.append(LoggerManager.timeFormat.format(new Date()));
+			this.stringBuf.append(LogManager.timeFormat.format(new Date()));
 			this.stringBuf.append(" [WARN]  ");
 			this.stringBuf.append(tag);
 			this.stringBuf.append(" ");
@@ -226,7 +226,7 @@ public final class FileLogger implements LogHandle {
 			if (null == this.buffer)
 				return;
 
-			this.stringBuf.append(LoggerManager.timeFormat.format(new Date()));
+			this.stringBuf.append(LogManager.timeFormat.format(new Date()));
 			this.stringBuf.append(" [ERROR] ");
 			this.stringBuf.append(tag);
 			this.stringBuf.append(" ");

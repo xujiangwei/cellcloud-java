@@ -216,7 +216,7 @@ public final class TalkService implements Service, SpeakerDelegate {
 				try {
 					Thread.sleep(10);
 				} catch (InterruptedException e) {
-					Logger.logException(e, LogLevel.DEBUG);
+					Logger.log(e, LogLevel.DEBUG);
 				}
 			}
 
