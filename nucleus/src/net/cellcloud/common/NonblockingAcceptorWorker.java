@@ -205,7 +205,9 @@ public final class NonblockingAcceptorWorker extends Thread {
 					else
 						read = -1;
 				} catch (IOException e) {
-					Logger.d(this.getClass(), "Remote host has closed the connection.");
+					if (Logger.isDebugLevel()) {
+						Logger.d(this.getClass(), "Remote host has closed the connection.");
+					}
 
 					if (null != session.socket) {
 						this.acceptor.fireSessionClosed(session);

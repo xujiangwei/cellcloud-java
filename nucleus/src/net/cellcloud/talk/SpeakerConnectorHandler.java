@@ -106,8 +106,9 @@ public final class SpeakerConnectorHandler implements MessageHandler {
 	 */
 	@Override
 	public void errorOccurred(int errorCode, Session session) {
-		if (Logger.isDebugLevel())
+		if (Logger.isDebugLevel()) {
 			Logger.d(SpeakerConnectorHandler.class, "errorOccurred : " + errorCode);
+		}
 
 		if (errorCode == MessageErrorCode.CONNECT_TIMEOUT
 			|| errorCode == MessageErrorCode.CONNECT_FAILED) {

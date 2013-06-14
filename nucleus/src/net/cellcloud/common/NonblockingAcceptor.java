@@ -453,7 +453,9 @@ public class NonblockingAcceptor extends MessageService implements MessageAccept
 
 		NonblockingAcceptorSession session = this.sessions.get(channel.socket().hashCode());
 		if (null == session) {
-			Logger.d(NonblockingAcceptor.class, "Not found session");
+			if (Logger.isDebugLevel()) {
+				Logger.d(NonblockingAcceptor.class, "Not found session");
+			}
 			return;
 		}
 
@@ -478,7 +480,9 @@ public class NonblockingAcceptor extends MessageService implements MessageAccept
 
 		NonblockingAcceptorSession session = this.sessions.get(channel.socket().hashCode());
 		if (null == session) {
-			Logger.d(NonblockingAcceptor.class, "Not found session");
+			if (Logger.isDebugLevel()) {
+				Logger.d(NonblockingAcceptor.class, "Not found session");
+			}
 			return;
 		}
 

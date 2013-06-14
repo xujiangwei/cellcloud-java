@@ -95,7 +95,9 @@ public final class ServerCheckCommand extends ServerCommand {
 			this.service.rejectSession(this.session);
 		}
 
-		Logger.i(ServerCheckCommand.class, log.toString());
+		if (Logger.isDebugLevel()) {
+			Logger.d(ServerCheckCommand.class, log.toString());
+		}
 		log = null;
 	}
 }

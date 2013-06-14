@@ -2,7 +2,7 @@
 -----------------------------------------------------------------------------
 This source file is part of Cell Cloud.
 
-Copyright (c) 2009-2012 Cell Cloud Team (cellcloudproject@gmail.com)
+Copyright (c) 2009-2013 Cell Cloud Team (cellcloudproject@gmail.com)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -45,7 +45,6 @@ public final class FileLogger implements LogHandle {
 
 	private static final FileLogger instance = new FileLogger();
 
-	private byte[] mutex = new byte[0];
 	private StringBuilder stringBuf = new StringBuilder();
 
 	private FileOutputStream outputStream = null;
@@ -135,7 +134,7 @@ public final class FileLogger implements LogHandle {
 			return;
 		}
 
-		synchronized (this.mutex) {
+		synchronized (this.stringBuf) {
 			try {
 				this.buffer.flush();
 				this.outputStream.flush();
@@ -153,10 +152,10 @@ public final class FileLogger implements LogHandle {
 
 	@Override
 	public void logDebug(String tag, String log) {
-		synchronized (this.mutex) {
-			if (null == this.buffer)
-				return;
+		if (null == this.buffer)
+			return;
 
+		synchronized (this.stringBuf) {
 			this.stringBuf.append(LogManager.timeFormat.format(new Date()));
 			this.stringBuf.append(" [DEBUG] ");
 			this.stringBuf.append(tag);
@@ -176,10 +175,10 @@ public final class FileLogger implements LogHandle {
 
 	@Override
 	public void logInfo(String tag, String log) {
-		synchronized (this.mutex) {
-			if (null == this.buffer)
-				return;
+		if (null == this.buffer)
+			return;
 
+		synchronized (this.stringBuf) {
 			this.stringBuf.append(LogManager.timeFormat.format(new Date()));
 			this.stringBuf.append(" [INFO]  ");
 			this.stringBuf.append(tag);
@@ -199,10 +198,10 @@ public final class FileLogger implements LogHandle {
 
 	@Override
 	public void logWarning(String tag, String log) {
-		synchronized (this.mutex) {
-			if (null == this.buffer)
-				return;
+		if (null == this.buffer)
+			return;
 
+		synchronized (this.stringBuf) {
 			this.stringBuf.append(LogManager.timeFormat.format(new Date()));
 			this.stringBuf.append(" [WARN]  ");
 			this.stringBuf.append(tag);
@@ -222,10 +221,10 @@ public final class FileLogger implements LogHandle {
 
 	@Override
 	public void logError(String tag, String log) {
-		synchronized (this.mutex) {
-			if (null == this.buffer)
-				return;
+		if (null == this.buffer)
+			return;
 
+		synchronized (this.stringBuf) {
 			this.stringBuf.append(LogManager.timeFormat.format(new Date()));
 			this.stringBuf.append(" [ERROR] ");
 			this.stringBuf.append(tag);

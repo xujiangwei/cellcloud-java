@@ -98,15 +98,17 @@ public final class TalkServiceDaemon extends Thread {
 					Speaker speaker = iter.next();
 
 					if (speaker.lost && this.tickTime - speaker.timestamp >= 5000) {
-						StringBuilder buf = new StringBuilder();
-						buf.append("Retry call cellet ");
-						buf.append(speaker.getIdentifier());
-						buf.append(" at ");
-						buf.append(speaker.getAddress().getAddress().getHostAddress());
-						buf.append(":");
-						buf.append(speaker.getAddress().getPort());
-						Logger.d(TalkServiceDaemon.class, buf.toString());
-						buf = null;
+						if (Logger.isDebugLevel()) {
+							StringBuilder buf = new StringBuilder();
+							buf.append("Retry call cellet ");
+							buf.append(speaker.getIdentifier());
+							buf.append(" at ");
+							buf.append(speaker.getAddress().getAddress().getHostAddress());
+							buf.append(":");
+							buf.append(speaker.getAddress().getPort());
+							Logger.d(TalkServiceDaemon.class, buf.toString());
+							buf = null;
+						}
 
 						// 重连
 						speaker.call(speaker.getAddress());

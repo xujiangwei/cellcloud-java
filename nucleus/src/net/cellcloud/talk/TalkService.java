@@ -290,7 +290,9 @@ public final class TalkService implements Service, SpeakerDelegate {
 
 		Vector<TalkSessionContext> contexts = this.tagSessionsMap.get(targetTag);
 		if (null == contexts) {
-			Logger.d(TalkService.class, "Can't find target tag in context list : " + targetTag);
+			if (Logger.isDebugLevel()) {
+				Logger.d(TalkService.class, "Can't find target tag in context list : " + targetTag);
+			}
 
 			// 尝试在已挂起的的追踪器里查找
 			this.tryOfferPrimitive(targetTag, cellet, primitive);
@@ -878,7 +880,9 @@ public final class TalkService implements Service, SpeakerDelegate {
 			, Queue<Long> timestampQueue, Queue<Primitive> primitiveQueue, long startTime) {
 		Vector<TalkSessionContext> contexts = this.tagSessionsMap.get(targetTag);
 		if (null == contexts) {
-			Logger.d(TalkService.class, "Not find session by remote tag");
+			if (Logger.isDebugLevel()) {
+				Logger.d(TalkService.class, "Not find session by remote tag");
+			}
 			return;
 		}
 
@@ -977,8 +981,10 @@ public final class TalkService implements Service, SpeakerDelegate {
 		if (null != ctx) {
 			ctx.tickTime = this.daemon.getTickTime();
 
-			Logger.d(this.getClass(), "Talk service heartbeat from " + session.getAddress().getAddress().getHostAddress()
-					+ ":" + session.getAddress().getPort());
+			if (Logger.isDebugLevel()) {
+				Logger.d(this.getClass(), "Talk service heartbeat from " + session.getAddress().getAddress().getHostAddress()
+						+ ":" + session.getAddress().getPort());
+			}
 		}
 	}
 
