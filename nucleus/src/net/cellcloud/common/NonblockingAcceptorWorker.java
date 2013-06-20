@@ -28,7 +28,6 @@ package net.cellcloud.common;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
-import java.nio.channels.SelectionKey;
 import java.nio.channels.SocketChannel;
 import java.util.Vector;
 
@@ -65,21 +64,6 @@ public final class NonblockingAcceptorWorker extends Thread {
 		NonblockingAcceptorSession session = null;
 
 		while (this.spinning) {
-			if (!this.receiveSessions.isEmpty()) {
-				// 执行接收数据任务，并移除已执行的 Session
-				session = this.receiveSessions.remove(0);
-				if (null != session.socket) {
-					processReceive(session);
-				}
-			}
-			if (!this.sendSessions.isEmpty()) {
-				// 执行发送数据任务，并移除已执行的 Session
-				session = this.sendSessions.remove(0);
-				if (null != session.socket) {
-					processSend(session);
-				}
-			}
-
 			// 如果没有任务，则线程 wait
 			synchronized (this.mutex) {
 				if (this.receiveSessions.isEmpty()
@@ -93,6 +77,23 @@ public final class NonblockingAcceptorWorker extends Thread {
 				}
 			}
 
+			if (!this.receiveSessions.isEmpty()) {
+				// 执行接收数据任务，并移除已执行的 Session
+				session = this.receiveSessions.remove(0);
+				if (null != session.socket) {
+					processReceive(session);
+				}
+			}
+
+			if (!this.sendSessions.isEmpty()) {
+				// 执行发送数据任务，并移除已执行的 Session
+				session = this.sendSessions.remove(0);
+				if (null != session.socket) {
+					processSend(session);
+				}
+			}
+
+			// 让步
 			Thread.yield();
 		}
 
@@ -105,7 +106,7 @@ public final class NonblockingAcceptorWorker extends Thread {
 		this.spinning = false;
 
 		synchronized (this.mutex) {
-			this.mutex.notify();
+			this.mutex.notifyAll();
 		}
 
 		if (blockingCheck) {
@@ -139,22 +140,21 @@ public final class NonblockingAcceptorWorker extends Thread {
 
 	/** 添加执行接收数据的 Session 。
 	 */
-	protected void addReceiveSession(NonblockingAcceptorSession session, SelectionKey key) {
+	protected void pushReceiveSession(NonblockingAcceptorSession session) {
 		if (!this.spinning) {
 			return;
 		}
 
-		session.selectionKey = key;
 		this.receiveSessions.add(session);
 
 		synchronized (this.mutex) {
-			this.mutex.notify();
+			this.mutex.notifyAll();
 		}
 	}
 
 	/** 添加执行发送数据的 Session 。
 	 */
-	protected void addSendSession(NonblockingAcceptorSession session, SelectionKey key) {
+	protected void pushSendSession(NonblockingAcceptorSession session) {
 		if (!this.spinning) {
 			return;
 		}
@@ -163,11 +163,10 @@ public final class NonblockingAcceptorWorker extends Thread {
 			return;
 		}
 
-		session.selectionKey = key;
 		this.sendSessions.add(session);
 
 		synchronized (this.mutex) {
-			this.mutex.notify();
+			this.mutex.notifyAll();
 		}
 	}
 
@@ -337,7 +336,7 @@ public final class NonblockingAcceptorWorker extends Thread {
 			int length = data.length;
 			boolean head = false;
 			boolean tail = false;
-			byte[] buf = new byte[NonblockingAcceptor.BLOCK];
+			byte[] buf = new byte[this.acceptor.block];
 			int bufIndex = 0;
 
 			while (cursor < length) {

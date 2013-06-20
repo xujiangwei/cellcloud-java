@@ -46,7 +46,7 @@ import java.util.concurrent.ConcurrentHashMap;
 public class NonblockingAcceptor extends MessageService implements MessageAcceptor {
 
 	// 缓存数据块大小
-	protected static final int BLOCK = 8192;
+	protected int block = 8192;
 
 	private ServerSocketChannel channel;
 	private Selector selector;
@@ -67,8 +67,8 @@ public class NonblockingAcceptor extends MessageService implements MessageAccept
 		this.spinning = false;
 		this.running = false;
 		this.sessions = new ConcurrentHashMap<Integer, NonblockingAcceptorSession>();
-		// 默认 4 线程
-		this.workerNum = 4;
+		// 默认 8 线程
+		this.workerNum = 8;
 	}
 
 	@Override
@@ -425,10 +425,15 @@ public class NonblockingAcceptor extends MessageService implements MessageAccept
 			// 创建 Session
 			InetSocketAddress address = new InetSocketAddress(clientChannel.socket().getInetAddress().getHostAddress(),
 					clientChannel.socket().getPort());
-			NonblockingAcceptorSession session = new NonblockingAcceptorSession(this, address);
+			NonblockingAcceptorSession session = new NonblockingAcceptorSession(this, address, this.block);
 			// 设置 Socket
 			session.socket = clientChannel.socket();
 
+			// 为 Session 选择工作线程
+			int index = (int)(session.getId() % this.workerNum);
+			session.worker = this.workers[index];
+
+			// 记录
 			this.sessions.put(clientChannel.socket().hashCode(), session);
 
 			// 回调事件
@@ -459,8 +464,9 @@ public class NonblockingAcceptor extends MessageService implements MessageAccept
 			return;
 		}
 
-		// 选出 Worker 为 Session 服务
-		this.selectWorkerForReceive(session, key);
+		// 推入 Worker
+		session.selectionKey = key;
+		session.worker.pushReceiveSession(session);
 
 		try {
 			if (channel.isOpen())
@@ -486,8 +492,9 @@ public class NonblockingAcceptor extends MessageService implements MessageAccept
 			return;
 		}
 
-		// 选出 Worker 为 Session 服务
-		this.selectWorkerForSend(session, key);
+		// 推入 Worker
+		session.selectionKey = key;
+		session.worker.pushSendSession(session);
 
 		try {
 			if (channel.isOpen())
@@ -495,37 +502,5 @@ public class NonblockingAcceptor extends MessageService implements MessageAccept
 		} catch (IOException e) {
 			Logger.log(e, LogLevel.WARNING);
 		}
-	}
-
-	/** 选择最优的工作线程进行数据接收。
-	 */
-	private void selectWorkerForReceive(NonblockingAcceptorSession session, SelectionKey key) {
-		NonblockingAcceptorWorker worker = null;
-
-		int min = Integer.MAX_VALUE;
-		for (NonblockingAcceptorWorker w : this.workers) {
-			if (w.getReceiveSessionNum() < min) {
-				worker = w;
-				min = w.getReceiveSessionNum();
-			}
-		}
-
-		worker.addReceiveSession(session, key);
-	}
-
-	/** 选择最优的工作线程进行数据发送。
-	 */
-	private void selectWorkerForSend(NonblockingAcceptorSession session, SelectionKey key) {
-		NonblockingAcceptorWorker worker = null;
-
-		int min = Integer.MAX_VALUE;
-		for (NonblockingAcceptorWorker w : this.workers) {
-			if (w.getSendSessionNum() < min) {
-				worker = w;
-				min = w.getSendSessionNum();
-			}
-		}
-
-		worker.addSendSession(session, key);
 	}
 }

@@ -204,13 +204,13 @@ public final class Nucleus {
 			// 启动 Cellet
 			this.activateCellets();
 
-			// 启动 Web Service
+			// 启动 HTTP Service
 			if (null != this.httpService) {
 				if (this.httpService.startup()) {
-					Logger.i(Nucleus.class, "Starting web service success.");
+					Logger.i(Nucleus.class, "Starting http service success.");
 				}
 				else {
-					Logger.i(Nucleus.class, "Starting web service failure.");
+					Logger.i(Nucleus.class, "Starting http service failure.");
 				}
 			}
 		}
@@ -252,7 +252,7 @@ public final class Nucleus {
 				this.talkService.shutdown();
 			}
 
-			// 关闭 Web Service
+			// 关闭 HTTP Service
 			if (null != this.httpService) {
 				this.httpService.shutdown();
 			}

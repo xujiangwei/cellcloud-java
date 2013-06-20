@@ -35,6 +35,8 @@ import java.util.Map;
 import java.util.Queue;
 import java.util.Vector;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 import net.cellcloud.common.Cryptology;
 import net.cellcloud.common.LogLevel;
@@ -72,6 +74,9 @@ public final class TalkService implements Service, SpeakerDelegate {
 	private NonblockingAcceptor acceptor;
 	private NucleusContext nucleusContext;
 	private TalkAcceptorHandler talkHandler;
+
+	// 线程执行器
+	private ExecutorService executor;
 
 	/// 待检验 Session
 	private ConcurrentHashMap<Long, Certificate> unidentifiedSessions;
@@ -183,6 +188,10 @@ public final class TalkService implements Service, SpeakerDelegate {
 		}
 
 		stopDaemon();
+
+		if (null != this.executor) {
+			this.executor.shutdown();
+		}
 	}
 
 	/** 设置是否激活 HTTP 服务。
@@ -1035,10 +1044,14 @@ public final class TalkService implements Service, SpeakerDelegate {
 
 	/** 尝试恢复被动会话。
 	 */
-	private boolean tryResumeTalk(String tag, Cellet cellet, int suspendMode, long startTime) {
+	private synchronized boolean tryResumeTalk(String tag, Cellet cellet, int suspendMode, long startTime) {
 		SuspendedTracker tracker = this.suspendedTrackers.get(tag);
 		if (null != tracker) {
-			boolean ret = tracker.pollPrimitiveMatchMode(this.daemon, cellet, suspendMode, startTime);
+			if (null == this.executor) {
+				this.executor = Executors.newSingleThreadExecutor();
+			}
+
+			boolean ret = tracker.pollPrimitiveMatchMode(this.executor, cellet, suspendMode, startTime);
 			if (ret) {
 				tracker.retreat(cellet);
 				return true;

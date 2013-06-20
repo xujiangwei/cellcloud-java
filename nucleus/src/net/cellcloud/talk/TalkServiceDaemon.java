@@ -27,7 +27,6 @@ THE SOFTWARE.
 package net.cellcloud.talk;
 
 import java.util.Iterator;
-import java.util.Vector;
 
 import net.cellcloud.common.LogLevel;
 import net.cellcloud.common.Logger;
@@ -45,21 +44,14 @@ public final class TalkServiceDaemon extends Thread {
 	protected boolean running = false;
 	private long tickTime = 0;
 
-	private Vector<Runnable> tasks;
-
 	public TalkServiceDaemon() {
 		super("TalkServiceDaemon");
-		this.tasks = new Vector<Runnable>();
 	}
 
 	/** 返回周期时间点。
 	 */
 	protected long getTickTime() {
 		return this.tickTime;
-	}
-
-	protected void joinTask(Runnable task) {
-		this.tasks.add(task);
 	}
 
 	@Override
@@ -125,12 +117,6 @@ public final class TalkServiceDaemon extends Thread {
 				// 检查并删除挂起的会话
 				service.checkAndDeleteSuspendedTalk();
 				checkSuspendedCount = 0;
-			}
-
-			// 执行简单任务
-			while (!this.tasks.isEmpty()) {
-				Runnable task = this.tasks.remove(0);
-				task.run();
 			}
 
 			// 休眠 1 秒
