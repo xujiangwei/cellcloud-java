@@ -2,7 +2,7 @@
 -----------------------------------------------------------------------------
 This source file is part of Cell Cloud.
 
-Copyright (c) 2009-2012 Cell Cloud Team (www.cellcloud.net)
+Copyright (c) 2009-2013 Cell Cloud Team (www.cellcloud.net)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -39,6 +39,7 @@ import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 
 import net.cellcloud.adapter.RelationNucleusAdapter;
+import net.cellcloud.cluster.ClusterController;
 import net.cellcloud.common.LogLevel;
 import net.cellcloud.common.Logger;
 import net.cellcloud.exception.CelletSandboxException;
@@ -183,6 +184,9 @@ public final class Nucleus {
 			}
 
 			if (this.config.talking) {
+				// 设置服务端口号
+				this.talkService.setPort(this.config.talkPort);
+
 				// 启动 Talk Service
 				if (this.talkService.startup()) {
 					Logger.i(Nucleus.class, "Starting talk service success.");
@@ -391,8 +395,9 @@ public final class Nucleus {
 
 			// 生成类列表
 			ArrayList<String> classNameList = new ArrayList<String>();
+			JarFile jarFile = null;
 			try {
-				JarFile jarFile = new JarFile(jarFilename);
+				jarFile = new JarFile(jarFilename);
 
 				Logger.i(Nucleus.class, "Analysing jar file : " + jarFile.getName());
 
@@ -405,11 +410,15 @@ public final class Nucleus {
 						classNameList.add(name);
 					}
 				}
-
-				jarFile.close();
 			} catch (IOException ioe) {
-				Logger.log(ioe, LogLevel.DEBUG);
+				Logger.log(ioe, LogLevel.WARNING);
 				continue;
+			} finally {
+				try {
+					jarFile.close();
+				} catch (Exception e) {
+					// Nothing
+				}
 			}
 
 			// 定位文件
@@ -422,50 +431,52 @@ public final class Nucleus {
 			}
 
 			// 加载 Class
-			URLClassLoader loader = new URLClassLoader(new URL[]{url}
+			URLClassLoader loader = null;
+			try {
+				loader = new URLClassLoader(new URL[]{url}
 					, Thread.currentThread().getContextClassLoader());
 
-			// 取出 Cellet 类
-			ArrayList<String> celletClasslist = this.celletJarClasses.get(jarFilename);
-			// Cellet 类列表
-			ArrayList<Class<?>> classes = new ArrayList<Class<?>>();
+				// 取出 Cellet 类
+				ArrayList<String> celletClasslist = this.celletJarClasses.get(jarFilename);
+				// Cellet 类列表
+				ArrayList<Class<?>> classes = new ArrayList<Class<?>>();
 
-			// 加载所有的 Class
-			for (int i = 0, size = classNameList.size(); i < size; ++i) {
-				try {
-					String className = classNameList.get(i);
-					Class<?> clazz = loader.loadClass(className);
-					if (celletClasslist.contains(className)) {
-						classes.add(clazz);
+				// 加载所有的 Class
+				for (int i = 0, size = classNameList.size(); i < size; ++i) {
+					try {
+						String className = classNameList.get(i);
+						Class<?> clazz = loader.loadClass(className);
+						if (celletClasslist.contains(className)) {
+							classes.add(clazz);
+						}
+					} catch (ClassNotFoundException e) {
+						Logger.log(e, LogLevel.ERROR);
 					}
-				} catch (ClassNotFoundException e) {
-					Logger.log(e, LogLevel.ERROR);
 				}
-			}
 
-			for (int i = 0, size = classes.size(); i < size; ++i) {
+				for (int i = 0, size = classes.size(); i < size; ++i) {
+					try {
+						Class<?> clazz = classes.get(i);
+						// 实例化 Cellet
+						Cellet cellet = (Cellet) clazz.newInstance();
+						// 存入列表
+						this.cellets.put(cellet.getFeature().getIdentifier(), cellet);
+					} catch (InstantiationException e) {
+						Logger.log(e, LogLevel.ERROR);
+						continue;
+					} catch (IllegalAccessException e) {
+						Logger.log(e, LogLevel.ERROR);
+						continue;
+					}
+				}
+			} finally {
+				// 以下为 JDK7 的代码
 				try {
-					Class<?> clazz = classes.get(i);
-					// 实例化 Cellet
-					Cellet cellet = (Cellet) clazz.newInstance();
-					// 存入列表
-					this.cellets.put(cellet.getFeature().getIdentifier(), cellet);
-				} catch (InstantiationException e) {
+					loader.close();
+				} catch (Exception e) {
 					Logger.log(e, LogLevel.ERROR);
-					continue;
-				} catch (IllegalAccessException e) {
-					Logger.log(e, LogLevel.ERROR);
-					continue;
 				}
 			}
-
-			/* 以下为 JDK7 的代码
-			try {
-				loader.close();
-			} catch (IOException e) {
-				Logger.logException(e, LogLevel.ERROR);
-			}
-			*/
 		}
 	}
 

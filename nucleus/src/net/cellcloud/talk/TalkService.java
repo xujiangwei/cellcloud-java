@@ -49,14 +49,13 @@ import net.cellcloud.core.CelletSandbox;
 import net.cellcloud.core.Nucleus;
 import net.cellcloud.core.NucleusContext;
 import net.cellcloud.exception.SingletonException;
+import net.cellcloud.http.HttpCapsule;
 import net.cellcloud.http.HttpService;
 import net.cellcloud.talk.dialect.ActionDialectFactory;
 import net.cellcloud.talk.dialect.Dialect;
 import net.cellcloud.talk.dialect.DialectEnumerator;
+import net.cellcloud.talk.http.TalkServlet;
 import net.cellcloud.util.Utils;
-
-import org.eclipse.jetty.server.nio.SelectChannelConnector;
-import org.eclipse.jetty.util.thread.QueuedThreadPool;
 
 /** 会话服务。
  *
@@ -120,6 +119,7 @@ public final class TalkService implements Service, SpeakerDelegate {
 	public void setPort(int port) {
 		this.port = port;
 	}
+
 	/** 设置 HTTP 服务端口。
 	 */
 	public void setHttpPort(int port) {
@@ -159,7 +159,7 @@ public final class TalkService implements Service, SpeakerDelegate {
 		}
 
 		// 最大连接数
-		this.acceptor.setMaxConnectNum(1024);
+		this.acceptor.setMaxConnectNum(1000);
 
 		boolean succeeded = this.acceptor.bind(this.port);
 		if (succeeded) {
@@ -168,7 +168,7 @@ public final class TalkService implements Service, SpeakerDelegate {
 
 		if (this.httpEnabled) {
 			// 启动 HTTP 服务
-			startHttpService();
+			enableHttpService();
 		}
 
 		return succeeded;
@@ -178,9 +178,6 @@ public final class TalkService implements Service, SpeakerDelegate {
 	 */
 	@Override
 	public void shutdown() {
-		// 停止 HTTP 服务
-		stopHttpService();
-
 		if (null != this.acceptor) {
 			this.acceptor.unbind();
 		}
@@ -482,28 +479,18 @@ public final class TalkService implements Service, SpeakerDelegate {
 		return false;
 	}
 
-	/** 启动 HTTP 服务。
+	/** 启用 HTTP 服务。
 	 */
-	private void startHttpService() {
+	private void enableHttpService() {
 		if (null == HttpService.getInstance()) {
 			Logger.w(TalkService.class, "Starts talk web service failed, web model failed to start.");
 			return;
 		}
 
-		SelectChannelConnector connector = new SelectChannelConnector();
-		connector.setPort(this.httpPort);
-		connector.setRequestHeaderSize(8192);
-		connector.setThreadPool(new QueuedThreadPool(16));
-		connector.setName("/cc/talker");
+		HttpCapsule capsule = new HttpCapsule(this.httpPort, 1000);
+		capsule.addCapsuleHolder(new TalkServlet());
 
-		HttpService.getInstance().addConnector(connector);
-		HttpService.getInstance().addHandler(new TalkHttpHandler());
-	}
-
-	/** 停止 HTTP 服务。
-	 */
-	private void stopHttpService() {
-		// TODO
+		HttpService.getInstance().addCapsule(capsule);
 	}
 
 	/**

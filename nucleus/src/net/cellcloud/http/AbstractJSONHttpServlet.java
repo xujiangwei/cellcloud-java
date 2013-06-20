@@ -2,7 +2,7 @@
 -----------------------------------------------------------------------------
 This source file is part of Cell Cloud.
 
-Copyright (c) 2009-2012 Cell Cloud Team (www.cellcloud.net)
+Copyright (c) 2009-2013 Cell Cloud Team (www.cellcloud.net)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -26,36 +26,46 @@ THE SOFTWARE.
 
 package net.cellcloud.http;
 
-/** 错误页内容。
+import java.io.IOException;
+
+import javax.servlet.ServletException;
+import javax.servlet.http.HttpServlet;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
+/**
  * 
  * @author Jiangwei Xu
  */
-public final class ErrorPages {
+public abstract class AbstractJSONHttpServlet extends HttpServlet {
 
-	private static String PAGE_404;
+	private static final long serialVersionUID = 2964870998423375946L;
 
-	protected ErrorPages() {
+	public AbstractJSONHttpServlet() {
+		super();
 	}
 
-	public final static String ERROR_404() {
-		return ErrorPages.PAGE_404;
+	@Override
+	public void doGet(HttpServletRequest request, HttpServletResponse response)
+		throws ServletException, IOException {
+		
 	}
 
-	protected static void build() {
-		StringBuilder buf = new StringBuilder();
-		buf.append("<!doctype html>\r\n");
-		buf.append("<html><head>");
-		buf.append("<meta charset=\"utf-8\">");
-		buf.append("<title>404 - File or directory not found.</title>");
-		buf.append("</head>\r\n<body>");
-		buf.append("<h2>404 - File or directory not found.</h2>");
-		buf.append("<h3>The resource you are looking for might have been removed, had its name changed, or is temporarily unavailable.</h3>");
-		buf.append("<p>Powered by Jetty (Cell Cloud)</p>");
-		buf.append("</body></html>\r\n");
+	@Override
+	public void doPost(HttpServletRequest request, HttpServletResponse response)
+		throws ServletException, IOException {
+		
+	}
 
-		PAGE_404 = buf.toString();
+	@Override
+	public void doPut(HttpServletRequest request, HttpServletResponse response)
+		throws ServletException, IOException {
+		
+	}
 
-		buf.delete(0, buf.length());
-		buf = null;
+	@Override
+	public void doDelete(HttpServletRequest request, HttpServletResponse response)
+		throws ServletException, IOException {
+		
 	}
 }

@@ -28,6 +28,7 @@ package net.cellcloud.common;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
+import java.net.StandardSocketOptions;
 import java.nio.ByteBuffer;
 import java.nio.channels.ClosedChannelException;
 import java.nio.channels.SelectionKey;
@@ -123,15 +124,16 @@ public class NonblockingConnector extends MessageService implements MessageConne
 			this.channel.configureBlocking(false);
 
 			// 配置
-			/* 以下为 JDK7 的代码
+			// 以下为 JDK7 的代码
 			this.channel.setOption(StandardSocketOptions.SO_KEEPALIVE, true);
-			this.channel.setOption(StandardSocketOptions.SO_RCVBUF, BLOCK);
-			this.channel.setOption(StandardSocketOptions.SO_SNDBUF, BLOCK);
-			*/
+			this.channel.setOption(StandardSocketOptions.SO_RCVBUF, this.block);
+			this.channel.setOption(StandardSocketOptions.SO_SNDBUF, this.block);
 			// 以下为 JDK6 的代码
+			/*
 			this.channel.socket().setKeepAlive(true);
 			this.channel.socket().setReceiveBufferSize(this.block);
 			this.channel.socket().setSendBufferSize(this.block);
+			*/
 
 			this.selector = Selector.open();
 			// 注册事件

@@ -83,6 +83,8 @@ public final class NucleusConfig {
 
 	/// 是否启用 Talk 服务
 	public boolean talking = true;
+	/// Talk 服务端口
+	public int talkPort = 7000;
 
 	/// 是否使用 HTTP 服务
 	public boolean httpd = false;

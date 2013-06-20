@@ -26,8 +26,7 @@ THE SOFTWARE.
 
 package net.cellcloud.http;
 
-import java.util.ArrayList;
-import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.List;
 
 import net.cellcloud.common.LogLevel;
@@ -38,8 +37,11 @@ import net.cellcloud.exception.SingletonException;
 
 import org.eclipse.jetty.server.Connector;
 import org.eclipse.jetty.server.Server;
+import org.eclipse.jetty.server.ServerConnector;
+import org.eclipse.jetty.servlet.ServletContextHandler;
+import org.eclipse.jetty.servlet.ServletHolder;
 
-/** Web 服务。
+/** HTTP 服务。
  * 
  * @author Jiangwei Xu
  */
@@ -48,10 +50,9 @@ public final class HttpService implements Service {
 	private static HttpService instance = null;
 
 	private Server server = null;
-	private List<Connector> connectors = null;
-	private HashMap<String, HttpHandler> httpHandlers = null;
+	private ServletContextHandler handler;
 
-	private JettyHandler handler = null;
+	private LinkedList<HttpCapsule> httpCapsules = null;
 
 	public HttpService(NucleusContext context)
 			throws SingletonException {
@@ -61,10 +62,15 @@ public final class HttpService implements Service {
 			// 设置 Jetty 的日志傀儡
 			org.eclipse.jetty.util.log.Log.setLog(new JettyLoggerPuppet());
 
+			// 创建服务器
 			this.server = new Server();
-			this.handler = new JettyHandler();
-			this.connectors = new ArrayList<Connector>();
-			this.httpHandlers = new HashMap<String, HttpHandler>();
+
+			// 创建句柄
+			this.handler = new ServletContextHandler(ServletContextHandler.NO_SESSIONS);
+			this.handler.setContextPath("/");
+			this.server.setHandler(this.handler);
+
+			this.httpCapsules = new LinkedList<HttpCapsule>();
 		}
 		else {
 			throw new SingletonException(HttpService.class.getName());
@@ -73,24 +79,33 @@ public final class HttpService implements Service {
 
 	/** 返回单例。
 	 */
-	public synchronized static HttpService getInstance() {
+	public static HttpService getInstance() {
 		return HttpService.instance;
 	}
 
 	@Override
 	public boolean startup() {
-		// 构建错误页
-		ErrorPages.build();
+		Connector[] connectors = new Connector[this.httpCapsules.size()];
 
-		Connector[] array = new Connector[this.connectors.size()];
-		this.connectors.toArray(array);
-		this.server.setConnectors(array);
-		this.server.setHandler(this.handler);
-		this.server.setGracefulShutdown(5000);
+		for (int i = 0; i < connectors.length; ++i) {
+			HttpCapsule hc = this.httpCapsules.get(i);
+			@SuppressWarnings("resource")
+			ServerConnector connector = new ServerConnector(this.server);
+			connector.setPort(hc.getPort());
+			connector.setAcceptQueueSize(hc.getQueueSize());
+			connectors[i] = connector;
+
+			// 处理接入器
+			List<CapsuleHolder> holders = hc.getCapsuleHolders();
+			for (CapsuleHolder holder : holders) {
+				ServletHolder sh = new ServletHolder(holder.getHttpServlet());
+				this.handler.addServlet(sh, holder.getPathSpec());
+			}
+		}
+
+		this.server.setConnectors(connectors);
+		this.server.setStopTimeout(5000);
 		this.server.setStopAtShutdown(true);
-
-		// 更新 Hanlder 列表
-		this.handler.updateHandlers(this.httpHandlers);
 
 		try {
 			this.server.start();
@@ -112,13 +127,9 @@ public final class HttpService implements Service {
 		}
 	}
 
-	/** 添加连接器。
+	/** 添加封装器。
 	 */
-	public void addConnector(Connector connector) {
-		this.connectors.add(connector);
-	}
-
-	public void addHandler(HttpHandler handler) {
-		this.httpHandlers.put(handler.getContextPath(), handler);
+	public void addCapsule(HttpCapsule capsule) {
+		this.httpCapsules.add(capsule);
 	}
 }

@@ -2,7 +2,7 @@
 -----------------------------------------------------------------------------
 This source file is part of Cell Cloud.
 
-Copyright (c) 2009-2012 Cell Cloud Team (www.cellcloud.net)
+Copyright (c) 2009-2013 Cell Cloud Team (www.cellcloud.net)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -24,38 +24,30 @@ THE SOFTWARE.
 -----------------------------------------------------------------------------
 */
 
-package net.cellcloud.http;
+package net.cellcloud.cluster;
 
-/** 错误页内容。
+import net.cellcloud.common.Session;
+
+/** 集群模块错误状态协议。
  * 
  * @author Jiangwei Xu
  */
-public final class ErrorPages {
+public class ClusterFailureProtocol extends ClusterProtocol {
 
-	private static String PAGE_404;
+	protected ClusterFailure failure;
+	protected ClusterProtocol protocol;
 
-	protected ErrorPages() {
+	protected ClusterFailureProtocol(ClusterFailure failure, ClusterProtocol protocol) {
+		super("Failure");
+		this.failure = failure;
+		this.protocol = protocol;
 	}
 
-	public final static String ERROR_404() {
-		return ErrorPages.PAGE_404;
+	@Override
+	public void launch(Session session) {
 	}
 
-	protected static void build() {
-		StringBuilder buf = new StringBuilder();
-		buf.append("<!doctype html>\r\n");
-		buf.append("<html><head>");
-		buf.append("<meta charset=\"utf-8\">");
-		buf.append("<title>404 - File or directory not found.</title>");
-		buf.append("</head>\r\n<body>");
-		buf.append("<h2>404 - File or directory not found.</h2>");
-		buf.append("<h3>The resource you are looking for might have been removed, had its name changed, or is temporarily unavailable.</h3>");
-		buf.append("<p>Powered by Jetty (Cell Cloud)</p>");
-		buf.append("</body></html>\r\n");
-
-		PAGE_404 = buf.toString();
-
-		buf.delete(0, buf.length());
-		buf = null;
+	@Override
+	public void respond(ClusterNode node, StateCode state) {
 	}
 }

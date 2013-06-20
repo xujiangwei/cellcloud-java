@@ -24,38 +24,31 @@ THE SOFTWARE.
 -----------------------------------------------------------------------------
 */
 
-package net.cellcloud.http;
+package net.cellcloud.talk.http;
 
-/** 错误页内容。
+import javax.servlet.http.HttpServlet;
+
+import net.cellcloud.http.AbstractJSONHttpServlet;
+import net.cellcloud.http.CapsuleHolder;
+
+/** Talk 服务的 HTTP 协议处理器。
  * 
  * @author Jiangwei Xu
  */
-public final class ErrorPages {
+public final class TalkServlet extends AbstractJSONHttpServlet implements CapsuleHolder {
 
-	private static String PAGE_404;
+	private static final long serialVersionUID = 108429566672601020L;
 
-	protected ErrorPages() {
+	public TalkServlet() {
 	}
 
-	public final static String ERROR_404() {
-		return ErrorPages.PAGE_404;
+	@Override
+	public String getPathSpec() {
+		return "/talk";
 	}
 
-	protected static void build() {
-		StringBuilder buf = new StringBuilder();
-		buf.append("<!doctype html>\r\n");
-		buf.append("<html><head>");
-		buf.append("<meta charset=\"utf-8\">");
-		buf.append("<title>404 - File or directory not found.</title>");
-		buf.append("</head>\r\n<body>");
-		buf.append("<h2>404 - File or directory not found.</h2>");
-		buf.append("<h3>The resource you are looking for might have been removed, had its name changed, or is temporarily unavailable.</h3>");
-		buf.append("<p>Powered by Jetty (Cell Cloud)</p>");
-		buf.append("</body></html>\r\n");
-
-		PAGE_404 = buf.toString();
-
-		buf.delete(0, buf.length());
-		buf = null;
+	@Override
+	public HttpServlet getHttpServlet() {
+		return this;
 	}
 }

@@ -310,18 +310,27 @@ public final class Application {
 		}
 
 		// 加载 Class
-		URLClassLoader loader = new URLClassLoader(urls.toArray(new URL[urls.size()])
-				, Thread.currentThread().getContextClassLoader());
+		URLClassLoader loader = null;
+		try {
+			loader = new URLClassLoader(urls.toArray(new URL[urls.size()])
+					, Thread.currentThread().getContextClassLoader());
 
-		for (String className : classNameList) {
+			for (String className : classNameList) {
+				try {
+					loader.loadClass(className);
+				} catch (ClassNotFoundException e) {
+					e.printStackTrace();
+					continue;
+				} catch (NoClassDefFoundError e) {
+					e.printStackTrace();
+					continue;
+				}
+			}
+		} finally {
 			try {
-				loader.loadClass(className);
-			} catch (ClassNotFoundException e) {
-				e.printStackTrace();
-				continue;
-			} catch (NoClassDefFoundError e) {
-				e.printStackTrace();
-				continue;
+				loader.close();
+			} catch (Exception e) {
+				// Nothing
 			}
 		}
 

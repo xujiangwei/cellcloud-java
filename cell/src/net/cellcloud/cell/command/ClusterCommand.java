@@ -26,9 +26,9 @@ THE SOFTWARE.
 
 package net.cellcloud.cell.command;
 
-import net.cellcloud.core.ClusterController;
-import net.cellcloud.core.ClusterNode;
-import net.cellcloud.core.ClusterVirtualNode;
+import net.cellcloud.cluster.ClusterController;
+import net.cellcloud.cluster.ClusterNode;
+import net.cellcloud.cluster.ClusterVirtualNode;
 import net.cellcloud.core.Nucleus;
 
 /** Cluster 命令。
