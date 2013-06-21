@@ -143,14 +143,14 @@ public final class Nucleus {
 			//---- 配置集群 ----
 
 			if (null == this.clusterController) {
-				this.clusterController = new ClusterController(this.config.clusterHostname, this.config.clusterPreferredPort);
+				this.clusterController = new ClusterController(this.config.cluster.host, this.config.cluster.preferredPort);
 			}
 			// 添加集群地址
-			if (null != this.config.clusterAddressList) {
-				this.clusterController.addClusterAddress(this.config.clusterAddressList);
+			if (null != this.config.cluster.addressList) {
+				this.clusterController.addClusterAddress(this.config.cluster.addressList);
 			}
 			// 设置自动扫描网络
-			this.clusterController.autoScanNetwork = this.config.clusterAutoScan
+			this.clusterController.autoScanNetwork = this.config.cluster.autoScan
 					&& (this.config.device == NucleusConfig.Device.SERVER
 						|| this.config.device == NucleusConfig.Device.DESKTOP);
 			// 启动集群控制器
@@ -164,7 +164,7 @@ public final class Nucleus {
 			//---- 配置 HTTP 服务  ----
 
 			if (this.config.httpd) {
-				// 创建 Web Service
+				// 创建 HTTP Service
 				try {
 					this.httpService = new HttpService(this.context);
 				} catch (SingletonException e) {
@@ -175,7 +175,7 @@ public final class Nucleus {
 			//---- 配置 Talk Service  ----
 
 			// 创建 Talk Service
-			if (this.config.talking && (null == this.talkService)) {
+			if (this.config.talk.enable && (null == this.talkService)) {
 				try {
 					this.talkService = new TalkService(this.context);
 				} catch (SingletonException e) {
@@ -183,9 +183,9 @@ public final class Nucleus {
 				}
 			}
 
-			if (this.config.talking) {
+			if (this.config.talk.enable) {
 				// 设置服务端口号
-				this.talkService.setPort(this.config.talkPort);
+				this.talkService.setPort(this.config.talk.port);
 
 				// 启动 Talk Service
 				if (this.talkService.startup()) {

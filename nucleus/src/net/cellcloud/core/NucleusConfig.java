@@ -81,23 +81,54 @@ public final class NucleusConfig {
 	/// 设备
 	public byte device = Device.SERVER;
 
-	/// 是否启用 Talk 服务
-	public boolean talking = true;
-	/// Talk 服务端口
-	public int talkPort = 7000;
+	/// 是否启用 HTTP 服务器
+	public boolean httpd = true;
 
-	/// 是否使用 HTTP 服务
-	public boolean httpd = false;
+	/// Talk Service 配置
+	public TalkConfig talk;
 
-	/// 集群绑定主机名
-	public String clusterHostname = "127.0.0.1";
-	/// 集群服务首选端口
-	public int clusterPreferredPort = 11099;
-	/// 集群地址表
-	public List<InetSocketAddress> clusterAddressList = null;
-	/// 是否自定扫描地址
-	public boolean clusterAutoScan = false;
+	/// 集群配置
+	public ClusterConfig cluster;
 
 	public NucleusConfig() {
+		this.talk = new TalkConfig();
+		this.cluster = new ClusterConfig();
+	}
+
+	/**
+	 * 会话服务器配置项。
+	 */
+	public final class TalkConfig {
+		/// 是否启用 Talk 服务
+		public boolean enable = true;
+
+		/// Talk 服务端口
+		public int port = 7000;
+
+		/// 是否使用 HTTP 服务
+		public boolean httpd = false;
+
+		private TalkConfig() {
+		}
+	}
+
+	/**
+	 * 集群配置项。
+	 */
+	public final class ClusterConfig {
+		/// 集群绑定主机名
+		public String host = "127.0.0.1";
+
+		/// 集群服务首选端口
+		public int preferredPort = 11099;
+
+		/// 集群地址表
+		public List<InetSocketAddress> addressList = null;
+
+		/// 是否自动扫描地址
+		public boolean autoScan = false;
+
+		private ClusterConfig() {
+		}
 	}
 }
