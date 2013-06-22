@@ -144,7 +144,7 @@ public final class Cryptology {
 			md.update(input);
 			bytes = md.digest();
 		} catch (NoSuchAlgorithmException e) {
-			Logger.log(e, LogLevel.ERROR);
+			Logger.log(Cryptology.class, e, LogLevel.ERROR);
 		}
 		return bytes;
 	}

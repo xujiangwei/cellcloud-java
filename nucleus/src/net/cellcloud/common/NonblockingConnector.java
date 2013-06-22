@@ -98,14 +98,14 @@ public class NonblockingConnector extends MessageService implements MessageConne
 					this.selector.close();
 				}
 			} catch (IOException e) {
-				Logger.log(e, LogLevel.DEBUG);
+				Logger.log(NonblockingConnector.class, e, LogLevel.DEBUG);
 			}
 
 			while (this.running) {
 				try {
 					Thread.sleep(10);
 				} catch (InterruptedException e) {
-					Logger.log(e, LogLevel.DEBUG);
+					Logger.log(NonblockingConnector.class, e, LogLevel.DEBUG);
 					break;
 				}
 			}
@@ -142,7 +142,7 @@ public class NonblockingConnector extends MessageService implements MessageConne
 			// 连接
 			this.channel.connect(this.address);
 		} catch (IOException e) {
-			Logger.log(e, LogLevel.DEBUG);
+			Logger.log(NonblockingConnector.class, e, LogLevel.DEBUG);
 
 			// 回调错误
 			this.fireErrorOccurred(MessageErrorCode.SOCKET_FAILED);
@@ -164,7 +164,7 @@ public class NonblockingConnector extends MessageService implements MessageConne
 
 			return false;
 		} catch (Exception e) {
-			Logger.log(e, LogLevel.WARNING);
+			Logger.log(NonblockingConnector.class, e, LogLevel.WARNING);
 			return false;
 		}
 
@@ -227,7 +227,7 @@ public class NonblockingConnector extends MessageService implements MessageConne
 					this.channel.close();
 				}
 			} catch (Exception e) {
-				Logger.log(e, LogLevel.DEBUG);
+				Logger.log(NonblockingConnector.class, e, LogLevel.DEBUG);
 			}
 
 			try {
@@ -242,7 +242,7 @@ public class NonblockingConnector extends MessageService implements MessageConne
 				this.selector.wakeup();
 				this.selector.close();
 			} catch (Exception e) {
-				Logger.log(e, LogLevel.DEBUG);
+				Logger.log(NonblockingConnector.class, e, LogLevel.DEBUG);
 			}
 		}
 
@@ -251,7 +251,7 @@ public class NonblockingConnector extends MessageService implements MessageConne
 			try {
 				Thread.sleep(10);
 			} catch (InterruptedException e) {
-				Logger.log(e, LogLevel.DEBUG);
+				Logger.log(NonblockingConnector.class, e, LogLevel.DEBUG);
 			}
 
 			if (++count >= 300) {
@@ -381,7 +381,7 @@ public class NonblockingConnector extends MessageService implements MessageConne
 
 					Thread.sleep(1);
 				} catch (InterruptedException e) {
-					Logger.log(e, LogLevel.DEBUG);
+					Logger.log(NonblockingConnector.class, e, LogLevel.DEBUG);
 				}
 			} //# while
 		} // # while
@@ -403,7 +403,7 @@ public class NonblockingConnector extends MessageService implements MessageConne
 					this.channel.close();
 					this.selector.close();
 				} catch (IOException ce) {
-					Logger.log(ce, LogLevel.DEBUG);
+					Logger.log(NonblockingConnector.class, ce, LogLevel.DEBUG);
 				}
 
 				// 连接失败
@@ -418,7 +418,7 @@ public class NonblockingConnector extends MessageService implements MessageConne
 		try {
 			channel.register(this.selector, SelectionKey.OP_READ | SelectionKey.OP_WRITE);
 		} catch (ClosedChannelException e) {
-			Logger.log(e, LogLevel.DEBUG);
+			Logger.log(NonblockingConnector.class, e, LogLevel.DEBUG);
 		}
 
 		return true;
@@ -446,7 +446,7 @@ public class NonblockingConnector extends MessageService implements MessageConne
 					if (null != this.selector)
 						this.selector.close();
 				} catch (IOException ce) {
-					Logger.log(ce, LogLevel.DEBUG);
+					Logger.log(NonblockingConnector.class, ce, LogLevel.DEBUG);
 				}
 
 				// 不能继续进行数据接收
@@ -465,7 +465,7 @@ public class NonblockingConnector extends MessageService implements MessageConne
 					this.channel.close();
 					this.selector.close();
 				} catch (IOException ce) {
-					Logger.log(ce, LogLevel.DEBUG);
+					Logger.log(NonblockingConnector.class, ce, LogLevel.DEBUG);
 				}
 
 				// 不能继续进行数据接收
@@ -488,7 +488,7 @@ public class NonblockingConnector extends MessageService implements MessageConne
 			// 注册
 			channel.register(this.selector, SelectionKey.OP_WRITE | SelectionKey.OP_READ);
 		} catch (IOException e) {
-			Logger.log(e, LogLevel.DEBUG);
+			Logger.log(NonblockingConnector.class, e, LogLevel.DEBUG);
 			this.fireErrorOccurred(MessageErrorCode.READ_FAILED);
 		}
 	}
@@ -539,11 +539,11 @@ public class NonblockingConnector extends MessageService implements MessageConne
 				// 注册
 				channel.register(this.selector, SelectionKey.OP_READ | SelectionKey.OP_WRITE);
 			} catch (ClosedChannelException ce) {
-				Logger.log(ce, LogLevel.DEBUG);
+				Logger.log(NonblockingConnector.class, ce, LogLevel.DEBUG);
 				this.fireErrorOccurred(MessageErrorCode.WRITE_FAILED);
 			}
 		} catch (IOException e) {
-			Logger.log(e, LogLevel.WARNING);
+			Logger.log(NonblockingConnector.class, e, LogLevel.WARNING);
 		}
 	}
 

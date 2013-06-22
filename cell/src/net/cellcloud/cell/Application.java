@@ -113,7 +113,7 @@ public final class Application {
 				this.nucleus = new Nucleus(config);
 			}
 		} catch (SingletonException e) {
-			Logger.log(e, LogLevel.ERROR);
+			Logger.log(Application.class, e, LogLevel.ERROR);
 			return false;
 		}
 
@@ -156,7 +156,7 @@ public final class Application {
 				try {
 					this.monitor.wait();
 				} catch (InterruptedException e) {
-					Logger.log(e, LogLevel.ERROR);
+					Logger.log(Application.class, e, LogLevel.ERROR);
 				}
 			}
 
@@ -243,11 +243,11 @@ public final class Application {
 
 			return true;
 		} catch (ParserConfigurationException e) {
-			Logger.log(e, LogLevel.ERROR);
+			Logger.log(Application.class, e, LogLevel.ERROR);
 		} catch (SAXException e) {
-			Logger.log(e, LogLevel.ERROR);
+			Logger.log(Application.class, e, LogLevel.ERROR);
 		} catch (IOException e) {
-			Logger.log(e, LogLevel.ERROR);
+			Logger.log(Application.class, e, LogLevel.ERROR);
 		}
 
 		return false;

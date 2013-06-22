@@ -363,7 +363,7 @@ public final class ClusterNetwork extends Observable implements Service, Message
 							try {
 								ia = InetAddress.getByAddress(new byte[] {(byte)s1, (byte)s2, (byte)s3, (byte)i});
 							} catch (UnknownHostException uhe) {
-								Logger.log(uhe, LogLevel.WARNING);
+								Logger.log(ClusterNetwork.class, uhe, LogLevel.WARNING);
 								continue;
 							}
 
@@ -383,7 +383,7 @@ public final class ClusterNetwork extends Observable implements Service, Message
 									}
 								}
 							} catch (IOException e) {
-								Logger.log(e, LogLevel.WARNING);
+								Logger.log(ClusterNetwork.class, e, LogLevel.WARNING);
 							}
 						}
 					}
@@ -393,7 +393,7 @@ public final class ClusterNetwork extends Observable implements Service, Message
 				}
 			}
 		} catch (SocketException e) {
-			Logger.log(e, LogLevel.ERROR);
+			Logger.log(ClusterNetwork.class, e, LogLevel.ERROR);
 		}
 
 		return result;

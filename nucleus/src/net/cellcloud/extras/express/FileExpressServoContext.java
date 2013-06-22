@@ -90,7 +90,7 @@ public final class FileExpressServoContext {
 			resultSet = this.storage.store(this.storage.createReadStatement(
 					new StringBuilder(this.authCode.getContextPath()).append(filename).toString()));
 		} catch (StorageException e) {
-			Logger.log(e, LogLevel.ERROR);
+			Logger.log(FileExpressServoContext.class, e, LogLevel.ERROR);
 		}
 		// 移动游标
 		resultSet.next();

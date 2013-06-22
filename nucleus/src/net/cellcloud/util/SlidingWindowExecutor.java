@@ -27,7 +27,9 @@ THE SOFTWARE.
 package net.cellcloud.util;
 
 import java.util.Collection;
+import java.util.LinkedList;
 import java.util.List;
+import java.util.Queue;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
@@ -35,6 +37,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /** 滑动窗执行器。
  * 
@@ -42,98 +45,182 @@ import java.util.concurrent.TimeoutException;
  */
 public class SlidingWindowExecutor implements ExecutorService {
 
-	private ExecutorService executor;
+	protected ExecutorService executor;
+
+	// 当前线程数快照
+	protected AtomicInteger threadNum = new AtomicInteger(0);
+
+	/// 任务队列
+	protected Queue<Runnable> taskQueue;
+	/// 选中执行的任务队列
+	protected Queue<Runnable> activeQueue;
+
+	// 活动窗属性
+	private int windowSize = 4;
+	protected byte[] monitor = new byte[0];
+
+	private volatile boolean dispatching = false;
+
+	protected SlidingWindowExecutor that;
 
 	private SlidingWindowExecutor(ExecutorService executor) {
+		this.that = this;
 		this.executor = executor;
+		this.taskQueue = new LinkedList<Runnable>();
+		this.activeQueue = new LinkedList<Runnable>();
 	}
 
-	public static SlidingWindowExecutor newCachedSlidingWindowThreadPool() {
+	/**
+	 * 创建指定窗口大小的活动滑窗线程池。
+	 * @param windowSize
+	 * @param maxThreadNum
+	 * @return
+	 */
+	public static SlidingWindowExecutor newSlidingWindowThreadPool(int windowSize) {
+		if (windowSize <= 0) {
+			throw new IllegalArgumentException("Window size is not less than zero.");
+		}
+
 		SlidingWindowExecutor swe = new SlidingWindowExecutor(Executors.newCachedThreadPool());
+		swe.windowSize = windowSize;
 		return swe;
 	}
 
 	@Override
 	public void execute(Runnable command) {
-		this.executor.execute(command);
+		synchronized (this.taskQueue) {
+			this.taskQueue.offer(command);
+		}
+
+		// 启动分发任务
+		if (!this.dispatching) {
+			this.dispatching = true;
+			this.executor.execute(new Dispatcher());
+		}
+		else {
+			synchronized (this.monitor) {
+				this.monitor.notifyAll();
+			}
+		}
 	}
 
 	@Override
-	public boolean awaitTermination(long arg0, TimeUnit arg1)
+	public boolean awaitTermination(long timeout, TimeUnit unit)
 			throws InterruptedException {
-		// TODO Auto-generated method stub
-		return false;
+		return this.executor.awaitTermination(timeout, unit);
 	}
 
 	@Override
-	public <T> List<Future<T>> invokeAll(Collection<? extends Callable<T>> arg0)
+	public <T> List<Future<T>> invokeAll(Collection<? extends Callable<T>> tasks)
 			throws InterruptedException {
-		// TODO Auto-generated method stub
-		return null;
+		return this.executor.invokeAll(tasks);
 	}
 
 	@Override
 	public <T> List<Future<T>> invokeAll(
-			Collection<? extends Callable<T>> arg0, long arg1, TimeUnit arg2)
+			Collection<? extends Callable<T>> tasks, long timeout, TimeUnit unit)
 			throws InterruptedException {
-		// TODO Auto-generated method stub
-		return null;
+		return this.executor.invokeAll(tasks, timeout, unit);
 	}
 
 	@Override
-	public <T> T invokeAny(Collection<? extends Callable<T>> arg0)
+	public <T> T invokeAny(Collection<? extends Callable<T>> tasks)
 			throws InterruptedException, ExecutionException {
-		// TODO Auto-generated method stub
-		return null;
+		return this.executor.invokeAny(tasks);
 	}
 
 	@Override
-	public <T> T invokeAny(Collection<? extends Callable<T>> arg0, long arg1,
-			TimeUnit arg2) throws InterruptedException, ExecutionException,
+	public <T> T invokeAny(Collection<? extends Callable<T>> tasks, long timeout,
+			TimeUnit unit) throws InterruptedException, ExecutionException,
 			TimeoutException {
-		// TODO Auto-generated method stub
-		return null;
+		return this.executor.invokeAny(tasks, timeout, unit);
 	}
 
 	@Override
 	public boolean isShutdown() {
-		// TODO Auto-generated method stub
-		return false;
+		return this.executor.isShutdown();
 	}
 
 	@Override
 	public boolean isTerminated() {
-		// TODO Auto-generated method stub
-		return false;
+		return this.executor.isTerminated();
 	}
 
 	@Override
 	public void shutdown() {
-		// TODO Auto-generated method stub
+		this.taskQueue.clear();
+		synchronized (this.monitor) {
+			this.monitor.notifyAll();
+		}
 
+		this.executor.shutdown();
 	}
 
 	@Override
 	public List<Runnable> shutdownNow() {
-		// TODO Auto-generated method stub
-		return null;
+		this.taskQueue.clear();
+		synchronized (this.monitor) {
+			this.monitor.notifyAll();
+		}
+
+		return this.executor.shutdownNow();
 	}
 
 	@Override
-	public <T> Future<T> submit(Callable<T> arg0) {
-		// TODO Auto-generated method stub
-		return null;
+	public <T> Future<T> submit(Callable<T> task) {
+		return this.executor.submit(task);
 	}
 
 	@Override
-	public Future<?> submit(Runnable arg0) {
-		// TODO Auto-generated method stub
-		return null;
+	public Future<?> submit(Runnable task) {
+		return this.executor.submit(task);
 	}
 
 	@Override
-	public <T> Future<T> submit(Runnable arg0, T arg1) {
-		// TODO Auto-generated method stub
-		return null;
+	public <T> Future<T> submit(Runnable task, T result) {
+		return this.executor.submit(task, result);
+	}
+
+	/**
+	 * 内部线程任务。
+	 */
+	protected final class Dispatcher implements Runnable {
+		protected Dispatcher() {
+		}
+
+		@Override
+		public void run() {
+			do {
+				// 将任务添加到活跃队列
+				while (activeQueue.size() < windowSize && !taskQueue.isEmpty()) {
+					Runnable task = null;
+					synchronized (taskQueue) {
+						task = taskQueue.poll();
+					}
+					if (null != task) {
+						synchronized (activeQueue) {
+							activeQueue.offer(task);
+						}
+					}
+				}
+
+				// 启动线程执行活跃任务
+				for (int i = 0; i < activeQueue.size(); ++i) {
+					executor.execute(new SlidingWindowTask(that));
+				}
+
+				if (!taskQueue.isEmpty()) {
+					synchronized (monitor) {
+						try {
+							monitor.wait();
+						} catch (InterruptedException e) {
+							e.printStackTrace();
+						}
+					}
+				}
+			} while (!taskQueue.isEmpty());
+
+			dispatching = false;
+		}
 	}
 }

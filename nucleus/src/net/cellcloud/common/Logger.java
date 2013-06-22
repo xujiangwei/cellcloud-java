@@ -67,7 +67,7 @@ public final class Logger {
 
 	/** 记录异常。
 	 */
-	public static void log(Exception e, byte level) {
+	public static void log(Class<?> clazz, Exception exception, byte level) {
 		if (LogManager.getInstance().getLevel() > level) {
 			return;
 		}
@@ -77,8 +77,8 @@ public final class Logger {
 		try {
 			sw = new StringWriter();
 			pw = new PrintWriter(sw);
-			e.printStackTrace(pw);
-			LogManager.getInstance().log(level, "Catched exception: ", sw.toString());
+			exception.printStackTrace(pw);
+			LogManager.getInstance().log(level, clazz.getName() + " Catched exception: ", sw.toString());
 		} catch (Exception ie) {
 			// Nothing
 		} finally {

@@ -144,7 +144,7 @@ public final class FileExpressTask implements MessageHandler, Runnable {
 				return;
 			}
 		} catch (StorageException e) {
-			Logger.log(e, LogLevel.DEBUG);
+			Logger.log(FileExpressTask.class, e, LogLevel.DEBUG);
 			return;
 		}
 

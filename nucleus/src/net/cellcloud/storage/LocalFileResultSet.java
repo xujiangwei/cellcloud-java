@@ -228,7 +228,7 @@ public final class LocalFileResultSet implements ResultSet {
 			try {
 				System.arraycopy(this.buffer.data, (int)(offset - this.buffer.offset), fileData, 0, len);
 			} catch (Exception e) {
-				Logger.log(e, LogLevel.ERROR);
+				Logger.log(LocalFileResultSet.class, e, LogLevel.ERROR);
 			}
 			return fileData;
 		}

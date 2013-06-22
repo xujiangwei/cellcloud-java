@@ -284,7 +284,7 @@ public final class LocalFileStorage implements FileStorage {
 				buf.clear();
 				buf = null;
 			} catch (Exception e) {
-				Logger.log(e, LogLevel.ERROR);
+				Logger.log(LocalFileStorage.class, e, LogLevel.ERROR);
 				return false;
 			} finally {
 				try {

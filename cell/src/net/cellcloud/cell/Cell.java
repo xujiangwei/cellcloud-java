@@ -149,9 +149,9 @@ public final class Cell {
 			fos.flush();
 			fos.close();
 		} catch (FileNotFoundException e) {
-			Logger.log(e, LogLevel.ERROR);
+			Logger.log(Cell.class, e, LogLevel.ERROR);
 		} catch (IOException e) {
-			Logger.log(e, LogLevel.ERROR);
+			Logger.log(Cell.class, e, LogLevel.ERROR);
 		}
 
 		Thread daemon = new Thread() {
@@ -163,7 +163,7 @@ public final class Cell {
 					try {
 						Thread.sleep(5000);
 					} catch (InterruptedException e) {
-						Logger.log(e, LogLevel.WARNING);
+						Logger.log(Cell.class, e, LogLevel.WARNING);
 					}
 
 					Cell.tick();
@@ -183,7 +183,7 @@ public final class Cell {
 			fos.flush();
 			fos.close();
 		} catch (IOException e) {
-			Logger.log(e, LogLevel.ERROR);
+			Logger.log(Cell.class, e, LogLevel.ERROR);
 		}
 	}
 
@@ -235,7 +235,7 @@ public final class Cell {
 						try {
 							Thread.sleep(1000);
 						} catch (InterruptedException e) {
-							Logger.log(e, LogLevel.INFO);
+							Logger.log(Cell.class, e, LogLevel.INFO);
 						}
 
 						File testFile = new File("bin/tag");

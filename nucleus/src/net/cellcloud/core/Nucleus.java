@@ -168,7 +168,7 @@ public final class Nucleus {
 				try {
 					this.httpService = new HttpService(this.context);
 				} catch (SingletonException e) {
-					Logger.log(e, LogLevel.WARNING);
+					Logger.log(Nucleus.class, e, LogLevel.WARNING);
 				}
 			}
 
@@ -179,7 +179,7 @@ public final class Nucleus {
 				try {
 					this.talkService = new TalkService(this.context);
 				} catch (SingletonException e) {
-					Logger.log(e, LogLevel.ERROR);
+					Logger.log(Nucleus.class, e, LogLevel.ERROR);
 				}
 			}
 
@@ -222,7 +222,7 @@ public final class Nucleus {
 					// 创建 Talk Service
 					this.talkService = new TalkService(this.context);
 				} catch (SingletonException e) {
-					Logger.log(e, LogLevel.ERROR);
+					Logger.log(Nucleus.class, e, LogLevel.ERROR);
 				}
 			}
 
@@ -364,7 +364,7 @@ public final class Nucleus {
 			sandbox.sealOff(cellet.getFeature());
 			this.sandboxes.put(cellet.getFeature().getIdentifier(), sandbox);
 		} catch (CelletSandboxException e) {
-			Logger.log(e, LogLevel.ERROR);
+			Logger.log(Nucleus.class, e, LogLevel.ERROR);
 		}
 	}
 
@@ -411,7 +411,7 @@ public final class Nucleus {
 					}
 				}
 			} catch (IOException ioe) {
-				Logger.log(ioe, LogLevel.WARNING);
+				Logger.log(Nucleus.class, ioe, LogLevel.WARNING);
 				continue;
 			} finally {
 				try {
@@ -426,7 +426,7 @@ public final class Nucleus {
 			try {
 				url = new URL(file.toURI().toURL().toString());
 			} catch (MalformedURLException e) {
-				Logger.log(e, LogLevel.WARNING);
+				Logger.log(Nucleus.class, e, LogLevel.WARNING);
 				continue;
 			}
 
@@ -450,7 +450,7 @@ public final class Nucleus {
 							classes.add(clazz);
 						}
 					} catch (ClassNotFoundException e) {
-						Logger.log(e, LogLevel.ERROR);
+						Logger.log(Nucleus.class, e, LogLevel.ERROR);
 					}
 				}
 
@@ -462,10 +462,10 @@ public final class Nucleus {
 						// 存入列表
 						this.cellets.put(cellet.getFeature().getIdentifier(), cellet);
 					} catch (InstantiationException e) {
-						Logger.log(e, LogLevel.ERROR);
+						Logger.log(Nucleus.class, e, LogLevel.ERROR);
 						continue;
 					} catch (IllegalAccessException e) {
-						Logger.log(e, LogLevel.ERROR);
+						Logger.log(Nucleus.class, e, LogLevel.ERROR);
 						continue;
 					}
 				}
@@ -474,7 +474,7 @@ public final class Nucleus {
 				try {
 					loader.close();
 				} catch (Exception e) {
-					Logger.log(e, LogLevel.ERROR);
+					Logger.log(Nucleus.class, e, LogLevel.ERROR);
 				}
 			}
 		}

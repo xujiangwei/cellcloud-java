@@ -150,7 +150,7 @@ public final class ClusterConnector extends Observable implements MessageHandler
 					try {
 						monitor.wait(timeout);
 					} catch (InterruptedException e) {
-						Logger.log(e, LogLevel.ERROR);
+						Logger.log(ClusterConnector.class, e, LogLevel.ERROR);
 						this.destroyMonitor(lh);
 						return null;
 					}
@@ -193,7 +193,7 @@ public final class ClusterConnector extends Observable implements MessageHandler
 			try {
 				monitor.wait(timeout);
 			} catch (InterruptedException e) {
-				Logger.log(e, LogLevel.ERROR);
+				Logger.log(ClusterConnector.class, e, LogLevel.ERROR);
 				this.destroyMonitor(lh);
 				return null;
 			}

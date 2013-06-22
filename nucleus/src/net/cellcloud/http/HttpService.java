@@ -110,9 +110,9 @@ public final class HttpService implements Service {
 		try {
 			this.server.start();
 		} catch (InterruptedException e) {
-			Logger.log(e, LogLevel.ERROR);
+			Logger.log(HttpService.class, e, LogLevel.ERROR);
 		} catch (Exception e) {
-			Logger.log(e, LogLevel.ERROR);
+			Logger.log(HttpService.class, e, LogLevel.ERROR);
 		}
 
 		return true;
@@ -123,7 +123,7 @@ public final class HttpService implements Service {
 		try {
 			this.server.stop();
 		} catch (Exception e) {
-			Logger.log(e, LogLevel.WARNING);
+			Logger.log(HttpService.class, e, LogLevel.WARNING);
 		}
 	}
 

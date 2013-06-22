@@ -75,7 +75,7 @@ public class SQLiteStorage implements RDBStorage {
 			try {
 				this.db.close();
 			} catch (SqlJetException e) {
-				Logger.log(e, LogLevel.WARNING);
+				Logger.log(SQLiteStorage.class, e, LogLevel.WARNING);
 			}
 		}
 
@@ -88,7 +88,7 @@ public class SQLiteStorage implements RDBStorage {
 			this.db = SqlJetDb.open(dbFile, true);
 			this.db.getOptions().setAutovacuum(true);
 		} catch (SqlJetException e) {
-			Logger.log(e, LogLevel.WARNING);
+			Logger.log(SQLiteStorage.class, e, LogLevel.WARNING);
 			return false;
 		}
 
@@ -102,7 +102,7 @@ public class SQLiteStorage implements RDBStorage {
 			    }
 			}, SqlJetTransactionMode.WRITE);
 		} catch (SqlJetException e) {
-			Logger.log(e, LogLevel.WARNING);
+			Logger.log(SQLiteStorage.class, e, LogLevel.WARNING);
 			return false;
 		}
 
