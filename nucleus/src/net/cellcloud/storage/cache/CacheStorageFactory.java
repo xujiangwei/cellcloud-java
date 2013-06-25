@@ -2,7 +2,7 @@
 -----------------------------------------------------------------------------
 This source file is part of Cell Cloud.
 
-Copyright (c) 2009-2012 Cell Cloud Team (www.cellcloud.net)
+Copyright (c) 2009-2013 Cell Cloud Team (www.cellcloud.net)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -24,60 +24,29 @@ THE SOFTWARE.
 -----------------------------------------------------------------------------
 */
 
-package net.cellcloud.storage;
+package net.cellcloud.storage.cache;
 
-import net.cellcloud.util.Properties;
+import net.cellcloud.storage.Storage;
+import net.cellcloud.storage.StorageFactory;
+import net.cellcloud.storage.StorageMetaData;
 
-/** 缓存文件存储器。
+/** 缓存文件工厂。
  * 
  * @author Jiangwei Xu
  */
-public class CacheFileStorage implements FileStorage {
+public final class CacheStorageFactory extends StorageFactory {
 
-	public final static String TYPE_NAME = "CacheFileStorage";
-
-	private String name;
-
-	protected CacheFileStorage(String name) {
-		this.name = name;
+	public CacheStorageFactory() {
+		super(new StorageMetaData(CacheStorage.TYPE_NAME, "Cache Storage"));
 	}
 
 	@Override
-	public String getName() {
-		return this.name;
+	public Storage create(String instanceName) {
+		return new CacheStorage(instanceName);
 	}
 
 	@Override
-	public String getTypeName() {
-		return CacheFileStorage.TYPE_NAME;
-	}
-
-	@Override
-	public boolean open(Properties properties) {
-		return false;
-	}
-
-	@Override
-	public void close() {
-	}
-
-	@Override
-	public ResultSet store(String statement) {
-		return null;
-	}
-
-	@Override
-	public ResultSet store(Schema schema) {
-		return null;
-	}
-
-	@Override
-	public String createReadStatement(String file) {
-		return null;
-	}
-
-	@Override
-	public String createWriteStatement(String file) {
-		return null;
+	public void destroy(Storage instance) {
+		instance = null;
 	}
 }

@@ -2,7 +2,7 @@
 -----------------------------------------------------------------------------
 This source file is part of Cell Cloud.
 
-Copyright (c) 2009-2013 Cell Cloud Team (www.cellcloud.net)
+Copyright (c) 2009-2012 Cell Cloud Team (www.cellcloud.net)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -24,28 +24,31 @@ THE SOFTWARE.
 -----------------------------------------------------------------------------
 */
 
-package net.cellcloud.storage;
+package net.cellcloud.storage.file;
 
-import net.cellcloud.util.Properties;
-import net.cellcloud.util.StringProperty;
+import net.cellcloud.storage.Storage;
+import net.cellcloud.storage.StorageFactory;
+import net.cellcloud.storage.StorageMetaData;
 
-/** SQLite 存储器属性配置。
+/** 本地文件存储工厂。
  * 
  * @author Jiangwei Xu
  */
-public final class SQLiteStorageProperties extends Properties {
+public final class LocalFileStorageFactory extends StorageFactory {
 
-	/// 数据文件名
-	protected final static String DB_FILE = "db_file";
-
-	/** 指定数据库文件创建属性集。
+	/** 构造函数。
 	 */
-	public SQLiteStorageProperties(String dbFile) {
-		StringProperty file = new StringProperty(DB_FILE, dbFile);
-		this.addProperty(file);
+	public LocalFileStorageFactory() {
+		super(new StorageMetaData(LocalFileStorage.TYPE_NAME, "Local File Storage"));
 	}
 
-	public String getDBFile() {
-		return (String)this.getProperty(DB_FILE).getValue();
+	@Override
+	public Storage create(String instanceName) {
+		return new LocalFileStorage(instanceName);
+	}
+
+	@Override
+	public void destroy(Storage instance) {
+		instance = null;
 	}
 }

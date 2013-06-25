@@ -2,7 +2,7 @@
 -----------------------------------------------------------------------------
 This source file is part of Cell Cloud.
 
-Copyright (c) 2009-2012 Cell Cloud Team (www.cellcloud.net)
+Copyright (c) 2009-2013 Cell Cloud Team (www.cellcloud.net)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -27,6 +27,9 @@ THE SOFTWARE.
 package net.cellcloud.storage;
 
 import java.util.concurrent.ConcurrentHashMap;
+
+import net.cellcloud.storage.file.LocalFileStorageFactory;
+import net.cellcloud.storage.mongodb.MongoDBStorageFactory;
 
 /** 存储器枚举。
  * 
@@ -97,6 +100,6 @@ public final class StorageEnumerator {
 
 	private void buildIn() {
 		this.addFactory(new LocalFileStorageFactory());
-		this.addFactory(new MongoStorageFactory());
+		this.addFactory(new MongoDBStorageFactory());
 	}
 }

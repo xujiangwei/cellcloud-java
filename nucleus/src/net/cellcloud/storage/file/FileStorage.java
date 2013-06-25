@@ -24,59 +24,32 @@ THE SOFTWARE.
 -----------------------------------------------------------------------------
 */
 
-package net.cellcloud.storage;
+package net.cellcloud.storage.file;
 
-import net.cellcloud.util.IntegerProperty;
-import net.cellcloud.util.Properties;
-import net.cellcloud.util.StringProperty;
+import net.cellcloud.storage.Storage;
 
-/** 缓存文件属性。
+/** 文件存储器接口。
  * 
  * @author Jiangwei Xu
  */
-public final class CacheFileProperties extends Properties {
+public interface FileStorage extends Storage {
 
-	/// 模式
-	public final static String MODE = "mode";
-	/// 地址
-	public final static String HOST = "host";
-	/// 端口
-	public final static String PORT = "port";
+	/// 文件名标签
+	public final static String LABEL_STRING_FILENAME = "filename";
+	/// 文件是否存在标签
+	public final static String LABEL_BOOL_EXIST = "exist";
+	/// 文件大小标签
+	public final static String LABEL_LONG_SIZE = "size";
+	/// 文件最后修改时间
+	public final static String LABEL_LONG_LASTMODIFIED = "lastModified";
+	/// 文件数据标签
+	public final static String LABEL_RAW_DATA = "data";
 
-	/// 守护服务模式
-	public final static int MODE_DAEMON = 1;
-	/// 客户端模式
-	public final static int MODE_CLIENT = 9;
-
-	public CacheFileProperties() {
-	}
-
-	/** 设置模式。
+	/** 创建读语句。
 	 */
-	public void setMode(int mode) {
-		if (this.hasProperty(MODE)) {
-			this.updateProperty(new IntegerProperty(MODE, mode));
-		}
-		else {
-			this.addProperty(new IntegerProperty(MODE, mode));
-		}
-	}
+	public String createReadStatement(final String file);
 
-	/** 设置地址。
+	/** 创建写语句。
 	 */
-	public void setAddress(String host, int port) {
-		if (this.hasProperty(HOST)) {
-			this.updateProperty(new StringProperty(HOST, host));
-		}
-		else {
-			this.addProperty(new StringProperty(HOST, host));
-		}
-
-		if (this.hasProperty(PORT)) {
-			this.updateProperty(new IntegerProperty(PORT, port));
-		}
-		else {
-			this.addProperty(new IntegerProperty(PORT, port));
-		}
-	}
+	public String createWriteStatement(final String file);
 }

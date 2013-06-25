@@ -2,7 +2,7 @@
 -----------------------------------------------------------------------------
 This source file is part of Cell Cloud.
 
-Copyright (c) 2009-2012 Cell Cloud Team (www.cellcloud.net)
+Copyright (c) 2009-2013 Cell Cloud Team (www.cellcloud.net)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -24,61 +24,16 @@ THE SOFTWARE.
 -----------------------------------------------------------------------------
 */
 
-package net.cellcloud.storage;
-
-import java.util.List;
+package net.cellcloud.storage.cache;
 
 import net.cellcloud.util.Properties;
-import com.mongodb.ServerAddress;
 
-/** MongoDB 存储器。
+/** 缓存文件属性。
  * 
  * @author Jiangwei Xu
  */
-public final class MongoStorage implements Storage {
+public final class CacheProperties extends Properties {
 
-	public final static String TYPE_NAME = "MongoStorage";
-
-	private String name;
-
-	protected MongoStorage(String name) {
-		this.name = name;
-	}
-
-	@Override
-	public String getName() {
-		return this.name;
-	}
-
-	@Override
-	public String getTypeName() {
-		return MongoStorage.TYPE_NAME;
-	}
-
-	@SuppressWarnings("unchecked")
-	@Override
-	public boolean open(Properties properties) {
-		if (properties.hasProperty(MongoProperties.SERVER_ADDRESS)) {
-			List<ServerAddress> list = (List<ServerAddress>) properties.getProperty(MongoProperties.SERVER_ADDRESS).getValue();
-			for (ServerAddress addr : list) {
-				addr.getHost();
-			}
-		}
-		return false;
-	}
-
-	@Override
-	public void close() {
-
-	}
-
-	@Override
-	public ResultSet store(String statement) {
-		return null;
-	}
-
-	@Override
-	public ResultSet store(Schema schema) {
-		return null;
+	public CacheProperties() {
 	}
 }

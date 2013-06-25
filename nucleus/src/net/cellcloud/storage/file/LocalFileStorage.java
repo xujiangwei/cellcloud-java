@@ -24,7 +24,7 @@ THE SOFTWARE.
 -----------------------------------------------------------------------------
 */
 
-package net.cellcloud.storage;
+package net.cellcloud.storage.file;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -39,6 +39,8 @@ import java.util.Iterator;
 import net.cellcloud.common.LogLevel;
 import net.cellcloud.common.Logger;
 import net.cellcloud.exception.StorageException;
+import net.cellcloud.storage.ResultSet;
+import net.cellcloud.storage.Schema;
 import net.cellcloud.util.Properties;
 
 /** 本地文件存储器。

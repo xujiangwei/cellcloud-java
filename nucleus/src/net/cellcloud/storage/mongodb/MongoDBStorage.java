@@ -2,7 +2,7 @@
 -----------------------------------------------------------------------------
 This source file is part of Cell Cloud.
 
-Copyright (c) 2009-2012 Cell Cloud Team (www.cellcloud.net)
+Copyright (c) 2009-2013 Cell Cloud Team (www.cellcloud.net)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -24,14 +24,64 @@ THE SOFTWARE.
 -----------------------------------------------------------------------------
 */
 
-package net.cellcloud.storage;
+package net.cellcloud.storage.mongodb;
 
-/** 缓存文件定位符。
+import java.util.List;
+
+import net.cellcloud.storage.ResultSet;
+import net.cellcloud.storage.Schema;
+import net.cellcloud.storage.Storage;
+import net.cellcloud.util.Properties;
+import com.mongodb.ServerAddress;
+
+/** MongoDB 存储器。
  * 
  * @author Jiangwei Xu
  */
-public final class CacheFileLocator {
+public final class MongoDBStorage implements Storage {
 
-	public CacheFileLocator() {
+	public final static String TYPE_NAME = "MongoDBStorage";
+
+	private String name;
+
+	protected MongoDBStorage(String name) {
+		this.name = name;
+	}
+
+	@Override
+	public String getName() {
+		return this.name;
+	}
+
+	@Override
+	public String getTypeName() {
+		return MongoDBStorage.TYPE_NAME;
+	}
+
+	@SuppressWarnings("unchecked")
+	@Override
+	public boolean open(Properties properties) {
+		if (properties.hasProperty(MongoDBProperties.SERVER_ADDRESS)) {
+			List<ServerAddress> list = (List<ServerAddress>) properties.getProperty(MongoDBProperties.SERVER_ADDRESS).getValue();
+			for (ServerAddress addr : list) {
+				addr.getHost();
+			}
+		}
+		return false;
+	}
+
+	@Override
+	public void close() {
+
+	}
+
+	@Override
+	public ResultSet store(String statement) {
+		return null;
+	}
+
+	@Override
+	public ResultSet store(Schema schema) {
+		return null;
 	}
 }

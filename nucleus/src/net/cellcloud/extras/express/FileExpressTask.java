@@ -34,10 +34,10 @@ import net.cellcloud.common.NonblockingConnector;
 import net.cellcloud.common.Packet;
 import net.cellcloud.common.Session;
 import net.cellcloud.exception.StorageException;
-import net.cellcloud.storage.LocalFileProperties;
-import net.cellcloud.storage.LocalFileStorage;
 import net.cellcloud.storage.ResultSet;
 import net.cellcloud.storage.StorageEnumerator;
+import net.cellcloud.storage.file.LocalFileProperties;
+import net.cellcloud.storage.file.LocalFileStorage;
 import net.cellcloud.util.Utils;
 
 /** 文件传输任务类。

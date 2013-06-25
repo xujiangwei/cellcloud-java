@@ -24,13 +24,16 @@ THE SOFTWARE.
 -----------------------------------------------------------------------------
 */
 
-package net.cellcloud.storage;
+package net.cellcloud.storage.sqlite;
 
 import java.io.File;
 
 import net.cellcloud.common.LogLevel;
 import net.cellcloud.common.Logger;
 import net.cellcloud.exception.StorageException;
+import net.cellcloud.storage.ResultSet;
+import net.cellcloud.storage.Schema;
+import net.cellcloud.storage.Storage;
 import net.cellcloud.util.Properties;
 
 import org.tmatesoft.sqljet.core.SqlJetException;
@@ -42,7 +45,7 @@ import org.tmatesoft.sqljet.core.table.SqlJetDb;
  * 
  * @author Jiangwei Xu
  */
-public class SQLiteStorage implements RDBStorage {
+public class SQLiteStorage implements Storage {
 
 	public final static String TYPE_NAME = "SQLiteStorage";
 

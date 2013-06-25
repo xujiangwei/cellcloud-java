@@ -24,58 +24,18 @@ THE SOFTWARE.
 -----------------------------------------------------------------------------
 */
 
-package net.cellcloud.storage;
+package net.cellcloud.storage.file;
 
-import java.net.UnknownHostException;
-import java.util.ArrayList;
-import java.util.List;
-
-import net.cellcloud.util.ListProperty;
 import net.cellcloud.util.Properties;
 
-import com.mongodb.ServerAddress;
-
-/** MongoDB Storage 配置属性。
+/** 本地文件存储器属性集。
  * 
  * @author Jiangwei Xu
  */
-public class MongoProperties extends Properties {
+public final class LocalFileProperties extends Properties {
 
-	public final static String SERVER_ADDRESS = "ServerAddress";
+	public final static LocalFileProperties DEFAULT = new LocalFileProperties();
 
-	public MongoProperties() {
-	}
-
-	/** 添加服务器地址信息。
-	 */
-	@SuppressWarnings("unchecked")
-	public void addServerAddress(String host, int port) {
-		List<ServerAddress> list = null;
-		if (this.hasProperty(SERVER_ADDRESS)) {
-			list = ((ListProperty<ServerAddress>)this.getProperty(SERVER_ADDRESS)).getValueAsList();
-		}
-		else {
-			list = new ArrayList<ServerAddress>();
-			ListProperty<ServerAddress> prop = new ListProperty<ServerAddress>(SERVER_ADDRESS, list);
-			this.addProperty(prop);
-		}
-
-		try {
-			list.add(new ServerAddress(host, port));
-		} catch (UnknownHostException e) {
-			e.printStackTrace();
-		}
-	}
-
-	/** 返回服务器地址列表。
-	 */
-	@SuppressWarnings("unchecked")
-	public List<ServerAddress> getServerAddressList() {
-		if (this.hasProperty(SERVER_ADDRESS)) {
-			return ((ListProperty<ServerAddress>)this.getProperty(SERVER_ADDRESS)).getValueAsList();
-		}
-		else {
-			return null;
-		}
+	public LocalFileProperties() {
 	}
 }

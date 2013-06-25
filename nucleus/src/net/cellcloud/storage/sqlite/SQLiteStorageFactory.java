@@ -2,7 +2,7 @@
 -----------------------------------------------------------------------------
 This source file is part of Cell Cloud.
 
-Copyright (c) 2009-2012 Cell Cloud Team (www.cellcloud.net)
+Copyright (c) 2009-2013 Cell Cloud Team (www.cellcloud.net)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -24,22 +24,31 @@ THE SOFTWARE.
 -----------------------------------------------------------------------------
 */
 
-package net.cellcloud.storage;
+package net.cellcloud.storage.sqlite;
 
-/** 存储管理器。
+import net.cellcloud.storage.Storage;
+import net.cellcloud.storage.StorageFactory;
+import net.cellcloud.storage.StorageMetaData;
+
+/** SQLite 存储器工厂。
  * 
  * @author Jiangwei Xu
  */
-public final class StorageMaster {
+public final class SQLiteStorageFactory extends StorageFactory {
 
-	private final static StorageMaster instance = new StorageMaster();
-
-	private StorageMaster() {
+	/** 默认构造函数。
+	 */
+	public SQLiteStorageFactory() {
+		super(new StorageMetaData(SQLiteStorage.TYPE_NAME, "SQLite Storage"));
 	}
 
-	/** 返回单例。
-	 */
-	public synchronized static StorageMaster getInstance() {
-		return StorageMaster.instance;
+	@Override
+	public Storage create(String instanceName) {
+		return new SQLiteStorage(instanceName);
+	}
+
+	@Override
+	public void destroy(Storage instance) {
+		instance = null;
 	}
 }

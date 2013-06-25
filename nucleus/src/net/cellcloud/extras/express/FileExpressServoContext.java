@@ -32,8 +32,8 @@ import java.util.concurrent.ConcurrentHashMap;
 import net.cellcloud.common.LogLevel;
 import net.cellcloud.common.Logger;
 import net.cellcloud.exception.StorageException;
-import net.cellcloud.storage.FileStorage;
 import net.cellcloud.storage.ResultSet;
+import net.cellcloud.storage.file.FileStorage;
 
 /** 文件快递上下文。
  * 

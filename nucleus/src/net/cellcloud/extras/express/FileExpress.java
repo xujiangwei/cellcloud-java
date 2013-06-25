@@ -43,8 +43,8 @@ import net.cellcloud.common.NonblockingAcceptor;
 import net.cellcloud.common.Packet;
 import net.cellcloud.common.Session;
 import net.cellcloud.exception.StorageException;
-import net.cellcloud.storage.FileStorage;
 import net.cellcloud.storage.ResultSet;
+import net.cellcloud.storage.file.FileStorage;
 import net.cellcloud.util.Utils;
 
 /** 文件传输服务类。

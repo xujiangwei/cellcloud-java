@@ -2,7 +2,7 @@
 -----------------------------------------------------------------------------
 This source file is part of Cell Cloud.
 
-Copyright (c) 2009-2012 Cell Cloud Team (www.cellcloud.net)
+Copyright (c) 2009-2013 Cell Cloud Team (www.cellcloud.net)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -24,12 +24,30 @@ THE SOFTWARE.
 -----------------------------------------------------------------------------
 */
 
-package net.cellcloud.storage;
+package net.cellcloud.storage.mongodb;
 
-/** 存储驱动器。
+import net.cellcloud.storage.Storage;
+import net.cellcloud.storage.StorageFactory;
+import net.cellcloud.storage.StorageMetaData;
+
+
+/** MongoDB 存储器工厂。
  * 
  * @author Jiangwei Xu
  */
-public interface StorageDriver {
+public final class MongoDBStorageFactory extends StorageFactory {
 
+	public MongoDBStorageFactory() {
+		super(new StorageMetaData(MongoDBStorage.TYPE_NAME, "MongoDB Storage"));
+	}
+
+	@Override
+	public Storage create(String instanceName) {
+		return new MongoDBStorage(instanceName);
+	}
+
+	@Override
+	public void destroy(Storage instance) {
+		instance = null;
+	}
 }

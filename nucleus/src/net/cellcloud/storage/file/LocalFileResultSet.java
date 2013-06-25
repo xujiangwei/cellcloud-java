@@ -24,13 +24,14 @@ THE SOFTWARE.
 -----------------------------------------------------------------------------
 */
 
-package net.cellcloud.storage;
+package net.cellcloud.storage.file;
 
 import net.cellcloud.common.LogLevel;
 import net.cellcloud.common.Logger;
 import net.cellcloud.exception.StorageException;
-import net.cellcloud.storage.LocalFileStorage.ChunkBuffer;
-import net.cellcloud.storage.LocalFileStorage.FileWrapper;
+import net.cellcloud.storage.ResultSet;
+import net.cellcloud.storage.file.LocalFileStorage.ChunkBuffer;
+import net.cellcloud.storage.file.LocalFileStorage.FileWrapper;
 
 /** 本地文件存储器结果集。
  * 
