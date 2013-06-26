@@ -24,12 +24,14 @@ THE SOFTWARE.
 -----------------------------------------------------------------------------
 */
 
-package net.cellcloud.core.memory;
+package net.cellcloud.extras.memory;
 
-public class ScopeMemory extends MemoryArea {
+/**
+ * TODO 实现
+ * @author Jiangwei Xu
+ */
+public class ImmortalMemory extends MemoryArea {
 
-	public ScopeMemory() {
-		// TODO Auto-generated constructor stub
+	public ImmortalMemory() {
 	}
-
 }

@@ -47,5 +47,4 @@ public enum LiteralBase {
 	/** 布尔型。
 	 */
 	BOOL
-
 }

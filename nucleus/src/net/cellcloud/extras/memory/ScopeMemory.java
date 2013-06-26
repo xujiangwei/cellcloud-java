@@ -24,12 +24,14 @@ THE SOFTWARE.
 -----------------------------------------------------------------------------
 */
 
-package net.cellcloud.core.memory;
+package net.cellcloud.extras.memory;
 
-/** 
+/**
+ * TODO 实现
+ * @author Jiangwei Xu
  */
-public abstract class MemoryArea {
+public class ScopeMemory extends MemoryArea {
 
-	public MemoryArea() {
+	public ScopeMemory() {
 	}
 }

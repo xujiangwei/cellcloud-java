@@ -24,46 +24,26 @@ THE SOFTWARE.
 -----------------------------------------------------------------------------
 */
 
-package net.cellcloud.extras.adapter.shrmem;
+package net.cellcloud.extras.memory.attribute;
 
-import java.util.LinkedList;
-
-import net.cellcloud.adapter.RelationNucleusAdapter;
-import net.cellcloud.util.BTree;
-
-/** 共享内存适配器。
+/**
+ * 属性。
  * 
  * @author Jiangwei Xu
  */
-public final class SharedMemoryAdapter extends RelationNucleusAdapter {
+public abstract class Attribute {
 
-	private static final SharedMemoryAdapter instance = new SharedMemoryAdapter();
+	private String name;
 
-	private BTree<Long, MemoryVirtualNode> nodes;
-	private LinkedList<MemoryVirtualNode> nodeRing;
-
-	private SharedMemoryAdapter() {
-		super("SharedMemoryAdapter");
-		this.nodes = new BTree<Long, MemoryVirtualNode>();
-		this.nodeRing = new LinkedList<MemoryVirtualNode>();
+	public Attribute(String name) {
+		this.name = name;
 	}
 
-	public synchronized static SharedMemoryAdapter getInstance() {
-		return SharedMemoryAdapter.instance;
-	}
-
-	@Override
-	public void setup() {
-	}
-
-	@Override
-	public void teardown() {
-	}
-
-	/** TODO
+	/**
+	 * 返回属性名。
+	 * @return
 	 */
-	public void addNode(MemoryVirtualNode node) {
-		this.nodes.put(node.hashCode, node);
-		this.nodeRing.add(node);
+	public String getName() {
+		return this.name;
 	}
 }

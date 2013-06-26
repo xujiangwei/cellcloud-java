@@ -92,8 +92,8 @@ public final class ClusterNetwork extends Observable implements Service, Message
 		// 启动接收器
 		this.acceptor = new NonblockingAcceptor();
 		this.acceptor.setHandler(this);
-		this.acceptor.setMaxConnectNum(1024);
-		this.acceptor.setWorkerNum(2);
+		this.acceptor.setMaxConnectNum(1000);
+		this.acceptor.setWorkerNum(4);
 		if (!this.acceptor.bind(new InetSocketAddress(this.hostname, this.port))) {
 			Logger.e(this.getClass(), new StringBuilder("Cluster network can not bind socket on ")
 					.append(this.hostname).append(":").append(this.port).toString());

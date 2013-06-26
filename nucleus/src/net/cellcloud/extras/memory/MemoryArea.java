@@ -24,12 +24,35 @@ THE SOFTWARE.
 -----------------------------------------------------------------------------
 */
 
-package net.cellcloud.core.memory;
+package net.cellcloud.extras.memory;
 
-public class ImmortalMemory extends MemoryArea {
+import net.cellcloud.extras.memory.attribute.Attribute;
+import net.cellcloud.util.Utils;
 
-	public ImmortalMemory() {
-		// TODO Auto-generated constructor stub
+/** 内存管理区域。
+ * 
+ * @author Jiangwei Xu
+ */
+public abstract class MemoryArea implements Externalizable {
+
+	private long guid;
+
+	public MemoryArea() {
+		this.guid = Math.abs(Utils.randomLong());
 	}
 
+	@Override
+	public long getGUID() {
+		return this.guid;
+	}
+
+	@Override
+	public void setAttribute(Attribute attribute) {
+		
+	}
+
+	@Override
+	public Attribute getAttribute(String name) {
+		return null;
+	}
 }

@@ -2,7 +2,7 @@
 -----------------------------------------------------------------------------
 This source file is part of Cell Cloud.
 
-Copyright (c) 2009-2012 Cell Cloud Team (www.cellcloud.net)
+Copyright (c) 2009-2013 Cell Cloud Team (www.cellcloud.net)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -27,7 +27,7 @@ THE SOFTWARE.
 package net.cellcloud.util;
 
 import java.util.Collection;
-import java.util.HashMap;
+import java.util.concurrent.ConcurrentHashMap;
 
 /** 属性集。
  * 
@@ -35,10 +35,10 @@ import java.util.HashMap;
  */
 public class Properties {
 
-	private HashMap<String, PropertyReference> properties;
+	private ConcurrentHashMap<String, PropertyReference> properties;
 
 	public Properties() {
-		this.properties = new HashMap<String, PropertyReference>();
+		this.properties = new ConcurrentHashMap<String, PropertyReference>();
 	}
 
 	/** 添加属性。

@@ -24,15 +24,31 @@ THE SOFTWARE.
 -----------------------------------------------------------------------------
 */
 
-package net.cellcloud.extras.adapter.shrmem;
+package net.cellcloud.extras.memory;
 
-/** 可共享对象。
+import net.cellcloud.extras.memory.attribute.Attribute;
+
+/** 可外现化接口。
  * 
  * @author Jiangwei Xu
  */
-public interface SharedObject {
+public interface Externalizable {
 
-	/** 返回 Hash 编码值。
+	/**
+	 * 返回 GUID 。
 	 */
-	public long getHashCode();
+	public long getGUID();
+
+	/**
+	 * 设置属性。
+	 * @param attribute
+	 */
+	public void setAttribute(Attribute attribute);
+
+	/**
+	 * 返回属性。
+	 * @param name
+	 * @return
+	 */
+	public Attribute getAttribute(String name);
 }

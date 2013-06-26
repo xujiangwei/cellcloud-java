@@ -24,14 +24,16 @@ THE SOFTWARE.
 -----------------------------------------------------------------------------
 */
 
-package net.cellcloud.extras.adapter.shrmem;
+package net.cellcloud.extras.memory;
 
 /** 共享内存。
  * 
  * @author Jiangwei Xu
  */
-public final class SharedMemory {
+public class SharedMemory extends MemoryArea {
 
 	protected SharedMemory() {
 	}
+
+	
 }

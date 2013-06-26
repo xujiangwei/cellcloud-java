@@ -51,10 +51,4 @@ public abstract class RelationNucleusAdapter implements Adapter {
 	public String getNucleusTag() {
 		return Nucleus.getInstance().getTagAsString();
 	}
-
-	/** 申请数据通道。
-	 */
-
-	/** 向集群内广播数据。
-	 */
 }
