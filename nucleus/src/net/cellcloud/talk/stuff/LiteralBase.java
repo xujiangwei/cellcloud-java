@@ -2,7 +2,7 @@
 -----------------------------------------------------------------------------
 This source file is part of Cell Cloud.
 
-Copyright (c) 2009-2012 Cell Cloud Team (www.cellcloud.net)
+Copyright (c) 2009-2013 Cell Cloud Team (www.cellcloud.net)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -39,12 +39,24 @@ public enum LiteralBase {
 	/** 整数型。
 	 */
 	INT,
-	
+
 	/** 长整数型。
 	 */
 	LONG,
-	
+
+	/** 浮点类型。
+	 */
+	FLOAT,
+
 	/** 布尔型。
 	 */
-	BOOL
+	BOOL,
+
+	/** JSON 类型。
+	 */
+	JSON,
+
+	/** XML 类型。
+	 */
+	XML
 }

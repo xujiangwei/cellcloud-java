@@ -68,14 +68,20 @@ public final class PrimitiveSerializer {
 	private static final String LITERALBASE_UINT = "uint";
 	private static final String LITERALBASE_LONG = "long";
 	private static final String LITERALBASE_ULONG = "ulong";
+	private static final String LITERALBASE_FLOAT = "float";
 	private static final String LITERALBASE_BOOL = "bool";
+	private static final String LITERALBASE_JSON = "json";
+	private static final String LITERALBASE_XML = "xml";
 
 	private static final byte[] LITERALBASE_STRING_BYTES = LITERALBASE_STRING.getBytes();
 	private static final byte[] LITERALBASE_INT_BYTES = LITERALBASE_INT.getBytes();
 	private static final byte[] LITERALBASE_UINT_BYTES = LITERALBASE_UINT.getBytes();
 	private static final byte[] LITERALBASE_LONG_BYTES = LITERALBASE_LONG.getBytes();
 	private static final byte[] LITERALBASE_ULONG_BYTES = LITERALBASE_ULONG.getBytes();
+	private static final byte[] LITERALBASE_FLOAT_BYTES = LITERALBASE_FLOAT.getBytes();
 	private static final byte[] LITERALBASE_BOOL_BYTES = LITERALBASE_BOOL.getBytes();
+	private static final byte[] LITERALBASE_JSON_BYTES = LITERALBASE_JSON.getBytes();
+	private static final byte[] LITERALBASE_XML_BYTES = LITERALBASE_XML.getBytes();
 
 	private static final String STUFFTYPE_SUBJECT = "sub";
 	private static final String STUFFTYPE_PREDICATE = "pre";
@@ -290,8 +296,7 @@ public final class PrimitiveSerializer {
 							buf.put((byte)next);
 							++length;
 						}
-						else
-						{
+						else {
 							buf.put((byte)read);
 							buf.put((byte)next);
 							length += 2;
@@ -340,7 +345,7 @@ public final class PrimitiveSerializer {
 						buf.get(literal, 0, length);
 						buf.clear();
 
-						// 添加语素
+						// 注入语素
 						injectStuff(primitive, type, value, literal);
 
 						phase = PARSE_PHASE_DIALECT;
@@ -487,8 +492,17 @@ public final class PrimitiveSerializer {
 		else if (literal == LiteralBase.LONG) {
 			return LITERALBASE_LONG_BYTES;
 		}
+		else if (literal == LiteralBase.FLOAT) {
+			return LITERALBASE_FLOAT_BYTES;
+		}
 		else if (literal == LiteralBase.BOOL) {
 			return LITERALBASE_BOOL_BYTES;
+		}
+		else if (literal == LiteralBase.JSON) {
+			return LITERALBASE_JSON_BYTES;
+		}
+		else if (literal == LiteralBase.XML) {
+			return LITERALBASE_XML_BYTES;
 		}
 		else {
 			return null;
@@ -501,6 +515,12 @@ public final class PrimitiveSerializer {
 		if (literal[0] == LITERALBASE_STRING_BYTES[0] && literal[1] == LITERALBASE_STRING_BYTES[1]) {
 			return LiteralBase.STRING;
 		}
+		else if (literal[0] == LITERALBASE_JSON_BYTES[0] && literal[1] == LITERALBASE_JSON_BYTES[1]) {
+			return LiteralBase.JSON;
+		}
+		else if (literal[0] == LITERALBASE_XML_BYTES[0] && literal[1] == LITERALBASE_XML_BYTES[1]) {
+			return LiteralBase.XML;
+		}
 		else if ((literal[0] == LITERALBASE_INT_BYTES[0] && literal[1] == LITERALBASE_INT_BYTES[1])
 				|| (literal[0] == LITERALBASE_UINT_BYTES[0] && literal[1] == LITERALBASE_UINT_BYTES[1])) {
 			return LiteralBase.INT;
@@ -511,6 +531,9 @@ public final class PrimitiveSerializer {
 		}
 		else if (literal[0] == LITERALBASE_BOOL_BYTES[0] && literal[1] == LITERALBASE_BOOL_BYTES[1]) {
 			return LiteralBase.BOOL;
+		}
+		else if (literal[0] == LITERALBASE_FLOAT_BYTES[0] && literal[1] == LITERALBASE_FLOAT_BYTES[1]) {
+			return LiteralBase.FLOAT;
 		}
 		else {
 			return null;

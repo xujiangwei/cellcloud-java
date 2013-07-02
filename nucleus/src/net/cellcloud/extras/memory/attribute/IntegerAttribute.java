@@ -27,23 +27,13 @@ THE SOFTWARE.
 package net.cellcloud.extras.memory.attribute;
 
 /**
- * 内存对象属性描述。
- * 
+ * 整数类型属性。
+ *
  * @author Jiangwei Xu
  */
-public abstract class Attribute {
+public class IntegerAttribute extends Attribute {
 
-	private String name;
-
-	public Attribute(String name) {
-		this.name = name;
-	}
-
-	/**
-	 * 返回属性名。
-	 * @return
-	 */
-	public String getName() {
-		return this.name;
+	public IntegerAttribute(String name) {
+		super(name);
 	}
 }

@@ -2,7 +2,7 @@
 -----------------------------------------------------------------------------
 This source file is part of Cell Cloud.
 
-Copyright (c) 2009-2012 Cell Cloud Team (www.cellcloud.net)
+Copyright (c) 2009-2013 Cell Cloud Team (www.cellcloud.net)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -26,25 +26,52 @@ THE SOFTWARE.
 
 package net.cellcloud.talk.stuff;
 
+import javax.xml.transform.TransformerException;
+
+import org.json.JSONObject;
+import org.w3c.dom.Document;
+
 /** 状语语素。
  * 
  * @author Jiangwei Xu
  */
 public final class AdverbialStuff extends Stuff {
 
+	/** 构造函数。 */
 	public AdverbialStuff(String value) {
 		super(StuffType.ADVERBIAL, value);
 	}
 
+	/** 构造函数。 */
 	public AdverbialStuff(int value) {
 		super(StuffType.ADVERBIAL, value);
 	}
 
+	/** 构造函数。 */
 	public AdverbialStuff(long value) {
 		super(StuffType.ADVERBIAL, value);
 	}
 
+	/** 构造函数。 */
+	public AdverbialStuff(float value) {
+		super(StuffType.ADVERBIAL, value);
+	}
+
+	/** 构造函数。 */
 	public AdverbialStuff(boolean value) {
+		super(StuffType.ADVERBIAL, value);
+	}
+
+	/** 构造函数。 */
+	public AdverbialStuff(JSONObject value) {
+		super(StuffType.ADVERBIAL, value);
+	}
+
+	/** 构造函数。 
+	 * @throws TransformerException 
+	 * @throws TransformerConfigurationException
+	 */
+	public AdverbialStuff(Document value) throws TransformerException {
 		super(StuffType.ADVERBIAL, value);
 	}
 

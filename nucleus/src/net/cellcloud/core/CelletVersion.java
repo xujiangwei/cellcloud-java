@@ -2,7 +2,7 @@
 -----------------------------------------------------------------------------
 This source file is part of Cell Cloud.
 
-Copyright (c) 2009-2012 Cell Cloud Team (www.cellcloud.net)
+Copyright (c) 2009-2013 Cell Cloud Team (www.cellcloud.net)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -30,8 +30,8 @@ package net.cellcloud.core;
  * 
  * @author Jiangwei Xu
  */
-public final class CelletVersion {
-	
+public class CelletVersion {
+
 	private int major;
 	private int minor;
 	private int revision;

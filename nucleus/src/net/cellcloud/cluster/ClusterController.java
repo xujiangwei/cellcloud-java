@@ -32,15 +32,15 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Observable;
 import java.util.Observer;
+import java.util.Timer;
+import java.util.TimerTask;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.ScheduledThreadPoolExecutor;
-import java.util.concurrent.TimeUnit;
 
 import net.cellcloud.common.Cryptology;
 import net.cellcloud.common.Logger;
 import net.cellcloud.common.Service;
 import net.cellcloud.core.Nucleus;
+import net.cellcloud.util.SlidingWindowExecutor;
 
 /** 集群控制器。
  * 
@@ -48,25 +48,34 @@ import net.cellcloud.core.Nucleus;
  */
 public final class ClusterController implements Service, Observer {
 
-	private ScheduledExecutorService executor;
 	private ClusterNetwork network;
-	public boolean autoScanNetwork = true;
+	private Timer timer;
+	protected SlidingWindowExecutor executor;
 
-	// 种子地址
-	private ArrayList<InetSocketAddress> seedAddressList;
+	// 集群地址列表
+	private ArrayList<InetSocketAddress> addressList;
 
 	// Key: Socket address hash code
-	private ConcurrentHashMap<Long, ClusterConnector> physicalConnectors;
+	private ConcurrentHashMap<Long, ClusterConnector> connectors;
+
+	private int numVNode;
 
 	private byte[] monitor = new byte[0];
 
 	private ClusterNode root;
 
-	public ClusterController(String hostname, int preferredPort) {
-		this.network = new ClusterNetwork(hostname, preferredPort);
+	// 是否自动扫描网络
+	public boolean autoScanNetwork = false;
+
+	public ClusterController(String hostname, int preferredPort, int numVNode) {
+		// 创建执行器
+		this.executor = SlidingWindowExecutor.newSlidingWindowThreadPool(8);
+
+		this.network = new ClusterNetwork(hostname, preferredPort, this.executor);
+		this.numVNode = numVNode;
 		this.network.addObserver(this);
-		this.seedAddressList = new ArrayList<InetSocketAddress>();
-		this.physicalConnectors = new ConcurrentHashMap<Long, ClusterConnector>();
+		this.addressList = new ArrayList<InetSocketAddress>();
+		this.connectors = new ConcurrentHashMap<Long, ClusterConnector>();
 	}
 
 	@Override
@@ -78,23 +87,22 @@ public final class ClusterController implements Service, Observer {
 
 		// 创建根节点
 		this.root = new ClusterNode(ClusterController.hashAddress(this.network.getBindAddress())
-				, this.network.getBindAddress(), 3);
+				, this.network.getBindAddress(), this.numVNode);
 
-		// 启动定时器，间隔 5 分钟
-		if (null != this.executor) {
-			this.executor.shutdown();
-		}
-		else {
-			this.executor = new ScheduledThreadPoolExecutor(4);
-		}
-		// 执行守护定时任务
-		this.executor.scheduleAtFixedRate(new ControllerTimerTask(), 5, 5 * 60, TimeUnit.SECONDS);
+		// 执行守护定时任务，间隔 5 分钟
+		this.timer = new Timer();
+		this.timer.scheduleAtFixedRate(new ControllerTimerTask(), 10 * 1000, 5 * 60 * 1000);
 
 		return true;
 	}
 
 	@Override
 	public void shutdown() {
+		if (null != this.timer) {
+			this.timer.cancel();
+			this.timer = null;
+		}
+
 		if (null != this.executor) {
 			this.executor.shutdown();
 			this.executor = null;
@@ -103,13 +111,13 @@ public final class ClusterController implements Service, Observer {
 		this.network.shutdown();
 
 		// 清理连接器
-		Iterator<ClusterConnector> iter = this.physicalConnectors.values().iterator();
+		Iterator<ClusterConnector> iter = this.connectors.values().iterator();
 		while (iter.hasNext()) {
 			ClusterConnector connector = iter.next();
 			connector.deleteObserver(this);
 			connector.close();
 		}
-		this.physicalConnectors.clear();
+		this.connectors.clear();
 
 		if (null != this.root) {
 			// 清空所有虚拟节点
@@ -155,7 +163,7 @@ public final class ClusterController implements Service, Observer {
 				boolean equals = false;
 
 				// 判断是否有重复地址
-				for (InetSocketAddress addr : this.seedAddressList) {
+				for (InetSocketAddress addr : this.addressList) {
 					long hashCode = ClusterController.hashAddress(addr);
 					if (hashCode == addrHash) {
 						equals = true;
@@ -164,7 +172,7 @@ public final class ClusterController implements Service, Observer {
 				}
 
 				if (!equals) {
-					this.seedAddressList.add(address);
+					this.addressList.add(address);
 				}
 			}
 		}
@@ -291,11 +299,14 @@ public final class ClusterController implements Service, Observer {
 	/** 定时器操作。
 	 */
 	private void timerHandle() {
+		ArrayList<InetSocketAddress> list = null;
+
 		synchronized (this.monitor) {
-			// 根据种子地址建立集群网络
-			if (!this.seedAddressList.isEmpty()) {
-				ArrayList<InetSocketAddress> list = new ArrayList<InetSocketAddress>();
-				for (InetSocketAddress address : this.seedAddressList) {
+			// 根据地址列表建立集群网络
+			if (!this.addressList.isEmpty()) {
+				list = new ArrayList<InetSocketAddress>();
+
+				for (InetSocketAddress address : this.addressList) {
 					// 通过地址的散列码判断是否已经加入节点
 					long hash = ClusterController.hashAddress(address);
 
@@ -308,12 +319,12 @@ public final class ClusterController implements Service, Observer {
 						}
 					}
 				}
-				if (!list.isEmpty()) {
-					// 尝试进行发现
-					doDiscover(list);
-				}
-				list = null;
 			}
+		}
+
+		if (null != list && !list.isEmpty()) {
+			// 尝试进行发现
+			doDiscover(list);
 		}
 	}
 
@@ -462,11 +473,11 @@ public final class ClusterController implements Service, Observer {
 
 	/** 返回或创建连接器。 */
 	private ClusterConnector getOrCreateConnector(InetSocketAddress address, Long hash) {
-		ClusterConnector connector = this.physicalConnectors.get(hash);
+		ClusterConnector connector = this.connectors.get(hash);
 		if (null == connector) {
 			connector = new ClusterConnector(address, hash);
 			connector.addObserver(this);
-			this.physicalConnectors.put(hash, connector);
+			this.connectors.put(hash, connector);
 		}
 
 		return connector;
@@ -478,7 +489,7 @@ public final class ClusterController implements Service, Observer {
 		connector.close();
 
 		// 删除物理连接
-		this.physicalConnectors.remove(connector.getHashCode());
+		this.connectors.remove(connector.getHashCode());
 		connector.deleteObserver(this);
 	}
 
@@ -521,7 +532,11 @@ public final class ClusterController implements Service, Observer {
 
 	/** 控制器定时任务。
 	 */
-	protected class ControllerTimerTask implements Runnable {
+	protected class ControllerTimerTask extends TimerTask {
+		protected ControllerTimerTask() {
+			super();
+		}
+
 		@Override
 		public void run() {
 			if (autoScanNetwork) {

@@ -194,13 +194,12 @@ public final class ClusterConnector extends Observable implements MessageHandler
 				monitor.wait(timeout);
 			} catch (InterruptedException e) {
 				Logger.log(ClusterConnector.class, e, LogLevel.ERROR);
-				this.destroyMonitor(lh);
 				return null;
+			} finally {
+				// 删除监听器
+				this.destroyMonitor(lh);
 			}
 		}
-
-		// 删除监听器
-		this.destroyMonitor(lh);
 
 		return monitor;
 	}

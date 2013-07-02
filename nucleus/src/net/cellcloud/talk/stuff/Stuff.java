@@ -26,11 +26,34 @@ THE SOFTWARE.
 
 package net.cellcloud.talk.stuff;
 
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.StringReader;
+import java.nio.charset.Charset;
+import java.text.DecimalFormat;
+
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.parsers.ParserConfigurationException;
+import javax.xml.transform.Transformer;
+import javax.xml.transform.TransformerException;
+import javax.xml.transform.TransformerFactory;
+import javax.xml.transform.dom.DOMSource;
+import javax.xml.transform.stream.StreamResult;
+
+import org.json.JSONException;
+import org.json.JSONObject;
+import org.w3c.dom.Document;
+import org.xml.sax.InputSource;
+import org.xml.sax.SAXException;
+
 /** 原语语素。
  * 
  * @author Jiangwei Xu
  */
 public abstract class Stuff {
+
+	private static final DecimalFormat DF = new DecimalFormat("#0.0000");
 
 	private StuffType type;
 	protected String value;
@@ -58,10 +81,37 @@ public abstract class Stuff {
 	}
 
 	/** 构造函数。 */
+	public Stuff(StuffType type, float value) {
+		this.type = type;
+		this.value = DF.format(value);
+		this.literalBase = LiteralBase.FLOAT;
+	}
+
+	/** 构造函数。 */
 	public Stuff(StuffType type, boolean value) {
 		this.type = type;
 		this.value = Boolean.toString(value);
 		this.literalBase = LiteralBase.BOOL;
+	}
+
+	/** 构造函数。 */
+	public Stuff(StuffType type, JSONObject json) {
+		this.type = type;
+		this.value = json.toString();
+		this.literalBase = LiteralBase.JSON;
+	}
+
+	/** 构造函数。 */
+	public Stuff(StuffType type, Document doc)
+			throws TransformerException {
+		TransformerFactory tf = TransformerFactory.newInstance();
+		Transformer t = tf.newTransformer();
+		t.setOutputProperty("encoding", "UTF-8");
+		ByteArrayOutputStream bos = new ByteArrayOutputStream();
+		t.transform(new DOMSource(doc), new StreamResult(bos));
+		this.value = bos.toString();
+		this.type = type;
+		this.literalBase = LiteralBase.XML;
 	}
 
 	/** 将自身语素数据复制给目标语素。 */
@@ -91,6 +141,12 @@ public abstract class Stuff {
 		return Long.parseLong(this.value);
 	}
 
+	/** 按照浮点数形式返回值。
+	 */
+	public float getValueAsFloat() {
+		return Float.parseFloat(this.value);
+	}
+
 	/** 按照布尔值形式返回值。
 	*/
 	public boolean getValueAsBool() {
@@ -100,6 +156,30 @@ public abstract class Stuff {
 			return true;
 		else
 			return false;
+	}
+
+	/** 按照 JSON 格式返回值。
+	 * @throws JSONException 
+	 */
+	public JSONObject getValueAsJSON()
+			throws JSONException {
+		return new JSONObject(this.value);
+	}
+
+	/** 按照 XML 格式返回值。
+	 * @throws ParserConfigurationException
+	 * @throws SAXException
+	 * @throws IOException
+	 */
+	public Document getValueAsXML()
+			throws ParserConfigurationException, SAXException, IOException {
+		String xmlStr = new String(this.value.getBytes(), Charset.forName("UTF-8"));
+		StringReader sr = new StringReader(xmlStr);
+		InputSource is = new InputSource(sr);
+		DocumentBuilderFactory factory =  DocumentBuilderFactory.newInstance();
+		DocumentBuilder builder = factory.newDocumentBuilder();
+		Document doc = builder.parse(is);
+	    return doc;
 	}
 
 	/** 返回数值字面义。

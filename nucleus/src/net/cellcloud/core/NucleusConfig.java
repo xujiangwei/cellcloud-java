@@ -122,6 +122,9 @@ public final class NucleusConfig {
 		/// 集群服务首选端口
 		public int preferredPort = 11099;
 
+		/// 虚拟节点数量
+		public int numVNode = 3;
+
 		/// 集群地址表
 		public List<InetSocketAddress> addressList = null;
 

@@ -2,7 +2,7 @@
 -----------------------------------------------------------------------------
 This source file is part of Cell Cloud.
 
-Copyright (c) 2009-2012 Cell Cloud Team (www.cellcloud.net)
+Copyright (c) 2009-2013 Cell Cloud Team (www.cellcloud.net)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -26,25 +26,52 @@ THE SOFTWARE.
 
 package net.cellcloud.talk.stuff;
 
+import javax.xml.transform.TransformerException;
+
+import org.json.JSONObject;
+import org.w3c.dom.Document;
+
 /** 宾语语素。
  * 
  * @author Jiangwei Xu
  */
 public final class ObjectiveStuff extends Stuff {
 
+	/** 构造函数。 */
 	public ObjectiveStuff(String value) {
 		super(StuffType.OBJECTIVE, value);
 	}
 
+	/** 构造函数。 */
 	public ObjectiveStuff(int value) {
 		super(StuffType.OBJECTIVE, value);
 	}
 
+	/** 构造函数。 */
 	public ObjectiveStuff(long value) {
 		super(StuffType.OBJECTIVE, value);
 	}
 
+	/** 构造函数。 */
+	public ObjectiveStuff(float value) {
+		super(StuffType.OBJECTIVE, value);
+	}
+
+	/** 构造函数。 */
 	public ObjectiveStuff(boolean value) {
+		super(StuffType.OBJECTIVE, value);
+	}
+
+	/** 构造函数。 */
+	public ObjectiveStuff(JSONObject value) {
+		super(StuffType.OBJECTIVE, value);
+	}
+
+	/** 构造函数。 
+	 * @throws TransformerException 
+	 * @throws TransformerConfigurationException
+	 */
+	public ObjectiveStuff(Document value) throws TransformerException {
 		super(StuffType.OBJECTIVE, value);
 	}
 

@@ -2,7 +2,7 @@
 -----------------------------------------------------------------------------
 This source file is part of Cell Cloud.
 
-Copyright (c) 2009-2012 Cell Cloud Team (www.cellcloud.net)
+Copyright (c) 2009-2013 Cell Cloud Team (www.cellcloud.net)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -26,25 +26,52 @@ THE SOFTWARE.
 
 package net.cellcloud.talk.stuff;
 
+import javax.xml.transform.TransformerException;
+
+import org.json.JSONObject;
+import org.w3c.dom.Document;
+
 /** 补语语素。
  * 
  * @author Jiangwei Xu
  */
 public final class ComplementStuff extends Stuff {
 
+	/** 构造函数。 */
 	public ComplementStuff(String value) {
 		super(StuffType.COMPLEMENT, value);
 	}
 
+	/** 构造函数。 */
 	public ComplementStuff(int value) {
 		super(StuffType.COMPLEMENT, value);
 	}
 
+	/** 构造函数。 */
 	public ComplementStuff(long value) {
 		super(StuffType.COMPLEMENT, value);
 	}
 
+	/** 构造函数。 */
+	public ComplementStuff(float value) {
+		super(StuffType.COMPLEMENT, value);
+	}
+
+	/** 构造函数。 */
 	public ComplementStuff(boolean value) {
+		super(StuffType.COMPLEMENT, value);
+	}
+
+	/** 构造函数。 */
+	public ComplementStuff(JSONObject value) {
+		super(StuffType.COMPLEMENT, value);
+	}
+
+	/** 构造函数。 
+	 * @throws TransformerException 
+	 * @throws TransformerConfigurationException
+	 */
+	public ComplementStuff(Document value) throws TransformerException {
 		super(StuffType.COMPLEMENT, value);
 	}
 

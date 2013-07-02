@@ -143,7 +143,8 @@ public final class Nucleus {
 			//---- 配置集群 ----
 
 			if (null == this.clusterController) {
-				this.clusterController = new ClusterController(this.config.cluster.host, this.config.cluster.preferredPort);
+				this.clusterController = new ClusterController(this.config.cluster.host
+						, this.config.cluster.preferredPort, this.config.cluster.numVNode);
 			}
 			// 添加集群地址
 			if (null != this.config.cluster.addressList) {
