@@ -26,6 +26,7 @@ THE SOFTWARE.
 
 package net.cellcloud.http;
 
+import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -35,11 +36,10 @@ import net.cellcloud.common.Service;
 import net.cellcloud.core.NucleusContext;
 import net.cellcloud.exception.SingletonException;
 
-import org.eclipse.jetty.server.Connector;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.ServerConnector;
-import org.eclipse.jetty.servlet.ServletContextHandler;
-import org.eclipse.jetty.servlet.ServletHolder;
+import org.eclipse.jetty.server.handler.ContextHandler;
+import org.eclipse.jetty.server.handler.ContextHandlerCollection;
 
 /** HTTP 服务。
  * 
@@ -50,10 +50,14 @@ public final class HttpService implements Service {
 	private static HttpService instance = null;
 
 	private Server server = null;
-	private ServletContextHandler handler;
 
 	private LinkedList<HttpCapsule> httpCapsules = null;
 
+	/**
+	 * 构造函数。
+	 * @param context
+	 * @throws SingletonException
+	 */
 	public HttpService(NucleusContext context)
 			throws SingletonException {
 		if (null == HttpService.instance) {
@@ -65,10 +69,8 @@ public final class HttpService implements Service {
 			// 创建服务器
 			this.server = new Server();
 
-			// 创建句柄
-			this.handler = new ServletContextHandler(ServletContextHandler.NO_SESSIONS);
-			this.handler.setContextPath("/");
-			this.server.setHandler(this.handler);
+			// 设置错误处理句柄
+			this.server.addBean(new DefaultErrorHandler());
 
 			this.httpCapsules = new LinkedList<HttpCapsule>();
 		}
@@ -83,27 +85,39 @@ public final class HttpService implements Service {
 		return HttpService.instance;
 	}
 
+	/** 启动服务。
+	 */
 	@Override
 	public boolean startup() {
-		Connector[] connectors = new Connector[this.httpCapsules.size()];
+		ArrayList<ServerConnector> connectorList = new ArrayList<ServerConnector>(this.httpCapsules.size());
+		ArrayList<ContextHandler> contextList = new ArrayList<ContextHandler>();
 
-		for (int i = 0; i < connectors.length; ++i) {
-			HttpCapsule hc = this.httpCapsules.get(i);
-			@SuppressWarnings("resource")
-			ServerConnector connector = new ServerConnector(this.server);
-			connector.setPort(hc.getPort());
-			connector.setAcceptQueueSize(hc.getQueueSize());
-			connectors[i] = connector;
+		for (HttpCapsule hc : this.httpCapsules) {
+			ServerConnector sc = new ServerConnector(this.server);
+			sc.setPort(hc.getPort());
+			sc.setAcceptQueueSize(hc.getQueueSize());
+			// 添加连接器
+			connectorList.add(sc);
 
-			// 处理接入器
+			// 添加上下文处理器
 			List<CapsuleHolder> holders = hc.getCapsuleHolders();
 			for (CapsuleHolder holder : holders) {
-				ServletHolder sh = new ServletHolder(holder.getHttpServlet());
-				this.handler.addServlet(sh, holder.getPathSpec());
+				ContextHandler context = new ContextHandler(holder.getPathSpec());
+				context.setHandler(holder.getHttpHandler());
+				contextList.add(context);
 			}
 		}
 
+		ServerConnector[] connectors = new ServerConnector[connectorList.size()];
+		connectorList.toArray(connectors);
 		this.server.setConnectors(connectors);
+
+		ContextHandler[] handlers = new ContextHandler[contextList.size()];
+		contextList.toArray(handlers);
+		ContextHandlerCollection contexts = new ContextHandlerCollection();
+		contexts.setHandlers(handlers);
+		this.server.setHandler(contexts);
+
 		this.server.setStopTimeout(5000);
 		this.server.setStopAtShutdown(true);
 
@@ -127,7 +141,7 @@ public final class HttpService implements Service {
 		}
 	}
 
-	/** 添加封装器。
+	/** 添加服务封装器。
 	 */
 	public void addCapsule(HttpCapsule capsule) {
 		this.httpCapsules.add(capsule);

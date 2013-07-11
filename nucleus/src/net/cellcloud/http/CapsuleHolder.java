@@ -26,7 +26,6 @@ THE SOFTWARE.
 
 package net.cellcloud.http;
 
-import javax.servlet.http.HttpServlet;
 
 /** Servlet 接入器接口。
  * 
@@ -42,5 +41,5 @@ public interface CapsuleHolder {
 	/** 返回对应的 Servlet 。
 	 * @return
 	 */
-	public HttpServlet getHttpServlet();
+	public HttpHandler getHttpHandler();
 }

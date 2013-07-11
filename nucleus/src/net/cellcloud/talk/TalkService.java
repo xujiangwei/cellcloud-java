@@ -56,6 +56,7 @@ import net.cellcloud.http.HttpService;
 import net.cellcloud.talk.dialect.ActionDialectFactory;
 import net.cellcloud.talk.dialect.Dialect;
 import net.cellcloud.talk.dialect.DialectEnumerator;
+import net.cellcloud.talk.http.InterrogationServlet;
 import net.cellcloud.talk.http.TalkServlet;
 import net.cellcloud.util.Utils;
 
@@ -114,24 +115,16 @@ public final class TalkService implements Service, SpeakerDelegate {
 		}
 	}
 
-	/** 返回单例。 */
-	public synchronized static TalkService getInstance() {
-		return instance;
-	}
-
-	/** 设置端口。
+	/**
+	 * 返回会话服务单例。
 	 */
-	public void setPort(int port) {
-		this.port = port;
+	public static TalkService getInstance() {
+		return TalkService.instance;
 	}
 
-	/** 设置 HTTP 服务端口。
-	 */
-	public void setHttpPort(int port) {
-		this.httpPort = port;
-	}
-
-	/** 启动会话服务。
+	/**
+	 * 启动会话服务。
+	 * @return 如果启动成功，则返回 true，否则返回 false
 	 */
 	@Override
 	public boolean startup() {
@@ -149,6 +142,7 @@ public final class TalkService implements Service, SpeakerDelegate {
 		}
 
 		if (null == this.acceptor) {
+			// 创建网络适配器
 			this.acceptor = new NonblockingAcceptor();
 
 			// 定义包标识
@@ -171,9 +165,9 @@ public final class TalkService implements Service, SpeakerDelegate {
 			startDaemon();
 		}
 
-		if (this.httpEnabled) {
+		if (succeeded && this.httpEnabled) {
 			// 启动 HTTP 服务
-			enableHttpService();
+			startHttpService();
 		}
 
 		return succeeded;
@@ -192,6 +186,35 @@ public final class TalkService implements Service, SpeakerDelegate {
 		if (null != this.executor) {
 			this.executor.shutdown();
 		}
+	}
+
+	/** 设置服务端口。
+	 * @note 在 startup 之前设置才能生效。
+	 * @param port 指定服务监听端口。
+	 */
+	public void setPort(int port) {
+		this.port = port;
+	}
+
+	/** 返回服务端口。
+	 * @return
+	 */
+	public int getPort() {
+		return this.port;
+	}
+
+	/** 设置 HTTP 服务端口。
+	 * @note 在 startup 之前设置才能生效。
+	 */
+	public void setHttpPort(int port) {
+		this.httpPort = port;
+	}
+
+	/** 返回 HTTP 服务端口。
+	 * @return
+	 */
+	public int getHttpPort() {
+		return this.httpPort;
 	}
 
 	/** 设置是否激活 HTTP 服务。
@@ -488,17 +511,21 @@ public final class TalkService implements Service, SpeakerDelegate {
 		return false;
 	}
 
-	/** 启用 HTTP 服务。
+	/** 启动 HTTP 服务。
 	 */
-	private void enableHttpService() {
+	private void startHttpService() {
 		if (null == HttpService.getInstance()) {
-			Logger.w(TalkService.class, "Starts talk web service failed, web model failed to start.");
+			Logger.w(TalkService.class, "Starts talk http service failed, http model is not started.");
 			return;
 		}
 
+		// 创建服务节点
 		HttpCapsule capsule = new HttpCapsule(this.httpPort, 1000);
+		// 依次添加 Holder 点
+		capsule.addCapsuleHolder(new InterrogationServlet());
 		capsule.addCapsuleHolder(new TalkServlet());
 
+		// 添加 HTTP 服务节点
 		HttpService.getInstance().addCapsule(capsule);
 	}
 

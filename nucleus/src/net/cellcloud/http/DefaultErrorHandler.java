@@ -24,28 +24,40 @@ THE SOFTWARE.
 -----------------------------------------------------------------------------
 */
 
-package net.cellcloud.talk.http;
+package net.cellcloud.http;
 
-import net.cellcloud.http.AbstractJSONHandler;
-import net.cellcloud.http.CapsuleHolder;
-import net.cellcloud.http.HttpHandler;
+import java.io.IOException;
+import java.io.Writer;
 
-/** Talk 服务的 HTTP 协议处理器。
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
+import net.cellcloud.common.Logger;
+
+import org.eclipse.jetty.server.Request;
+import org.eclipse.jetty.server.handler.ErrorHandler;
+
+/** 默认错误处理句柄。
  * 
  * @author Jiangwei Xu
+ *
  */
-public final class TalkServlet extends AbstractJSONHandler implements CapsuleHolder {
+public class DefaultErrorHandler extends ErrorHandler {
 
-	public TalkServlet() {
+	public DefaultErrorHandler() {
+		super();
 	}
 
 	@Override
-	public String getPathSpec() {
-		return "/talk";
+	public void handle(String target, Request baseRequest, HttpServletRequest request, HttpServletResponse response) {
+		if (Logger.isDebugLevel()) {
+			Logger.d(DefaultErrorHandler.class, "Error http request: " + request.getRequestURI());
+		}
+
+		baseRequest.setHandled(true);
 	}
 
 	@Override
-	public HttpHandler getHttpHandler() {
-		return this;
+	protected void handleErrorPage(HttpServletRequest request, Writer writer, int code, String message) throws IOException {
 	}
 }

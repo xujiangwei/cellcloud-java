@@ -30,18 +30,21 @@ import net.cellcloud.http.AbstractJSONHandler;
 import net.cellcloud.http.CapsuleHolder;
 import net.cellcloud.http.HttpHandler;
 
-/** Talk 服务的 HTTP 协议处理器。
+/**
+ * 会话询问。
  * 
  * @author Jiangwei Xu
+ *
  */
-public final class TalkServlet extends AbstractJSONHandler implements CapsuleHolder {
+public final class InterrogationServlet extends AbstractJSONHandler implements CapsuleHolder {
 
-	public TalkServlet() {
+	public InterrogationServlet() {
+		super();
 	}
 
 	@Override
 	public String getPathSpec() {
-		return "/talk";
+		return "/talk/int";
 	}
 
 	@Override

@@ -26,46 +26,16 @@ THE SOFTWARE.
 
 package net.cellcloud.http;
 
-import java.io.IOException;
-
-import javax.servlet.ServletException;
-import javax.servlet.http.HttpServlet;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
+import org.eclipse.jetty.server.handler.AbstractHandler;
 
 /**
  * 
  * @author Jiangwei Xu
+ *
  */
-public abstract class AbstractJSONHttpServlet extends HttpServlet {
+public abstract class HttpHandler extends AbstractHandler {
 
-	private static final long serialVersionUID = 2964870998423375946L;
-
-	public AbstractJSONHttpServlet() {
+	public HttpHandler() {
 		super();
-	}
-
-	@Override
-	public void doGet(HttpServletRequest request, HttpServletResponse response)
-		throws ServletException, IOException {
-		
-	}
-
-	@Override
-	public void doPost(HttpServletRequest request, HttpServletResponse response)
-		throws ServletException, IOException {
-		
-	}
-
-	@Override
-	public void doPut(HttpServletRequest request, HttpServletResponse response)
-		throws ServletException, IOException {
-		
-	}
-
-	@Override
-	public void doDelete(HttpServletRequest request, HttpServletResponse response)
-		throws ServletException, IOException {
-		
 	}
 }
