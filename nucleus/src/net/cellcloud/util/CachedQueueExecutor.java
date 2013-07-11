@@ -27,10 +27,9 @@ THE SOFTWARE.
 package net.cellcloud.util;
 
 import java.util.Collection;
-import java.util.LinkedList;
 import java.util.List;
-import java.util.Queue;
 import java.util.concurrent.Callable;
+import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -39,67 +38,49 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
 
-/** 滑动窗执行器。
+/**
+ * 可缓存的队列执行器。
  * 
  * @author Jiangwei Xu
+ *
  */
-public class SlidingWindowExecutor implements ExecutorService {
+public final class CachedQueueExecutor implements ExecutorService {
 
-	protected ExecutorService executor;
+	private ExecutorService executor;
+	private int maxThreads = 8;
+	private AtomicInteger numThreads = new AtomicInteger(0);
 
-	// 当前线程数快照
-	protected AtomicInteger threadNum = new AtomicInteger(0);
+	private ConcurrentLinkedQueue<Runnable> queue;
 
-	/// 任务队列
-	protected Queue<Runnable> taskQueue;
-	/// 选中执行的任务队列
-	protected Queue<Runnable> activeQueue;
-
-	// 活动窗属性
-	private int windowSize = 4;
-	protected byte[] monitor = new byte[0];
-
-	private volatile boolean dispatching = false;
-
-	protected SlidingWindowExecutor that;
-
-	private SlidingWindowExecutor(ExecutorService executor, int windowSize) {
-		this.that = this;
-		this.executor = executor;
-		this.windowSize = windowSize;
-		this.taskQueue = new LinkedList<Runnable>();
-		this.activeQueue = new LinkedList<Runnable>();
+	/**
+	 * 私有构造函数。
+	 * @param maxThreads
+	 */
+	private CachedQueueExecutor(int maxThreads) {
+		this.executor = Executors.newCachedThreadPool();
+		this.maxThreads = maxThreads;
+		this.queue = new ConcurrentLinkedQueue<Runnable>();
 	}
 
 	/**
-	 * 创建指定窗口大小的活动滑窗线程池。
-	 * @param windowSize
-	 * @param maxThreadNum
+	 * 创建可缓存队列执行器。
+	 * @param maxThreads
 	 * @return
 	 */
-	public static SlidingWindowExecutor newSlidingWindowThreadPool(int windowSize) {
-		if (windowSize <= 0) {
-			throw new IllegalArgumentException("Window size is not less than zero.");
+	public static CachedQueueExecutor newCachedQueueThreadPool(int maxThreads) {
+		if (maxThreads <= 0) {
+			throw new IllegalArgumentException("Max threads is not less than zero.");
 		}
 
-		return new SlidingWindowExecutor(Executors.newCachedThreadPool(), windowSize);
+		return new CachedQueueExecutor(maxThreads);
 	}
 
 	@Override
 	public void execute(Runnable command) {
-		synchronized (this.taskQueue) {
-			this.taskQueue.offer(command);
-		}
+		this.queue.offer(command);
 
-		// 启动分发任务
-		if (!this.dispatching) {
-			this.dispatching = true;
-			this.executor.execute(new Dispatcher());
-		}
-		else {
-			synchronized (this.monitor) {
-				this.monitor.notifyAll();
-			}
+		if (this.numThreads.get() < this.maxThreads) {
+			this.executor.execute(new QueueTask());
 		}
 	}
 
@@ -147,23 +128,12 @@ public class SlidingWindowExecutor implements ExecutorService {
 
 	@Override
 	public void shutdown() {
-		this.taskQueue.clear();
-
-		synchronized (this.monitor) {
-			this.monitor.notifyAll();
-		}
-
 		this.executor.shutdown();
 	}
 
 	@Override
 	public List<Runnable> shutdownNow() {
-		this.taskQueue.clear();
-
-		synchronized (this.monitor) {
-			this.monitor.notifyAll();
-		}
-
+		this.queue.clear();
 		return this.executor.shutdownNow();
 	}
 
@@ -183,45 +153,24 @@ public class SlidingWindowExecutor implements ExecutorService {
 	}
 
 	/**
-	 * 内部线程任务。
+	 * 执行队列任务。
 	 */
-	protected final class Dispatcher implements Runnable {
-		protected Dispatcher() {
+	protected final class QueueTask implements Runnable {
+		protected QueueTask() {
 		}
 
 		@Override
 		public void run() {
+			numThreads.incrementAndGet();
+
 			do {
-				// 将任务添加到活跃队列
-				while (activeQueue.size() < windowSize && !taskQueue.isEmpty()) {
-					Runnable task = null;
-					synchronized (taskQueue) {
-						task = taskQueue.poll();
-					}
-					if (null != task) {
-						synchronized (activeQueue) {
-							activeQueue.offer(task);
-						}
-					}
+				Runnable task = queue.poll();
+				if (null != task) {
+					task.run();
 				}
+			} while (!queue.isEmpty());
 
-				// 启动线程执行活跃任务
-				for (int i = 0, size = activeQueue.size(); i < size; ++i) {
-					executor.execute(new SlidingWindowTask(that));
-				}
-
-				if (!taskQueue.isEmpty()) {
-					synchronized (monitor) {
-						try {
-							monitor.wait();
-						} catch (InterruptedException e) {
-							e.printStackTrace();
-						}
-					}
-				}
-			} while (!taskQueue.isEmpty());
-
-			dispatching = false;
+			numThreads.decrementAndGet();
 		}
 	}
 }

@@ -77,7 +77,7 @@ public final class TalkService implements Service, SpeakerDelegate {
 	private TalkAcceptorHandler talkHandler;
 
 	// 线程执行器
-	private ExecutorService executor;
+	protected ExecutorService executor;
 
 	/// 待检验 Session
 	private ConcurrentHashMap<Long, Certificate> unidentifiedSessions;
@@ -106,6 +106,9 @@ public final class TalkService implements Service, SpeakerDelegate {
 			this.port = 7000;
 			this.httpPort = 8181;
 			this.httpEnabled = true;
+
+			// 创建执行器
+			this.executor = Executors.newSingleThreadExecutor();
 
 			// 添加默认方言工厂
 			DialectEnumerator.getInstance().addFactory(new ActionDialectFactory());
@@ -151,9 +154,7 @@ public final class TalkService implements Service, SpeakerDelegate {
 			this.acceptor.defineDataMark(head, tail);
 
 			// 设置处理器
-			if (null == this.talkHandler) {
-				this.talkHandler = new TalkAcceptorHandler(this, this.acceptor.getWorkerNum());
-			}
+			this.talkHandler = new TalkAcceptorHandler(this);
 			this.acceptor.setHandler(this.talkHandler);
 		}
 
@@ -1074,10 +1075,6 @@ public final class TalkService implements Service, SpeakerDelegate {
 	private synchronized boolean tryResumeTalk(String tag, Cellet cellet, int suspendMode, long startTime) {
 		SuspendedTracker tracker = this.suspendedTrackers.get(tag);
 		if (null != tracker) {
-			if (null == this.executor) {
-				this.executor = Executors.newSingleThreadExecutor();
-			}
-
 			boolean ret = tracker.pollPrimitiveMatchMode(this.executor, cellet, suspendMode, startTime);
 			if (ret) {
 				tracker.retreat(cellet);

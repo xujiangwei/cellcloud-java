@@ -26,6 +26,12 @@ THE SOFTWARE.
 
 package net.cellcloud.talk.http;
 
+import java.io.IOException;
+
+import javax.servlet.ServletException;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
 import net.cellcloud.http.AbstractJSONHandler;
 import net.cellcloud.http.CapsuleHolder;
 import net.cellcloud.http.HttpHandler;
@@ -50,5 +56,11 @@ public final class InterrogationServlet extends AbstractJSONHandler implements C
 	@Override
 	public HttpHandler getHttpHandler() {
 		return this;
+	}
+
+	@Override
+	protected void doGet(HttpServletRequest request, HttpServletResponse response)
+			throws ServletException, IOException {
+		
 	}
 }

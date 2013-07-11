@@ -59,5 +59,31 @@ public class DefaultErrorHandler extends ErrorHandler {
 
 	@Override
 	protected void handleErrorPage(HttpServletRequest request, Writer writer, int code, String message) throws IOException {
+		// Nothing
+	}
+
+	@Override
+	protected void writeErrorPage(HttpServletRequest request, Writer writer, int code, String message, boolean showStacks) throws IOException {
+		// Nothing
+	}
+
+	@Override
+	protected void writeErrorPageHead(HttpServletRequest request, Writer writer, int code, String message) throws IOException {
+		// Nothing
+	}
+
+	@Override
+	protected void writeErrorPageBody(HttpServletRequest request, Writer writer, int code, String message, boolean showStacks) throws IOException {
+		// Nothing
+	}
+
+	@Override
+	protected void writeErrorPageMessage(HttpServletRequest request, Writer writer, int code, String message, String uri) throws IOException {
+		// Nothing
+	}
+
+	@Override
+	protected void writeErrorPageStacks(HttpServletRequest request, Writer writer) throws IOException {
+		// Nothing
 	}
 }

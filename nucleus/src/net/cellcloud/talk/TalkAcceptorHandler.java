@@ -48,15 +48,10 @@ public final class TalkAcceptorHandler implements MessageHandler {
 
 	/** 构造函数。
 	 */
-	protected TalkAcceptorHandler(TalkService talkService, int queueLength) {
+	protected TalkAcceptorHandler(TalkService talkService) {
 		this.talkService = talkService;
 		this.dialogueCmdQueue = new LinkedList<ServerDialogueCommand>();
 		this.heartbeatCmdQueue = new LinkedList<ServerHeartbeatCommand>();
-
-		for (int i = 0; i < queueLength; ++i) {
-			this.dialogueCmdQueue.offer(new ServerDialogueCommand(talkService));
-			this.heartbeatCmdQueue.offer(new ServerHeartbeatCommand(talkService));
-		}
 	}
 
 	@Override
@@ -80,11 +75,16 @@ public final class TalkAcceptorHandler implements MessageHandler {
 	}
 
 	@Override
-	public void messageReceived(Session session, Message message) {
+	public void messageReceived(final Session session, final Message message) {
 		byte[] data = message.get();
-		Packet packet = Packet.unpack(data);
+		final Packet packet = Packet.unpack(data);
 		if (null != packet) {
-			interpret(session, packet);
+			this.talkService.executor.execute(new Runnable(){
+				@Override
+				public void run() {
+					interpret(session, packet);
+				}
+			});
 		}
 	}
 
@@ -104,15 +104,8 @@ public final class TalkAcceptorHandler implements MessageHandler {
 		if (TalkDefinition.isDialogue(tag)) {
 			try {
 				ServerDialogueCommand cmd = borrowDialogueCommand(session, packet);
-				if (null != cmd) {
-					cmd.execute();
-					returnDialogueCommand(cmd);
-				}
-				else {
-					cmd = new ServerDialogueCommand(this.talkService, session, packet);
-					cmd.execute();
-					cmd = null;
-				}
+				cmd.execute();
+				returnDialogueCommand(cmd);
 			} catch (Exception e) {
 				Logger.log(TalkAcceptorHandler.class, e, LogLevel.ERROR);
 			}
@@ -120,15 +113,8 @@ public final class TalkAcceptorHandler implements MessageHandler {
 		else if (TalkDefinition.isHeartbeat(tag)) {
 			try {
 				ServerHeartbeatCommand cmd = borrowHeartbeatCommand(session, packet);
-				if (null != cmd) {
-					cmd.execute();
-					returnHeartbeatCommand(cmd);
-				}
-				else {
-					cmd = new ServerHeartbeatCommand(this.talkService, session, packet);
-					cmd.execute();
-					cmd = null;
-				}
+				cmd.execute();
+				returnHeartbeatCommand(cmd);
 			} catch (Exception e) {
 				Logger.log(TalkAcceptorHandler.class, e, LogLevel.ERROR);
 			}
@@ -182,38 +168,54 @@ public final class TalkAcceptorHandler implements MessageHandler {
 
 	private ServerDialogueCommand borrowDialogueCommand(Session session, Packet packet) {
 		synchronized (this.dialogueCmdQueue) {
-			ServerDialogueCommand cmd = this.dialogueCmdQueue.poll();
-			if (null != cmd) {
-				cmd.session = session;
-				cmd.packet = packet;
-				return cmd;
-			}
-		}
+			ServerDialogueCommand cmd = null;
 
-		return null;
+			if (this.dialogueCmdQueue.isEmpty()) {
+				cmd = new ServerDialogueCommand(this.talkService);
+			}
+			else {
+				cmd = this.dialogueCmdQueue.poll();
+			}
+
+			cmd.session = session;
+			cmd.packet = packet;
+
+			return cmd;
+		}
 	}
 
 	private void returnDialogueCommand(ServerDialogueCommand cmd) {
 		synchronized (this.dialogueCmdQueue) {
+			cmd.session = null;
+			cmd.packet = null;
+
 			this.dialogueCmdQueue.offer(cmd);
 		}
 	}
-	
+
 	private ServerHeartbeatCommand borrowHeartbeatCommand(Session session, Packet packet) {
 		synchronized (this.heartbeatCmdQueue) {
-			ServerHeartbeatCommand cmd = this.heartbeatCmdQueue.poll();
-			if (null != cmd) {
-				cmd.session = session;
-				cmd.packet = packet;
-				return cmd;
-			}
-		}
+			ServerHeartbeatCommand cmd = null;
 
-		return null;
+			if (this.heartbeatCmdQueue.isEmpty()) {
+				cmd = new ServerHeartbeatCommand(this.talkService);
+			}
+			else {
+				cmd = this.heartbeatCmdQueue.poll();
+			}
+
+			cmd.session = session;
+			cmd.packet = packet;
+
+			return cmd;
+		}
 	}
 
 	private void returnHeartbeatCommand(ServerHeartbeatCommand cmd) {
 		synchronized (this.heartbeatCmdQueue) {
+			cmd.session = null;
+			cmd.packet = null;
+
 			this.heartbeatCmdQueue.offer(cmd);
 		}
 	}
