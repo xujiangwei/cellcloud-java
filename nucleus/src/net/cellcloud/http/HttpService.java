@@ -100,7 +100,7 @@ public final class HttpService implements Service {
 			connectorList.add(sc);
 
 			// 添加上下文处理器
-			List<CapsuleHolder> holders = hc.getCapsuleHolders();
+			List<CapsuleHolder> holders = hc.getHolders();
 			for (CapsuleHolder holder : holders) {
 				ContextHandler context = new ContextHandler(holder.getPathSpec());
 				context.setHandler(holder.getHttpHandler());
@@ -141,9 +141,15 @@ public final class HttpService implements Service {
 		}
 	}
 
-	/** 添加服务封装器。
+	/** 添加服务节点。
 	 */
 	public void addCapsule(HttpCapsule capsule) {
 		this.httpCapsules.add(capsule);
+	}
+
+	/** 删除服务节点。
+	 */
+	public void removeCapsule(HttpCapsule capsule) {
+		this.httpCapsules.remove(capsule);
 	}
 }

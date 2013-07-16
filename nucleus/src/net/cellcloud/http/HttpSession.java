@@ -2,7 +2,7 @@
 -----------------------------------------------------------------------------
 This source file is part of Cell Cloud.
 
-Copyright (c) 2009-2012 Cell Cloud Team (www.cellcloud.net)
+Copyright (c) 2009-2013 Cell Cloud Team (www.cellcloud.net)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -26,36 +26,40 @@ THE SOFTWARE.
 
 package net.cellcloud.http;
 
-/** 错误页内容。
+import java.net.InetSocketAddress;
+
+import net.cellcloud.common.Message;
+import net.cellcloud.common.Session;
+
+/**
+ * HTTP 会话。
  * 
  * @author Jiangwei Xu
+ *
  */
-public final class ErrorPages {
+public class HttpSession extends Session {
 
-	private static String PAGE_404;
+	private long timestamp;
 
-	protected ErrorPages() {
+	/**
+	 * 构造函数。
+	 * @param address
+	 */
+	public HttpSession(InetSocketAddress address) {
+		super(null, address);
+		this.timestamp = System.currentTimeMillis();
 	}
 
-	public final static String ERROR_404() {
-		return ErrorPages.PAGE_404;
+	/**
+	 * 返回会话时间戳。
+	 * @return
+	 */
+	public long getTimestamp() {
+		return this.timestamp;
 	}
 
-	protected static void build() {
-		StringBuilder buf = new StringBuilder();
-		buf.append("<!doctype html>\r\n");
-		buf.append("<html><head>");
-		buf.append("<meta charset=\"utf-8\">");
-		buf.append("<title>404 - File or directory not found.</title>");
-		buf.append("</head>\r\n<body>");
-		buf.append("<h2>404 - File or directory not found.</h2>");
-		buf.append("<h3>The resource you are looking for might have been removed, had its name changed, or is temporarily unavailable.</h3>");
-		buf.append("<p>Powered by Jetty (Cell Cloud)</p>");
-		buf.append("</body></html>\r\n");
-
-		PAGE_404 = buf.toString();
-
-		buf.delete(0, buf.length());
-		buf = null;
+	@Override
+	public final void write(Message message) {
+		// Nothing
 	}
 }

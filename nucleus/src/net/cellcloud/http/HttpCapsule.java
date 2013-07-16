@@ -41,6 +41,8 @@ public class HttpCapsule {
 
 	private ArrayList<CapsuleHolder> holders;
 
+	private SessionManager sessionManager;
+
 	public HttpCapsule(int port, int queueSize) {
 		this.port = port;
 		this.queueSize = queueSize;
@@ -64,14 +66,54 @@ public class HttpCapsule {
 	/** 返回 Holder 列表。
 	 * @return
 	 */
-	public List<CapsuleHolder> getCapsuleHolders() {
+	public List<CapsuleHolder> getHolders() {
 		return this.holders;
 	}
 
-	/** 添加 Servlet 接入器。
+	/** 添加接入器。
 	 * @param holder
 	 */
-	public void addCapsuleHolder(CapsuleHolder holder) {
+	public void addHolder(CapsuleHolder holder) {
 		this.holders.add(holder);
+
+		HttpHandler hh = holder.getHttpHandler();
+		if (null != hh) {
+			hh.setSessionManager(this.sessionManager);
+		}
+	}
+
+	/** 移除接入器。
+	 * @param holder
+	 */
+	public void removeHolder(CapsuleHolder holder) {
+		this.holders.remove(holder);
+
+		HttpHandler hh = holder.getHttpHandler();
+		if (null != hh) {
+			hh.setSessionManager(null);
+		}
+	}
+
+	/**
+	 * 设置会话管理器。
+	 * @param sessionManager
+	 */
+	public void setSessionManager(SessionManager sessionManager) {
+		this.sessionManager = sessionManager;
+
+		for (CapsuleHolder holder : this.holders) {
+			HttpHandler hh = holder.getHttpHandler();
+			if (null != hh) {
+				hh.setSessionManager(this.sessionManager);
+			}
+		}
+	}
+
+	/**
+	 * 返回会话管理器。
+	 * @return
+	 */
+	public SessionManager getSessionManager() {
+		return this.sessionManager;
 	}
 }

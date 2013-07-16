@@ -2,7 +2,7 @@
 -----------------------------------------------------------------------------
 This source file is part of Cell Cloud.
 
-Copyright (c) 2009-2012 Cell Cloud Team (www.cellcloud.net)
+Copyright (c) 2009-2013 Cell Cloud Team (www.cellcloud.net)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -24,29 +24,46 @@ THE SOFTWARE.
 -----------------------------------------------------------------------------
 */
 
-package net.cellcloud.talk;
+package net.cellcloud.http;
 
-import net.cellcloud.common.Message;
-import net.cellcloud.common.MessageService;
-import net.cellcloud.common.Session;
-
-/** 用于模拟 Message Service 的 HTTP 消息服务。
+/**
+ * HTTP Sessoin 管理器接口。
  * 
  * @author Jiangwei Xu
+ *
  */
-public class HttpMessageService extends MessageService {
+public interface SessionManager {
 
-	public HttpMessageService() {
-		
-	}
+	/**
+	 * 管理指定的请求。
+	 * @param request
+	 */
+	public void manage(HttpRequest request, HttpResponse response);
 
-	@Override
-	public void write(Session session, Message message) {
-		
-	}
+	/**
+	 * 解除管理指定的请求。
+	 * @param request
+	 */
+	public void unmanage(HttpRequest request);
 
-	@Override
-	public void read(Message message, Session session) {
-		
-	}
+	/**
+	 * 返回指定 ID 的 Session 。
+	 * @param id
+	 * @return
+	 */
+	public HttpSession getSession(Long id);
+
+	/**
+	 * 返回指定请求的 Session 。
+	 * @param request
+	 * @return
+	 */
+	public HttpSession getSession(HttpRequest request);
+
+	/**
+	 * 是否包含该 Session 。
+	 * @param id
+	 * @return
+	 */
+	public boolean hasSession(Long id);
 }

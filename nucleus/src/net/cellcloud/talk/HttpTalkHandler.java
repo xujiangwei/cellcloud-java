@@ -24,43 +24,29 @@ THE SOFTWARE.
 -----------------------------------------------------------------------------
 */
 
-package net.cellcloud.talk.http;
-
-import java.io.IOException;
-
-import javax.servlet.ServletException;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
+package net.cellcloud.talk;
 
 import net.cellcloud.http.AbstractJSONHandler;
 import net.cellcloud.http.CapsuleHolder;
 import net.cellcloud.http.HttpHandler;
 
-/**
- * 会话询问。
+/** Talk 服务的 HTTP 协议处理器。
  * 
  * @author Jiangwei Xu
- *
  */
-public final class InterrogationServlet extends AbstractJSONHandler implements CapsuleHolder {
+public final class HttpTalkHandler extends AbstractJSONHandler implements CapsuleHolder {
 
-	public InterrogationServlet() {
+	public HttpTalkHandler() {
 		super();
 	}
 
 	@Override
 	public String getPathSpec() {
-		return "/talk/int";
+		return "/talk";
 	}
 
 	@Override
 	public HttpHandler getHttpHandler() {
 		return this;
-	}
-
-	@Override
-	protected void doGet(HttpServletRequest request, HttpServletResponse response)
-			throws ServletException, IOException {
-		
 	}
 }

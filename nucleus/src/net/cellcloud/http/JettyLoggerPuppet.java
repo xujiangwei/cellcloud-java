@@ -53,11 +53,19 @@ public class JettyLoggerPuppet implements org.eclipse.jetty.util.log.Logger {
 
 	@Override
 	public void debug(Throwable throwable) {
+		if (!this.debugEnabled) {
+			return;
+		}
+
 		net.cellcloud.common.Logger.d(this.getClass(), throwable.getMessage());
 	}
 
 	@Override
 	public void debug(String format, Object... params) {
+		if (!this.debugEnabled) {
+			return;
+		}
+
 		String out = format;
 		synchronized (this.buffer) {
 			for (Object param : params) {
@@ -72,6 +80,10 @@ public class JettyLoggerPuppet implements org.eclipse.jetty.util.log.Logger {
 
 	@Override
 	public void debug(String format, Throwable throwable) {
+		if (!this.debugEnabled) {
+			return;
+		}
+
 		net.cellcloud.common.Logger.d(this.getClass(), format);
 	}
 

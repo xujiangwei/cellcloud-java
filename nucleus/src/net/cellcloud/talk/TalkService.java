@@ -36,7 +36,6 @@ import java.util.Queue;
 import java.util.Vector;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 
 import net.cellcloud.common.Cryptology;
 import net.cellcloud.common.LogLevel;
@@ -51,13 +50,14 @@ import net.cellcloud.core.CelletSandbox;
 import net.cellcloud.core.Nucleus;
 import net.cellcloud.core.NucleusContext;
 import net.cellcloud.exception.SingletonException;
+import net.cellcloud.http.CookieSessionManager;
 import net.cellcloud.http.HttpCapsule;
 import net.cellcloud.http.HttpService;
+import net.cellcloud.http.HttpSession;
 import net.cellcloud.talk.dialect.ActionDialectFactory;
 import net.cellcloud.talk.dialect.Dialect;
 import net.cellcloud.talk.dialect.DialectEnumerator;
-import net.cellcloud.talk.http.InterrogationServlet;
-import net.cellcloud.talk.http.TalkServlet;
+import net.cellcloud.util.CachedQueueExecutor;
 import net.cellcloud.util.Utils;
 
 /** 会话服务。
@@ -71,6 +71,8 @@ public final class TalkService implements Service, SpeakerDelegate {
 	private int port;
 	private int httpPort;
 	private boolean httpEnabled;
+
+	private CookieSessionManager httpSessionManager;
 
 	private NonblockingAcceptor acceptor;
 	private NucleusContext nucleusContext;
@@ -104,11 +106,11 @@ public final class TalkService implements Service, SpeakerDelegate {
 			this.nucleusContext = nucleusContext;
 
 			this.port = 7000;
-			this.httpPort = 8181;
+			this.httpPort = 7070;
 			this.httpEnabled = true;
 
 			// 创建执行器
-			this.executor = Executors.newSingleThreadExecutor();
+			this.executor = CachedQueueExecutor.newCachedQueueThreadPool(8);
 
 			// 添加默认方言工厂
 			DialectEnumerator.getInstance().addFactory(new ActionDialectFactory());
@@ -520,11 +522,18 @@ public final class TalkService implements Service, SpeakerDelegate {
 			return;
 		}
 
+		// 创建 Session 管理器
+		this.httpSessionManager = new CookieSessionManager(); 
+
 		// 创建服务节点
 		HttpCapsule capsule = new HttpCapsule(this.httpPort, 1000);
+		// 设置 Session 管理器
+		capsule.setSessionManager(this.httpSessionManager);
 		// 依次添加 Holder 点
-		capsule.addCapsuleHolder(new InterrogationServlet());
-		capsule.addCapsuleHolder(new TalkServlet());
+		capsule.addHolder(new HttpInterrogationHandler(this));
+		capsule.addHolder(new HttpCheckHandler(this));
+		capsule.addHolder(new HttpRequestHandler(this));
+		capsule.addHolder(new HttpTalkHandler());
 
 		// 添加 HTTP 服务节点
 		HttpService.getInstance().addCapsule(capsule);
@@ -639,10 +648,10 @@ public final class TalkService implements Service, SpeakerDelegate {
 
 	/** 开启 Session 。
 	 */
-	protected void openSession(Session session) {
+	protected Certificate openSession(Session session) {
 		Long sid = session.getId();
 		if (this.unidentifiedSessions.containsKey(sid)) {
-			return;
+			return this.unidentifiedSessions.get(sid);
 		}
 
 		Certificate cert = new Certificate();
@@ -650,6 +659,8 @@ public final class TalkService implements Service, SpeakerDelegate {
 		cert.key = Utils.randomString(8);
 		cert.plaintext = Utils.randomString(16);
 		this.unidentifiedSessions.put(sid, cert);
+
+		return cert;
 	}
 
 	/** 关闭 Session 。
@@ -752,7 +763,10 @@ public final class TalkService implements Service, SpeakerDelegate {
 
 		this.unidentifiedSessions.remove(sid);
 		this.sessionContexts.remove(session);
-		this.acceptor.close(session);
+
+		if (!(session instanceof HttpSession)) {
+			this.acceptor.close(session);
+		}
 	}
 
 	/** 请求 Cellet 。
@@ -1100,6 +1114,11 @@ public final class TalkService implements Service, SpeakerDelegate {
 	/** 向指定 Session 发送识别指令。
 	 */
 	private void deliverChecking(Session session, String text, String key) {
+		// 如果是来自 HTTP 协议的 Session 则直接返回
+		if (session instanceof HttpSession) {
+			return;
+		}
+
 		// 包格式：密文|密钥
 
 		byte[] ciphertext = Cryptology.getInstance().simpleEncrypt(text.getBytes(), key.getBytes());

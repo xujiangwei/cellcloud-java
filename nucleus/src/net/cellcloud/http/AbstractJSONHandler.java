@@ -29,15 +29,9 @@ package net.cellcloud.http;
 import java.io.IOException;
 import java.io.PrintWriter;
 
-import javax.servlet.ServletException;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-
 import net.cellcloud.common.LogLevel;
 import net.cellcloud.common.Logger;
 
-import org.eclipse.jetty.http.HttpMethod;
-import org.eclipse.jetty.server.Request;
 import org.json.JSONObject;
 
 /**
@@ -53,44 +47,27 @@ public abstract class AbstractJSONHandler extends HttpHandler {
 	}
 
 	@Override
-	public void handle(String target, Request baseRequest, HttpServletRequest request, HttpServletResponse response) throws IOException, ServletException {
-		String method = baseRequest.getMethod();
-		if (method.equalsIgnoreCase(HttpMethod.GET.asString())) {
-			doGet(request, response);
-			baseRequest.setHandled(true);
-		}
-		else if (method.equalsIgnoreCase(HttpMethod.POST.asString())) {
-			doPost(request, response);
-			baseRequest.setHandled(true);
-		}
-		else if (method.equalsIgnoreCase(HttpMethod.PUT.asString())) {
-			doPut(request, response);
-			baseRequest.setHandled(true);
-		}
-		else if (method.equalsIgnoreCase(HttpMethod.DELETE.asString())) {
-			doDelete(request, response);
-			baseRequest.setHandled(true);
-		}
+	protected void doGet(HttpRequest request, HttpResponse response)
+		throws IOException {
+		this.respond(response, HttpResponse.SC_METHOD_NOT_ALLOWED);
 	}
 
-	protected void doGet(HttpServletRequest request, HttpServletResponse response)
-		throws ServletException, IOException {
-		this.respond(response, HttpServletResponse.SC_METHOD_NOT_ALLOWED);
+	@Override
+	protected void doPost(HttpRequest request, HttpResponse response)
+		throws IOException {
+		this.respond(response, HttpResponse.SC_METHOD_NOT_ALLOWED);
 	}
 
-	protected void doPost(HttpServletRequest request, HttpServletResponse response)
-		throws ServletException, IOException {
-		this.respond(response, HttpServletResponse.SC_METHOD_NOT_ALLOWED);
+	@Override
+	protected void doPut(HttpRequest request, HttpResponse response)
+		throws IOException {
+		this.respond(response, HttpResponse.SC_METHOD_NOT_ALLOWED);
 	}
 
-	protected void doPut(HttpServletRequest request, HttpServletResponse response)
-		throws ServletException, IOException {
-		this.respond(response, HttpServletResponse.SC_METHOD_NOT_ALLOWED);
-	}
-
-	protected void doDelete(HttpServletRequest request, HttpServletResponse response)
-		throws ServletException, IOException {
-		this.respond(response, HttpServletResponse.SC_METHOD_NOT_ALLOWED);
+	@Override
+	protected void doDelete(HttpRequest request, HttpResponse response)
+		throws IOException {
+		this.respond(response, HttpResponse.SC_METHOD_NOT_ALLOWED);
 	}
 
 	/**
@@ -98,7 +75,7 @@ public abstract class AbstractJSONHandler extends HttpHandler {
 	 * @param response
 	 * @param status
 	 */
-	protected void respond(HttpServletResponse response, int status) {
+	protected void respond(HttpResponse response, int status) {
 		response.setContentType("text/json");
 		response.setCharacterEncoding("UTF-8");
 		response.setStatus(status);
@@ -125,7 +102,7 @@ public abstract class AbstractJSONHandler extends HttpHandler {
 	 * @param json
 	 * @throws IOException
 	 */
-	protected void respond(HttpServletResponse response, int status, JSONObject json) throws IOException {
+	protected void respond(HttpResponse response, int status, JSONObject json) throws IOException {
 		response.setContentType("text/json");
 		response.setCharacterEncoding("UTF-8");
 		response.setStatus(status);
@@ -149,10 +126,10 @@ public abstract class AbstractJSONHandler extends HttpHandler {
 	 * 按照 200 状态处理访问响应
 	 * @param response
 	 */
-	protected void respondWithOk(HttpServletResponse response) {
+	protected void respondWithOk(HttpResponse response) {
 		response.setContentType("text/json");
 		response.setCharacterEncoding("UTF-8");
-		response.setStatus(HttpServletResponse.SC_OK);
+		response.setStatus(HttpResponse.SC_OK);
 
 		PrintWriter out = null;
 		try {
@@ -175,10 +152,10 @@ public abstract class AbstractJSONHandler extends HttpHandler {
 	 * @param json
 	 * @throws IOException
 	 */
-	protected void respondWithOk(HttpServletResponse response, JSONObject json) throws IOException {
+	protected void respondWithOk(HttpResponse response, JSONObject json) throws IOException {
 		response.setContentType("text/json");
 		response.setCharacterEncoding("UTF-8");
-		response.setStatus(HttpServletResponse.SC_OK);
+		response.setStatus(HttpResponse.SC_OK);
 
 		PrintWriter out = null;
 		try {

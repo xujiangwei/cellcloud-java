@@ -27,7 +27,7 @@ THE SOFTWARE.
 package net.cellcloud.http;
 
 
-/** Servlet 接入器接口。
+/** HTTP 处理句柄接入器接口。
  * 
  * @author Jiangwei Xu
  */
