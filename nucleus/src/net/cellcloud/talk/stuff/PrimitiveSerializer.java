@@ -32,12 +32,17 @@ import java.io.OutputStream;
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
 import java.util.Iterator;
+import java.util.List;
 
 import net.cellcloud.common.LogLevel;
 import net.cellcloud.common.Logger;
 import net.cellcloud.talk.Primitive;
 import net.cellcloud.talk.dialect.Dialect;
 import net.cellcloud.talk.dialect.DialectEnumerator;
+
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
 
 /** 原语序列化器。
  * 
@@ -96,6 +101,11 @@ public final class PrimitiveSerializer {
 	private static final byte[] STUFFTYPE_ADVERBIAL_BYTES = STUFFTYPE_ADVERBIAL.getBytes();
 	private static final byte[] STUFFTYPE_ATTRIBUTIVE_BYTES = STUFFTYPE_ATTRIBUTIVE.getBytes();
 	private static final byte[] STUFFTYPE_COMPLEMENT_BYTES = STUFFTYPE_COMPLEMENT.getBytes();
+
+	private static final String JSONKEY_VERSION = "version";
+	private static final String JSONKEY_STUFFS = "stuffs";
+	private static final String JSONKEY_STUFFTYPE = "type";
+	private static final String JSONKEY_STUFFVALUE = "value";
 
 	private static final int BLOCK = 2048;
 
@@ -563,5 +573,121 @@ public final class PrimitiveSerializer {
 
 		// 分析数据
 		dialect.build(primitive);
+	}
+
+	/**
+	 * 将原语序列化为 JSON 格式。
+	 * @param output
+	 * @param primitive
+	 */
+	public static void write(JSONObject output, Primitive primitive) throws JSONException {
+		// 版本
+		output.put(JSONKEY_VERSION, "1.0");
+
+		JSONArray stuffs = new JSONArray();
+		List<SubjectStuff> subjects = primitive.subjects();
+		if (null != subjects) {
+			for (SubjectStuff stuff : subjects) {
+				JSONObject stuffJSON = new JSONObject();
+				// 解析类型
+				stuffJSON.put(JSONKEY_STUFFTYPE, STUFFTYPE_SUBJECT);
+				// 解析数值
+				parseValue(stuffJSON, stuff);
+				// 写入数组
+				stuffs.put(stuffJSON);
+			}
+		}
+		List<PredicateStuff> predicates = primitive.predicates();
+		if (null != predicates) {
+			for (PredicateStuff stuff : predicates) {
+				JSONObject stuffJSON = new JSONObject();
+				// 解析类型
+				stuffJSON.put(JSONKEY_STUFFTYPE, STUFFTYPE_PREDICATE);
+				// 解析数值
+				parseValue(stuffJSON, stuff);
+				// 写入数组
+				stuffs.put(stuffJSON);
+			}
+		}
+		List<ObjectiveStuff> objectives = primitive.objectives();
+		if (null != objectives) {
+			for (ObjectiveStuff stuff : objectives) {
+				JSONObject stuffJSON = new JSONObject();
+				// 解析类型
+				stuffJSON.put(JSONKEY_STUFFTYPE, STUFFTYPE_OBJECTIVE);
+				// 解析数值
+				parseValue(stuffJSON, stuff);
+				// 写入数组
+				stuffs.put(stuffJSON);
+			}
+		}
+		List<AdverbialStuff> adverbials = primitive.adverbials();
+		if (null != adverbials) {
+			for (AdverbialStuff stuff : adverbials) {
+				JSONObject stuffJSON = new JSONObject();
+				// 解析类型
+				stuffJSON.put(JSONKEY_STUFFTYPE, STUFFTYPE_ADVERBIAL);
+				// 解析数值
+				parseValue(stuffJSON, stuff);
+				// 写入数组
+				stuffs.put(stuffJSON);
+			}
+		}
+		List<AttributiveStuff> attributives = primitive.attributives();
+		if (null != attributives) {
+			for (AttributiveStuff stuff : attributives) {
+				JSONObject stuffJSON = new JSONObject();
+				// 解析类型
+				stuffJSON.put(JSONKEY_STUFFTYPE, STUFFTYPE_ATTRIBUTIVE);
+				// 解析数值
+				parseValue(stuffJSON, stuff);
+				// 写入数组
+				stuffs.put(stuffJSON);
+			}
+		}
+		List<ComplementStuff> complements = primitive.complements();
+		if (null != complements) {
+			for (ComplementStuff stuff : complements) {
+				JSONObject stuffJSON = new JSONObject();
+				// 解析类型
+				stuffJSON.put(JSONKEY_STUFFTYPE, STUFFTYPE_COMPLEMENT);
+				// 解析数值
+				parseValue(stuffJSON, stuff);
+				// 写入数组
+				stuffs.put(stuffJSON);
+			}
+		}
+
+		// 所有语素
+		output.put(JSONKEY_STUFFS, stuffs);
+
+		// TODO 处理 Dialect
+	}
+
+	/**
+	 * 按照语素字面义解析数值。
+	 * @param output
+	 * @param stuff
+	 * @throws JSONException
+	 */
+	private static void parseValue(JSONObject output, Stuff stuff) throws JSONException {
+		if (stuff.literalBase == LiteralBase.STRING) {
+			output.put(JSONKEY_STUFFVALUE, stuff.getValueAsString());
+		}
+		else if (stuff.literalBase == LiteralBase.BOOL) {
+			output.put(JSONKEY_STUFFVALUE, stuff.getValueAsBool());
+		}
+		else if (stuff.literalBase == LiteralBase.INT) {
+			output.put(JSONKEY_STUFFVALUE, stuff.getValueAsInt());
+		}
+		else if (stuff.literalBase == LiteralBase.LONG) {
+			output.put(JSONKEY_STUFFVALUE, stuff.getValueAsLong());
+		}
+		else if (stuff.literalBase == LiteralBase.FLOAT) {
+			output.put(JSONKEY_STUFFVALUE, stuff.getValueAsFloat());
+		}
+		else if (stuff.literalBase == LiteralBase.JSON) {
+			output.put(JSONKEY_STUFFVALUE, stuff.getValueAsJSON());
+		}
 	}
 }

@@ -1,0 +1,431 @@
+/*
+-----------------------------------------------------------------------------
+This source file is part of Cell Cloud.
+
+Copyright (c) 2009-2013 Cell Cloud Team (www.cellcloud.net)
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in
+all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+THE SOFTWARE.
+-----------------------------------------------------------------------------
+*/
+
+package net.cellcloud.talk;
+
+import java.net.InetSocketAddress;
+import java.nio.charset.Charset;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeoutException;
+
+import net.cellcloud.common.Cryptology;
+import net.cellcloud.common.LogLevel;
+import net.cellcloud.common.Logger;
+import net.cellcloud.core.Nucleus;
+import net.cellcloud.http.HttpResponse;
+
+import org.eclipse.jetty.client.HttpClient;
+import org.eclipse.jetty.client.api.ContentResponse;
+import org.eclipse.jetty.client.util.StringContentProvider;
+import org.eclipse.jetty.http.HttpHeader;
+import org.eclipse.jetty.http.HttpMethod;
+import org.json.JSONException;
+import org.json.JSONObject;
+
+/**
+ * 基于 HTTP 的对话者。
+ * 
+ * @author Jiangwei Xu
+ *
+ */
+public class HttpSpeaker implements Speakable {
+
+	private static final String URI_INTERROGATION = "/talk/int";
+	private static final String URI_CHECK = "/talk/check";
+	private static final String URI_REQUEST = "/talk/request";
+	private static final String URI_HEARTBEAT = "/talk/hb";
+
+	private String identifier;
+	private SpeakerDelegate delegate;
+	private volatile int state = SpeakerState.HANGUP;
+
+	private InetSocketAddress address;
+	private HttpClient client;
+
+	private String cookie;
+
+	/// 服务器的 Tag
+	private String remoteTag;
+
+	/// 心跳控制计数
+	private int hbTick;
+	/// 心跳计数周期
+	private int hbPeriod;
+	/// 心跳失败累计次数
+	private int hbFailCounts;
+
+	public HttpSpeaker(String identifier, SpeakerDelegate delegate, int heartbeatPeriod) {
+		this.identifier = identifier;
+		this.delegate = delegate;
+		this.client = new HttpClient();
+		this.client.setConnectTimeout(10000);
+		this.hbTick = 0;
+		this.hbPeriod = heartbeatPeriod;
+		this.hbFailCounts = 0;
+	}
+
+	@Override
+	public String getIdentifier() {
+		return this.identifier;
+	}
+
+	@Override
+	public String getRemoteTag() {
+		return this.remoteTag;
+	}
+
+	@Override
+	public boolean call(InetSocketAddress address) {
+		if (SpeakerState.CALLING == this.state) {
+			// 正在 Call 返回 false
+			return false;
+		}
+
+		if (this.client.isStarting()) {
+			// 正在启动则返回失败
+			return false;
+		}
+
+		// 尝试启动
+		if (!this.client.isStarted()) {
+			try {
+				// 启动
+				this.client.start();
+
+				int counts = 0;
+				while (!this.client.isStarted()) {
+					Thread.sleep(10);
+
+					++counts;
+					if (counts > 150) {
+						break;
+					}
+				}
+			} catch (Exception e) {
+				Logger.log(HttpSpeaker.class, e, LogLevel.ERROR);
+				return false;
+			}
+		}
+
+		// 设置状态
+		this.state = SpeakerState.HANGUP;
+
+		// 地址
+		this.address = address;
+
+		// 拼装 URL
+		StringBuilder url = new StringBuilder("http://");
+		url.append(address.getHostString()).append(":").append(address.getPort());
+		url.append(URI_INTERROGATION);
+
+		try {
+			// 更新状态
+			this.state = SpeakerState.CALLING;
+
+			ContentResponse response = this.client.newRequest(url.toString()).method(HttpMethod.GET).send();
+			if (response.getStatus() == HttpResponse.SC_OK) {
+				// 获取服务器提供的 Cookie
+				this.cookie = response.getHeaders().get(HttpHeader.SET_COOKIE);
+
+				// 解析数据
+				JSONObject data = this.readContent(response.getContent());
+				String ciphertextBase64 = data.getString(HttpInterrogationHandler.Ciphertext);
+				final String key = data.getString(HttpInterrogationHandler.Key);
+				final byte[] ciphertext = Cryptology.getInstance().decodeBase64(ciphertextBase64);
+				// 发送 Check 请求
+				TalkService.getInstance().executor.execute(new Runnable() {
+					@Override
+					public void run() {
+						requestCheck(ciphertext, key.getBytes(Charset.forName("UTF-8")));
+					}
+				});
+				return true;
+			}
+		} catch (InterruptedException | TimeoutException | ExecutionException | JSONException e) {
+			Logger.log(HttpSpeaker.class, e, LogLevel.ERROR);
+		}
+
+		return false;
+	}
+
+	@Override
+	public void suspend(long duration) {
+	}
+
+	@Override
+	public void resume(long startTime) {
+	}
+
+	@Override
+	public void hangUp() {
+		this.stopClient();
+
+		this.state = SpeakerState.HANGUP;
+
+		this.fireQuitted();
+	}
+
+	@Override
+	public boolean speak(Primitive primitive) {
+		return false;
+	}
+
+	@Override
+	public boolean isCalled() {
+		return (this.state == SpeakerState.CALLED);
+	}
+
+	@Override
+	public boolean isSuspended() {
+		return (this.state == SpeakerState.SUSPENDED);
+	}
+
+	/**
+	 * 每秒计时。
+	 */
+	protected void tick() {
+		if (this.state != SpeakerState.CALLED) {
+			return;
+		}
+
+		// Tick 周期为 5 秒
+		++this.hbTick;
+
+		if (this.hbTick >= this.hbPeriod) {
+			this.hbTick = 0;
+
+			if (Logger.isDebugLevel()) {
+				Logger.d(HttpSpeaker.class, "Http heartbeat request : " + this.getIdentifier());
+			}
+
+			// 执行心跳
+			TalkService.getInstance().executor.execute(new Runnable() {
+				@Override
+				public void run() {
+					requestHeartbeat();
+				}
+			});
+		}
+	}
+
+	private void stopClient() {
+		try {
+			this.client.stop();
+		} catch (Exception e) {
+			Logger.log(HttpSpeaker.class, e, LogLevel.DEBUG);
+		}
+	}
+
+	private void requestHeartbeat() {
+		// 拼装 URL
+		StringBuilder url = new StringBuilder("http://");
+		url.append(this.address.getHostString()).append(":").append(this.address.getPort());
+		url.append(URI_HEARTBEAT);
+
+		// 发送请求
+		try {
+			ContentResponse response = this.client.newRequest(url.toString())
+											.method(HttpMethod.GET)
+											.header(HttpHeader.COOKIE, this.cookie)
+											.send();
+			if (response.getStatus() == HttpResponse.SC_OK) {
+				// 失败次数清空
+				this.hbFailCounts = 0;
+
+				JSONObject responseData = this.readContent(response.getContent());
+				if (responseData.has(HttpHeartbeatHandler.Primitives)) {
+					
+				}
+			}
+			else {
+				// 记录失败
+				++this.hbFailCounts;
+				Logger.w(HttpSpeaker.class, "Heartbeat failed");
+			}
+		} catch (InterruptedException | TimeoutException | ExecutionException e) {
+			// 记录失败次数
+			++this.hbFailCounts;
+		} catch (JSONException e) {
+			Logger.log(getClass(), e, LogLevel.ERROR);
+		}
+
+		// 3 次失败之后通知关闭
+		if (this.hbFailCounts >= 3) {
+			this.hangUp();
+		}
+	}
+
+	/**
+	 * 请求 Check 。
+	 */
+	private void requestCheck(byte[] ciphertext, byte[] key) {
+		if (null == this.address) {
+			return;
+		}
+
+		// 解密
+		byte[] plaintext = Cryptology.getInstance().simpleDecrypt(ciphertext, key); 
+		JSONObject data = new JSONObject();
+		try {
+			data.put(HttpCheckHandler.Plaintext, new String(plaintext, Charset.forName("UTF-8")));
+		} catch (JSONException e) {
+			Logger.log(HttpSpeaker.class, e, LogLevel.ERROR);
+			return;
+		}
+
+		// 拼装 URL
+		StringBuilder url = new StringBuilder("http://");
+		url.append(this.address.getHostString()).append(":").append(this.address.getPort());
+		url.append(URI_CHECK);
+
+		StringContentProvider content = new StringContentProvider(data.toString(), "UTF-8");
+		try {
+			// 发送请求
+			ContentResponse response = this.client.newRequest(url.toString())
+											.method(HttpMethod.POST)
+											.header(HttpHeader.COOKIE, this.cookie)
+											.content(content)
+											.send();
+			if (response.getStatus() == HttpResponse.SC_OK) {
+				// 获取数据
+				JSONObject responseData = this.readContent(response.getContent());
+				if (null != responseData) {
+					this.remoteTag = responseData.getString(HttpCheckHandler.Tag);
+
+					// 尝试请求 Cellet
+					TalkService.getInstance().executor.execute(new Runnable() {
+						@Override
+						public void run() {
+							requestCellet();
+						}
+					});
+				}
+				else {
+					Logger.e(HttpSpeaker.class, "Can not get tag data from check action");
+				}
+			}
+			else {
+				Logger.e(HttpSpeaker.class, "Request check failed: " + response.getStatus());
+			}
+		} catch (InterruptedException | TimeoutException | ExecutionException | JSONException e) {
+			Logger.log(HttpSpeaker.class, e, LogLevel.ERROR);
+		}
+
+		url = null;
+	}
+
+	/**
+	 * 请求 Cellet 。
+	 */
+	private void requestCellet() {
+		// 拼装 URL
+		StringBuilder url = new StringBuilder("http://");
+		url.append(this.address.getHostString()).append(":").append(this.address.getPort());
+		url.append(URI_REQUEST);
+
+		JSONObject data = new JSONObject();
+		try {
+			data.put(HttpRequestHandler.Identifier, this.identifier);
+			data.put(HttpRequestHandler.Tag, Nucleus.getInstance().getTagAsString());
+		} catch (JSONException e) {
+			Logger.log(getClass(), e, LogLevel.ERROR);
+		}
+
+		StringContentProvider content = new StringContentProvider(data.toString(), "UTF-8");
+		try {
+			// 发送请求
+			ContentResponse response = this.client.newRequest(url.toString())
+											.method(HttpMethod.POST)
+											.header(HttpHeader.COOKIE, this.cookie)
+											.content(content)
+											.send();
+			if (response.getStatus() == HttpResponse.SC_OK) {
+				StringBuilder buf = new StringBuilder();
+				buf.append("Cellet '");
+				buf.append(this.identifier);
+				buf.append("' has called at ");
+				buf.append(this.address.getAddress().getHostAddress());
+				buf.append(":");
+				buf.append(this.address.getPort());
+				Logger.i(HttpSpeaker.class, buf.toString());
+				buf = null;
+
+				// 变更状态
+				this.state = SpeakerState.CALLED;
+
+				// 回调事件
+				this.fireContacted();
+			}
+			else {
+				Logger.e(HttpSpeaker.class, "Request cellet failed: " + response.getStatus());
+			}
+		} catch (InterruptedException | TimeoutException | ExecutionException e) {
+			Logger.log(getClass(), e, LogLevel.ERROR);
+		}
+	}
+
+	private void fireDialogue(Primitive primitive) {
+		this.delegate.onDialogue(this, primitive);
+	}
+
+	private void fireContacted() {
+		this.delegate.onContacted(this);
+	}
+
+	private void fireQuitted() {
+		this.delegate.onQuitted(this);
+	}
+
+	private void fireSuspended(long timestamp, int mode) {
+		this.delegate.onSuspended(this, timestamp, mode);
+	}
+
+	private void fireResumed(long timestamp, Primitive primitive) {
+		this.delegate.onResumed(this, timestamp, primitive);
+	}
+
+	private void fireFailed(TalkServiceFailure failure) {
+		this.delegate.onFailed(this, failure);
+	}
+
+	/**
+	 * 读 HTTP 返回内容数据。
+	 * @param content
+	 * @return
+	 * @throws JSONException
+	 */
+	private JSONObject readContent(byte[] content) throws JSONException {
+		JSONObject ret = null;
+
+		try {
+			ret = new JSONObject(new String(content, Charset.forName("UTF-8")));
+		} catch (JSONException e) {
+			throw e;
+		}
+
+		return ret;
+	}
+}

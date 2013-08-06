@@ -26,6 +26,10 @@ THE SOFTWARE.
 
 package net.cellcloud.http;
 
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 import org.eclipse.jetty.http.HttpHeader;
@@ -40,10 +44,22 @@ public class CookieSessionManager implements SessionManager {
 
 	private static final String COOKIE = HttpHeader.COOKIE.asString();
 
+	private long sessionExpires;
+	private int maxSessionNum;
 	private ConcurrentHashMap<Long, HttpSession> sessions;
 
+	// 监听器列表
+	private ArrayList<SessionListener> listeners;
+
+	private volatile long maintainTime;
+
 	public CookieSessionManager() {
+		// 默认会话有效期：12 小时
+		this.sessionExpires = 12 * 60 * 60 * 1000;
+		this.maxSessionNum = 5000;
 		this.sessions = new ConcurrentHashMap<Long, HttpSession>();
+		this.maintainTime = System.currentTimeMillis();
+		this.listeners = new ArrayList<SessionListener>(1);
 	}
 
 	@Override
@@ -62,11 +78,29 @@ public class CookieSessionManager implements SessionManager {
 		}
 
 		// 创建会话
-		HttpSession session = new HttpSession(request.getRemoteAddr());
+		HttpSession session = new HttpSession(request.getRemoteAddr(), this.sessionExpires);
 		this.sessions.put(session.getId(), session);
 
+		cookie = "SID=" + session.getId().toString();
 		// 设置 Cookie
-		response.setCookie("SID:" + session.getId().toString());
+		response.setCookie(cookie);
+		// 注入 Cookie 到 Request
+		request.setAttribute(COOKIE, cookie);
+
+		// 分发事件
+		this.dispatchCreate(session);
+
+		// 是否需要进行 Session 维护
+		if (this.sessions.size() > this.maxSessionNum) {
+			long time = System.currentTimeMillis();
+			// 维护最小间隔时间：30 分钟
+			if (time - this.maintainTime > 1800000) {
+				this.maintainTime = time;
+				SessionMaintainTask task = new SessionMaintainTask();
+				// 启动维护线程
+				task.start();
+			}
+		}
 	}
 
 	@Override
@@ -78,11 +112,34 @@ public class CookieSessionManager implements SessionManager {
 			if (sessionId.longValue() > 0) {
 				// 判断是否是已被管理 Session
 				if (this.sessions.containsKey(sessionId)) {
-					// 已被管理
-					this.sessions.remove(sessionId);
+					// 解除管理
+					HttpSession session = this.sessions.remove(sessionId);
+
+					// 分发事件
+					this.dispatchDestroy(session);
 				}
 			}
 		}
+	}
+
+	@Override
+	public void unmanage(HttpSession session) {
+		Long sessionId = session.getId();
+		if (this.sessions.containsKey(sessionId)) {
+			this.sessions.remove(sessionId);
+
+			// 分发事件
+			this.dispatchDestroy(session);
+		}
+	}
+
+	@Override
+	public List<HttpSession> getSessions() {
+		ArrayList<HttpSession> ret = new ArrayList<HttpSession>(this.sessions.size());
+		for (HttpSession session : this.sessions.values()) {
+			ret.add(session);
+		}
+		return ret;
 	}
 
 	@Override
@@ -101,6 +158,17 @@ public class CookieSessionManager implements SessionManager {
 				return this.sessions.get(sessionId);
 			}
 		}
+		else {
+			// 检查属性
+			String attrCookie = (String) request.getAttribute(COOKIE);
+			if (null != attrCookie) {
+				Long sessionId = this.readSessionId(attrCookie);
+				if (sessionId.longValue() > 0) {
+					// 返回 Session
+					return this.sessions.get(sessionId);
+				}
+			}
+		}
 
 		return null;
 	}
@@ -108,6 +176,38 @@ public class CookieSessionManager implements SessionManager {
 	@Override
 	public boolean hasSession(Long id) {
 		return this.sessions.containsKey(id);
+	}
+
+	@Override
+	public void addSessionListener(SessionListener listener) {
+		synchronized (this.listeners) {
+			if (!this.listeners.contains(listener)) {
+				this.listeners.add(listener);
+			}
+		}
+	}
+
+	@Override
+	public void removeSessionListener(SessionListener listener) {
+		synchronized (this.listeners) {
+			this.listeners.remove(listener);
+		}
+	}
+
+	private void dispatchCreate(HttpSession session) {
+		synchronized (this.listeners) {
+			for (SessionListener listener : this.listeners) {
+				listener.onCreate(session);
+			}
+		}
+	}
+
+	private void dispatchDestroy(HttpSession session) {
+		synchronized (this.listeners) {
+			for (SessionListener listener : this.listeners) {
+				listener.onDestroy(session);
+			}
+		}
 	}
 
 	/**
@@ -130,5 +230,32 @@ public class CookieSessionManager implements SessionManager {
 		}
 
 		return ret;
+	}
+
+
+	/**
+	 * Session 维护任务。
+	 */
+	protected final class SessionMaintainTask extends Thread {
+		protected SessionMaintainTask() {
+			super(SessionMaintainTask.class.getName());
+		}
+
+		@Override
+		public void run() {
+			long time = System.currentTimeMillis();
+
+			// 依次删除所有超出有效期的会话
+			Iterator<Map.Entry<Long, HttpSession>> iter = sessions.entrySet().iterator();
+			while (iter.hasNext()) {
+				HttpSession session = iter.next().getValue();
+				if (time - session.getTimestamp() > session.getExpires()) {
+					iter.remove();
+
+					// 分发事件
+					dispatchDestroy(session);
+				}
+			}
+		}
 	}
 }

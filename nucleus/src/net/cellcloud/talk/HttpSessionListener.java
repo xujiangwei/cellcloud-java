@@ -24,22 +24,29 @@ THE SOFTWARE.
 -----------------------------------------------------------------------------
 */
 
-package net.cellcloud.http;
+package net.cellcloud.talk;
 
+import net.cellcloud.http.HttpSession;
+import net.cellcloud.http.SessionListener;
 
-/** HTTP 处理句柄接入器接口。
+/**
+ * HTTP 会话监听器。
  * 
  * @author Jiangwei Xu
+ *
  */
-public interface CapsuleHolder {
+public class HttpSessionListener implements SessionListener {
 
-	/** 返回路径描述。
-	 * @return
-	 */
-	public String getPathSpec();
+	public HttpSessionListener() {
+	}
 
-	/** 返回对应的处理句柄 。
-	 * @return
-	 */
-	public HttpHandler getHttpHandler();
+	@Override
+	public void onCreate(HttpSession session) {
+		// Nothing
+	}
+
+	@Override
+	public void onDestroy(HttpSession session) {
+		TalkService.getInstance().closeSession(session);
+	}
 }

@@ -26,6 +26,8 @@ THE SOFTWARE.
 
 package net.cellcloud.http;
 
+import java.util.List;
+
 /**
  * HTTP Sessoin 管理器接口。
  * 
@@ -47,6 +49,18 @@ public interface SessionManager {
 	public void unmanage(HttpRequest request);
 
 	/**
+	 * 解除管理指定的会话。
+	 * @param session
+	 */
+	public void unmanage(HttpSession session);
+
+	/**
+	 * 返回所有 Session 列表。
+	 * @return
+	 */
+	public List<HttpSession> getSessions();
+
+	/**
 	 * 返回指定 ID 的 Session 。
 	 * @param id
 	 * @return
@@ -66,4 +80,16 @@ public interface SessionManager {
 	 * @return
 	 */
 	public boolean hasSession(Long id);
+
+	/**
+	 * 添加心跳监听器。
+	 * @param listener
+	 */
+	public void addSessionListener(SessionListener listener);
+
+	/**
+	 * 移除心跳监听器。
+	 * @param listener
+	 */
+	public void removeSessionListener(SessionListener listener);
 }

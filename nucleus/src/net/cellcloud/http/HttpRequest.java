@@ -67,6 +67,24 @@ public class HttpRequest {
 	}
 
 	/**
+	 * 设置属性值。
+	 * @param name
+	 * @param value
+	 */
+	public void setAttribute(String name, Object value) {
+		this.request.setAttribute(name, value);
+	}
+
+	/**
+	 * 返回指定名称的属性值。
+	 * @param name
+	 * @return
+	 */
+	public Object getAttribute(String name) {
+		return this.request.getAttribute(name);
+	}
+
+	/**
 	 * 返回 Session 。
 	 * @return
 	 */

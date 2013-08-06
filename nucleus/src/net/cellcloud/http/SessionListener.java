@@ -26,20 +26,25 @@ THE SOFTWARE.
 
 package net.cellcloud.http;
 
-
-/** HTTP 处理句柄接入器接口。
+/**
+ * 会话期满监听器。
  * 
  * @author Jiangwei Xu
+ *
  */
-public interface CapsuleHolder {
+public interface SessionListener {
 
-	/** 返回路径描述。
-	 * @return
+	/**
+	 * 会话被创建。
+	 * 
+	 * @param session
 	 */
-	public String getPathSpec();
+	public void onCreate(HttpSession session);
 
-	/** 返回对应的处理句柄 。
-	 * @return
+	/**
+	 * 会话被销毁。
+	 * 
+	 * @param session
 	 */
-	public HttpHandler getHttpHandler();
+	public void onDestroy(HttpSession session);
 }

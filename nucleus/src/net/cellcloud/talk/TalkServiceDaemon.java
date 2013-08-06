@@ -68,14 +68,28 @@ public final class TalkServiceDaemon extends Thread {
 			// 当前时间
 			this.tickTime = System.currentTimeMillis();
 
+			// 心跳计数
 			++heartbeatCount;
+
+			// HTTP 客户端管理
+			if (heartbeatCount % 5 == 0) {
+				// 每 5 秒一次计数
+				if (null != service.httpSpeakers) {
+					for (HttpSpeaker speaker : service.httpSpeakers.values()) {
+						speaker.tick();
+					}
+				}
+			}
+
+			// HTTP 服务器 Session 管理
+			if (heartbeatCount % 60 == 0) {
+				service.checkHttpSessionHeartbeat();
+			}
+
 			if (heartbeatCount >= 120) {
 				// 120 秒一次心跳
-
 				if (null != service.speakers) {
-					Iterator<Speaker> iter = service.speakers.values().iterator();
-					while (iter.hasNext()) {
-						Speaker speaker = iter.next();
+					for (Speaker speaker : service.speakers.values()) {
 						speaker.heartbeat();
 					}
 				}
@@ -111,7 +125,7 @@ public final class TalkServiceDaemon extends Thread {
 			// 处理未识别 Session
 			service.processUnidentifiedSessions(this.tickTime);
 
-			// 1 分钟检查一次
+			// 1 分钟检查一次挂起状态下的会话器是否失效
 			++checkSuspendedCount;
 			if (checkSuspendedCount >= 60) {
 				// 检查并删除挂起的会话
@@ -144,6 +158,14 @@ public final class TalkServiceDaemon extends Thread {
 				speaker.hangUp();
 			}
 			service.speakers.clear();
+		}
+		if (null != service.httpSpeakers) {
+			Iterator<HttpSpeaker> iter = service.httpSpeakers.values().iterator();
+			while (iter.hasNext()) {
+				HttpSpeaker speaker = iter.next();
+				speaker.hangUp();
+			}
+			service.httpSpeakers.clear();
 		}
 
 		ActionDialectFactory factory =

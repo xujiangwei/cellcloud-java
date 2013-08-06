@@ -24,22 +24,69 @@ THE SOFTWARE.
 -----------------------------------------------------------------------------
 */
 
-package net.cellcloud.http;
+package net.cellcloud.talk;
 
+import java.net.InetSocketAddress;
 
-/** HTTP 处理句柄接入器接口。
+/**
+ * 通信会话器接口。
  * 
  * @author Jiangwei Xu
  */
-public interface CapsuleHolder {
+public interface Speakable {
 
-	/** 返回路径描述。
+	/**
+	 * 向指定地址发起请求 Cellet 服务。
+	 * @param address
 	 * @return
 	 */
-	public String getPathSpec();
+	public boolean call(InetSocketAddress address);
 
-	/** 返回对应的处理句柄 。
+	/**
+	 * 挂起服务。
+	 * @param duration 指定挂起的有效时长。
+	 */
+	public void suspend(long duration);
+
+	/**
+	 * 恢复服务。
+	 * @param startTime
+	 */
+	public void resume(long startTime);
+
+	/**
+	 * 挂断与 Cellet 的服务。
+	 */
+	public void hangUp();
+
+	/**
+	 * 向 Cellet 发送原语数据。
+	 * @param primitive
 	 * @return
 	 */
-	public HttpHandler getHttpHandler();
+	public boolean speak(Primitive primitive);
+
+	/**
+	 * 是否已经与 Cellet 建立服务。
+	 * @return
+	 */
+	public boolean isCalled();
+
+	/**
+	 * Cellet 服务器是否已经被挂起。
+	 * @return
+	 */
+	public boolean isSuspended();
+
+	/**
+	 * 返回与会话器对话的 Cellet 的识别符。
+	 * @return
+	 */
+	public String getIdentifier();
+
+	/**
+	 * 返回远端的内核标签。
+	 * @return
+	 */
+	public String getRemoteTag();
 }

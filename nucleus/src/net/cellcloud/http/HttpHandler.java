@@ -33,8 +33,11 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import org.eclipse.jetty.http.HttpMethod;
+import org.eclipse.jetty.server.Handler;
 import org.eclipse.jetty.server.Request;
-import org.eclipse.jetty.server.handler.AbstractHandler;
+import org.eclipse.jetty.server.Server;
+import org.eclipse.jetty.util.annotation.ManagedAttribute;
+import org.eclipse.jetty.util.annotation.ManagedOperation;
 
 /**
  * HTTP 协议处理句柄。
@@ -42,8 +45,9 @@ import org.eclipse.jetty.server.handler.AbstractHandler;
  * @author Jiangwei Xu
  *
  */
-public abstract class HttpHandler extends AbstractHandler {
+public abstract class HttpHandler implements Handler /*extends AbstractHandler*/ {
 
+	private Server server;
 	private SessionManager sessionManager;
 
 	public HttpHandler() {
@@ -77,23 +81,27 @@ public abstract class HttpHandler extends AbstractHandler {
 			this.sessionManager.manage(httpRequest, httpResponse);
 		}
 
-		String method = baseRequest.getMethod();
+		// 访问方法
+		String method = request.getMethod();
+		if (request.getContentLength() > 0) {
+			method = HttpMethod.POST.asString();
+		}
+
 		if (method.equalsIgnoreCase(HttpMethod.GET.asString())) {
 			doGet(httpRequest, httpResponse);
-			baseRequest.setHandled(true);
 		}
 		else if (method.equalsIgnoreCase(HttpMethod.POST.asString())) {
 			doPost(httpRequest, httpResponse);
-			baseRequest.setHandled(true);
 		}
 		else if (method.equalsIgnoreCase(HttpMethod.PUT.asString())) {
 			doPut(httpRequest, httpResponse);
-			baseRequest.setHandled(true);
 		}
 		else if (method.equalsIgnoreCase(HttpMethod.DELETE.asString())) {
 			doDelete(httpRequest, httpResponse);
-			baseRequest.setHandled(true);
 		}
+
+		// 已处理
+		baseRequest.setHandled(true);
 
 		if (null != httpRequest) {
 			httpRequest.destroy();
@@ -132,4 +140,68 @@ public abstract class HttpHandler extends AbstractHandler {
 	 * @throws IOException
 	 */
 	protected abstract void doDelete(HttpRequest request, HttpResponse response) throws IOException;
+
+	@Override
+	public void addLifeCycleListener(Listener listener) {
+	}
+
+	@Override
+	public void removeLifeCycleListener(Listener listener) {
+	}
+
+	@Override
+	public boolean isFailed() {
+		return false;
+	}
+
+	@Override
+	public boolean isRunning() {
+		return true;
+	}
+
+	@Override
+	public boolean isStarted() {
+		return true;
+	}
+
+	@Override
+	public boolean isStarting() {
+		return false;
+	}
+
+	@Override
+	public boolean isStopped() {
+		return false;
+	}
+
+	@Override
+	public boolean isStopping() {
+		return false;
+	}
+
+	@Override
+	@ManagedOperation(value = "Starts the instance", impact = "ACTION")
+	public void start() throws Exception {
+	}
+
+	@Override
+	@ManagedOperation(value = "Stops the instance", impact = "ACTION")
+	public void stop() throws Exception {
+	}
+
+	@Override
+	@ManagedOperation(value = "destroy associated resources", impact = "ACTION")
+	public void destroy() {
+	}
+
+	@Override
+	@ManagedAttribute(value = "the jetty server for this handler", readonly = true)
+	public Server getServer() {
+		return this.server;
+	}
+
+	@Override
+	public void setServer(Server server) {
+		this.server = server;
+	}
 }

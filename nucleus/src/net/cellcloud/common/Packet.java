@@ -318,7 +318,7 @@ public final class Packet {
 					return packet;
 				}
 			}
-			
+
 			// 解析子段数量
 			int subNum = Integer.parseInt(new String(bSubNum));
 			bSubNum = null;

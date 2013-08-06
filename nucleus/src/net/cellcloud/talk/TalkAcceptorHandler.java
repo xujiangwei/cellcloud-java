@@ -79,7 +79,7 @@ public final class TalkAcceptorHandler implements MessageHandler {
 		byte[] data = message.get();
 		final Packet packet = Packet.unpack(data);
 		if (null != packet) {
-			this.talkService.executor.execute(new Runnable(){
+			this.talkService.executor.execute(new Runnable() {
 				@Override
 				public void run() {
 					interpret(session, packet);

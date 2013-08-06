@@ -49,9 +49,9 @@ import net.cellcloud.http.HttpSession;
  */
 public final class HttpRequestHandler extends AbstractJSONHandler implements CapsuleHolder {
 
-	private static final String Identifier = "identifier";
-	private static final String Tag = "tag";
-	private static final String Version = "version";
+	protected static final String Identifier = "identifier";
+	protected static final String Tag = "tag";
+	protected static final String Version = "version";
 
 	private TalkService talkService;
 

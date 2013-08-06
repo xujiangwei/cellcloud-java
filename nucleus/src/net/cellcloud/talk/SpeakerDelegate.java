@@ -33,15 +33,45 @@ package net.cellcloud.talk;
  */
 public interface SpeakerDelegate {
 
-	public void onDialogue(Speaker speaker, Primitive primitive);
+	/**
+	 * Dialogue
+	 * @param speaker
+	 * @param primitive
+	 */
+	public void onDialogue(Speakable speaker, Primitive primitive);
 
-	public void onContacted(Speaker speaker);
+	/**
+	 * 
+	 * @param speaker
+	 */
+	public void onContacted(Speakable speaker);
 
-	public void onQuitted(Speaker speaker);
+	/**
+	 * 
+	 * @param speaker
+	 */
+	public void onQuitted(Speakable speaker);
 
-	public void onSuspended(Speaker speaker, long timestamp, int mode);
+	/**
+	 * 
+	 * @param speaker
+	 * @param timestamp
+	 * @param mode
+	 */
+	public void onSuspended(Speakable speaker, long timestamp, int mode);
 
-	public void onResumed(Speaker speaker, long timestamp, Primitive primitive);
+	/**
+	 * 
+	 * @param speaker
+	 * @param timestamp
+	 * @param primitive
+	 */
+	public void onResumed(Speakable speaker, long timestamp, Primitive primitive);
 
-	public void onFailed(Speaker speaker, TalkServiceFailure failure);
+	/**
+	 * 
+	 * @param speaker
+	 * @param failure
+	 */
+	public void onFailed(Speakable speaker, TalkServiceFailure failure);
 }

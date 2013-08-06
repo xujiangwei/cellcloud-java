@@ -54,6 +54,7 @@ public class DefaultErrorHandler extends ErrorHandler {
 			Logger.d(DefaultErrorHandler.class, "Error http request: " + request.getRequestURI());
 		}
 
+		response.setHeader("Server", "Cell Cloud");
 		baseRequest.setHandled(true);
 	}
 

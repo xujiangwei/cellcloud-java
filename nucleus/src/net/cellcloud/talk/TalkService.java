@@ -49,6 +49,7 @@ import net.cellcloud.core.Cellet;
 import net.cellcloud.core.CelletSandbox;
 import net.cellcloud.core.Nucleus;
 import net.cellcloud.core.NucleusContext;
+import net.cellcloud.exception.InvalidException;
 import net.cellcloud.exception.SingletonException;
 import net.cellcloud.http.CookieSessionManager;
 import net.cellcloud.http.HttpCapsule;
@@ -70,9 +71,11 @@ public final class TalkService implements Service, SpeakerDelegate {
 
 	private int port;
 	private int httpPort;
+	// 服务器端是否启用 HTTP 服务
 	private boolean httpEnabled;
 
 	private CookieSessionManager httpSessionManager;
+	private HttpSessionListener httpSessionListener;
 
 	private NonblockingAcceptor acceptor;
 	private NucleusContext nucleusContext;
@@ -90,7 +93,10 @@ public final class TalkService implements Service, SpeakerDelegate {
 	/// 挂起状态的上下文
 	private ConcurrentHashMap<String, SuspendedTracker> suspendedTrackers;
 
+	// 私有协议 Speaker
 	protected ConcurrentHashMap<String, Speaker> speakers;
+	// HTTP 协议 Speaker
+	protected ConcurrentHashMap<String, HttpSpeaker> httpSpeakers;
 
 	private TalkServiceDaemon daemon;
 	private ArrayList<TalkListener> listeners;
@@ -189,6 +195,10 @@ public final class TalkService implements Service, SpeakerDelegate {
 		if (null != this.executor) {
 			this.executor.shutdown();
 		}
+
+		if (this.httpEnabled && null != HttpService.getInstance()) {
+			HttpService.getInstance().removeCapsule(this.httpPort);
+		}
 	}
 
 	/** 设置服务端口。
@@ -196,6 +206,10 @@ public final class TalkService implements Service, SpeakerDelegate {
 	 * @param port 指定服务监听端口。
 	 */
 	public void setPort(int port) {
+		if (null != this.acceptor && this.acceptor.isRunning()) {
+			throw new InvalidException("Can't set the port in talk service after the start");
+		}
+
 		this.port = port;
 	}
 
@@ -210,6 +224,10 @@ public final class TalkService implements Service, SpeakerDelegate {
 	 * @note 在 startup 之前设置才能生效。
 	 */
 	public void setHttpPort(int port) {
+		if (null != this.acceptor && this.acceptor.isRunning()) {
+			throw new InvalidException("Can't set the http port in talk service after the start");
+		}
+
 		this.httpPort = port;
 	}
 
@@ -223,6 +241,10 @@ public final class TalkService implements Service, SpeakerDelegate {
 	/** 设置是否激活 HTTP 服务。
 	 */
 	public void httpEnabled(boolean enabled) {
+		if (null != HttpService.getInstance() && HttpService.getInstance().hasCapsule(this.httpPort)) {
+			throw new InvalidException("Can't set the http enabled in talk service after the start");
+		}
+
 		this.httpEnabled = enabled;
 	}
 
@@ -378,33 +400,79 @@ public final class TalkService implements Service, SpeakerDelegate {
 	 * @note Client
 	 */
 	public boolean call(String identifier, InetSocketAddress address) {
-		return this.call(identifier, address, null);
+		return this.call(identifier, address, null, false);
+	}
+
+	/**
+	 * 申请调用 Cellet 服务。
+	 * 
+	 * @param identifier
+	 * @param address
+	 * @return
+	 */
+	public boolean call(String identifier, InetSocketAddress address, boolean httpUsed) {
+		return this.call(identifier, address, null, httpUsed);
+	}
+
+	/**
+	 * 申请调用 Cellet 服务。
+	 * 
+	 * @param identifier
+	 * @param address
+	 * @param capacity
+	 * @return
+	 */
+	public boolean call(String identifier, InetSocketAddress address, TalkCapacity capacity) {
+		return this.call(identifier, address, capacity, false);
 	}
 
 	/** 申请调用 Cellet 服务。
 	 * 
 	 * @note Client
 	 */
-	public boolean call(String identifier, InetSocketAddress address, TalkCapacity capacity) {
-		if (null == this.speakers)
-			this.speakers = new ConcurrentHashMap<String, Speaker>();
+	public boolean call(String identifier, InetSocketAddress address, TalkCapacity capacity, boolean httpUsed) {
+		if (!httpUsed) {
+			// 私有协议 Speaker
 
-		Speaker speaker = null;
+			if (null == this.speakers)
+				this.speakers = new ConcurrentHashMap<String, Speaker>();
 
-		if (this.speakers.containsKey(identifier)) {
-			// 检查 Speaker 是否是 Lost 状态 
-			speaker = this.speakers.get(identifier);
-			if (speaker.lost) {
-				speaker.lost = false;
+			Speaker speaker = null;
+	
+			if (this.speakers.containsKey(identifier)) {
+				// 检查 Speaker 是否是 Lost 状态 
+				speaker = this.speakers.get(identifier);
+				if (speaker.lost) {
+					speaker.lost = false;
+				}
 			}
+			else {
+				speaker = new Speaker(identifier, this, capacity);
+				this.speakers.put(identifier, speaker);
+			}
+	
+			// Call
+			return speaker.call(address);
 		}
 		else {
-			speaker = new Speaker(identifier, this, capacity);
-			this.speakers.put(identifier, speaker);
-		}
+			// HTTP 协议 Speaker
 
-		// Call
-		return speaker.call(address);
+			if (null == this.httpSpeakers)
+				this.httpSpeakers = new ConcurrentHashMap<String, HttpSpeaker>();
+
+			HttpSpeaker speaker = null;
+
+			if (this.httpSpeakers.containsKey(identifier)) {
+				speaker = this.httpSpeakers.get(identifier);
+			}
+			else {
+				speaker = new HttpSpeaker(identifier, this, 2);
+				this.httpSpeakers.put(identifier, speaker);
+			}
+
+			// Call
+			return speaker.call(address);
+		}
 	}
 
 	/** 挂起 Cellet 调用。
@@ -523,7 +591,11 @@ public final class TalkService implements Service, SpeakerDelegate {
 		}
 
 		// 创建 Session 管理器
-		this.httpSessionManager = new CookieSessionManager(); 
+		this.httpSessionManager = new CookieSessionManager();
+
+		// 添加监听器
+		this.httpSessionListener = new HttpSessionListener();
+		this.httpSessionManager.addSessionListener(this.httpSessionListener);
 
 		// 创建服务节点
 		HttpCapsule capsule = new HttpCapsule(this.httpPort, 1000);
@@ -533,7 +605,7 @@ public final class TalkService implements Service, SpeakerDelegate {
 		capsule.addHolder(new HttpInterrogationHandler(this));
 		capsule.addHolder(new HttpCheckHandler(this));
 		capsule.addHolder(new HttpRequestHandler(this));
-		capsule.addHolder(new HttpTalkHandler());
+		capsule.addHolder(new HttpHeartbeatHandler());
 
 		// 添加 HTTP 服务节点
 		HttpService.getInstance().addCapsule(capsule);
@@ -543,7 +615,7 @@ public final class TalkService implements Service, SpeakerDelegate {
 	 * 通知 Dialogue 。
 	 */
 	@Override
-	public void onDialogue(Speaker speaker, Primitive primitive) {
+	public void onDialogue(Speakable speaker, Primitive primitive) {
 		if (null == this.listeners) {
 			return;
 		}
@@ -560,13 +632,13 @@ public final class TalkService implements Service, SpeakerDelegate {
 	 * 通知新连接。
 	 */
 	@Override
-	public void onContacted(Speaker speaker) {
+	public void onContacted(Speakable speaker) {
 		if (null == this.listeners) {
 			return;
 		}
 
 		String identifier = speaker.getIdentifier();
-		String tag = speaker.remoteTag;
+		String tag = speaker.getRemoteTag();
 		synchronized (this.listeners) {
 			for (TalkListener listener : this.listeners) {
 				listener.contacted(identifier, tag);
@@ -578,13 +650,13 @@ public final class TalkService implements Service, SpeakerDelegate {
 	 * 通知断开连接。
 	 */
 	@Override
-	public void onQuitted(Speaker speaker) {
+	public void onQuitted(Speakable speaker) {
 		if (null == this.listeners) {
 			return;
 		}
 
 		String identifier = speaker.getIdentifier();
-		String tag = speaker.remoteTag;
+		String tag = speaker.getRemoteTag();
 		synchronized (this.listeners) {
 			for (TalkListener listener : this.listeners) {
 				listener.quitted(identifier, tag);
@@ -596,13 +668,13 @@ public final class TalkService implements Service, SpeakerDelegate {
 	 * 通知挂起。
 	 */
 	@Override
-	public void onSuspended(Speaker speaker, long timestamp, int mode) {
+	public void onSuspended(Speakable speaker, long timestamp, int mode) {
 		if (null == this.listeners) {
 			return;
 		}
 
 		String identifier = speaker.getIdentifier();
-		String tag = speaker.remoteTag;
+		String tag = speaker.getRemoteTag();
 		synchronized (this.listeners) {
 			for (TalkListener listener : this.listeners) {
 				listener.suspended(identifier, tag, timestamp, mode);
@@ -614,13 +686,13 @@ public final class TalkService implements Service, SpeakerDelegate {
 	 * 通知恢复。
 	 */
 	@Override
-	public void onResumed(Speaker speaker, long timestamp, Primitive primitive) {
+	public void onResumed(Speakable speaker, long timestamp, Primitive primitive) {
 		if (null == this.listeners) {
 			return;
 		}
 
 		String identifier = speaker.getIdentifier();
-		String tag = speaker.remoteTag;
+		String tag = speaker.getRemoteTag();
 		synchronized (this.listeners) {
 			for (TalkListener listener : this.listeners) {
 				listener.resumed(identifier, tag, timestamp, primitive);
@@ -632,13 +704,13 @@ public final class TalkService implements Service, SpeakerDelegate {
 	 * 通知发生错误。
 	 */
 	@Override
-	public void onFailed(Speaker speaker, TalkServiceFailure failure) {
+	public void onFailed(Speakable speaker, TalkServiceFailure failure) {
 		if (null == this.listeners) {
 			return;
 		}
 
 		String identifier = speaker.getIdentifier();
-		String tag = speaker.remoteTag;
+		String tag = speaker.getRemoteTag();
 		synchronized (this.listeners) {
 			for (TalkListener listener : this.listeners) {
 				listener.failed(identifier, tag, failure);
@@ -1005,9 +1077,20 @@ public final class TalkService implements Service, SpeakerDelegate {
 				Logger.i(TalkService.class, log.toString());
 				log = null;
 
+				// 从记录中删除
 				this.unidentifiedSessions.remove(session.getId());
-				this.acceptor.close(session);
+
+				if (session instanceof HttpSession) {
+					// 删除 HTTP 的 Session
+					this.httpSessionManager.unmanage((HttpSession)session);
+				}
+				else {
+					// 关闭私有协议的 Session
+					this.acceptor.close(session);
+				}
 			}
+
+			sessionList.clear();
 			sessionList = null;
 		}
 	}
@@ -1030,6 +1113,27 @@ public final class TalkService implements Service, SpeakerDelegate {
 	 */
 	protected long getTickTime() {
 		return this.daemon.getTickTime();
+	}
+
+	/** 检查 HTTP Session 心跳。
+	 */
+	protected void checkHttpSessionHeartbeat() {
+		if (null == this.httpSessionManager) {
+			return;
+		}
+
+		this.executor.execute(new Runnable() {
+			@Override
+			public void run() {
+				long time = daemon.getTickTime();
+				List<HttpSession> list = httpSessionManager.getSessions();
+				for (HttpSession session : list) {
+					if (time - session.getHeartbeat() > 60000) {
+						httpSessionManager.unmanage(session);
+					}
+				}
+			}
+		});
 	}
 
 	/** 检查并删除挂起的会话。

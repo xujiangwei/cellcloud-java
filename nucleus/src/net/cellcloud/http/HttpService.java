@@ -118,7 +118,7 @@ public final class HttpService implements Service {
 		contexts.setHandlers(handlers);
 		this.server.setHandler(contexts);
 
-		this.server.setStopTimeout(5000);
+		this.server.setStopTimeout(1000);
 		this.server.setStopAtShutdown(true);
 
 		try {
@@ -151,5 +151,33 @@ public final class HttpService implements Service {
 	 */
 	public void removeCapsule(HttpCapsule capsule) {
 		this.httpCapsules.remove(capsule);
+	}
+
+	/**
+	 * 删除指定端口的服务节点。
+	 * @param port
+	 */
+	public void removeCapsule(int port) {
+		for (HttpCapsule capsule : this.httpCapsules) {
+			if (capsule.getPort() == port) {
+				this.removeCapsule(capsule);
+				return;
+			}
+		}
+	}
+
+	/**
+	 * 是否包含指定端口的 HTTP 服务节点。
+	 * @param port
+	 * @return
+	 */
+	public boolean hasCapsule(int port) {
+		for (HttpCapsule capsule : this.httpCapsules) {
+			if (capsule.getPort() == port) {
+				return true;
+			}
+		}
+
+		return false;
 	}
 }

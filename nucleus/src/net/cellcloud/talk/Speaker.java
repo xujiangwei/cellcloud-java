@@ -2,7 +2,7 @@
 -----------------------------------------------------------------------------
 This source file is part of Cell Cloud.
 
-Copyright (c) 2009-2012 Cell Cloud Team (www.cellcloud.net)
+Copyright (c) 2009-2013 Cell Cloud Team (www.cellcloud.net)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -39,11 +39,13 @@ import net.cellcloud.common.Session;
 import net.cellcloud.core.Nucleus;
 import net.cellcloud.util.Utils;
 
-/** 对话者描述类。
+/**
+ * 对话者。
  * 
  * @author Jiangwei Xu
+ *
  */
-public class Speaker {
+public class Speaker implements Speakable {
 
 	private byte[] nucleusTag;
 
@@ -56,7 +58,7 @@ public class Speaker {
 	protected String remoteTag;
 
 	private boolean authenticated = false;
-	private int state = SpeakerState.HANGUP;
+	private volatile int state = SpeakerState.HANGUP;
 
 	// 是否需要重新连接
 	protected boolean lost = false;
@@ -81,8 +83,14 @@ public class Speaker {
 
 	/** 返回 Cellet Identifier 。
 	 */
+	@Override
 	public String getIdentifier() {
 		return this.celletIdentifier;
+	}
+
+	@Override
+	public String getRemoteTag() {
+		return this.remoteTag;
 	}
 
 	/** 返回连接地址。
@@ -96,6 +104,7 @@ public class Speaker {
 
 	/** 向指定地址发起请求 Cellet 服务。
 	 */
+	@Override
 	public boolean call(InetSocketAddress address) {
 		if (SpeakerState.CALLING == this.state) {
 			// 正在 Call 返回 false
@@ -140,6 +149,7 @@ public class Speaker {
 
 	/** 挂起服务。
 	 */
+	@Override
 	public void suspend(long duration) {
 		if (this.state == SpeakerState.CALLED) {
 			// 包格式：内核标签|有效时长
@@ -162,6 +172,7 @@ public class Speaker {
 
 	/** 恢复服务。
 	 */
+	@Override
 	public void resume(long startTime) {
 		if (this.state == SpeakerState.SUSPENDED
 			|| this.state == SpeakerState.CALLED) {
@@ -185,6 +196,7 @@ public class Speaker {
 
 	/** 挂断与 Cellet 的服务。
 	*/
+	@Override
 	public void hangUp() {
 		if (null != this.connector) {
 			this.connector.disconnect();
@@ -197,6 +209,7 @@ public class Speaker {
 
 	/** 向 Cellet 发送原语数据。
 	 */
+	@Override
 	public synchronized boolean speak(Primitive primitive) {
 		if (null == this.connector
 			|| !this.connector.isConnected()
@@ -222,11 +235,14 @@ public class Speaker {
 
 	/** 是否已经与 Cellet 建立服务。
 	 */
+	@Override
 	public boolean isCalled() {
 		return this.state == SpeakerState.CALLED;
 	}
+
 	/** Cellet 服务器是否已经被挂起。
 	 */
+	@Override
 	public boolean isSuspended() {
 		return this.state == SpeakerState.SUSPENDED;
 	}

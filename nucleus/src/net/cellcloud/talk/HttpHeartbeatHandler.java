@@ -26,11 +26,15 @@ THE SOFTWARE.
 
 package net.cellcloud.talk;
 
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
-import java.nio.charset.Charset;
+import java.util.ArrayList;
+import java.util.Queue;
 
 import net.cellcloud.common.LogLevel;
 import net.cellcloud.common.Logger;
+import net.cellcloud.common.Message;
+import net.cellcloud.common.Packet;
 import net.cellcloud.core.Nucleus;
 import net.cellcloud.http.AbstractJSONHandler;
 import net.cellcloud.http.CapsuleHolder;
@@ -38,31 +42,28 @@ import net.cellcloud.http.HttpHandler;
 import net.cellcloud.http.HttpRequest;
 import net.cellcloud.http.HttpResponse;
 import net.cellcloud.http.HttpSession;
+import net.cellcloud.talk.stuff.PrimitiveSerializer;
 
+import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
 /**
- * 接入校验。
+ * HTTP 心跳处理器。
  * 
  * @author Jiangwei Xu
  *
  */
-public final class HttpCheckHandler extends AbstractJSONHandler implements CapsuleHolder {
+public final class HttpHeartbeatHandler extends AbstractJSONHandler implements CapsuleHolder {
 
-	protected static final String Plaintext = "plaintext";
-	protected static final String Tag = "tag";
+	protected static final String Primitives = "primitives";
 
-	private TalkService talkService;
-
-	public HttpCheckHandler(TalkService talkService) {
-		super();
-		this.talkService = talkService;
+	public HttpHeartbeatHandler() {
 	}
 
 	@Override
 	public String getPathSpec() {
-		return "/talk/check";
+		return "/talk/hb";
 	}
 
 	@Override
@@ -71,42 +72,75 @@ public final class HttpCheckHandler extends AbstractJSONHandler implements Capsu
 	}
 
 	@Override
-	protected void doPost(HttpRequest request, HttpResponse response)
+	protected void doGet(HttpRequest request, HttpResponse response)
 		throws IOException {
 		HttpSession session = request.getSession();
 		if (null != session) {
-			TalkService.Certificate cert = this.talkService.getCertificate(session);
-			if (null != cert) {
-				String data = new String(request.readRequestData(), Charset.forName("UTF-8"));
-				try {
-					JSONObject json = new JSONObject(data);
-					// 获得明文码
-					String plaintext = json.getString(Plaintext);
-					if (null != plaintext && plaintext.equals(cert.plaintext)) {
-						// 检测通过
-						this.talkService.acceptSession(session);
-						// 返回数据
-						JSONObject ret = new JSONObject();
-						ret.put(Tag, Nucleus.getInstance().getTagAsString());
-						this.respondWithOk(response, ret);
+			// 心跳
+			session.heartbeat();
+
+			// 获取消息队列
+			Queue<Message> queue = session.getQueue();
+			if (!queue.isEmpty()) {
+				ArrayList<Primitive> primitives = new ArrayList<Primitive>(queue.size());
+				for (int i = 0, size = queue.size(); i < size; ++i) {
+					// 消息出队
+					Message message = queue.poll();
+					// 解包
+					Packet packet = Packet.unpack(message.get());
+					if (null != packet) {
+						// 将包数据转为输入流进行反序列化
+						byte[] body = packet.getBody();
+						ByteArrayInputStream stream = new ByteArrayInputStream(body);
+
+						// 反序列化
+						Primitive prim = new Primitive(Nucleus.getInstance().getTagAsString());
+						prim.read(stream);
+
+						// 添加到数组
+						primitives.add(prim);
 					}
-					else {
-						// 检测失败
-						this.talkService.rejectSession(session);
-						this.respond(response, HttpResponse.SC_UNAUTHORIZED);
-					}
-				} catch (JSONException e) {
-					Logger.log(HttpCheckHandler.class, e, LogLevel.WARNING);
-					this.respond(response, HttpResponse.SC_BAD_REQUEST);
 				}
+
+				JSONArray jsonPrimitives = this.convert(primitives);
+				JSONObject json = new JSONObject();
+				try {
+					json.put(Primitives, jsonPrimitives);
+				} catch (JSONException e) {
+					Logger.log(getClass(), e, LogLevel.ERROR);
+				}
+
+				// 返回数据
+				this.respondWithOk(response, json);
 			}
 			else {
-				this.respond(response, HttpResponse.SC_BAD_REQUEST);
+				this.respondWithOk(response);
 			}
 		}
 		else {
-			// 获取 Session 失败
 			this.respond(response, HttpResponse.SC_INTERNAL_SERVER_ERROR);
 		}
+	}
+
+	/**
+	 * 将原语队列转为 JSON 数组。
+	 * @param queue
+	 * @return
+	 */
+	private JSONArray convert(ArrayList<Primitive> list) {
+		JSONArray ret = new JSONArray();
+
+		try {
+			for (Primitive prim : list) {
+				JSONObject json = new JSONObject();
+				PrimitiveSerializer.write(json, prim);
+				// 写入数组
+				ret.put(json);
+			}
+		} catch (JSONException e) {
+			// Nothing
+		}
+
+		return ret;
 	}
 }

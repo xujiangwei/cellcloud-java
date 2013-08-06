@@ -49,8 +49,8 @@ import net.cellcloud.http.HttpSession;
  */
 public final class HttpInterrogationHandler extends AbstractJSONHandler implements CapsuleHolder {
 
-	private static final String Ciphertext = "ciphertext";
-	private static final String Key = "key";
+	protected static final String Ciphertext = "ciphertext";
+	protected static final String Key = "key";
 
 	private TalkService talkService;
 
@@ -89,7 +89,7 @@ public final class HttpInterrogationHandler extends AbstractJSONHandler implemen
 			}
 			else {
 				// 返回 Certificate 为 null
-				this.respond(response, HttpResponse.SC_INTERNAL_SERVER_ERROR);
+				this.respond(response, HttpResponse.SC_NOT_FOUND);
 			}
 		}
 		else {

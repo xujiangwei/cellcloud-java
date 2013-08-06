@@ -24,22 +24,27 @@ THE SOFTWARE.
 -----------------------------------------------------------------------------
 */
 
-package net.cellcloud.http;
+package net.cellcloud.exception;
 
-
-/** HTTP 处理句柄接入器接口。
+/**
+ * 无效执行异常。
  * 
  * @author Jiangwei Xu
+ *
  */
-public interface CapsuleHolder {
+public class InvalidException extends RuntimeException {
 
-	/** 返回路径描述。
-	 * @return
-	 */
-	public String getPathSpec();
+	private static final long serialVersionUID = 2736165184326605440L;
 
-	/** 返回对应的处理句柄 。
-	 * @return
-	 */
-	public HttpHandler getHttpHandler();
+	public InvalidException(String message) {
+		super(message);
+	}
+
+	public InvalidException(Throwable cause) {
+		super(cause);
+	}
+
+	public InvalidException(String message, Throwable cause) {
+		super(message, cause);
+	}
 }

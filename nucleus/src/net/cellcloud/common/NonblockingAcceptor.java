@@ -263,6 +263,14 @@ public class NonblockingAcceptor extends MessageService implements MessageAccept
 		// Nothing
 	}
 
+	/**
+	 * 适配器句柄线程是否正在运行。
+	 * @return
+	 */
+	public boolean isRunning() {
+		return this.running;
+	}
+
 	/** 返回绑定地址。
 	 */
 	public final InetSocketAddress  getBindAddress() {
