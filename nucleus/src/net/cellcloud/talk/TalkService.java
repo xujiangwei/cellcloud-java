@@ -410,8 +410,8 @@ public final class TalkService implements Service, SpeakerDelegate {
 	 * @param address
 	 * @return
 	 */
-	public boolean call(String identifier, InetSocketAddress address, boolean httpUsed) {
-		return this.call(identifier, address, null, httpUsed);
+	public boolean call(String identifier, InetSocketAddress address, boolean http) {
+		return this.call(identifier, address, null, http);
 	}
 
 	/**
@@ -430,8 +430,8 @@ public final class TalkService implements Service, SpeakerDelegate {
 	 * 
 	 * @note Client
 	 */
-	public boolean call(String identifier, InetSocketAddress address, TalkCapacity capacity, boolean httpUsed) {
-		if (!httpUsed) {
+	public boolean call(String identifier, InetSocketAddress address, TalkCapacity capacity, boolean http) {
+		if (!http) {
 			// 私有协议 Speaker
 
 			if (null == this.speakers)
@@ -508,13 +508,16 @@ public final class TalkService implements Service, SpeakerDelegate {
 	 * @note Client
 	 */
 	public void hangUp(String identifier) {
-		if (null == this.speakers || !this.speakers.containsKey(identifier))
-			return;
-
-		Speaker speaker = this.speakers.get(identifier);
-		if (null != speaker) {
+		if (null != this.speakers && this.speakers.containsKey(identifier)) {
+			Speaker speaker = this.speakers.get(identifier);
 			speaker.hangUp();
 			this.speakers.remove(identifier);
+		}
+
+		if (null != this.httpSpeakers && this.httpSpeakers.containsKey(identifier)) {
+			HttpSpeaker hs = this.httpSpeakers.get(identifier);
+			hs.hangUp();
+			this.httpSpeakers.remove(identifier);
 		}
 	}
 
@@ -523,13 +526,20 @@ public final class TalkService implements Service, SpeakerDelegate {
 	 * @note Client
 	 */
 	public boolean talk(final String identifier, final Primitive primitive) {
-		if (null == this.speakers)
-			return false;
+		if (null != this.speakers) {
+			Speaker speaker = this.speakers.get(identifier);
+			if (null != speaker) {
+				// Speak
+				return speaker.speak(primitive);
+			}
+		}
 
-		Speaker speaker = this.speakers.get(identifier);
-		if (null != speaker) {
-			// Speak
-			return speaker.speak(primitive);
+		if (null != this.httpSpeakers) {
+			HttpSpeaker hs = this.httpSpeakers.get(identifier);
+			if (null != hs) {
+				// Speak
+				return hs.speak(primitive);
+			}
 		}
 
 		return false;
@@ -540,7 +550,7 @@ public final class TalkService implements Service, SpeakerDelegate {
 	 * @note Client
 	 */
 	public boolean talk(final String identifier, final Dialect dialect) {
-		if (null == this.speakers)
+		if (null == this.speakers && null == this.httpSpeakers)
 			return false;
 
 		Primitive primitive = dialect.translate();
@@ -556,12 +566,18 @@ public final class TalkService implements Service, SpeakerDelegate {
 	 * @note Client
 	 */
 	public boolean isCalled(final String identifier) {
-		if (null == this.speakers)
-			return false;
+		if (null != this.speakers) {
+			Speaker speaker = this.speakers.get(identifier);
+			if (null != speaker) {
+				return speaker.isCalled();
+			}
+		}
 
-		Speaker speaker = this.speakers.get(identifier);
-		if (null != speaker) {
-			return speaker.isCalled();
+		if (null != this.httpSpeakers) {
+			HttpSpeaker hs = this.httpSpeakers.get(identifier);
+			if (null != hs) {
+				return hs.isCalled();
+			}
 		}
 
 		return false;
@@ -605,6 +621,7 @@ public final class TalkService implements Service, SpeakerDelegate {
 		capsule.addHolder(new HttpInterrogationHandler(this));
 		capsule.addHolder(new HttpCheckHandler(this));
 		capsule.addHolder(new HttpRequestHandler(this));
+		capsule.addHolder(new HttpDialogueHandler(this));
 		capsule.addHolder(new HttpHeartbeatHandler());
 
 		// 添加 HTTP 服务节点

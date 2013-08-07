@@ -36,12 +36,14 @@ import net.cellcloud.common.LogLevel;
 import net.cellcloud.common.Logger;
 import net.cellcloud.core.Nucleus;
 import net.cellcloud.http.HttpResponse;
+import net.cellcloud.talk.stuff.PrimitiveSerializer;
 
 import org.eclipse.jetty.client.HttpClient;
 import org.eclipse.jetty.client.api.ContentResponse;
 import org.eclipse.jetty.client.util.StringContentProvider;
 import org.eclipse.jetty.http.HttpHeader;
 import org.eclipse.jetty.http.HttpMethod;
+import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -56,6 +58,7 @@ public class HttpSpeaker implements Speakable {
 	private static final String URI_INTERROGATION = "/talk/int";
 	private static final String URI_CHECK = "/talk/check";
 	private static final String URI_REQUEST = "/talk/request";
+	private static final String URI_DIALOGUE = "/talk/dialogue";
 	private static final String URI_HEARTBEAT = "/talk/hb";
 
 	private String identifier;
@@ -190,7 +193,51 @@ public class HttpSpeaker implements Speakable {
 
 	@Override
 	public boolean speak(Primitive primitive) {
-		return false;
+		if (this.state != SpeakerState.CALLED
+			|| !this.client.isStarted()) {
+			return false;
+		}
+
+		JSONObject json = new JSONObject();
+		try {
+			// 源 Tag
+			json.put(HttpDialogueHandler.Tag, Nucleus.getInstance().getTagAsString());
+			// 原语 JSON
+			JSONObject primJSON = new JSONObject();
+			PrimitiveSerializer.write(primJSON, primitive);
+			json.put(HttpDialogueHandler.Primitive, primJSON);
+		} catch (JSONException e) {
+			Logger.log(this.getClass(), e, LogLevel.ERROR);
+			return false;
+		}
+
+		// URL
+		StringBuilder url = new StringBuilder("http://");
+		url.append(this.address.getHostString()).append(":").append(this.address.getPort());
+		url.append(URI_DIALOGUE);
+
+		// 数据内容
+		StringContentProvider content = new StringContentProvider(json.toString(), "UTF-8");
+		try {
+			// 发送请求
+			ContentResponse response = this.client.newRequest(url.toString())
+											.method(HttpMethod.POST)
+											.header(HttpHeader.COOKIE, this.cookie)
+											.content(content)
+											.send();
+			if (response.getStatus() == HttpResponse.SC_OK) {
+				// 发送数据成功
+			}
+			else {
+				Logger.w(this.getClass(), "Send dialogue data failed : " + response.getStatus());
+			}
+		} catch (InterruptedException | TimeoutException | ExecutionException e) {
+			return false;
+		}
+
+		url = null;
+
+		return true;
 	}
 
 	@Override
@@ -257,7 +304,13 @@ public class HttpSpeaker implements Speakable {
 
 				JSONObject responseData = this.readContent(response.getContent());
 				if (responseData.has(HttpHeartbeatHandler.Primitives)) {
-					
+					// 读取原语数组
+					JSONArray primitives = responseData.getJSONArray(HttpHeartbeatHandler.Primitives);
+					for (int i = 0, size = primitives.length(); i < size; ++i) {
+						JSONObject primJSON = primitives.getJSONObject(i);
+						// 进行对话处理
+						this.doDialogue(primJSON);
+					}
 				}
 			}
 			else {
@@ -329,6 +382,9 @@ public class HttpSpeaker implements Speakable {
 			}
 			else {
 				Logger.e(HttpSpeaker.class, "Request check failed: " + response.getStatus());
+
+				TalkServiceFailure failure = new TalkServiceFailure(TalkFailureCode.CALL_FAILED, this.getClass());
+				this.fireFailed(failure);
 			}
 		} catch (InterruptedException | TimeoutException | ExecutionException | JSONException e) {
 			Logger.log(HttpSpeaker.class, e, LogLevel.ERROR);
@@ -387,6 +443,15 @@ public class HttpSpeaker implements Speakable {
 		}
 	}
 
+	private void doDialogue(JSONObject data) throws JSONException {
+		// 解析原语
+		Primitive primitive = new Primitive(this.remoteTag);
+		primitive.setCelletIdentifier(this.identifier);
+		PrimitiveSerializer.read(primitive, data);
+
+		this.fireDialogue(primitive);
+	}
+
 	private void fireDialogue(Primitive primitive) {
 		this.delegate.onDialogue(this, primitive);
 	}
@@ -399,13 +464,13 @@ public class HttpSpeaker implements Speakable {
 		this.delegate.onQuitted(this);
 	}
 
-	private void fireSuspended(long timestamp, int mode) {
-		this.delegate.onSuspended(this, timestamp, mode);
-	}
+//	private void fireSuspended(long timestamp, int mode) {
+//		this.delegate.onSuspended(this, timestamp, mode);
+//	}
 
-	private void fireResumed(long timestamp, Primitive primitive) {
-		this.delegate.onResumed(this, timestamp, primitive);
-	}
+//	private void fireResumed(long timestamp, Primitive primitive) {
+//		this.delegate.onResumed(this, timestamp, primitive);
+//	}
 
 	private void fireFailed(TalkServiceFailure failure) {
 		this.delegate.onFailed(this, failure);

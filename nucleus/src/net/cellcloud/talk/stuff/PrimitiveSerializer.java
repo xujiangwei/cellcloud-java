@@ -106,6 +106,7 @@ public final class PrimitiveSerializer {
 	private static final String JSONKEY_STUFFS = "stuffs";
 	private static final String JSONKEY_STUFFTYPE = "type";
 	private static final String JSONKEY_STUFFVALUE = "value";
+	private static final String JSONKEY_LITERALBASE = "literal";
 
 	private static final int BLOCK = 2048;
 
@@ -592,7 +593,7 @@ public final class PrimitiveSerializer {
 				// 解析类型
 				stuffJSON.put(JSONKEY_STUFFTYPE, STUFFTYPE_SUBJECT);
 				// 解析数值
-				parseValue(stuffJSON, stuff);
+				writeValue(stuffJSON, stuff);
 				// 写入数组
 				stuffs.put(stuffJSON);
 			}
@@ -604,7 +605,7 @@ public final class PrimitiveSerializer {
 				// 解析类型
 				stuffJSON.put(JSONKEY_STUFFTYPE, STUFFTYPE_PREDICATE);
 				// 解析数值
-				parseValue(stuffJSON, stuff);
+				writeValue(stuffJSON, stuff);
 				// 写入数组
 				stuffs.put(stuffJSON);
 			}
@@ -616,7 +617,7 @@ public final class PrimitiveSerializer {
 				// 解析类型
 				stuffJSON.put(JSONKEY_STUFFTYPE, STUFFTYPE_OBJECTIVE);
 				// 解析数值
-				parseValue(stuffJSON, stuff);
+				writeValue(stuffJSON, stuff);
 				// 写入数组
 				stuffs.put(stuffJSON);
 			}
@@ -628,7 +629,7 @@ public final class PrimitiveSerializer {
 				// 解析类型
 				stuffJSON.put(JSONKEY_STUFFTYPE, STUFFTYPE_ADVERBIAL);
 				// 解析数值
-				parseValue(stuffJSON, stuff);
+				writeValue(stuffJSON, stuff);
 				// 写入数组
 				stuffs.put(stuffJSON);
 			}
@@ -640,7 +641,7 @@ public final class PrimitiveSerializer {
 				// 解析类型
 				stuffJSON.put(JSONKEY_STUFFTYPE, STUFFTYPE_ATTRIBUTIVE);
 				// 解析数值
-				parseValue(stuffJSON, stuff);
+				writeValue(stuffJSON, stuff);
 				// 写入数组
 				stuffs.put(stuffJSON);
 			}
@@ -652,7 +653,7 @@ public final class PrimitiveSerializer {
 				// 解析类型
 				stuffJSON.put(JSONKEY_STUFFTYPE, STUFFTYPE_COMPLEMENT);
 				// 解析数值
-				parseValue(stuffJSON, stuff);
+				writeValue(stuffJSON, stuff);
 				// 写入数组
 				stuffs.put(stuffJSON);
 			}
@@ -665,29 +666,114 @@ public final class PrimitiveSerializer {
 	}
 
 	/**
-	 * 按照语素字面义解析数值。
+	 * 从 JSON 数据里反序列化原语。
+	 * @param primitive
+	 * @param json
+	 */
+	public static void read(Primitive output, JSONObject json) throws JSONException {
+		JSONArray stuffs = json.getJSONArray(JSONKEY_STUFFS);
+		for (int i = 0, size = stuffs.length(); i < size; ++i) {
+			JSONObject stuffJSON = stuffs.getJSONObject(i);
+			String type = stuffJSON.getString(JSONKEY_STUFFTYPE);
+			if (type.equals(STUFFTYPE_SUBJECT)) {
+				SubjectStuff subject = new SubjectStuff();
+				readValue(subject, stuffJSON);
+				output.commit(subject);
+			}
+			else if (type.equals(STUFFTYPE_PREDICATE)) {
+				PredicateStuff predicate = new PredicateStuff();
+				readValue(predicate, stuffJSON);
+				output.commit(predicate);
+			}
+			else if (type.equals(STUFFTYPE_OBJECTIVE)) {
+				ObjectiveStuff objective = new ObjectiveStuff();
+				readValue(objective, stuffJSON);
+				output.commit(objective);
+			}
+			else if (type.equals(STUFFTYPE_ATTRIBUTIVE)) {
+				AttributiveStuff attributive = new AttributiveStuff();
+				readValue(attributive, stuffJSON);
+				output.commit(attributive);
+			}
+			else if (type.equals(STUFFTYPE_ADVERBIAL)) {
+				AdverbialStuff adverbial = new AdverbialStuff();
+				readValue(adverbial, stuffJSON);
+				output.commit(adverbial);
+			}
+			else if (type.equals(STUFFTYPE_COMPLEMENT)) {
+				ComplementStuff complement = new ComplementStuff();
+				readValue(complement, stuffJSON);
+				output.commit(complement);
+			}
+		}
+
+		// TODO 处理 Dialect
+	}
+
+	/**
+	 * 写入语素对应的数值。
 	 * @param output
 	 * @param stuff
 	 * @throws JSONException
 	 */
-	private static void parseValue(JSONObject output, Stuff stuff) throws JSONException {
+	private static void writeValue(JSONObject output, Stuff stuff) throws JSONException {
 		if (stuff.literalBase == LiteralBase.STRING) {
 			output.put(JSONKEY_STUFFVALUE, stuff.getValueAsString());
-		}
-		else if (stuff.literalBase == LiteralBase.BOOL) {
-			output.put(JSONKEY_STUFFVALUE, stuff.getValueAsBool());
+			output.put(JSONKEY_LITERALBASE, LITERALBASE_STRING);
 		}
 		else if (stuff.literalBase == LiteralBase.INT) {
 			output.put(JSONKEY_STUFFVALUE, stuff.getValueAsInt());
+			output.put(JSONKEY_LITERALBASE, LITERALBASE_INT);
 		}
 		else if (stuff.literalBase == LiteralBase.LONG) {
 			output.put(JSONKEY_STUFFVALUE, stuff.getValueAsLong());
-		}
-		else if (stuff.literalBase == LiteralBase.FLOAT) {
-			output.put(JSONKEY_STUFFVALUE, stuff.getValueAsFloat());
+			output.put(JSONKEY_LITERALBASE, LITERALBASE_LONG);
 		}
 		else if (stuff.literalBase == LiteralBase.JSON) {
 			output.put(JSONKEY_STUFFVALUE, stuff.getValueAsJSON());
+			output.put(JSONKEY_LITERALBASE, LITERALBASE_JSON);
+		}
+		else if (stuff.literalBase == LiteralBase.BOOL) {
+			output.put(JSONKEY_STUFFVALUE, stuff.getValueAsBool());
+			output.put(JSONKEY_LITERALBASE, LITERALBASE_BOOL);
+		}
+		else if (stuff.literalBase == LiteralBase.FLOAT) {
+			output.put(JSONKEY_STUFFVALUE, stuff.getValueAsFloat());
+			output.put(JSONKEY_LITERALBASE, LITERALBASE_FLOAT);
+		}
+	}
+
+	/**
+	 * 读取语素对应的值。
+	 * @param output
+	 * @param json
+	 * @throws JSONException
+	 */
+	private static void readValue(Stuff output, JSONObject json) throws JSONException {
+		String literal = json.getString(JSONKEY_LITERALBASE);
+		if (literal.equals(LITERALBASE_STRING)) {
+			output.setValue(json.getString(JSONKEY_STUFFVALUE));
+			output.setLiteralBase(LiteralBase.STRING);
+		}
+		else if (literal.equals(LITERALBASE_INT)) {
+			output.setValue(json.getInt(JSONKEY_STUFFVALUE));
+			output.setLiteralBase(LiteralBase.INT);
+		}
+		else if (literal.equals(LITERALBASE_LONG)) {
+			output.setValue(json.getLong(JSONKEY_STUFFVALUE));
+			output.setLiteralBase(LiteralBase.LONG);
+		}
+		else if (literal.equals(LITERALBASE_JSON)) {
+			output.setValue(json.getJSONObject(JSONKEY_STUFFVALUE));
+			output.setLiteralBase(LiteralBase.JSON);
+		}
+		else if (literal.equals(LITERALBASE_BOOL)) {
+			output.setValue(json.getBoolean(JSONKEY_STUFFVALUE));
+			output.setLiteralBase(LiteralBase.BOOL);
+		}
+		else if (literal.equals(LITERALBASE_FLOAT)) {
+			output.setValue(json.getDouble(JSONKEY_STUFFVALUE));
+			output.setLiteralBase(LiteralBase.FLOAT);
 		}
 	}
 }

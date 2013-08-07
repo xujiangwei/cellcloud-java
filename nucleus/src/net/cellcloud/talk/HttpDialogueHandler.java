@@ -26,9 +26,21 @@ THE SOFTWARE.
 
 package net.cellcloud.talk;
 
+import java.io.IOException;
+import java.nio.charset.Charset;
+
+import net.cellcloud.common.LogLevel;
+import net.cellcloud.common.Logger;
 import net.cellcloud.http.AbstractJSONHandler;
 import net.cellcloud.http.CapsuleHolder;
 import net.cellcloud.http.HttpHandler;
+import net.cellcloud.http.HttpRequest;
+import net.cellcloud.http.HttpResponse;
+import net.cellcloud.http.HttpSession;
+import net.cellcloud.talk.stuff.PrimitiveSerializer;
+
+import org.json.JSONException;
+import org.json.JSONObject;
 
 /**
  * HTTP 协议的对话处理器。
@@ -38,8 +50,14 @@ import net.cellcloud.http.HttpHandler;
  */
 public final class HttpDialogueHandler extends AbstractJSONHandler implements CapsuleHolder {
 
-	public HttpDialogueHandler() {
+	protected static final String Tag = "tag";
+	protected static final String Primitive = "primitive";
+
+	private TalkService talkService;
+
+	public HttpDialogueHandler(TalkService service) {
 		super();
+		this.talkService = service;
 	}
 
 	@Override
@@ -52,4 +70,31 @@ public final class HttpDialogueHandler extends AbstractJSONHandler implements Ca
 		return this;
 	}
 
+	@Override
+	protected void doPost(HttpRequest request, HttpResponse response)
+		throws IOException {
+		HttpSession session = request.getSession();
+		if (null != session) {
+			try {
+				// 读取包体数据
+				JSONObject json = new JSONObject(new String(request.readRequestData(), Charset.forName("UTF-8")));
+				// 解析 JSON 数据
+				String speakerTag = json.getString(Tag);
+				JSONObject primitiveJSON = json.getJSONObject(Primitive);
+				// 解析原语
+				Primitive primitive = new Primitive(speakerTag);
+				PrimitiveSerializer.read(primitive, primitiveJSON);
+				// 处理原语
+				this.talkService.processDialogue(session, speakerTag, primitive);
+				// 响应
+				this.respondWithOk(response);
+			} catch (JSONException e) {
+				Logger.log(HttpDialogueHandler.class, e, LogLevel.ERROR);
+				this.respond(response, HttpResponse.SC_BAD_REQUEST);
+			}
+		}
+		else {
+			this.respond(response, HttpResponse.SC_UNAUTHORIZED);
+		}
+	}
 }

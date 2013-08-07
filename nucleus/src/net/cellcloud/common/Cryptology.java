@@ -47,7 +47,7 @@ public final class Cryptology {
 
 	/** 返回加解密库对象的实例。
 	 */
-	public synchronized static Cryptology getInstance() {
+	public static Cryptology getInstance() {
 		return instance;
 	}
 

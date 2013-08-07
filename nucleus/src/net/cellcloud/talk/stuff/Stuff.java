@@ -2,7 +2,7 @@
 -----------------------------------------------------------------------------
 This source file is part of Cell Cloud.
 
-Copyright (c) 2009-2012 Cell Cloud Team (www.cellcloud.net)
+Copyright (c) 2009-2013 Cell Cloud Team (www.cellcloud.net)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -58,6 +58,11 @@ public abstract class Stuff {
 	private StuffType type;
 	protected String value;
 	protected LiteralBase literalBase;
+
+	/** 构造函数。 */
+	public Stuff(StuffType type) {
+		this.type = type;
+	}
 
 	/** 构造函数。 */
 	public Stuff(StuffType type, String value) {
@@ -193,6 +198,32 @@ public abstract class Stuff {
 	protected void setValue(String value) {
 		this.value = value;
 	}
+	/** @private
+	 */
+	protected void setValue(int value) {
+		this.value = Integer.toString(value);
+	}
+	/** @private
+	 */
+	protected void setValue(long value) {
+		this.value = Long.toString(value);
+	}
+	/** @private
+	 */
+	protected void setValue(boolean value) {
+		this.value = Boolean.toString(value);
+	}
+	/** @private
+	 */
+	protected void setValue(double value) {
+		this.value = DF.format(value);
+	}
+	/** @private
+	 */
+	protected void setValue(JSONObject json) {
+		this.value = json.toString();
+	}
+
 	/** @private
 	 */
 	protected void setLiteralBase(LiteralBase literalBase) {

@@ -35,6 +35,9 @@ public final class TalkFailureCode {
 	/** 未找到指定的 Cellet 。 */
 	public static final int NOTFOUND_CELLET = 100;
 
+	/** Call 一般性失败。 */
+	public static final int CALL_FAILED = 200;
+
 	/** Call 连接超时。 */
 	public static final int CALL_TIMEOUT = 201;
 }

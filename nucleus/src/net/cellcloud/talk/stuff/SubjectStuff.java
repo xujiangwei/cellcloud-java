@@ -26,6 +26,7 @@ THE SOFTWARE.
 
 package net.cellcloud.talk.stuff;
 
+import javax.xml.transform.TransformerConfigurationException;
 import javax.xml.transform.TransformerException;
 
 import org.json.JSONObject;
@@ -36,6 +37,11 @@ import org.w3c.dom.Document;
  * @author Jiangwei Xu
  */
 public final class SubjectStuff extends Stuff {
+
+	/** 构造函数。 */
+	protected SubjectStuff() {
+		super(StuffType.SUBJECT);
+	}
 
 	/** 构造函数。 */
 	public SubjectStuff(String value) {
