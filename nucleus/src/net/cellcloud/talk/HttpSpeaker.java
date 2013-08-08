@@ -186,9 +186,10 @@ public class HttpSpeaker implements Speakable {
 	public void hangUp() {
 		this.stopClient();
 
-		this.state = SpeakerState.HANGUP;
-
-		this.fireQuitted();
+		if (this.state != SpeakerState.HANGUP) {
+			this.state = SpeakerState.HANGUP;
+			this.fireQuitted();
+		}
 	}
 
 	@Override
@@ -227,11 +228,29 @@ public class HttpSpeaker implements Speakable {
 											.send();
 			if (response.getStatus() == HttpResponse.SC_OK) {
 				// 发送数据成功
+				// 获取队列长度
+				JSONObject data = this.readContent(response.getContent());
+				if (data.has(HttpDialogueHandler.QueueSize)) {
+					int size = data.getInt(HttpDialogueHandler.QueueSize);
+					if (size > 0) {
+						// 心跳 Tick 清零
+						this.hbTick = 0;
+
+						TalkService.getInstance().executor.execute(new Runnable() {
+							@Override
+							public void run() {
+								requestHeartbeat();
+							}
+						});
+					}
+				}
 			}
 			else {
 				Logger.w(this.getClass(), "Send dialogue data failed : " + response.getStatus());
 			}
 		} catch (InterruptedException | TimeoutException | ExecutionException e) {
+			return false;
+		} catch (JSONException e) {
 			return false;
 		}
 
@@ -463,14 +482,6 @@ public class HttpSpeaker implements Speakable {
 	private void fireQuitted() {
 		this.delegate.onQuitted(this);
 	}
-
-//	private void fireSuspended(long timestamp, int mode) {
-//		this.delegate.onSuspended(this, timestamp, mode);
-//	}
-
-//	private void fireResumed(long timestamp, Primitive primitive) {
-//		this.delegate.onResumed(this, timestamp, primitive);
-//	}
 
 	private void fireFailed(TalkServiceFailure failure) {
 		this.delegate.onFailed(this, failure);

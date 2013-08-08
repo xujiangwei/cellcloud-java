@@ -107,6 +107,9 @@ public final class PrimitiveSerializer {
 	private static final String JSONKEY_STUFFTYPE = "type";
 	private static final String JSONKEY_STUFFVALUE = "value";
 	private static final String JSONKEY_LITERALBASE = "literal";
+	private static final String JSONKEY_DIALECT = "dialect";
+	private static final String JSONKEY_NAME = "name";
+	private static final String JSONKEY_TRACKER = "tracker";
 
 	private static final int BLOCK = 2048;
 
@@ -134,8 +137,9 @@ public final class PrimitiveSerializer {
 			int bufLength = 0;
 
 			// 语素
-			if (null != primitive.subjects()) {
-				Iterator<SubjectStuff> iter = primitive.subjects().iterator();
+			List<SubjectStuff> subjects = primitive.subjects();
+			if (null != subjects) {
+				Iterator<SubjectStuff> iter = subjects.iterator();
 				while (iter.hasNext()) {
 					SubjectStuff stuff = iter.next();
 					stream.write((int)TOKEN_OPEN_BRACE);
@@ -154,8 +158,9 @@ public final class PrimitiveSerializer {
 					stream.write((int)TOKEN_CLOSE_BRACE);
 				}
 			}
-			if (null != primitive.predicates()) {
-				Iterator<PredicateStuff> iter = primitive.predicates().iterator();
+			List<PredicateStuff> predicates = primitive.predicates();
+			if (null != predicates) {
+				Iterator<PredicateStuff> iter = predicates.iterator();
 				while (iter.hasNext()) {
 					PredicateStuff stuff = iter.next();
 					stream.write((int)TOKEN_OPEN_BRACE);
@@ -174,8 +179,9 @@ public final class PrimitiveSerializer {
 					stream.write((int)TOKEN_CLOSE_BRACE);
 				}
 			}
-			if (null != primitive.objectives()) {
-				Iterator<ObjectiveStuff> iter = primitive.objectives().iterator();
+			List<ObjectiveStuff> objectives = primitive.objectives();
+			if (null != objectives) {
+				Iterator<ObjectiveStuff> iter = objectives.iterator();
 				while (iter.hasNext()) {
 					ObjectiveStuff stuff = iter.next();
 					stream.write((int)TOKEN_OPEN_BRACE);
@@ -194,8 +200,9 @@ public final class PrimitiveSerializer {
 					stream.write((int)TOKEN_CLOSE_BRACE);
 				}
 			}
-			if (null != primitive.adverbials()) {
-				Iterator<AdverbialStuff> iter = primitive.adverbials().iterator();
+			List<AdverbialStuff> adverbials = primitive.adverbials();
+			if (null != adverbials) {
+				Iterator<AdverbialStuff> iter = adverbials.iterator();
 				while (iter.hasNext()) {
 					AdverbialStuff stuff = iter.next();
 					stream.write((int)TOKEN_OPEN_BRACE);
@@ -214,8 +221,9 @@ public final class PrimitiveSerializer {
 					stream.write((int)TOKEN_CLOSE_BRACE);
 				}
 			}
-			if (null != primitive.attributives()) {
-				Iterator<AttributiveStuff> iter = primitive.attributives().iterator();
+			List<AttributiveStuff> attributives = primitive.attributives();
+			if (null != attributives) {
+				Iterator<AttributiveStuff> iter = attributives.iterator();
 				while (iter.hasNext()) {
 					AttributiveStuff stuff = iter.next();
 					stream.write((int)TOKEN_OPEN_BRACE);
@@ -234,8 +242,9 @@ public final class PrimitiveSerializer {
 					stream.write((int)TOKEN_CLOSE_BRACE);
 				}
 			}
-			if (null != primitive.complements()) {
-				Iterator<ComplementStuff> iter = primitive.complements().iterator();
+			List<ComplementStuff> complements = primitive.complements();
+			if (null != complements) {
+				Iterator<ComplementStuff> iter = complements.iterator();
 				while (iter.hasNext()) {
 					ComplementStuff stuff = iter.next();
 					stream.write((int)TOKEN_OPEN_BRACE);
@@ -256,11 +265,12 @@ public final class PrimitiveSerializer {
 			}
 
 			// 方言
-			if (null != primitive.getDialect()) {
+			Dialect dialect = primitive.getDialect();
+			if (null != dialect) {
 				stream.write(TOKEN_OPEN_BRACKET);
-				stream.write(primitive.getDialect().getName().getBytes(Charset.forName("UTF8")));
+				stream.write(dialect.getName().getBytes(Charset.forName("UTF8")));
 				stream.write(TOKEN_AT);
-				stream.write(primitive.getDialect().getTracker().getBytes(Charset.forName("UTF8")));
+				stream.write(dialect.getTracker().getBytes(Charset.forName("UTF8")));
 				stream.write(TOKEN_CLOSE_BRACKET);
 			}
 
@@ -662,7 +672,15 @@ public final class PrimitiveSerializer {
 		// 所有语素
 		output.put(JSONKEY_STUFFS, stuffs);
 
-		// TODO 处理 Dialect
+		// 方言
+		Dialect dialect = primitive.getDialect();
+		if (null != dialect) {
+			JSONObject dialectJSON = new JSONObject();
+			dialectJSON.put(JSONKEY_NAME, dialect.getName());
+			dialectJSON.put(JSONKEY_TRACKER, dialect.getTracker());
+			// 添加方言数据
+			output.put(JSONKEY_DIALECT, dialectJSON);
+		}
 	}
 
 	/**
@@ -671,6 +689,7 @@ public final class PrimitiveSerializer {
 	 * @param json
 	 */
 	public static void read(Primitive output, JSONObject json) throws JSONException {
+		// 解析语素
 		JSONArray stuffs = json.getJSONArray(JSONKEY_STUFFS);
 		for (int i = 0, size = stuffs.length(); i < size; ++i) {
 			JSONObject stuffJSON = stuffs.getJSONObject(i);
@@ -707,7 +726,25 @@ public final class PrimitiveSerializer {
 			}
 		}
 
-		// TODO 处理 Dialect
+		// 解析方言
+		if (json.has(JSONKEY_DIALECT)) {
+			JSONObject dialectJSON = json.getJSONObject(JSONKEY_DIALECT);
+			String dialectName = dialectJSON.getString(JSONKEY_NAME);
+			String tracker = dialectJSON.getString(JSONKEY_TRACKER);
+
+			// 创建方言
+			Dialect dialect = DialectEnumerator.getInstance().createDialect(dialectName, tracker);
+			if (null != dialect) {
+				// 关联
+				output.capture(dialect);
+
+				// 构建数据
+				dialect.build(output);
+			}
+			else {
+				Logger.w(PrimitiveSerializer.class, "Can't create '" +  dialectName + "' dialect.");
+			}
+		}
 	}
 
 	/**
