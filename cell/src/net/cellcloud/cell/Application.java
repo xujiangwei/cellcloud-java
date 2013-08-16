@@ -196,7 +196,7 @@ public final class Application {
 			// 检测配置文件
 			URL pathURL = this.getClass().getClassLoader().getResource(".");
 			String resourcePath = (null != pathURL) ? pathURL.getPath() : "./";
-			String fileName = resourcePath + "nucleus.xml";
+			String fileName = resourcePath + "cell.xml";
 			File file = new File(fileName);
 			if (!file.exists()) {
 				String[] array = resourcePath.split("/");
@@ -213,7 +213,7 @@ public final class Application {
 				path = null;
 			}
 
-			fileName = resourcePath + "nucleus.xml";
+			fileName = resourcePath + "cell.xml";
 			file = new File(fileName);
 			if (file.exists()) {
 				// 解析文件
@@ -226,7 +226,6 @@ public final class Application {
 				NodeList list = document.getElementsByTagName("cellet");
 				for (int i = 0; i < list.getLength(); ++i) {
 					Node node = list.item(i);
-					String path = node.getAttributes().getNamedItem("path").getNodeValue();
 					String jar = node.getAttributes().getNamedItem("jar").getNodeValue();
 
 					ArrayList<String> classes = new ArrayList<String>();
@@ -237,7 +236,7 @@ public final class Application {
 					}
 
 					// 添加 Jar
-					nucleus.prepareCelletJar(path + jar, classes);
+					nucleus.prepareCelletJar(jar, classes);
 				}
 			}
 

@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<cell>
+	<cellets>
+		<cellet jar="/E:/Development/CellCloud-Java/workspace/cellet-dummy/cellet-dummy.jar">
+			<class>net.cellcloud.cellet.DummyCellet</class>
+		</cellet>
+	</cellets>
+</cell>
