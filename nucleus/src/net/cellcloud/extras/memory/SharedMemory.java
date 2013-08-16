@@ -26,14 +26,26 @@ THE SOFTWARE.
 
 package net.cellcloud.extras.memory;
 
-/** 共享内存。
+import net.cellcloud.extras.memory.attribute.Attribute;
+
+/**
+ * 集群内共享内存。
  * 
  * @author Jiangwei Xu
  */
 public class SharedMemory extends MemoryArea {
 
 	protected SharedMemory() {
+		super();
 	}
 
-	
+	@Override
+	public void setAttribute(Attribute attribute) {
+		super.setAttribute(attribute);
+		this.synchronize();
+	}
+
+	private void synchronize() {
+		
+	}
 }

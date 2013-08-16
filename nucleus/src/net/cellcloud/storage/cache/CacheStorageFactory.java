@@ -30,7 +30,7 @@ import net.cellcloud.storage.Storage;
 import net.cellcloud.storage.StorageFactory;
 import net.cellcloud.storage.StorageMetaData;
 
-/** 缓存文件工厂。
+/** 缓存工厂。
  * 
  * @author Jiangwei Xu
  */

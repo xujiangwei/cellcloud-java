@@ -33,7 +33,23 @@ package net.cellcloud.extras.memory.attribute;
  */
 public class IntegerAttribute extends Attribute {
 
-	public IntegerAttribute(String name) {
+	private int value;
+
+	/**
+	 * 构造函数。
+	 * @param name
+	 * @param value
+	 */
+	public IntegerAttribute(String name, int value) {
 		super(name);
+		this.value = value;
+	}
+
+	/**
+	 * 返回值。
+	 * @return
+	 */
+	public int getValue() {
+		return this.value;
 	}
 }

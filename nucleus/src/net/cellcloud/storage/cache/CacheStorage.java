@@ -28,14 +28,14 @@ package net.cellcloud.storage.cache;
 
 import net.cellcloud.storage.ResultSet;
 import net.cellcloud.storage.Schema;
-import net.cellcloud.storage.file.FileStorage;
+import net.cellcloud.storage.Storage;
 import net.cellcloud.util.Properties;
 
-/** 缓存文件存储器。
+/** 缓存存储器。
  * 
  * @author Jiangwei Xu
  */
-public class CacheStorage implements FileStorage {
+public class CacheStorage implements Storage {
 
 	public final static String TYPE_NAME = "CacheStorage";
 
@@ -71,16 +71,6 @@ public class CacheStorage implements FileStorage {
 
 	@Override
 	public ResultSet store(Schema schema) {
-		return null;
-	}
-
-	@Override
-	public String createReadStatement(String file) {
-		return null;
-	}
-
-	@Override
-	public String createWriteStatement(String file) {
 		return null;
 	}
 }

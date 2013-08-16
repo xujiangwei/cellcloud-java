@@ -28,6 +28,7 @@ package net.cellcloud.extras.memory;
 
 /**
  * TODO 实现
+ * 
  * @author Jiangwei Xu
  */
 public class ImmortalMemory extends MemoryArea {

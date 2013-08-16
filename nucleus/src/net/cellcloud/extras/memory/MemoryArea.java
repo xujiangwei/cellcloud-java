@@ -26,6 +26,9 @@ THE SOFTWARE.
 
 package net.cellcloud.extras.memory;
 
+import java.util.Collection;
+import java.util.concurrent.ConcurrentHashMap;
+
 import net.cellcloud.extras.memory.attribute.Attribute;
 import net.cellcloud.util.Utils;
 
@@ -37,8 +40,11 @@ public abstract class MemoryArea implements Externalizable {
 
 	private long guid;
 
+	protected ConcurrentHashMap<String, Attribute> attributes;
+
 	public MemoryArea() {
 		this.guid = Math.abs(Utils.randomLong());
+		this.attributes = new ConcurrentHashMap<String, Attribute>();
 	}
 
 	@Override
@@ -48,11 +54,16 @@ public abstract class MemoryArea implements Externalizable {
 
 	@Override
 	public void setAttribute(Attribute attribute) {
-		
+		this.attributes.put(attribute.getName(), attribute);
 	}
 
 	@Override
 	public Attribute getAttribute(String name) {
-		return null;
+		return this.attributes.get(name);
+	}
+
+	@Override
+	public Collection<Attribute> getAttributes() {
+		return this.attributes.values();
 	}
 }

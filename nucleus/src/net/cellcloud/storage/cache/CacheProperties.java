@@ -28,7 +28,7 @@ package net.cellcloud.storage.cache;
 
 import net.cellcloud.util.Properties;
 
-/** 缓存文件属性。
+/** 缓存属性。
  * 
  * @author Jiangwei Xu
  */

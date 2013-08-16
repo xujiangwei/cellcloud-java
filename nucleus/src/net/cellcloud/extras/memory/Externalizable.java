@@ -26,6 +26,8 @@ THE SOFTWARE.
 
 package net.cellcloud.extras.memory;
 
+import java.util.Collection;
+
 import net.cellcloud.extras.memory.attribute.Attribute;
 
 /** 可外现化接口。
@@ -51,4 +53,10 @@ public interface Externalizable {
 	 * @return
 	 */
 	public Attribute getAttribute(String name);
+
+	/**
+	 * 返回所有属性的集合。
+	 * @return
+	 */
+	public Collection<Attribute> getAttributes();
 }

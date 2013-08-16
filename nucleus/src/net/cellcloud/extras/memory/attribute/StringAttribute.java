@@ -35,11 +35,20 @@ public class StringAttribute extends Attribute {
 
 	private String value;
 
+	/**
+	 * 构造函数。
+	 * @param name
+	 * @param value
+	 */
 	public StringAttribute(String name, String value) {
 		super(name);
 		this.value = value;
 	}
 
+	/**
+	 * 返回值。
+	 * @return
+	 */
 	public String getValue() {
 		return this.value;
 	}
