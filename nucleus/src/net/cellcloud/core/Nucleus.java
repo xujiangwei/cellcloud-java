@@ -34,6 +34,7 @@ import java.net.URLClassLoader;
 import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.Iterator;
+import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
@@ -307,6 +308,22 @@ public final class Nucleus {
 		}
 
 		this.cellets.remove(cellet.getFeature().getIdentifier());
+	}
+
+	/**
+	 * 返回所有 Cellet 的 Feature 列表。
+	 * @return
+	 */
+	public List<CelletFeature> getCelletFeatures() {
+		if (null == this.cellets) {
+			return null;
+		}
+
+		ArrayList<CelletFeature> list = new ArrayList<CelletFeature>(this.cellets.size());
+		for (Cellet c : this.cellets.values()) {
+			list.add(c.getFeature());
+		}
+		return list;
 	}
 
 	/** 查询并返回内核上下文。
