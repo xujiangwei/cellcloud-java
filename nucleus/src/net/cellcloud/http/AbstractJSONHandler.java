@@ -76,8 +76,7 @@ public abstract class AbstractJSONHandler extends HttpHandler {
 	 * @param status
 	 */
 	protected void respond(HttpResponse response, int status) {
-		response.setHeader("Server", "Cell Cloud");
-		response.setContentType("text/json");
+		response.setContentType("application/json");
 		response.setCharacterEncoding("UTF-8");
 		response.setStatus(status);
 
@@ -104,8 +103,7 @@ public abstract class AbstractJSONHandler extends HttpHandler {
 	 * @throws IOException
 	 */
 	protected void respond(HttpResponse response, int status, JSONObject json) throws IOException {
-		response.setHeader("Server", "Cell Cloud");
-		response.setContentType("text/json");
+		response.setContentType("application/json");
 		response.setCharacterEncoding("UTF-8");
 		response.setStatus(status);
 
@@ -129,8 +127,7 @@ public abstract class AbstractJSONHandler extends HttpHandler {
 	 * @param response
 	 */
 	protected void respondWithOk(HttpResponse response) {
-		response.setHeader("Server", "Cell Cloud");
-		response.setContentType("text/json");
+		response.setContentType("application/json");
 		response.setCharacterEncoding("UTF-8");
 		response.setStatus(HttpResponse.SC_OK);
 
@@ -156,8 +153,7 @@ public abstract class AbstractJSONHandler extends HttpHandler {
 	 * @throws IOException
 	 */
 	protected void respondWithOk(HttpResponse response, JSONObject json) throws IOException {
-		response.setHeader("Server", "Cell Cloud");
-		response.setContentType("text/json");
+		response.setContentType("application/json");
 		response.setCharacterEncoding("UTF-8");
 		response.setStatus(HttpResponse.SC_OK);
 

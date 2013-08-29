@@ -41,8 +41,8 @@ import javax.servlet.http.HttpServletRequest;
  */
 public class HttpRequest {
 
-	private HttpServletRequest request;
-	private SessionManager sessionManager;
+	protected HttpServletRequest request;
+	protected SessionManager sessionManager;
 
 	private ByteArrayOutputStream dataStream;
 
@@ -64,6 +64,15 @@ public class HttpRequest {
 	 */
 	public String getHeader(String header) {
 		return this.request.getHeader(header);
+	}
+
+	/**
+	 * 返回指定名称的参数值。
+	 * @param name
+	 * @return
+	 */
+	public String getParameter(String name) {
+		return this.request.getParameter(name);
 	}
 
 	/**

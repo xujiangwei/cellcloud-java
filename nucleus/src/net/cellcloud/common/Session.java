@@ -46,6 +46,12 @@ public class Session {
 		this.address = address;
 	}
 
+	public Session(long id, MessageService service, InetSocketAddress address) {
+		this.id = id;
+		this.service = service;
+		this.address = address;
+	}
+
 	/** 返回会话 ID 。
 	 */
 	public Long getId() {

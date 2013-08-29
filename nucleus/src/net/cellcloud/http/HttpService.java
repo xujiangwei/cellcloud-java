@@ -29,6 +29,7 @@ package net.cellcloud.http;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.concurrent.ConcurrentHashMap;
 
 import net.cellcloud.common.LogLevel;
 import net.cellcloud.common.Logger;
@@ -51,7 +52,10 @@ public final class HttpService implements Service {
 
 	private Server server = null;
 
-	private LinkedList<HttpCapsule> httpCapsules = null;
+	protected LinkedList<HttpCapsule> httpCapsules = null;
+
+	// HTTP URI 上下文 Holder
+	protected ConcurrentHashMap<String, CapsuleHolder> holders;
 
 	/**
 	 * 构造函数。
@@ -73,6 +77,8 @@ public final class HttpService implements Service {
 			this.server.addBean(new DefaultErrorHandler());
 
 			this.httpCapsules = new LinkedList<HttpCapsule>();
+
+			this.holders = new ConcurrentHashMap<String, CapsuleHolder>();
 		}
 		else {
 			throw new SingletonException(HttpService.class.getName());
@@ -105,8 +111,17 @@ public final class HttpService implements Service {
 				ContextHandler context = new ContextHandler(holder.getPathSpec());
 				context.setHandler(holder.getHttpHandler());
 				contextList.add(context);
+
+				// 记录 Holder
+				this.holders.put(holder.getPathSpec(), holder);
 			}
 		}
+
+		// 添加跨域支持
+		HttpCrossDomainHandler cdh = new HttpCrossDomainHandler(this);
+		ContextHandler context = new ContextHandler(cdh.getPathSpec());
+		context.setHandler(cdh.getHttpHandler());
+		contextList.add(context);
 
 		ServerConnector[] connectors = new ServerConnector[connectorList.size()];
 		connectorList.toArray(connectors);

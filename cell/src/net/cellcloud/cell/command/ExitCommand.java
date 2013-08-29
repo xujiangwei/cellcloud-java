@@ -57,7 +57,7 @@ public final class ExitCommand extends ConsoleCommand {
 		}
 
 		this.state = ConsoleCommand.CCS_EXECUTING;
-		print("Are you sure exit cell console and quit program? [y/n] ");
+		print("Are you sure exit cell console and quit? [y/n] ");
 	}
 
 	@Override

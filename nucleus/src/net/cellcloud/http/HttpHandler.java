@@ -45,7 +45,7 @@ import org.eclipse.jetty.util.annotation.ManagedOperation;
  * @author Jiangwei Xu
  *
  */
-public abstract class HttpHandler implements Handler /*extends AbstractHandler*/ {
+public abstract class HttpHandler implements Handler {
 
 	private Server server;
 	private SessionManager sessionManager;
@@ -86,6 +86,11 @@ public abstract class HttpHandler implements Handler /*extends AbstractHandler*/
 		if (request.getContentLength() > 0) {
 			method = HttpMethod.POST.asString();
 		}
+
+		// 服务器类型
+		response.setHeader("Server", "Cell Cloud");
+		// 允许跨域访问
+		httpResponse.setHeader("Access-Control-Allow-Origin", "*");
 
 		if (method.equalsIgnoreCase(HttpMethod.GET.asString())) {
 			doGet(httpRequest, httpResponse);

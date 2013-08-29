@@ -70,10 +70,13 @@ public class CookieSessionManager implements SessionManager {
 			Long sessionId = this.readSessionId(cookie);
 			if (sessionId.longValue() > 0) {
 				// 判断是否是已被管理 Session
-				if (this.sessions.containsKey(sessionId)) {
-					// 已被管理
-					return;
+				if (!this.sessions.containsKey(sessionId)) {
+					// 添加管理
+					HttpSession session = new HttpSession(sessionId.longValue(), request.getRemoteAddr(), this.sessionExpires);
+					this.sessions.put(sessionId, session);
 				}
+
+				return;
 			}
 		}
 

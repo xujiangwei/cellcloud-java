@@ -129,7 +129,7 @@ public class HttpResponse {
 	public static final int SC_HTTP_VERSION_NOT_SUPPORTED = 505;
 
 
-	private HttpServletResponse response;
+	protected HttpServletResponse response;
 
 	public HttpResponse(HttpServletResponse response) {
 		this.response = response;

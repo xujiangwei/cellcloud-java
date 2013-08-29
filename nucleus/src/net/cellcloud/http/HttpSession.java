@@ -65,6 +65,20 @@ public class HttpSession extends Session {
 	}
 
 	/**
+	 * 构造函数。
+	 * @param id
+	 * @param address
+	 * @param expires
+	 */
+	public HttpSession(long id, InetSocketAddress address, long expires) {
+		super(id, null, address);
+		this.timestamp = System.currentTimeMillis();
+		this.expires = expires;
+		this.queue = new ConcurrentLinkedQueue<Message>();
+		this.heartbeat = this.timestamp;
+	}
+
+	/**
 	 * 返回会话时间戳。
 	 * @return
 	 */
