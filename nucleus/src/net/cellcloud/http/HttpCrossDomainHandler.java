@@ -170,8 +170,20 @@ public final class HttpCrossDomainHandler extends HttpHandler implements Capsule
 	 * @author Jiangwei Xu
 	 */
 	protected final class BaseRequest extends Request {
+		private boolean handled;
+
 		public BaseRequest() {
 			super(null, null);
+		}
+
+		@Override
+		public void setHandled(boolean value) {
+			this.handled = value;
+		}
+
+		@Override
+		public boolean isHandled() {
+			return this.handled;
 		}
 	}
 }

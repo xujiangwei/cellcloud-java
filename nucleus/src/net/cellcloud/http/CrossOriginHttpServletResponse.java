@@ -73,7 +73,7 @@ public class CrossOriginHttpServletResponse implements HttpServletResponse {
 				StringBuilder buf = new StringBuilder();
 				buf.append("var _rd = eval('(");
 				buf.append(buffer.toString());
-				buf.append(")';");
+				buf.append(")');");
 				buf.append(this.callback);
 				buf.append(".call(null,_rd);");
 				writer.print(buf.toString());
@@ -81,7 +81,8 @@ public class CrossOriginHttpServletResponse implements HttpServletResponse {
 				writer.close();
 			}
 			else {
-				
+				writer.print(buffer.toString());
+				writer.close();
 			}
 		} catch (IOException e) {
 			Logger.log(this.getClass(), e, LogLevel.WARNING);
