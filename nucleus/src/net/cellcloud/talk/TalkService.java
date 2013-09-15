@@ -74,6 +74,8 @@ public final class TalkService implements Service, SpeakerDelegate {
 	// 服务器端是否启用 HTTP 服务
 	private boolean httpEnabled;
 
+	private int block;
+
 	private CookieSessionManager httpSessionManager;
 	private HttpSessionListener httpSessionListener;
 
@@ -114,6 +116,7 @@ public final class TalkService implements Service, SpeakerDelegate {
 			this.port = 7000;
 			this.httpPort = 7070;
 			this.httpEnabled = true;
+			this.block = 8192;
 
 			// 创建执行器
 			this.executor = CachedQueueExecutor.newCachedQueueThreadPool(8);
@@ -155,6 +158,7 @@ public final class TalkService implements Service, SpeakerDelegate {
 		if (null == this.acceptor) {
 			// 创建网络适配器
 			this.acceptor = new NonblockingAcceptor();
+			this.acceptor.setBlock(this.block);
 
 			// 定义包标识
 			byte[] head = {0x20, 0x10, 0x11, 0x10};
@@ -246,6 +250,14 @@ public final class TalkService implements Service, SpeakerDelegate {
 		}
 
 		this.httpEnabled = enabled;
+	}
+
+	/**
+	 * TODO
+	 * @param block
+	 */
+	public void setBlock(int block) {
+		this.block = block;
 	}
 
 	/** 启动任务表守护线程。

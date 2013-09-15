@@ -288,6 +288,20 @@ public class NonblockingAcceptor extends MessageService implements MessageAccept
 		return this.workerNum;
 	}
 
+	/** 设置 Block 数据块大小。
+	 * @param size
+	 */
+	public void setBlock(int size) {
+		this.block = size;
+	}
+
+	/** 返回 Block 数据块大小。
+	 * @return
+	 */
+	public int getBlock() {
+		return this.block;
+	}
+
 	/** 返回所有 Session 。
 	 */
 	public Collection<NonblockingAcceptorSession> getSessions() {

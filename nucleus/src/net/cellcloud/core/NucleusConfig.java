@@ -105,6 +105,9 @@ public final class NucleusConfig {
 		/// Talk 服务端口
 		public int port = 7000;
 
+		/// Block 设置
+		public int block = 8192;
+
 		/// 是否使用 HTTP 服务
 		public boolean httpd = false;
 

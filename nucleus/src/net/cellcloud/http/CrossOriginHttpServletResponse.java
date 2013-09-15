@@ -51,6 +51,7 @@ public class CrossOriginHttpServletResponse implements HttpServletResponse {
 	private PrintWriter writer;
 	private StringWriter stringWriter;
 
+	private boolean eval;
 	private String callback;
 
 	public CrossOriginHttpServletResponse(HttpServletResponse soul, String callback) {
@@ -58,6 +59,7 @@ public class CrossOriginHttpServletResponse implements HttpServletResponse {
 		this.callback = callback;
 		this.stringWriter = new StringWriter(512);
 		this.writer = new PrintWriter(this.stringWriter);
+		this.eval = false;
 	}
 
 	public String getCallback() {
@@ -71,9 +73,16 @@ public class CrossOriginHttpServletResponse implements HttpServletResponse {
 			PrintWriter writer = this.soul.getWriter();
 			if (null != this.callback) {
 				StringBuilder buf = new StringBuilder();
-				buf.append("var _rd = eval('(");
-				buf.append(buffer.toString());
-				buf.append(")');");
+				if (this.eval) {
+					buf.append("var _rd = eval('(");
+					buf.append(buffer.toString());
+					buf.append(")');");
+				}
+				else {
+					buf.append("var _rd = ");
+					buf.append(buffer.toString());
+					buf.append(";");
+				}
 				buf.append(this.callback);
 				buf.append(".call(null,_rd);");
 				writer.print(buf.toString());

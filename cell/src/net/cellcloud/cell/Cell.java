@@ -30,6 +30,7 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.util.HashMap;
 
 import net.cellcloud.common.LogLevel;
 import net.cellcloud.common.Logger;
@@ -203,7 +204,10 @@ public final class Cell {
 			// 按照指定参数启停 Cell
 
 			if (args[0].equals("start")) {
-				Cell.app = new Application(true, "cell.log");
+				// 解析参数
+				Arguments arguments = Cell.parseArgs(args);
+
+				Cell.app = new Application(arguments.console, arguments.logFile);
 
 				if (Cell.app.startup()) {
 
@@ -262,5 +266,27 @@ public final class Cell {
 			System.out.print("cell> No argument");
 			VersionInfo.main(args);
 		}
+	}
+
+	/**
+	 * 解析参数
+	 * @param args
+	 * @return
+	 */
+	private static Arguments parseArgs(String[] args) {
+		Arguments ret = new Arguments();
+
+		if (args.length > 1) {
+			HashMap<String, String> map = new HashMap<String, String>(2);
+			for (String arg : args) {
+				String[] array = arg.split("=");
+				if (array.length == 2) {
+					map.put(array[0], array[1]);
+				}
+			}
+			// 判断是否使用交互式控制台
+		}
+
+		return ret;
 	}
 }
