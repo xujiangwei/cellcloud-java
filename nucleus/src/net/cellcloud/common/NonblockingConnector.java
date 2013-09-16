@@ -45,7 +45,7 @@ import java.util.Vector;
  */
 public class NonblockingConnector extends MessageService implements MessageConnector {
 
-	// 缓冲块大小，默认：8192
+	// 缓冲块大小
 	private int block = 8192;
 
 	private InetSocketAddress address;

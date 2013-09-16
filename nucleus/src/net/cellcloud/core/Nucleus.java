@@ -189,7 +189,7 @@ public final class Nucleus {
 				// 设置服务端口号
 				this.talkService.setPort(this.config.talk.port);
 				// 设置 Block
-				this.talkService.setBlock(this.config.talk.block);
+				this.talkService.setBlockSize(this.config.talk.block);
 
 				// 启动 Talk Service
 				if (this.talkService.startup()) {

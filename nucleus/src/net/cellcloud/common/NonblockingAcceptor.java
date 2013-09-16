@@ -291,14 +291,14 @@ public class NonblockingAcceptor extends MessageService implements MessageAccept
 	/** 设置 Block 数据块大小。
 	 * @param size
 	 */
-	public void setBlock(int size) {
+	public void setBlockSize(int size) {
 		this.block = size;
 	}
 
 	/** 返回 Block 数据块大小。
 	 * @return
 	 */
-	public int getBlock() {
+	public int getBlockSize() {
 		return this.block;
 	}
 

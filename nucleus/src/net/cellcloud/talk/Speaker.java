@@ -52,6 +52,7 @@ public class Speaker implements Speakable {
 	private String celletIdentifier;
 	private SpeakerDelegate delegate;
 	private NonblockingConnector connector;
+	private int block;
 
 	protected TalkCapacity capacity;
 
@@ -66,18 +67,20 @@ public class Speaker implements Speakable {
 
 	/** 构造函数。
 	 */
-	public Speaker(String identifier, SpeakerDelegate delegate) {
+	public Speaker(String identifier, SpeakerDelegate delegate, int block) {
 		this.nucleusTag = Nucleus.getInstance().getTagAsString().getBytes();
 		this.celletIdentifier = identifier;
 		this.delegate = delegate;
+		this.block = block;
 	}
 
 	/** 构造函数。
 	 */
-	public Speaker(String identifier, SpeakerDelegate delegate, TalkCapacity capacity) {
+	public Speaker(String identifier, SpeakerDelegate delegate, int block, TalkCapacity capacity) {
 		this.nucleusTag = Nucleus.getInstance().getTagAsString().getBytes();
 		this.celletIdentifier = identifier;
 		this.delegate = delegate;
+		this.block = block;
 		this.capacity = capacity;
 	}
 
@@ -113,6 +116,7 @@ public class Speaker implements Speakable {
 
 		if (null == this.connector) {
 			this.connector = new NonblockingConnector();
+			this.connector.setBlockSize(this.block);
 
 			byte[] headMark = {0x20, 0x10, 0x11, 0x10};
 			byte[] tailMark = {0x19, 0x78, 0x10, 0x04};

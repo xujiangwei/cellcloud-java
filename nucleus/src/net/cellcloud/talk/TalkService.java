@@ -158,7 +158,7 @@ public final class TalkService implements Service, SpeakerDelegate {
 		if (null == this.acceptor) {
 			// 创建网络适配器
 			this.acceptor = new NonblockingAcceptor();
-			this.acceptor.setBlock(this.block);
+			this.acceptor.setBlockSize(this.block);
 
 			// 定义包标识
 			byte[] head = {0x20, 0x10, 0x11, 0x10};
@@ -253,11 +253,11 @@ public final class TalkService implements Service, SpeakerDelegate {
 	}
 
 	/**
-	 * TODO
-	 * @param block
+	 * 设置适配器缓存块大小。
+	 * @param size
 	 */
-	public void setBlock(int block) {
-		this.block = block;
+	public void setBlockSize(int size) {
+		this.block = size;
 	}
 
 	/** 启动任务表守护线程。
@@ -459,7 +459,7 @@ public final class TalkService implements Service, SpeakerDelegate {
 				}
 			}
 			else {
-				speaker = new Speaker(identifier, this, capacity);
+				speaker = new Speaker(identifier, this, this.block, capacity);
 				this.speakers.put(identifier, speaker);
 			}
 	
