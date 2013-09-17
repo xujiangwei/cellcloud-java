@@ -450,7 +450,7 @@ public final class TalkService implements Service, SpeakerDelegate {
 				this.speakers = new ConcurrentHashMap<String, Speaker>();
 
 			Speaker speaker = null;
-	
+
 			if (this.speakers.containsKey(identifier)) {
 				// 检查 Speaker 是否是 Lost 状态 
 				speaker = this.speakers.get(identifier);
@@ -462,7 +462,7 @@ public final class TalkService implements Service, SpeakerDelegate {
 				speaker = new Speaker(identifier, this, this.block, capacity);
 				this.speakers.put(identifier, speaker);
 			}
-	
+
 			// Call
 			return speaker.call(address);
 		}

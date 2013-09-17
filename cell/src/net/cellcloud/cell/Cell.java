@@ -31,6 +31,7 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.HashMap;
+import java.util.Map;
 
 import net.cellcloud.common.LogLevel;
 import net.cellcloud.common.Logger;
@@ -276,6 +277,9 @@ public final class Cell {
 	private static Arguments parseArgs(String[] args) {
 		Arguments ret = new Arguments();
 
+		// -console=<true|false>
+		// -log=<filename>
+
 		if (args.length > 1) {
 			HashMap<String, String> map = new HashMap<String, String>(2);
 			for (String arg : args) {
@@ -284,7 +288,22 @@ public final class Cell {
 					map.put(array[0], array[1]);
 				}
 			}
+
 			// 判断是否使用交互式控制台
+			for (Map.Entry<String, String> entry : map.entrySet()) {
+				String name = entry.getKey();
+				String value = entry.getValue();
+				if (name.equals("-console")) {
+					try {
+						ret.console = Boolean.parseBoolean(value);
+					} catch (Exception e) {
+						Logger.w(Cell.class, "Cellet arguments error: -console");
+					}
+				}
+				else if (name.equals("-log")) {
+					ret.logFile = value;
+				}
+			}
 		}
 
 		return ret;
