@@ -26,6 +26,7 @@ THE SOFTWARE.
 
 package net.cellcloud.util;
 
+
 /**
  * 滑窗任务。
  * @author Jiangwei Xu
@@ -34,26 +35,21 @@ package net.cellcloud.util;
 public class SlidingWindowTask implements Runnable {
 
 	private SlidingWindowExecutor executor;
+	private Runnable task;
 
-	public SlidingWindowTask(SlidingWindowExecutor executor) {
+	public SlidingWindowTask(SlidingWindowExecutor executor, Runnable task) {
 		this.executor = executor;
+		this.task = task;
 	}
 
 	@Override
 	public void run() {
 		this.executor.threadNum.incrementAndGet();
 
-		do {
-			Runnable task = null;
-			synchronized (this.executor.activeQueue) {
-				task = this.executor.activeQueue.poll();
-			}
-
-			if (null != task) {
-				// 执行任务
-				task.run();
-			}
-		} while (!this.executor.activeQueue.isEmpty());
+		if (null != this.task) {
+			// 执行任务
+			this.task.run();
+		}
 
 		this.executor.threadNum.decrementAndGet();
 
@@ -64,5 +60,6 @@ public class SlidingWindowTask implements Runnable {
 		}
 
 		this.executor = null;
+		this.task = null;
 	}
 }

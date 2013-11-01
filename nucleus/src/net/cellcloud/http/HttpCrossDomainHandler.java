@@ -139,7 +139,7 @@ public final class HttpCrossDomainHandler extends HttpHandler implements Capsule
 			out = response.getWriter();
 			out.print("console.log(\"Talk service http cross-domain error.\");");
 		} catch (IOException e) {
-			Logger.log(AbstractJSONHandler.class, e, LogLevel.ERROR);
+			Logger.log(HttpCrossDomainHandler.class, e, LogLevel.ERROR);
 		} finally {
 			try {
 				out.close();

@@ -61,10 +61,10 @@ public class SlidingWindowExecutor implements ExecutorService {
 
 	private volatile boolean dispatching = false;
 
-	protected SlidingWindowExecutor that;
+	protected SlidingWindowExecutor self;
 
 	private SlidingWindowExecutor(ExecutorService executor, int windowSize) {
-		this.that = this;
+		this.self = this;
 		this.executor = executor;
 		this.windowSize = windowSize;
 		this.taskQueue = new LinkedList<Runnable>();
@@ -183,6 +183,14 @@ public class SlidingWindowExecutor implements ExecutorService {
 	}
 
 	/**
+	 * 快照线程数量。
+	 * @return
+	 */
+	public int snapshootThreadNum() {
+		return this.threadNum.get();
+	}
+
+	/**
 	 * 内部线程任务。
 	 */
 	protected final class Dispatcher implements Runnable {
@@ -193,7 +201,9 @@ public class SlidingWindowExecutor implements ExecutorService {
 		public void run() {
 			do {
 				// 将任务添加到活跃队列
-				while (activeQueue.size() < windowSize && !taskQueue.isEmpty()) {
+				while (activeQueue.size() < windowSize
+						&& threadNum.get() < windowSize
+						&& !taskQueue.isEmpty()) {
 					Runnable task = null;
 					synchronized (taskQueue) {
 						task = taskQueue.poll();
@@ -206,8 +216,8 @@ public class SlidingWindowExecutor implements ExecutorService {
 				}
 
 				// 启动线程执行活跃任务
-				for (int i = 0, size = activeQueue.size(); i < size; ++i) {
-					executor.execute(new SlidingWindowTask(that));
+				while (!activeQueue.isEmpty()) {
+					executor.execute(new SlidingWindowTask(self, activeQueue.poll()));
 				}
 
 				if (!taskQueue.isEmpty()) {
