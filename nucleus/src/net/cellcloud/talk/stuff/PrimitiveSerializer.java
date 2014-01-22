@@ -146,7 +146,7 @@ public final class PrimitiveSerializer {
 					stream.write(STUFFTYPE_SUBJECT_BYTES);
 					stream.write((int)TOKEN_OPERATE_ASSIGN);
 
-					bufLength = reviseValue(buf, stuff.value.getBytes(Charset.forName("UTF8")));
+					bufLength = reviseValue(buf, stuff.value.getBytes(Charset.forName("UTF-8")));
 					buf.flip();
 					byte[] d = new byte[bufLength];
 					buf.get(d, 0, bufLength);
@@ -167,7 +167,7 @@ public final class PrimitiveSerializer {
 					stream.write(STUFFTYPE_PREDICATE_BYTES);
 					stream.write((int)TOKEN_OPERATE_ASSIGN);
 
-					bufLength = reviseValue(buf, stuff.value.getBytes(Charset.forName("UTF8")));
+					bufLength = reviseValue(buf, stuff.value.getBytes(Charset.forName("UTF-8")));
 					buf.flip();
 					byte[] d = new byte[bufLength];
 					buf.get(d, 0, bufLength);
@@ -188,7 +188,7 @@ public final class PrimitiveSerializer {
 					stream.write(STUFFTYPE_OBJECTIVE_BYTES);
 					stream.write((int)TOKEN_OPERATE_ASSIGN);
 
-					bufLength = reviseValue(buf, stuff.value.getBytes(Charset.forName("UTF8")));
+					bufLength = reviseValue(buf, stuff.value.getBytes(Charset.forName("UTF-8")));
 					buf.flip();
 					byte[] d = new byte[bufLength];
 					buf.get(d, 0, bufLength);
@@ -209,7 +209,7 @@ public final class PrimitiveSerializer {
 					stream.write(STUFFTYPE_ADVERBIAL_BYTES);
 					stream.write((int)TOKEN_OPERATE_ASSIGN);
 
-					bufLength = reviseValue(buf, stuff.value.getBytes(Charset.forName("UTF8")));
+					bufLength = reviseValue(buf, stuff.value.getBytes(Charset.forName("UTF-8")));
 					buf.flip();
 					byte[] d = new byte[bufLength];
 					buf.get(d, 0, bufLength);
@@ -230,7 +230,7 @@ public final class PrimitiveSerializer {
 					stream.write(STUFFTYPE_ATTRIBUTIVE_BYTES);
 					stream.write((int)TOKEN_OPERATE_ASSIGN);
 
-					bufLength = reviseValue(buf, stuff.value.getBytes(Charset.forName("UTF8")));
+					bufLength = reviseValue(buf, stuff.value.getBytes(Charset.forName("UTF-8")));
 					buf.flip();
 					byte[] d = new byte[bufLength];
 					buf.get(d, 0, bufLength);
@@ -251,7 +251,7 @@ public final class PrimitiveSerializer {
 					stream.write(STUFFTYPE_COMPLEMENT_BYTES);
 					stream.write((int)TOKEN_OPERATE_ASSIGN);
 
-					bufLength = reviseValue(buf, stuff.value.getBytes(Charset.forName("UTF8")));
+					bufLength = reviseValue(buf, stuff.value.getBytes(Charset.forName("UTF-8")));
 					buf.flip();
 					byte[] d = new byte[bufLength];
 					buf.get(d, 0, bufLength);
@@ -268,9 +268,9 @@ public final class PrimitiveSerializer {
 			Dialect dialect = primitive.getDialect();
 			if (null != dialect) {
 				stream.write(TOKEN_OPEN_BRACKET);
-				stream.write(dialect.getName().getBytes(Charset.forName("UTF8")));
+				stream.write(dialect.getName().getBytes(Charset.forName("UTF-8")));
 				stream.write(TOKEN_AT);
-				stream.write(dialect.getTracker().getBytes(Charset.forName("UTF8")));
+				stream.write(dialect.getTracker().getBytes(Charset.forName("UTF-8")));
 				stream.write(TOKEN_CLOSE_BRACKET);
 			}
 

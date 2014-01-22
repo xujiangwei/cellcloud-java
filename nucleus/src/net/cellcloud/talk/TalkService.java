@@ -70,11 +70,11 @@ public final class TalkService implements Service, SpeakerDelegate {
 	private static TalkService instance = null;
 
 	private int port;
+	private int block;
+
 	private int httpPort;
 	// 服务器端是否启用 HTTP 服务
 	private boolean httpEnabled;
-
-	private int block;
 
 	private CookieSessionManager httpSessionManager;
 	private HttpSessionListener httpSessionListener;
@@ -114,9 +114,10 @@ public final class TalkService implements Service, SpeakerDelegate {
 			this.nucleusContext = nucleusContext;
 
 			this.port = 7000;
+			this.block = 8192;
+
 			this.httpPort = 7070;
 			this.httpEnabled = true;
-			this.block = 8192;
 
 			// 创建执行器
 			this.executor = CachedQueueExecutor.newCachedQueueThreadPool(8);
@@ -336,6 +337,21 @@ public final class TalkService implements Service, SpeakerDelegate {
 
 		synchronized (this.listeners) {
 			this.listeners.remove(listener);
+		}
+	}
+
+	/**
+	 * 是否已添加指定的监听器。
+	 * @param listener
+	 * @return
+	 */
+	public boolean hasListener(TalkListener listener) {
+		if (null == this.listeners) {
+			return false;
+		}
+
+		synchronized (this.listeners) {
+			return this.listeners.contains(listener);
 		}
 	}
 
