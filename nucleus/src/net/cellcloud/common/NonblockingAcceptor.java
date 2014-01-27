@@ -77,7 +77,7 @@ public class NonblockingAcceptor extends MessageService implements MessageAccept
 	}
 
 	@Override
-	public boolean bind(InetSocketAddress address) {
+	public boolean bind(final InetSocketAddress address) {
 		// 创建工作线程
 		if (null == this.workers) {
 			// 创建工作线程
@@ -88,21 +88,33 @@ public class NonblockingAcceptor extends MessageService implements MessageAccept
 		}
 
 		// 打开 Socket channel 并绑定服务
+		SelectionKey skey = null;
 		try {
-			this.channel = ServerSocketChannel.open();
 			this.selector = Selector.open();
-
-			this.channel.socket().bind(address);
+			this.channel = ServerSocketChannel.open();
 			this.channel.configureBlocking(false);
-			this.channel.register(this.selector, SelectionKey.OP_ACCEPT);
+			this.channel.socket().bind(address);
+
+			skey = this.channel.register(this.selector, SelectionKey.OP_ACCEPT);
 
 			this.bindAddress = address;
-
 		} catch (IOException e) {
 			Logger.log(NonblockingAcceptor.class, e, LogLevel.ERROR);
-
-			// 返回失败
-			return false;
+		} finally {
+			if (null == skey && null != this.selector) {
+				try {
+					this.selector.close();
+				} catch (IOException e) {
+					// Nothing
+				}
+			}
+			if (null == skey && null != this.channel) {
+				try {
+					this.channel.close();
+				} catch (IOException e) {
+					// Nothing
+				}
+			}
 		}
 
 		// 创建句柄线程
@@ -390,7 +402,16 @@ public class NonblockingAcceptor extends MessageService implements MessageAccept
 	/** 事件循环。 */
 	private void loopDispatch() throws IOException, Exception {
 		while (this.spinning) {
-			while (this.selector.isOpen() && this.selector.select() > 0) {
+			if (!this.selector.isOpen()) {
+				try {
+					Thread.sleep(1);
+				} catch (InterruptedException e) {
+					Logger.log(NonblockingAcceptor.class, e, LogLevel.DEBUG);
+				}
+				continue;
+			}
+
+			if (this.selector.select() > 0) {
 				Iterator<SelectionKey> it = this.selector.selectedKeys().iterator();
 				while (it.hasNext()) {
 					SelectionKey key = (SelectionKey) it.next();
@@ -400,10 +421,10 @@ public class NonblockingAcceptor extends MessageService implements MessageAccept
 						if (key.isAcceptable()) {
 							accept(key);
 						}
-						else if (key.isReadable()) {
+						if (key.isReadable()) {
 							receive(key);
 						}
-						else if (key.isWritable()) {
+						if (key.isWritable()) {
 							send(key);
 						}
 					}
@@ -416,14 +437,8 @@ public class NonblockingAcceptor extends MessageService implements MessageAccept
 							throw e;
 						}
 					}
-				}
-
-				try {
-					Thread.sleep(1);
-				} catch (InterruptedException e) {
-					Logger.log(NonblockingAcceptor.class, e, LogLevel.DEBUG);
-				}
-			} // # while
+				} // # while
+			} // # if
 
 			Thread.yield();
 		} // # while
@@ -434,8 +449,10 @@ public class NonblockingAcceptor extends MessageService implements MessageAccept
 		ServerSocketChannel channel = (ServerSocketChannel)key.channel();
 
 		try {
+			// accept
 			SocketChannel clientChannel = channel.accept();
 			if (this.sessions.size() >= this.getMaxConnectNum()) {
+				// 达到最大连接数
 				clientChannel.socket().close();
 				clientChannel.close();
 				return;
@@ -490,12 +507,8 @@ public class NonblockingAcceptor extends MessageService implements MessageAccept
 		session.selectionKey = key;
 		session.worker.pushReceiveSession(session);
 
-		try {
-			if (channel.isOpen())
-				channel.register(this.selector, SelectionKey.OP_WRITE | SelectionKey.OP_READ);
-		} catch (IOException e) {
-			Logger.log(NonblockingAcceptor.class, e, LogLevel.DEBUG);
-		}
+		if (key.isValid())
+			key.interestOps(key.interestOps() | SelectionKey.OP_READ);
 	}
 
 	/** 处理 Write */
@@ -518,11 +531,7 @@ public class NonblockingAcceptor extends MessageService implements MessageAccept
 		session.selectionKey = key;
 		session.worker.pushSendSession(session);
 
-		try {
-			if (channel.isOpen())
-				channel.register(this.selector, SelectionKey.OP_WRITE | SelectionKey.OP_READ);
-		} catch (IOException e) {
-			Logger.log(NonblockingAcceptor.class, e, LogLevel.WARNING);
-		}
+		if (key.isValid())
+			key.interestOps(key.interestOps() | SelectionKey.OP_WRITE);
 	}
 }

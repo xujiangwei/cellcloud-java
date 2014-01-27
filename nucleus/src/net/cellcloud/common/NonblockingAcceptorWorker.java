@@ -221,7 +221,6 @@ public final class NonblockingAcceptorWorker extends Thread {
 
 					// 移除 Session
 					this.acceptor.eraseSession(session);
-
 					this.removeSession(session);
 
 					session.selectionKey.cancel();
@@ -246,7 +245,6 @@ public final class NonblockingAcceptorWorker extends Thread {
 
 					// 移除 Session
 					this.acceptor.eraseSession(session);
-
 					this.removeSession(session);
 
 					session.selectionKey.cancel();

@@ -30,7 +30,6 @@ import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.StandardSocketOptions;
 import java.nio.ByteBuffer;
-import java.nio.channels.ClosedChannelException;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.nio.channels.SocketChannel;
@@ -172,7 +171,6 @@ public class NonblockingConnector extends MessageService implements MessageConne
 		this.session = new Session(this, this.address);
 
 		this.handleThread = new Thread() {
-
 			@Override
 			public void run() {
 				running = true;
@@ -184,7 +182,7 @@ public class NonblockingConnector extends MessageService implements MessageConne
 					loopDispatch();
 				} catch (Exception e) {
 					spinning = false;
-//					Logger.logException(e, LogLevel.DEBUG);
+					Logger.log(NonblockingConnector.class, e, LogLevel.DEBUG);
 				}
 
 				// 通知 Session 销毁。
@@ -197,11 +195,8 @@ public class NonblockingConnector extends MessageService implements MessageConne
 						selector.close();
 					if (null != channel && channel.isOpen())
 						channel.close();
-
-					channel = null;
 				} catch (IOException e) {
 					// Nothing
-					channel = null;
 				}
 			}
 		};
@@ -351,8 +346,16 @@ public class NonblockingConnector extends MessageService implements MessageConne
 		this.spinning = true;
 
 		while (this.spinning) {
-			while (this.selector.isOpen()
-					&& this.selector.select(this.channel.isConnected() ? 0 : this.connectTimeout) > 0) {
+			if (!this.selector.isOpen()) {
+				try {
+					Thread.sleep(1);
+				} catch (InterruptedException e) {
+					Logger.log(NonblockingConnector.class, e, LogLevel.DEBUG);
+				}
+				continue;
+			}
+
+			if (this.selector.select(this.channel.isConnected() ? 0 : this.connectTimeout) > 0) {
 				Set<SelectionKey> keys = this.selector.selectedKeys();
 				Iterator<SelectionKey> it = keys.iterator();
 				while (it.hasNext()) {
@@ -366,30 +369,26 @@ public class NonblockingConnector extends MessageService implements MessageConne
 							return;
 						}
 					}
-					else if (key.isReadable()) {
+					if (key.isReadable()) {
 						receive(key);
 					}
-					else if (key.isWritable()) {
+					if (key.isWritable()) {
 						send(key);
 					}
 				} //# while
 
-				try {
-					if (!this.spinning) {
-						return;
-					}
-
-					Thread.sleep(1);
-				} catch (InterruptedException e) {
-					Logger.log(NonblockingConnector.class, e, LogLevel.DEBUG);
+				if (!this.spinning) {
+					return;
 				}
-			} //# while
+
+				Thread.yield();
+			}
 		} // # while
 	}
 
 	private boolean doConnect(SelectionKey key) {
 		// 获取创建通道选择器事件键的套接字通道
-		SocketChannel channel = (SocketChannel)key.channel();
+		SocketChannel channel = (SocketChannel) key.channel();
 
 		// 判断此通道上是否正在进行连接操作。  
         // 完成套接字通道的连接过程。
@@ -397,7 +396,7 @@ public class NonblockingConnector extends MessageService implements MessageConne
 			try {
 				channel.finishConnect();
 			} catch (IOException e) {
-				//Logger.logException(e, LogLevel.DEBUG);
+				Logger.log(NonblockingConnector.class, e, LogLevel.DEBUG);
 
 				try {
 					this.channel.close();
@@ -415,10 +414,9 @@ public class NonblockingConnector extends MessageService implements MessageConne
 			fireSessionOpened();
 		}
 
-		try {
-			channel.register(this.selector, SelectionKey.OP_READ | SelectionKey.OP_WRITE);
-		} catch (ClosedChannelException e) {
-			Logger.log(NonblockingConnector.class, e, LogLevel.DEBUG);
+		if (key.isValid()) {
+			key.interestOps(key.interestOps() & ~SelectionKey.OP_CONNECT);
+			key.interestOps(key.interestOps() | SelectionKey.OP_READ | SelectionKey.OP_WRITE);
 		}
 
 		return true;
@@ -436,7 +434,7 @@ public class NonblockingConnector extends MessageService implements MessageConne
 			try {
 				read = channel.read(this.readBuffer);
 			} catch (IOException e) {
-//				Logger.logException(e, LogLevel.DEBUG);
+//				Logger.log(NonblockingConnector.class, e, LogLevel.DEBUG);
 
 				fireSessionClosed();
 
@@ -484,24 +482,20 @@ public class NonblockingConnector extends MessageService implements MessageConne
 			this.readBuffer.clear();
 		} while (read > 0);
 
-		try {
-			// 注册
-			channel.register(this.selector, SelectionKey.OP_WRITE | SelectionKey.OP_READ);
-		} catch (IOException e) {
-			Logger.log(NonblockingConnector.class, e, LogLevel.DEBUG);
-			this.fireErrorOccurred(MessageErrorCode.READ_FAILED);
+		if (key.isValid()) {
+			key.interestOps(key.interestOps() | SelectionKey.OP_READ);
 		}
 	}
 
 	private void send(SelectionKey key) {
+		SocketChannel channel = (SocketChannel) key.channel();
+
+		if (!channel.isConnected()) {
+			fireSessionClosed();
+			return;
+		}
+
 		try {
-			SocketChannel channel = (SocketChannel) key.channel();
-
-			if (!channel.isConnected()) {
-				fireSessionClosed();
-				return;
-			}
-
 			if (!this.messages.isEmpty()) {
 				// 有消息，进行发送
 
@@ -534,16 +528,12 @@ public class NonblockingConnector extends MessageService implements MessageConne
 					}
 				}
 			}
-
-			try {
-				// 注册
-				channel.register(this.selector, SelectionKey.OP_READ | SelectionKey.OP_WRITE);
-			} catch (ClosedChannelException ce) {
-				Logger.log(NonblockingConnector.class, ce, LogLevel.DEBUG);
-				this.fireErrorOccurred(MessageErrorCode.WRITE_FAILED);
-			}
 		} catch (IOException e) {
 			Logger.log(NonblockingConnector.class, e, LogLevel.WARNING);
+		}
+
+		if (key.isValid()) {
+			key.interestOps(key.interestOps() | SelectionKey.OP_WRITE);
 		}
 	}
 
