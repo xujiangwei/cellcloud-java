@@ -64,7 +64,7 @@ public final class VersionInfo {
 		buf.append("| |_| _|| |_| |_   | |_| |_| | | | | | |\n");
 		buf.append("|___|___|___|___|  |___|___|___|___|___/\n\n");
 
-		buf.append("Copyright (c) 2009,2013 Cell Cloud Team, www.cellcloud.net\n");
+		buf.append("Copyright (c) 2009,2014 Cell Cloud Team, www.cellcloud.net\n");
 		buf.append("-----------------------------------------------------------------------");
 
 		System.out.println(buf);

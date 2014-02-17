@@ -364,9 +364,13 @@ public class NonblockingConnector extends MessageService implements MessageConne
 
 					// 当前通道选择器产生连接已经准备就绪事件，并且客户端套接字通道尚未连接到服务端套接字通道
 					if (key.isConnectable()) {
-						if (!doConnect(key)) {
+						if (!this.doConnect(key)) {
 							this.spinning = false;
 							return;
+						}
+						else {
+							// 连接成功，打开 Session
+							fireSessionOpened();
 						}
 					}
 					if (key.isReadable()) {
@@ -378,12 +382,15 @@ public class NonblockingConnector extends MessageService implements MessageConne
 				} //# while
 
 				if (!this.spinning) {
-					return;
+					break;
 				}
 
 				Thread.yield();
 			}
 		} // # while
+
+		// 关闭会话
+		this.fireSessionClosed();
 	}
 
 	private boolean doConnect(SelectionKey key) {
@@ -409,9 +416,6 @@ public class NonblockingConnector extends MessageService implements MessageConne
 				fireErrorOccurred(MessageErrorCode.CONNECT_TIMEOUT);
 				return false;
 			}
-
-			// 连接成功，打开 Session
-			fireSessionOpened();
 		}
 
 		if (key.isValid()) {
