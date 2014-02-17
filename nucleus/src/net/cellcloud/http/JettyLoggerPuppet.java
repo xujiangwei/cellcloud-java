@@ -88,6 +88,15 @@ public class JettyLoggerPuppet implements org.eclipse.jetty.util.log.Logger {
 	}
 
 	@Override
+	public void debug(String msg, long value) {
+		if (!this.debugEnabled) {
+			return;
+		}
+
+		net.cellcloud.common.Logger.d(this.getClass(), msg);
+	}
+
+	@Override
 	public void info(Throwable throwable) {
 		net.cellcloud.common.Logger.i(this.getClass(), throwable.getMessage());
 	}
