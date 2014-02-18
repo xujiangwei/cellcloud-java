@@ -83,7 +83,7 @@ public final class Application {
 		buf.append("| |_| _|| |_| |_   | |_| |_| | | | | | |\n");
 		buf.append("|___|___|___|___|  |___|___|___|___|___/\n\n");
 
-		buf.append("Copyright (c) 2009,2013 Cell Cloud Team, www.cellcloud.net\n");
+		buf.append("Copyright (c) 2009,2014 Cell Cloud Team, www.cellcloud.net\n");
 		buf.append("-----------------------------------------------------------------------");
 
 		System.out.println(buf);
@@ -110,7 +110,7 @@ public final class Application {
 				config.role = NucleusConfig.Role.NODE;
 				config.device = NucleusConfig.Device.SERVER;
 
-				this.nucleus = new Nucleus(config);
+				this.nucleus = Nucleus.createInstance(config);
 			}
 		} catch (SingletonException e) {
 			Logger.log(Application.class, e, LogLevel.ERROR);
