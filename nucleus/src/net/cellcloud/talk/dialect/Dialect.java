@@ -2,7 +2,7 @@
 -----------------------------------------------------------------------------
 This source file is part of Cell Cloud.
 
-Copyright (c) 2009-2012 Cell Cloud Team (www.cellcloud.net)
+Copyright (c) 2009-2014 Cell Cloud Team (www.cellcloud.net)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -41,10 +41,25 @@ public abstract class Dialect {
 	private String celletIdentifier;
 	private Cellet cellet;
 
+	/**
+	 * 构造函数。
+	 * 
+	 * @param name
+	 */
+	public Dialect(String name) {
+		this.name = name;
+		this.tracker = "none";
+	}
+
+	/**
+	 * 构造函数。
+	 * 
+	 * @param name
+	 * @param tracker
+	 */
 	public Dialect(String name, String tracker) {
 		this.name = name;
 		this.tracker = tracker;
-		this.cellet = null;
 	}
 
 	/** 返回方言名。

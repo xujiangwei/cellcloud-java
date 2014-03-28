@@ -131,10 +131,18 @@ public class HttpResponse {
 
 	protected HttpServletResponse response;
 
+	// 跨域的 Cookie
+	protected String crossCookie;
+
 	public HttpResponse(HttpServletResponse response) {
 		this.response = response;
+		this.crossCookie = null;
 	}
 
+	/**
+	 * 设置内容类型。
+	 * @param type
+	 */
 	public void setContentType(String type) {
 		this.response.setContentType(type);
 	}
@@ -147,6 +155,18 @@ public class HttpResponse {
 		this.response.setStatus(status);
 	}
 
+	/**
+	 * 设置跨域的 Cookie 。
+	 * @param cookie
+	 */
+	public void setCrossCookie(String cookie) {
+		this.crossCookie = cookie;
+	}
+
+	/**
+	 * 设置 Cookie 内容。
+	 * @param cookie
+	 */
 	public void setCookie(String cookie) {
 		this.response.setHeader(HttpHeader.SET_COOKIE.asString(), cookie);
 	}

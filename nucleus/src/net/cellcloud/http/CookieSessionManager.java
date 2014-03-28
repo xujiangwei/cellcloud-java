@@ -65,8 +65,21 @@ public class CookieSessionManager implements SessionManager {
 	@Override
 	public void manage(HttpRequest request, HttpResponse response) {
 		// 获取 Cookie
-		String cookie = request.getHeader(COOKIE);
+		String cookie = null;
+
+		if (!request.isCrossDomain()) {
+			// 非跨域
+			cookie = request.getHeader(COOKIE);
+		}
+		else {
+			// 跨域
+			cookie = request.getParameter(HttpCrossDomainHandler.COOKIE);
+		}
+
 		if (null != cookie) {
+			// 注入 Cookie 到 Request，管理 Session 时用于索引 Session 实例
+			request.setAttribute(COOKIE, cookie);
+
 			Long sessionId = this.readSessionId(cookie);
 			if (sessionId.longValue() > 0) {
 				// 判断是否是已被管理 Session
@@ -86,8 +99,14 @@ public class CookieSessionManager implements SessionManager {
 
 		cookie = "SID=" + session.getId().toString();
 		// 设置 Cookie
-		response.setCookie(cookie);
-		// 注入 Cookie 到 Request
+		if (!request.isCrossDomain()) {
+			response.setCookie(cookie);
+		}
+		else {
+			response.setCrossCookie(cookie);
+		}
+
+		// 注入 Cookie 到 Request，管理 Session 时用于索引 Session 实例
 		request.setAttribute(COOKIE, cookie);
 
 		// 分发事件

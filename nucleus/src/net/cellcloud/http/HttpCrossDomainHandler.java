@@ -31,6 +31,7 @@ import java.io.PrintWriter;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 
 import net.cellcloud.common.LogLevel;
 import net.cellcloud.common.Logger;
@@ -50,10 +51,13 @@ public final class HttpCrossDomainHandler extends HttpHandler implements Capsule
 	protected static final String PARAMETERS = "p";
 	protected static final String BODY = "b";
 	protected static final String CALLBACK = "c";
+	protected static final String TIME = "t";
+	protected static final String COOKIE = "_cookie";
 
 	private HttpService service;
 
 	public HttpCrossDomainHandler(HttpService service) {
+		super();
 		this.service = service;
 	}
 
@@ -68,53 +72,89 @@ public final class HttpCrossDomainHandler extends HttpHandler implements Capsule
 	}
 
 	@Override
-	protected void doGet(HttpRequest request, HttpResponse response)
-			throws IOException {
+	public void handle(String target, Request baseRequest, HttpServletRequest request, HttpServletResponse response)
+			throws IOException, ServletException {
+		// 实际 URI
 		String uri = request.getParameter(URI);
 		CapsuleHolder holder = this.service.holders.get(uri);
 		if (null == holder) {
+			baseRequest.setHandled(true);
 			this.respond(response, HttpResponse.SC_BAD_REQUEST);
 			return;
 		}
 
+		// 会话管理器
+		SessionManager sessionMgr = holder.getHttpHandler().getSessionManager();
+
+		// 方法
+		String method = request.getParameter(METHOD);
+
+		// 创建跨域对象
+		CrossDomainRequest httpRequest = new CrossDomainRequest(new CrossOriginHttpServletRequest(request, method, uri), sessionMgr);
+		CrossDomainResponse httpResponse = new CrossDomainResponse(new CrossOriginHttpServletResponse(response, 1024));
+
+		// 进行会话管理
+		if (null != sessionMgr) {
+			sessionMgr.manage(httpRequest, httpResponse);
+		}
+
+		// 服务器类型
+		response.setHeader("Server", "Cell Cloud");
+		// 允许跨域访问
+		httpResponse.setHeader("Access-Control-Allow-Origin", "*");
+
 		// 回调
 		String callback = request.getParameter(CALLBACK);
+		// 时间戳
+		long timestamp = 0;
+		try {
+			timestamp = Long.parseLong(request.getParameter(TIME));
+		} catch (Exception e) {
+			// Nothing
+		}
 
-		// 创建响应
-		CrossOriginHttpServletResponse cor = createHttpServletResponse(response, callback);
-
-		String method = request.getParameter(METHOD);
 		if (method.equalsIgnoreCase(HttpMethod.GET.asString())) {
 			try {
-				holder.getHttpHandler().handle(uri, createBaseRequest()
-						, createHttpServletRequest(request, HttpMethod.GET.asString(), uri)
-						, cor);
-			} catch (ServletException e) {
+				holder.getHttpHandler().doGet(httpRequest, httpResponse);
+			} catch (IOException e) {
 				Logger.log(getClass(), e, LogLevel.WARNING);
 			}
 		}
 		else if (method.equalsIgnoreCase(HttpMethod.POST.asString())) {
 			try {
-				holder.getHttpHandler().handle(uri, createBaseRequest()
-						, createHttpServletRequest(request, HttpMethod.POST.asString(), uri)
-						, cor);
-			} catch (ServletException e) {
+				holder.getHttpHandler().doPost(httpRequest, httpResponse);
+			} catch (IOException e) {
 				Logger.log(getClass(), e, LogLevel.WARNING);
 			}
 		}
 		else {
-			this.respond(response, HttpResponse.SC_NOT_IMPLEMENTED);
+			this.respond(httpResponse, HttpResponse.SC_NOT_IMPLEMENTED);
 			return;
 		}
 
-		// 处理响应数据内容
-		cor.output();
+		// 响应请求
+		// httpResponse.crossCookie 的值是由会话管理器赋值，如果有值表示使用新的 Cookie
+		httpResponse.respond(timestamp, callback, httpResponse.crossCookie);
+
+		// 已处理
+		baseRequest.setHandled(true);
+
+		if (null != httpRequest) {
+			httpRequest.destroy();
+			httpRequest = null;
+		}
+	}
+
+	@Override
+	protected void doGet(HttpRequest request, HttpResponse response)
+			throws IOException {
+		this.respond(response, HttpResponse.SC_NOT_IMPLEMENTED);
 	}
 
 	@Override
 	protected void doPost(HttpRequest request, HttpResponse response)
 			throws IOException {
-		this.doGet(request, response);
+		this.respond(response, HttpResponse.SC_NOT_IMPLEMENTED);
 	}
 
 	@Override
@@ -149,41 +189,23 @@ public final class HttpCrossDomainHandler extends HttpHandler implements Capsule
 		}
 	}
 
-	private Request createBaseRequest() {
-		BaseRequest request = new BaseRequest();
-		return request;
-	}
+	private void respond(HttpServletResponse response, int status) {
+		response.setContentType("text/javascript");
+		response.setCharacterEncoding("UTF-8");
+		response.setStatus(status);
 
-	private HttpServletRequest createHttpServletRequest(HttpRequest request, String method, String uri) {
-		CrossOriginHttpServletRequest ret = new CrossOriginHttpServletRequest(request.request, method, uri);
-		return ret;
-	}
-
-	private CrossOriginHttpServletResponse createHttpServletResponse(HttpResponse response, String callback) {
-		CrossOriginHttpServletResponse ret = new CrossOriginHttpServletResponse(response.response, callback);
-		return ret;
-	}
-
-
-	/**
-	 * 基础 Request 。
-	 * @author Jiangwei Xu
-	 */
-	protected final class BaseRequest extends Request {
-		private boolean handled;
-
-		public BaseRequest() {
-			super(null, null);
-		}
-
-		@Override
-		public void setHandled(boolean value) {
-			this.handled = value;
-		}
-
-		@Override
-		public boolean isHandled() {
-			return this.handled;
+		PrintWriter out = null;
+		try {
+			out = response.getWriter();
+			out.print("console.log(\"Talk service http cross-domain error.\");");
+		} catch (IOException e) {
+			Logger.log(HttpCrossDomainHandler.class, e, LogLevel.ERROR);
+		} finally {
+			try {
+				out.close();
+			} catch (Exception e) {
+				// Nothing
+			}
 		}
 	}
 }

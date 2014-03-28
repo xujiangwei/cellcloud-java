@@ -2,7 +2,7 @@
 -----------------------------------------------------------------------------
 This source file is part of Cell Cloud.
 
-Copyright (c) 2009-2013 Cell Cloud Team (www.cellcloud.net)
+Copyright (c) 2009-2014 Cell Cloud Team (www.cellcloud.net)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -52,27 +52,29 @@ public class CrossOriginHttpServletResponse implements HttpServletResponse {
 	private StringWriter stringWriter;
 
 	private boolean eval;
-	private String callback;
 
-	public CrossOriginHttpServletResponse(HttpServletResponse soul, String callback) {
-		this.soul = soul;
-		this.callback = callback;
-		this.stringWriter = new StringWriter(512);
+	public CrossOriginHttpServletResponse(HttpServletResponse response, int block) {
+		this.soul = response;
+		this.stringWriter = new StringWriter(block);
 		this.writer = new PrintWriter(this.stringWriter);
 		this.eval = false;
 	}
 
-	public String getCallback() {
-		return this.callback;
-	}
-
-	protected void output() {
+	/**
+	 * 响应数据。
+	 * @param timestamp
+	 * @param callback
+	 * @param newCookie
+	 */
+	public void respond(long timestamp, String callback, String newCookie) {
 		StringBuffer buffer = this.stringWriter.getBuffer();
 
 		try {
 			PrintWriter writer = this.soul.getWriter();
-			if (null != this.callback) {
+			if (null != callback) {
 				StringBuilder buf = new StringBuilder();
+
+				// 返回的参数
 				if (this.eval) {
 					buf.append("var _rd = eval('(");
 					buf.append(buffer.toString());
@@ -83,8 +85,17 @@ public class CrossOriginHttpServletResponse implements HttpServletResponse {
 					buf.append(buffer.toString());
 					buf.append(";");
 				}
-				buf.append(this.callback);
-				buf.append(".call(null,_rd);");
+				// 被执行的回调函数
+				buf.append(callback);
+				buf.append(".call(null,");
+				buf.append(timestamp);
+				buf.append(",_rd");
+				if (null != newCookie) {
+					buf.append(",'");
+					buf.append(newCookie);
+					buf.append("'");
+				}
+				buf.append(");");
 				writer.print(buf.toString());
 				buf = null;
 				writer.close();
@@ -96,6 +107,15 @@ public class CrossOriginHttpServletResponse implements HttpServletResponse {
 		} catch (IOException e) {
 			Logger.log(this.getClass(), e, LogLevel.WARNING);
 		}
+	}
+
+	/**
+	 * 响应数据。
+	 * @param timestamp
+	 * @param callback
+	 */
+	public void respond(long timestamp, String callback) {
+		this.respond(timestamp, callback, null);
 	}
 
 	@Override

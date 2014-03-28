@@ -1087,11 +1087,10 @@ public final class TalkService implements Service, SpeakerDelegate {
 		// 存储超时的 Session
 		ArrayList<Session> sessionList = null;
 
-		Long sid = null;
-		Iterator<Long> iter = this.unidentifiedSessions.keySet().iterator();
+		Iterator<Map.Entry<Long, Certificate>> iter = this.unidentifiedSessions.entrySet().iterator();
 		while (iter.hasNext()) {
-			sid = iter.next();
-			Certificate cert = this.unidentifiedSessions.get(sid);
+			Map.Entry<Long, Certificate> e = iter.next();
+			Certificate cert = e.getValue();
 			if (false == cert.checked) {
 				cert.checked = true;
 				deliverChecking(cert.session, cert.plaintext, cert.key);

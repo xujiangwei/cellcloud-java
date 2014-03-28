@@ -133,8 +133,8 @@ public class HttpSpeaker implements Speakable {
 			}
 		}
 
-		// 设置状态
-		this.state = SpeakerState.HANGUP;
+		// 更新状态
+		this.state = SpeakerState.CALLING;
 
 		// 地址
 		this.address = address;
@@ -145,9 +145,6 @@ public class HttpSpeaker implements Speakable {
 		url.append(URI_INTERROGATION);
 
 		try {
-			// 更新状态
-			this.state = SpeakerState.CALLING;
-
 			ContentResponse response = this.client.newRequest(url.toString()).method(HttpMethod.GET).send();
 			if (response.getStatus() == HttpResponse.SC_OK) {
 				// 获取服务器提供的 Cookie
@@ -169,6 +166,8 @@ public class HttpSpeaker implements Speakable {
 			}
 		} catch (InterruptedException | TimeoutException | ExecutionException | JSONException e) {
 			Logger.log(HttpSpeaker.class, e, LogLevel.ERROR);
+			// 设置状态
+			this.state = SpeakerState.HANGUP;
 		}
 
 		return false;

@@ -46,15 +46,19 @@ public class HttpRequest {
 
 	private ByteArrayOutputStream dataStream;
 
+	protected boolean crossDomain;
+
 	protected HttpRequest(HttpServletRequest request, SessionManager sessionManager) {
 		this.request = request;
 		this.sessionManager = sessionManager;
+		this.crossDomain = false;
 	}
 
 	protected void destroy() {
 		this.request = null;
 		this.sessionManager = null;
 		this.dataStream = null;
+		this.crossDomain = false;
 	}
 
 	/**
@@ -107,6 +111,14 @@ public class HttpRequest {
 	 */
 	public InetSocketAddress getRemoteAddr() {
 		return new InetSocketAddress(this.request.getRemoteAddr(), this.request.getRemotePort());
+	}
+
+	/**
+	 * 是否执行跨域处理。
+	 * @return
+	 */
+	public boolean isCrossDomain() {
+		return this.crossDomain;
 	}
 
 	/**

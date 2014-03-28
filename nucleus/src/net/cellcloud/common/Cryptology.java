@@ -74,8 +74,7 @@ public final class Cryptology {
 		int length = plaintext.length;
 		byte[] out = new byte[length];
 
-		for (int i = 0; i < length; ++i)
-		{
+		for (int i = 0; i < length; ++i) {
 			byte c = (byte) (plaintext[i] ^ parity);
 			out[i] = (byte) (c ^ cc);
 		}
@@ -106,8 +105,7 @@ public final class Cryptology {
 		int length = ciphertext.length;
 		byte[] out = new byte[length];
 
-		for (int i = 0; i < length; ++i)
-		{
+		for (int i = 0; i < length; ++i) {
 			byte c = (byte) (ciphertext[i] ^ cc);
 			out[i] = (byte) (c ^ parity);
 		}

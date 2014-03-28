@@ -82,6 +82,8 @@ public final class HttpCheckHandler extends AbstractJSONHandler implements Capsu
 					JSONObject json = new JSONObject(data);
 					// 获得明文码
 					String plaintext = json.getString(Plaintext);
+					System.out.println("plaintext:" + plaintext);
+					System.out.println("cert.plaintext:" + cert.plaintext);
 					if (null != plaintext && plaintext.equals(cert.plaintext)) {
 						// 检测通过
 						this.talkService.acceptSession(session);

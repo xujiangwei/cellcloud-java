@@ -27,8 +27,10 @@ THE SOFTWARE.
 package net.cellcloud.http;
 
 import java.io.BufferedReader;
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
+import java.nio.charset.Charset;
 import java.security.Principal;
 import java.util.Collection;
 import java.util.Enumeration;
@@ -53,7 +55,6 @@ import javax.servlet.http.Part;
 import net.cellcloud.common.LogLevel;
 import net.cellcloud.common.Logger;
 
-import org.eclipse.jetty.http.HttpMethod;
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -67,19 +68,23 @@ public class CrossOriginHttpServletRequest implements HttpServletRequest {
 	private HttpServletRequest soul;
 	private String method;
 	private String uri;
+	private String cookie;
 	private JSONObject parameters;
-	private String content;
+	private DummyServletInputStream inputStream;
+	private int length;
 
-	public CrossOriginHttpServletRequest(HttpServletRequest soul, String method, String uri) {
-		this.soul = soul;
+	public CrossOriginHttpServletRequest(HttpServletRequest request, String method, String uri) {
+		this.soul = request;
 		this.method = method;
 		this.uri = uri;
 
+		this.cookie = request.getParameter(HttpCrossDomainHandler.COOKIE);
+
+		// 分析参数
 		this.analyseParameters();
 
-		if (method.equalsIgnoreCase(HttpMethod.POST.asString())) {
-			this.analysePostBody();
-		}
+		// 分析模拟的 POST Body
+		this.analysePostBody();
 	}
 
 	private void analyseParameters() {
@@ -94,7 +99,15 @@ public class CrossOriginHttpServletRequest implements HttpServletRequest {
 	}
 
 	private void analysePostBody() {
-		this.content = this.soul.getParameter(HttpCrossDomainHandler.BODY);
+		String content = this.soul.getParameter(HttpCrossDomainHandler.BODY);
+		if (null != content) {
+			this.length = content.length();
+			System.out.println("content:" + content);
+			this.inputStream = new DummyServletInputStream(content);
+		}
+		else {
+			this.length = 0;
+		}
 	}
 
 	@Override
@@ -119,7 +132,7 @@ public class CrossOriginHttpServletRequest implements HttpServletRequest {
 
 	@Override
 	public int getContentLength() {
-		return (null != this.content) ? this.content.length() : 0;
+		return this.length;
 	}
 
 	@Override
@@ -134,7 +147,7 @@ public class CrossOriginHttpServletRequest implements HttpServletRequest {
 
 	@Override
 	public ServletInputStream getInputStream() throws IOException {
-		return this.soul.getInputStream();
+		return this.inputStream;
 	}
 
 	@Override
@@ -162,8 +175,17 @@ public class CrossOriginHttpServletRequest implements HttpServletRequest {
 		return this.soul.getLocales();
 	}
 
+	/**
+	 * @note 逻辑被重写。
+	 * @param name
+	 * @return
+	 */
 	@Override
 	public String getParameter(String name) {
+		if (name.equals(HttpCrossDomainHandler.COOKIE)) {
+			return this.cookie;
+		}
+
 		if (null == this.parameters) {
 			return null;
 		}
@@ -223,7 +245,7 @@ public class CrossOriginHttpServletRequest implements HttpServletRequest {
 
 	@Override
 	public BufferedReader getReader() throws IOException {
-		return null;
+		return this.soul.getReader();
 	}
 
 	@Override
@@ -331,7 +353,7 @@ public class CrossOriginHttpServletRequest implements HttpServletRequest {
 
 	@Override
 	public Cookie[] getCookies() {
-		return null;
+		return this.soul.getCookies();
 	}
 
 	@Override
@@ -401,7 +423,6 @@ public class CrossOriginHttpServletRequest implements HttpServletRequest {
 
 	@Override
 	public StringBuffer getRequestURL() {
-		// TODO
 		return null;
 	}
 
@@ -461,5 +482,35 @@ public class CrossOriginHttpServletRequest implements HttpServletRequest {
 
 	@Override
 	public void logout() throws ServletException {
+	}
+
+	/**
+	 * 封装的 Servlet 流。
+	 * 
+	 * @author Jiangwei Xu
+	 *
+	 */
+	protected class DummyServletInputStream extends ServletInputStream {
+
+		private ByteArrayInputStream inputStream;
+
+		protected DummyServletInputStream(String content) {
+			this.inputStream = new ByteArrayInputStream(content.getBytes(Charset.forName("UTF-8")));
+		}
+
+		@Override
+		public int read() throws IOException {
+			return this.inputStream.read();
+		}
+
+		@Override
+		public int read(byte[] b) throws IOException {
+			return this.inputStream.read(b);
+		}
+
+		@Override
+		public int read(byte[] b, int off, int len) {
+			return this.inputStream.read(b, off, len);
+		}
 	}
 }

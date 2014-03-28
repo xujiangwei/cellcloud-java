@@ -81,7 +81,7 @@ public abstract class HttpHandler implements Handler {
 			this.sessionManager.manage(httpRequest, httpResponse);
 		}
 
-		// 访问方法
+		// FIXME 访问方法判断，这是 Jetty 9.0.x 版本的 BUG
 		String method = request.getMethod();
 		if (request.getContentLength() > 0) {
 			method = HttpMethod.POST.asString();
@@ -89,7 +89,6 @@ public abstract class HttpHandler implements Handler {
 
 		// 服务器类型
 		response.setHeader("Server", "Cell Cloud");
-		// 允许跨域访问
 		httpResponse.setHeader("Access-Control-Allow-Origin", "*");
 
 		if (method.equalsIgnoreCase(HttpMethod.GET.asString())) {
@@ -171,7 +170,7 @@ public abstract class HttpHandler implements Handler {
 
 	@Override
 	public boolean isStarting() {
-		return false;
+		return true;
 	}
 
 	@Override
@@ -187,11 +186,13 @@ public abstract class HttpHandler implements Handler {
 	@Override
 	@ManagedOperation(value = "Starts the instance", impact = "ACTION")
 	public void start() throws Exception {
+		// Nothing
 	}
 
 	@Override
 	@ManagedOperation(value = "Stops the instance", impact = "ACTION")
 	public void stop() throws Exception {
+		// Nothing
 	}
 
 	@Override
