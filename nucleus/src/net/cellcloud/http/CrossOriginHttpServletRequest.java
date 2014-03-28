@@ -102,7 +102,6 @@ public class CrossOriginHttpServletRequest implements HttpServletRequest {
 		String content = this.soul.getParameter(HttpCrossDomainHandler.BODY);
 		if (null != content) {
 			this.length = content.length();
-			System.out.println("content:" + content);
 			this.inputStream = new DummyServletInputStream(content);
 		}
 		else {
