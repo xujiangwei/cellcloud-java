@@ -2,7 +2,7 @@
 -----------------------------------------------------------------------------
 This source file is part of Cell Cloud.
 
-Copyright (c) 2009-2012 Cell Cloud Team (www.cellcloud.net)
+Copyright (c) 2009-2014 Cell Cloud Team (www.cellcloud.net)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -42,11 +42,32 @@ public final class TalkCapacity {
 	/// 重复尝试连接的次数
 	public int retryAttempts = 0;
 	/// 两次连接中间隔时间，单位毫秒
-	public long retryDelay = 1000;
+	public long retryDelay = 5000;
 
+	protected int retryCounts = 0;
+
+	/**
+	 * 构造函数。
+	 * @param autoSuspend
+	 * @param suspendDuration
+	 */
 	public TalkCapacity(boolean autoSuspend, long suspendDuration) {
 		this.autoSuspend = autoSuspend;
 		this.suspendDuration = suspendDuration;
+	}
+
+	/**
+	 * 构造函数。
+	 * @param retryAttempts
+	 * @param retryDelay
+	 */
+	public TalkCapacity(int retryAttempts, long retryDelay) {
+		this.retryAttempts = retryAttempts;
+		this.retryDelay = retryDelay;
+
+		if (this.retryAttempts == Integer.MAX_VALUE) {
+			this.retryAttempts -= 1;
+		}
 	}
 
 	public final static byte[] serialize(TalkCapacity capacity) {

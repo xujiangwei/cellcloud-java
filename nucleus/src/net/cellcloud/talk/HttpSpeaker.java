@@ -2,7 +2,7 @@
 -----------------------------------------------------------------------------
 This source file is part of Cell Cloud.
 
-Copyright (c) 2009-2013 Cell Cloud Team (www.cellcloud.net)
+Copyright (c) 2009-2014 Cell Cloud Team (www.cellcloud.net)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -60,6 +60,8 @@ public class HttpSpeaker implements Speakable {
 	private static final String URI_REQUEST = "/talk/request";
 	private static final String URI_DIALOGUE = "/talk/dialogue";
 	private static final String URI_HEARTBEAT = "/talk/hb";
+	// TODO HTTP 增加 hang up 接口
+//	private static final String URI_HANGUP = "/talk/hangup";
 
 	private String identifier;
 	private SpeakerDelegate delegate;
@@ -78,7 +80,9 @@ public class HttpSpeaker implements Speakable {
 	/// 心跳计数周期
 	private int hbPeriod;
 	/// 心跳失败累计次数
-	private int hbFailCounts;
+	private int hbFailedCounts;
+	/// 最大心跳失败次数
+	private int hbMaxFailed;
 
 	public HttpSpeaker(String identifier, SpeakerDelegate delegate, int heartbeatPeriod) {
 		this.identifier = identifier;
@@ -87,7 +91,8 @@ public class HttpSpeaker implements Speakable {
 		this.client.setConnectTimeout(10000);
 		this.hbTick = 0;
 		this.hbPeriod = heartbeatPeriod;
-		this.hbFailCounts = 0;
+		this.hbFailedCounts = 0;
+		this.hbMaxFailed = 10;
 	}
 
 	@Override
@@ -229,8 +234,8 @@ public class HttpSpeaker implements Speakable {
 				// 发送数据成功
 				// 获取队列长度
 				JSONObject data = this.readContent(response.getContent());
-				if (data.has(HttpDialogueHandler.QueueSize)) {
-					int size = data.getInt(HttpDialogueHandler.QueueSize);
+				if (data.has(HttpDialogueHandler.Queue)) {
+					int size = data.getInt(HttpDialogueHandler.Queue);
 					if (size > 0) {
 						// 心跳 Tick 清零
 						this.hbTick = 0;
@@ -276,7 +281,7 @@ public class HttpSpeaker implements Speakable {
 			return;
 		}
 
-		// Tick 周期为 5 秒
+		// tick 计数
 		++this.hbTick;
 
 		if (this.hbTick >= this.hbPeriod) {
@@ -318,7 +323,7 @@ public class HttpSpeaker implements Speakable {
 											.send();
 			if (response.getStatus() == HttpResponse.SC_OK) {
 				// 失败次数清空
-				this.hbFailCounts = 0;
+				this.hbFailedCounts = 0;
 
 				JSONObject responseData = this.readContent(response.getContent());
 				if (responseData.has(HttpHeartbeatHandler.Primitives)) {
@@ -333,18 +338,18 @@ public class HttpSpeaker implements Speakable {
 			}
 			else {
 				// 记录失败
-				++this.hbFailCounts;
+				++this.hbFailedCounts;
 				Logger.w(HttpSpeaker.class, "Heartbeat failed");
 			}
 		} catch (InterruptedException | TimeoutException | ExecutionException e) {
 			// 记录失败次数
-			++this.hbFailCounts;
+			++this.hbFailedCounts;
 		} catch (JSONException e) {
 			Logger.log(getClass(), e, LogLevel.ERROR);
 		}
 
-		// 3 次失败之后通知关闭
-		if (this.hbFailCounts >= 3) {
+		// hbMaxFailed 次失败之后通知关闭
+		if (this.hbFailedCounts >= this.hbMaxFailed) {
 			this.hangUp();
 		}
 	}

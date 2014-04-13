@@ -43,7 +43,6 @@ public abstract class Dialect {
 
 	/**
 	 * 构造函数。
-	 * 
 	 * @param name
 	 */
 	public Dialect(String name) {
@@ -53,7 +52,6 @@ public abstract class Dialect {
 
 	/**
 	 * 构造函数。
-	 * 
 	 * @param name
 	 * @param tracker
 	 */

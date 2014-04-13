@@ -102,22 +102,43 @@ public final class TalkServiceDaemon extends Thread {
 				Iterator<Speaker> iter = service.speakers.values().iterator();
 				while (iter.hasNext()) {
 					Speaker speaker = iter.next();
-
-					if (speaker.lost && this.tickTime - speaker.timestamp >= 5000) {
-						if (Logger.isDebugLevel()) {
-							StringBuilder buf = new StringBuilder();
-							buf.append("Retry call cellet ");
-							buf.append(speaker.getIdentifier());
-							buf.append(" at ");
-							buf.append(speaker.getAddress().getAddress().getHostAddress());
-							buf.append(":");
-							buf.append(speaker.getAddress().getPort());
-							Logger.d(TalkServiceDaemon.class, buf.toString());
-							buf = null;
+					if (speaker.lost
+						&& null != speaker.capacity
+						&& speaker.capacity.retryAttempts > 0) {
+						if (speaker.retryTimestamp == 0) {
+							// 建立时间戳
+							speaker.retryTimestamp = this.tickTime;
+							continue;
 						}
 
-						// 重连
-						speaker.call(speaker.getAddress());
+						// 判断是否达到最大重试次数
+						if (speaker.capacity.retryCounts >= speaker.capacity.retryAttempts) {
+							if (speaker.capacity.retryCounts != Integer.MAX_VALUE) {
+								speaker.fireRetryEnd();
+								speaker.capacity.retryCounts = Integer.MAX_VALUE;
+							}
+							continue;
+						}
+
+						if (this.tickTime - speaker.retryTimestamp >= speaker.capacity.retryDelay) {
+							if (Logger.isDebugLevel()) {
+								StringBuilder buf = new StringBuilder();
+								buf.append("Retry call cellet ");
+								buf.append(speaker.getIdentifier());
+								buf.append(" at ");
+								buf.append(speaker.getAddress().getAddress().getHostAddress());
+								buf.append(":");
+								buf.append(speaker.getAddress().getPort());
+								Logger.d(TalkServiceDaemon.class, buf.toString());
+								buf = null;
+							}
+
+							// 重连
+							speaker.retryTimestamp = this.tickTime;
+							speaker.capacity.retryCounts++;
+							// 执行 call
+							speaker.call(speaker.getAddress());
+						}
 					}
 				}
 			}

@@ -2,7 +2,7 @@
 -----------------------------------------------------------------------------
 This source file is part of Cell Cloud.
 
-Copyright (c) 2009-2012 Cell Cloud Team (www.cellcloud.net)
+Copyright (c) 2009-2014 Cell Cloud Team (www.cellcloud.net)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -32,34 +32,33 @@ package net.cellcloud.talk;
  */
 public final class TalkServiceFailure {
 
-	private int code = 0;
+	private TalkFailureCode code = null;
 	private String reason = null;
 	private String description = null;
 	private String sourceDescription = "";
 	private String sourceCelletIdentifier = "";
 
-	public TalkServiceFailure(int code, Class<?> clazz) {
+	public TalkServiceFailure(TalkFailureCode code, Class<?> clazz) {
 		construct(code, clazz);
 	}
 
-	private void construct(int code, Class<?> clazz) {
+	private void construct(TalkFailureCode code, Class<?> clazz) {
 		this.code = code;
 		this.reason = "Error in " + clazz.getName();
 
-		switch (code) {
-		case TalkFailureCode.NOTFOUND_CELLET:
+		if (code == TalkFailureCode.NOTFOUND_CELLET)
 			this.description = "Server can not find specified cellet";
-			break;
-		case TalkFailureCode.CALL_TIMEOUT:
+		else if (code == TalkFailureCode.CALL_FAILED)
 			this.description = "Network connecting timeout";
-			break;
-		default:
+		else if (code == TalkFailureCode.TALK_LOST)
+			this.description = "Lost talk connection";
+		else if (code == TalkFailureCode.RETRY_END)
+			this.description = "Auto retry end";
+		else
 			this.description = "Unknown failure";
-			break;
-		}
 	}
 
-	public int getCode() {
+	public TalkFailureCode getCode() {
 		return this.code;
 	}
 

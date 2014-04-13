@@ -52,7 +52,7 @@ public final class HttpDialogueHandler extends AbstractJSONHandler implements Ca
 
 	protected static final String Tag = "tag";
 	protected static final String Primitive = "primitive";
-	protected static final String QueueSize = "queue";
+	protected static final String Queue = "queue";
 
 	private TalkService talkService;
 
@@ -89,7 +89,7 @@ public final class HttpDialogueHandler extends AbstractJSONHandler implements Ca
 				this.talkService.processDialogue(session, speakerTag, primitive);
 				// 响应
 				JSONObject responseData = new JSONObject();
-				responseData.put(QueueSize, session.getQueue().size());
+				responseData.put(Queue, session.getQueue().size());
 				this.respondWithOk(response, responseData);
 			} catch (JSONException e) {
 				Logger.log(HttpDialogueHandler.class, e, LogLevel.ERROR);

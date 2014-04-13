@@ -60,11 +60,21 @@ public class ActionDialect extends Dialect {
 
 	/**
 	 * 构造函数。
-	 * 
 	 * @param tracker
 	 */
 	public ActionDialect(String tracker) {
 		super(ActionDialect.DIALECT_NAME, tracker);
+		this.params = new HashMap<String, String>(2);
+	}
+
+	/**
+	 * 构造函数。
+	 * @param tracker
+	 * @param action
+	 */
+	public ActionDialect(String tracker, String action) {
+		super(ActionDialect.DIALECT_NAME, tracker);
+		this.action = action;
 		this.params = new HashMap<String, String>(2);
 	}
 

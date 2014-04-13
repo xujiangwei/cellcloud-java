@@ -2,7 +2,7 @@
 -----------------------------------------------------------------------------
 This source file is part of Cell Cloud.
 
-Copyright (c) 2009-2012 Cell Cloud Team (www.cellcloud.net)
+Copyright (c) 2009-2014 Cell Cloud Team (www.cellcloud.net)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -30,14 +30,31 @@ package net.cellcloud.talk;
  * 
  * @author Jiangwei Xu
  */
-public final class TalkFailureCode {
+public enum TalkFailureCode {
 
-	/** 未找到指定的 Cellet 。 */
-	public static final int NOTFOUND_CELLET = 100;
+	/** 未找到指定的 Cellet 。
+	 * @note 此错误不触发自动重连。
+	 */
+	NOTFOUND_CELLET(1000),
 
-	/** Call 一般性失败。 */
-	public static final int CALL_FAILED = 200;
+	/** Call 请求失败。 */
+	CALL_FAILED(2000),
 
-	/** Call 连接超时。 */
-	public static final int CALL_TIMEOUT = 201;
+	/** 会话连接被断开。 */
+	TALK_LOST(3000),
+
+	/** 重试次数达到上限，重试结束。
+	 * @note 此错误不触发自动重连。
+	 */
+	RETRY_END(4000);
+
+	private int code;
+
+	private TalkFailureCode(int code) {
+		this.code = code;
+	}
+
+	public int getCode() {
+		return this.code;
+	}
 }

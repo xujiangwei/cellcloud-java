@@ -2,7 +2,7 @@
 -----------------------------------------------------------------------------
 This source file is part of Cell Cloud.
 
-Copyright (c) 2009-2013 Cell Cloud Team (www.cellcloud.net)
+Copyright (c) 2009-2014 Cell Cloud Team (www.cellcloud.net)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -63,7 +63,7 @@ public class Speaker implements Speakable {
 
 	// 是否需要重新连接
 	protected boolean lost = false;
-	protected long timestamp = 0;
+	protected long retryTimestamp = 0;
 
 	/** 构造函数。
 	 */
@@ -146,6 +146,7 @@ public class Speaker implements Speakable {
 			// 开始进行调用
 			this.state = SpeakerState.CALLING;
 			this.lost = false;
+			this.retryTimestamp = 0;
 		}
 
 		return ret;
@@ -275,9 +276,29 @@ public class Speaker implements Speakable {
 				this.state = SpeakerState.SUSPENDED;
 				this.fireSuspended(System.currentTimeMillis(), SuspendMode.PASSIVE);
 
-				// 需要进行重连
+				// 标记为丢失
 				this.lost = true;
 			}
+		}
+
+		// 判断是否为异常网络中断
+		if (SpeakerState.CALLING == this.state) {
+			TalkServiceFailure failure = new TalkServiceFailure(TalkFailureCode.CALL_FAILED
+					, this.getClass());
+			failure.setSourceDescription("No network device");
+			this.fireFailed(failure);
+
+			// 标记为丢失
+			this.lost = true;
+		}
+		else if (SpeakerState.CALLED == this.state) {
+			TalkServiceFailure failure = new TalkServiceFailure(TalkFailureCode.TALK_LOST
+					, this.getClass());
+			failure.setSourceDescription("Network fault, connection closed");
+			this.fireFailed(failure);
+
+			// 标记为丢失
+			this.lost = true;
 		}
 
 		this.authenticated = false;
@@ -309,6 +330,11 @@ public class Speaker implements Speakable {
 
 	protected void fireFailed(TalkServiceFailure failure) {
 		this.delegate.onFailed(this, failure);
+	}
+
+	protected void fireRetryEnd() {
+		TalkServiceFailure failure = new TalkServiceFailure(TalkFailureCode.RETRY_END, this.getClass());
+		this.fireFailed(failure);
 	}
 
 	protected void requestCheck(Packet packet, Session session) {
