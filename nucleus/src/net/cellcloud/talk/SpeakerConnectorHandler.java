@@ -118,6 +118,7 @@ public final class SpeakerConnectorHandler implements MessageHandler {
 			TalkServiceFailure failure = new TalkServiceFailure(TalkFailureCode.CALL_FAILED
 				, this.getClass());
 			failure.setSourceDescription("Attempt to connect to host timed out");
+			failure.setSourceCelletIdentifier(this.speaker.getIdentifier());
 			this.speaker.fireFailed(failure);
 
 			// 标记为丢失

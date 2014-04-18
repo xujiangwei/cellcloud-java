@@ -407,6 +407,7 @@ public class HttpSpeaker implements Speakable {
 				Logger.e(HttpSpeaker.class, "Request check failed: " + response.getStatus());
 
 				TalkServiceFailure failure = new TalkServiceFailure(TalkFailureCode.CALL_FAILED, this.getClass());
+				failure.setSourceCelletIdentifier(this.identifier);
 				this.fireFailed(failure);
 			}
 		} catch (InterruptedException | TimeoutException | ExecutionException | JSONException e) {

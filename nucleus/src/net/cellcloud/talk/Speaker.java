@@ -286,6 +286,7 @@ public class Speaker implements Speakable {
 			TalkServiceFailure failure = new TalkServiceFailure(TalkFailureCode.CALL_FAILED
 					, this.getClass());
 			failure.setSourceDescription("No network device");
+			failure.setSourceCelletIdentifier(this.celletIdentifier);
 			this.fireFailed(failure);
 
 			// 标记为丢失
@@ -295,6 +296,7 @@ public class Speaker implements Speakable {
 			TalkServiceFailure failure = new TalkServiceFailure(TalkFailureCode.TALK_LOST
 					, this.getClass());
 			failure.setSourceDescription("Network fault, connection closed");
+			failure.setSourceCelletIdentifier(this.celletIdentifier);
 			this.fireFailed(failure);
 
 			// 标记为丢失
@@ -338,6 +340,7 @@ public class Speaker implements Speakable {
 
 	protected void fireRetryEnd() {
 		TalkServiceFailure failure = new TalkServiceFailure(TalkFailureCode.RETRY_END, this.getClass());
+		failure.setSourceCelletIdentifier(this.celletIdentifier);
 		this.fireFailed(failure);
 	}
 
