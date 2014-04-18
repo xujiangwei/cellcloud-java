@@ -45,7 +45,7 @@ import java.util.Vector;
 public class NonblockingConnector extends MessageService implements MessageConnector {
 
 	// 缓冲块大小
-	private int block = 8192;
+	private int block = 16384;
 
 	private InetSocketAddress address;
 	private long connectTimeout;
@@ -125,13 +125,13 @@ public class NonblockingConnector extends MessageService implements MessageConne
 			// 配置
 			// 以下为 JDK7 的代码
 			this.channel.setOption(StandardSocketOptions.SO_KEEPALIVE, true);
-			this.channel.setOption(StandardSocketOptions.SO_RCVBUF, this.block);
-			this.channel.setOption(StandardSocketOptions.SO_SNDBUF, this.block);
+			this.channel.setOption(StandardSocketOptions.SO_RCVBUF, this.block + 1024);
+			this.channel.setOption(StandardSocketOptions.SO_SNDBUF, this.block + 1024);
 			// 以下为 JDK6 的代码
 			/*
 			this.channel.socket().setKeepAlive(true);
-			this.channel.socket().setReceiveBufferSize(this.block);
-			this.channel.socket().setSendBufferSize(this.block);
+			this.channel.socket().setReceiveBufferSize(this.block + 1024);
+			this.channel.socket().setSendBufferSize(this.block + 1024);
 			*/
 
 			this.selector = Selector.open();
@@ -267,14 +267,18 @@ public class NonblockingConnector extends MessageService implements MessageConne
 
 	@Override
 	public void setBlockSize(int size) {
+		if (this.block == size) {
+			return;
+		}
+
 		this.block = size;
 		this.readBuffer = ByteBuffer.allocate(this.block);
 		this.writeBuffer = ByteBuffer.allocate(this.block);
 
 		if (null != this.channel) {
 			try {
-				this.channel.socket().setReceiveBufferSize(this.block);
-				this.channel.socket().setSendBufferSize(this.block);
+				this.channel.socket().setReceiveBufferSize(this.block + 1024);
+				this.channel.socket().setSendBufferSize(this.block + 1024);
 			} catch (Exception e) {
 				// ignore
 			}

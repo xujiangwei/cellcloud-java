@@ -329,6 +329,10 @@ public class Speaker implements Speakable {
 	}
 
 	protected void fireFailed(TalkServiceFailure failure) {
+		if (failure.getCode() == TalkFailureCode.CALL_FAILED) {
+			this.state = SpeakerState.HANGUP;
+		}
+
 		this.delegate.onFailed(this, failure);
 	}
 
