@@ -112,10 +112,10 @@ public final class TalkServiceDaemon extends Thread {
 						}
 
 						// 判断是否达到最大重试次数
-						if (speaker.capacity.retryCounts >= speaker.capacity.retryAttempts) {
-							if (speaker.capacity.retryCounts != Integer.MAX_VALUE) {
+						if (speaker.retryCounts >= speaker.capacity.retryAttempts) {
+							if (!speaker.retryEnd) {
+								speaker.retryEnd = true;
 								speaker.fireRetryEnd();
-								speaker.capacity.retryCounts = Integer.MAX_VALUE;
 							}
 							continue;
 						}
@@ -135,7 +135,7 @@ public final class TalkServiceDaemon extends Thread {
 
 							// 重连
 							speaker.retryTimestamp = this.tickTime;
-							speaker.capacity.retryCounts++;
+							speaker.retryCounts++;
 							// 执行 call
 							speaker.call(speaker.getAddress());
 						}
