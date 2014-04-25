@@ -69,9 +69,7 @@ public final class SpeakerConnectorHandler implements MessageHandler {
 	 */
 	@Override
 	public void sessionOpened(Session session) {
-		if (null != this.speaker.capacity) {
-			this.speaker.capacity.retryCounts = 0;
-		}
+		// Nothing
 	}
 
 	/**
@@ -164,6 +162,13 @@ public final class SpeakerConnectorHandler implements MessageHandler {
 		else if (TalkDefinition.TPT_INTERROGATE[2] == tag[2]
 			&& TalkDefinition.TPT_INTERROGATE[3] == tag[3]) {
 			this.speaker.requestCheck(packet, session);
+
+			// 重置重试参数
+			if (null != this.speaker.capacity) {
+				this.speaker.retryTimestamp = 0;
+				this.speaker.retryCounts = 0;
+				this.speaker.retryEnd = false;
+			}
 		}
 	}
 }

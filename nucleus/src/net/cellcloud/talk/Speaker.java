@@ -64,6 +64,8 @@ public class Speaker implements Speakable {
 	// 是否需要重新连接
 	protected boolean lost = false;
 	protected long retryTimestamp = 0;
+	protected int retryCounts = 0;
+	protected boolean retryEnd = false;
 
 	/** 构造函数。
 	 */
@@ -108,7 +110,7 @@ public class Speaker implements Speakable {
 	/** 向指定地址发起请求 Cellet 服务。
 	 */
 	@Override
-	public boolean call(InetSocketAddress address) {
+	public synchronized boolean call(InetSocketAddress address) {
 		if (SpeakerState.CALLING == this.state) {
 			// 正在 Call 返回 false
 			return false;
@@ -250,6 +252,15 @@ public class Speaker implements Speakable {
 	@Override
 	public boolean isSuspended() {
 		return this.state == SpeakerState.SUSPENDED;
+	}
+
+	/**
+	 * 重置状态数据。
+	 */
+	protected void reset() {
+		this.retryTimestamp = 0;
+		this.retryCounts = 0;
+		this.retryEnd = false;
 	}
 
 	/** 记录服务端 Tag */
