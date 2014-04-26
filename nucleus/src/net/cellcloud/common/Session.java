@@ -40,16 +40,28 @@ public class Session {
 	private MessageService service;
 	private InetSocketAddress address;
 
+	protected byte[] cache;
+	protected int cacheSize;
+	protected int cacheCursor;
+
 	public Session(MessageService service, InetSocketAddress address) {
 		this.id = Math.abs(Utils.randomLong());
 		this.service = service;
 		this.address = address;
+
+		this.cacheSize = 1024;
+		this.cache = new byte[this.cacheSize];
+		this.cacheCursor = 0;
 	}
 
 	public Session(long id, MessageService service, InetSocketAddress address) {
 		this.id = id;
 		this.service = service;
 		this.address = address;
+
+		this.cacheSize = 1024;
+		this.cache = new byte[this.cacheSize];
+		this.cacheCursor = 0;
 	}
 
 	/** 返回会话 ID 。
@@ -74,5 +86,23 @@ public class Session {
 	 */
 	public void write(Message message) {
 		this.service.write(this, message);
+	}
+
+	protected void resetCacheSize(int newSize) {
+		if (newSize <= this.cacheSize) {
+			return;
+		}
+
+		this.cacheSize = newSize;
+
+		if (this.cacheCursor > 0) {
+			byte[] cur = new byte[this.cacheCursor];
+			System.arraycopy(this.cache, 0, cur, 0, this.cacheCursor);
+			this.cache = new byte[newSize];
+			System.arraycopy(cur, 0, this.cache, 0, this.cacheCursor);
+		}
+		else {
+			this.cache = new byte[newSize];
+		}
 	}
 }

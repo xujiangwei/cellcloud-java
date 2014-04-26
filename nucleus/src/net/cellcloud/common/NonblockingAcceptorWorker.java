@@ -29,6 +29,7 @@ package net.cellcloud.common;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.SocketChannel;
+import java.util.ArrayList;
 import java.util.Vector;
 
 
@@ -317,9 +318,38 @@ public final class NonblockingAcceptorWorker extends Thread {
 		}
 	}
 
-	/** 解析数据格式。
-	 */
 	private void parse(NonblockingAcceptorSession session, byte[] data) {
+		// 拦截器返回 true 则该数据被拦截，不再进行数据解析。
+		if (this.acceptor.fireIntercepted(session, data)) {
+			return;
+		}
+
+		// 根据数据标志获取数据
+		if (this.acceptor.existDataMark()) {
+			ArrayList<byte[]> out = new ArrayList<byte[]>(2);
+			// 进行递归提取
+			this.extract(out, session, data);
+
+			if (!out.isEmpty()) {
+				for (byte[] bytes : out) {
+					Message message = new Message(bytes);
+					this.acceptor.fireMessageReceived(session, message);
+				}
+
+				out.clear();
+			}
+			out = null;
+		}
+		else {
+			Message message = new Message(data);
+			this.acceptor.fireMessageReceived(session, message);
+		}
+	}
+
+	/** 解析数据格式。
+	 * @deprecated
+	 */
+	protected void parseData(NonblockingAcceptorSession session, byte[] data) {
 		// 拦截器返回 true 则该数据被拦截，不再进行数据解析。
 		if (this.acceptor.fireIntercepted(session, data)) {
 			return;
@@ -401,5 +431,97 @@ public final class NonblockingAcceptorWorker extends Thread {
 			Message message = new Message(data);
 			this.acceptor.fireMessageReceived(session, message);
 		}
+	}
+
+	/**
+	 * 数据提取并输出。
+	 */
+	private void extract(final ArrayList<byte[]> out, final NonblockingAcceptorSession session, final byte[] data) {
+		final byte[] headMark = this.acceptor.getHeadMark();
+		final byte[] tailMark = this.acceptor.getTailMark();
+
+		// 当数据小于标签长度时直接缓存
+		if (data.length < headMark.length) {
+			System.arraycopy(data, 0, session.cache, session.cacheCursor, data.length);
+			session.cacheCursor += data.length;
+			return;
+		}
+
+		byte[] real = data;
+		if (session.cacheCursor > 0) {
+			real = new byte[session.cacheCursor + data.length];
+			System.arraycopy(session.cache, 0, real, 0, session.cacheCursor);
+			System.arraycopy(data, 0, real, session.cacheCursor, data.length);
+			session.cacheCursor = 0;
+		}
+
+		int index = 0;
+		int len = real.length;
+		int headPos = -1;
+		int tailPos = -1;
+
+		if (compareBytes(headMark, 0, real, index, headMark.length)) {
+			// 有头标签
+			index += headMark.length;
+			// 记录数据位置头
+			headPos = index;
+			// 判断是否有尾标签
+			while (index < len) {
+				if (real[index] == tailMark[0]) {
+					if (compareBytes(tailMark, 0, real, index, tailMark.length)) {
+						// 找到尾标签
+						tailPos = index;
+						break;
+					}
+					else {
+						++index;
+					}
+				}
+				else {
+					++index;
+				}
+			}
+
+			if (headPos > 0 && tailPos > 0) {
+				byte[] outBytes = new byte[tailPos - headPos];
+				System.arraycopy(real, headPos, outBytes, 0, tailPos - headPos);
+				out.add(outBytes);
+
+				int newLen = len - tailPos - tailMark.length;
+				if (newLen > 0) {
+					byte[] newBytes = new byte[newLen];
+					System.arraycopy(real, tailPos + tailMark.length, newBytes, 0, newLen);
+
+					// 递归
+					extract(out, session, newBytes);
+				}
+			}
+			else {
+				// 没有尾标签
+				// 仅进行缓存
+				if (len + session.cacheCursor > session.cacheSize) {
+					// 缓存扩容
+					session.resetCacheSize(len + session.cacheCursor);
+				}
+
+				System.arraycopy(real, 0, session.cache, session.cacheCursor, len);
+				session.cacheCursor += len;
+			}
+
+			return;
+		}
+
+		byte[] newBytes = new byte[len - headMark.length];
+		System.arraycopy(real, headMark.length, newBytes, 0, newBytes.length);
+		extract(out, session, newBytes);
+	}
+
+	private boolean compareBytes(byte[] b1, int offsetB1, byte[] b2, int offsetB2, int length) {
+		for (int i = 0; i < length; ++i) {
+			if (b1[offsetB1 + i] != b2[offsetB2 + i]) {
+				return false;
+			}
+		}
+		return true;
 	}
 }

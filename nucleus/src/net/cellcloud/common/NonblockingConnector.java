@@ -33,6 +33,7 @@ import java.nio.ByteBuffer;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.nio.channels.SocketChannel;
+import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.Set;
 import java.util.Vector;
@@ -125,13 +126,13 @@ public class NonblockingConnector extends MessageService implements MessageConne
 			// 配置
 			// 以下为 JDK7 的代码
 			this.channel.setOption(StandardSocketOptions.SO_KEEPALIVE, true);
-			this.channel.setOption(StandardSocketOptions.SO_RCVBUF, this.block + 1024);
-			this.channel.setOption(StandardSocketOptions.SO_SNDBUF, this.block + 1024);
+			this.channel.setOption(StandardSocketOptions.SO_RCVBUF, this.block + 512);
+			this.channel.setOption(StandardSocketOptions.SO_SNDBUF, this.block + 512);
 			// 以下为 JDK6 的代码
 			/*
 			this.channel.socket().setKeepAlive(true);
-			this.channel.socket().setReceiveBufferSize(this.block + 1024);
-			this.channel.socket().setSendBufferSize(this.block + 1024);
+			this.channel.socket().setReceiveBufferSize(this.block + 512);
+			this.channel.socket().setSendBufferSize(this.block + 512);
 			*/
 
 			this.selector = Selector.open();
@@ -277,8 +278,8 @@ public class NonblockingConnector extends MessageService implements MessageConne
 
 		if (null != this.channel) {
 			try {
-				this.channel.socket().setReceiveBufferSize(this.block + 1024);
-				this.channel.socket().setSendBufferSize(this.block + 1024);
+				this.channel.socket().setReceiveBufferSize(this.block + 512);
+				this.channel.socket().setSendBufferSize(this.block + 512);
 			} catch (Exception e) {
 				// ignore
 			}
@@ -548,6 +549,36 @@ public class NonblockingConnector extends MessageService implements MessageConne
 	private void process(byte[] data) {
 		// 根据数据标志获取数据
 		if (this.existDataMark()) {
+			ArrayList<byte[]> out = new ArrayList<byte[]>(2);
+			// 数据递归提取
+			this.extract(out, data);
+
+			if (!out.isEmpty()) {
+				for (byte[] bytes : out) {
+					Message message = new Message(bytes);
+					if (null != this.handler) {
+						this.handler.messageReceived(this.session, message);
+					}
+				}
+
+				out.clear();
+			}
+			out = null;
+		}
+		else {
+			Message message = new Message(data);
+			if (null != this.handler) {
+				this.handler.messageReceived(this.session, message);
+			}
+		}
+	}
+
+	/**
+	 * @deprecated
+	 */
+	protected void processData(byte[] data) {
+		// 根据数据标志获取数据
+		if (this.existDataMark()) {
 			byte[] headMark = this.getHeadMark();
 			byte[] tailMark = this.getTailMark();
 
@@ -626,5 +657,97 @@ public class NonblockingConnector extends MessageService implements MessageConne
 				this.handler.messageReceived(this.session, message);
 			}
 		}
+	}
+
+	/**
+	 * 数据提取并输出。
+	 */
+	private void extract(final ArrayList<byte[]> out, final byte[] data) {
+		final byte[] headMark = this.getHeadMark();
+		final byte[] tailMark = this.getTailMark();
+
+		// 当数据小于标签长度时直接缓存
+		if (data.length < headMark.length) {
+			System.arraycopy(data, 0, this.session.cache, this.session.cacheCursor, data.length);
+			this.session.cacheCursor += data.length;
+			return;
+		}
+
+		byte[] real = data;
+		if (this.session.cacheCursor > 0) {
+			real = new byte[this.session.cacheCursor + data.length];
+			System.arraycopy(this.session.cache, 0, real, 0, this.session.cacheCursor);
+			System.arraycopy(data, 0, real, this.session.cacheCursor, data.length);
+			this.session.cacheCursor = 0;
+		}
+
+		int index = 0;
+		int len = real.length;
+		int headPos = -1;
+		int tailPos = -1;
+
+		if (compareBytes(headMark, 0, real, index, headMark.length)) {
+			// 有头标签
+			index += headMark.length;
+			// 记录数据位置头
+			headPos = index;
+			// 判断是否有尾标签
+			while (index < len) {
+				if (real[index] == tailMark[0]) {
+					if (compareBytes(tailMark, 0, real, index, tailMark.length)) {
+						// 找到尾标签
+						tailPos = index;
+						break;
+					}
+					else {
+						++index;
+					}
+				}
+				else {
+					++index;
+				}
+			}
+
+			if (headPos > 0 && tailPos > 0) {
+				byte[] outBytes = new byte[tailPos - headPos];
+				System.arraycopy(real, headPos, outBytes, 0, tailPos - headPos);
+				out.add(outBytes);
+
+				int newLen = len - tailPos - tailMark.length;
+				if (newLen > 0) {
+					byte[] newBytes = new byte[newLen];
+					System.arraycopy(real, tailPos + tailMark.length, newBytes, 0, newLen);
+
+					// 递归
+					extract(out, newBytes);
+				}
+			}
+			else {
+				// 没有尾标签
+				// 仅进行缓存
+				if (len + this.session.cacheCursor > this.session.cacheSize) {
+					// 缓存扩容
+					this.session.resetCacheSize(len + this.session.cacheCursor);
+				}
+
+				System.arraycopy(real, 0, this.session.cache, this.session.cacheCursor, len);
+				this.session.cacheCursor += len;
+			}
+
+			return;
+		}
+
+		byte[] newBytes = new byte[len - headMark.length];
+		System.arraycopy(real, headMark.length, newBytes, 0, newBytes.length);
+		extract(out, newBytes);
+	}
+
+	private boolean compareBytes(byte[] b1, int offsetB1, byte[] b2, int offsetB2, int length) {
+		for (int i = 0; i < length; ++i) {
+			if (b1[offsetB1 + i] != b2[offsetB2 + i]) {
+				return false;
+			}
+		}
+		return true;
 	}
 }
