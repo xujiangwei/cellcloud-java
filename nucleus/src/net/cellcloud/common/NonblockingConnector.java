@@ -109,8 +109,6 @@ public class NonblockingConnector extends MessageService implements MessageConne
 					break;
 				}
 			}
-
-			Thread.yield();
 		}
 
 		// 状态初始化

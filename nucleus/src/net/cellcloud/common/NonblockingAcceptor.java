@@ -441,6 +441,10 @@ public class NonblockingAcceptor extends MessageService implements MessageAccept
 			} // # if
 
 			Thread.yield();
+//			try {
+//				Thread.sleep(0);
+//			} catch (InterruptedException e) {
+//			}
 		} // # while
 	}
 
