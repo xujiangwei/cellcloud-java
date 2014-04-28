@@ -99,7 +99,7 @@ else
 fi
 
 # Add on extra jar files to CLASSPATH
-CLASSPATH="$CLASSPATH":"$CC_HOME"/bin/nucleus-0.2.0.jar:"$CC_HOME"/bin/cell-0.2.0.jar
+CLASSPATH="$CLASSPATH":"$CC_HOME"/bin/nucleus-0.5.0.jar:"$CC_HOME"/bin/cell-0.5.0.jar
 # Scan lib path
 for file in ` ls "$CC_HOME"/lib `
 do
@@ -206,7 +206,7 @@ elif [ "$1" = "stop" ] ; then
 elif [ "$1" = "version" ] ; then
 
     "$_RUNJAVA"   \
-      -classpath "$CC_HOME/bin/cell-0.2.0.jar" \
+      -classpath "$CC_HOME/bin/cell-0.5.0.jar" \
       net.cellcloud.cell.VersionInfo
 
 else

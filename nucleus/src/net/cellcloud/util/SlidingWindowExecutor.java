@@ -229,6 +229,8 @@ public class SlidingWindowExecutor implements ExecutorService {
 						}
 					}
 				}
+
+				Thread.yield();
 			} while (!taskQueue.isEmpty());
 
 			dispatching = false;

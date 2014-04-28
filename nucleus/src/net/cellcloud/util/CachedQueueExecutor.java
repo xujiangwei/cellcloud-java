@@ -168,6 +168,8 @@ public final class CachedQueueExecutor implements ExecutorService {
 				if (null != task) {
 					task.run();
 				}
+
+				Thread.yield();
 			} while (!queue.isEmpty());
 
 			numThreads.decrementAndGet();

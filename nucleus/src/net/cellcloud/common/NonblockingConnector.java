@@ -388,7 +388,11 @@ public class NonblockingConnector extends MessageService implements MessageConne
 					break;
 				}
 
-				Thread.yield();
+//				Thread.yield();
+				try {
+					Thread.sleep(1);
+				} catch (InterruptedException e) {
+				}
 			}
 		} // # while
 

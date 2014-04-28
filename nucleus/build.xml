@@ -10,7 +10,7 @@
 	Author: Jiangwei Xu
 	</description>
 
-	<property name="version.brand" value="0.2.0" />
+	<property name="version.brand" value="0.5.0" />
 
 	<property name="build.dir" value="${basedir}/build" />
 	<property name="src.dir" value="${basedir}/src" />
@@ -52,7 +52,7 @@
 	<!-- =================================================================== -->
 	<target name="debug" depends="prepare">
 		<echo message="Compiling the source code..." />
-		<javac srcdir="${src.dir}" destdir="${bin.dir}/debug" target="1.6" source="1.6" 
+		<javac srcdir="${src.dir}" destdir="${bin.dir}/debug" target="1.7" source="1.7" 
 				encoding="UTF-8" debug="on" deprecation="on" optimize="off" includes="**">
 			<classpath refid="classpath" />
 		</javac>
@@ -69,7 +69,7 @@
 	<!-- =================================================================== -->
 	<target name="release" depends="prepare">
 		<echo message="Compiling the source code..." />
-		<javac srcdir="${src.dir}" destdir="${bin.dir}/release" target="1.6" source="1.6" 
+		<javac srcdir="${src.dir}" destdir="${bin.dir}/release" target="1.7" source="1.7" 
 				encoding="UTF-8" debug="off" deprecation="on" optimize="on" includes="**">
 			<classpath refid="classpath" />
 		</javac>
@@ -110,7 +110,7 @@
 	<!-- =================================================================== -->
 	<target name="build-debug" depends="debug,dist-debug">
 		<echo>Debug the project.</echo>
-		<echo>Copyright (C) 2009,2013 Cell Cloud Team. All rights reserved.</echo>
+		<echo>Copyright (C) 2009,2014 Cell Cloud Team. All rights reserved.</echo>
 	</target>
 
 	<!-- =================================================================== -->
@@ -118,7 +118,7 @@
 	<!-- =================================================================== -->
 	<target name="build-release" depends="release,dist-release">
 		<echo>Release the project.</echo>
-		<echo>Copyright (C) 2009,2013 Cell Cloud Team. All rights reserved.</echo>
+		<echo>Copyright (C) 2009,2014 Cell Cloud Team. All rights reserved.</echo>
 	</target>
 
 </project>
