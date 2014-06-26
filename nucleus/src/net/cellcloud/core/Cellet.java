@@ -2,7 +2,7 @@
 -----------------------------------------------------------------------------
 This source file is part of Cell Cloud.
 
-Copyright (c) 2009-2012 Cell Cloud Team (www.cellcloud.net)
+Copyright (c) 2009-2014 Cell Cloud Team (www.cellcloud.net)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -25,6 +25,8 @@ THE SOFTWARE.
 */
 
 package net.cellcloud.core;
+
+import java.util.Set;
 
 import net.cellcloud.talk.Primitive;
 import net.cellcloud.talk.TalkService;
@@ -62,6 +64,14 @@ public abstract class Cellet extends AbstractCellet {
 	 */
 	public void talk(final String targetTag, final Dialect dialect) {
 		TalkService.getInstance().notice(targetTag, dialect, this, this.sandbox);
+	}
+
+	/**
+	 * 返回服务器当前的会话者清单。
+	 * @return
+	 */
+	protected Set<String> getTalkerList() {
+		return TalkService.getInstance().getTalkerList();
 	}
 
 	/** 进行激活前准备。

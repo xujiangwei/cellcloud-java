@@ -37,11 +37,11 @@ public abstract class AbstractCellet {
 	public AbstractCellet() {
 	}
 
-	/** Cellet 激活回调。
+	/** Cellet 激活时调用该方法。
 	 */
 	public abstract void activate();
 
-	/** Cellet 钝化回调。
+	/** Cellet 销毁时调用该方法。
 	 */
 	public abstract void deactivate();
 

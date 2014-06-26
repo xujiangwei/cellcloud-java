@@ -2,7 +2,7 @@
 -----------------------------------------------------------------------------
 This source file is part of Cell Cloud.
 
-Copyright (c) 2009-2013 Cell Cloud Team (www.cellcloud.net)
+Copyright (c) 2009-2014 Cell Cloud Team (www.cellcloud.net)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -33,8 +33,10 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Queue;
+import java.util.Set;
 import java.util.Vector;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentSkipListSet;
 import java.util.concurrent.ExecutorService;
 
 import net.cellcloud.common.Cryptology;
@@ -95,6 +97,9 @@ public final class TalkService implements Service, SpeakerDelegate {
 	/// 挂起状态的上下文
 	private ConcurrentHashMap<String, SuspendedTracker> suspendedTrackers;
 
+	/// Tag 缓存列表
+	private ConcurrentSkipListSet<String> tagList;
+
 	// 私有协议 Speaker
 	protected ConcurrentHashMap<String, Speaker> speakers;
 	// HTTP 协议 Speaker
@@ -154,6 +159,9 @@ public final class TalkService implements Service, SpeakerDelegate {
 		}
 		if (null == this.suspendedTrackers) {
 			this.suspendedTrackers = new ConcurrentHashMap<String, SuspendedTracker>();
+		}
+		if (null == this.tagList) {
+			this.tagList = new ConcurrentSkipListSet<String>();
 		}
 
 		if (null == this.acceptor) {
@@ -353,6 +361,14 @@ public final class TalkService implements Service, SpeakerDelegate {
 		synchronized (this.listeners) {
 			return this.listeners.contains(listener);
 		}
+	}
+
+	/**
+	 * 返回当前所有会话者的 Tag 列表。
+	 * @return
+	 */
+	public Set<String> getTalkerList() {
+		return this.tagList;
 	}
 
 	/** 通知对端 Speaker 原语。
@@ -843,6 +859,7 @@ public final class TalkService implements Service, SpeakerDelegate {
 					// 如果清单为空，则删除此记录
 					if (list.isEmpty()) {
 						this.tagSessionsMap.remove(tag);
+						this.tagList.remove(tag);
 					}
 				}
 			} // # while
@@ -908,6 +925,7 @@ public final class TalkService implements Service, SpeakerDelegate {
 			list = new Vector<TalkSessionContext>();
 			list.add(ctx);
 			this.tagSessionsMap.put(tag, list);
+			this.tagList.add(tag);
 		}
 
 		Cellet cellet = null;
