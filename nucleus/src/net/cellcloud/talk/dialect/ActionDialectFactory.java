@@ -26,7 +26,7 @@ THE SOFTWARE.
 
 package net.cellcloud.talk.dialect;
 
-import java.util.Vector;
+import java.util.LinkedList;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -41,15 +41,15 @@ public final class ActionDialectFactory extends DialectFactory {
 	private ExecutorService executor;
 	private int maxThreadCount;
 	private int threadCount;
-	private Vector<ActionDialect> dialects;
-	private Vector<ActionDelegate> delegates;
+	private LinkedList<ActionDialect> dialects;
+	private LinkedList<ActionDelegate> delegates;
 
 	public ActionDialectFactory() {
 		this.metaData = new DialectMetaData(ActionDialect.DIALECT_NAME, "Action Dialect");
 		this.maxThreadCount = 16;
 		this.threadCount = 0;
-		this.dialects = new Vector<ActionDialect>();
-		this.delegates = new Vector<ActionDelegate>();
+		this.dialects = new LinkedList<ActionDialect>();
+		this.delegates = new LinkedList<ActionDelegate>();
 	}
 
 	@Override
@@ -86,6 +86,9 @@ public final class ActionDialectFactory extends DialectFactory {
 						ActionDelegate adg = null;
 						ActionDialect adl = null;
 						synchronized (metaData) {
+							if (dialects.isEmpty()) {
+								break;
+							}
 							adg = delegates.remove(0);
 							adl = dialects.remove(0);
 						}
