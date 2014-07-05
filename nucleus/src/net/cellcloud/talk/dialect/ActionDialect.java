@@ -26,16 +26,16 @@ THE SOFTWARE.
 
 package net.cellcloud.talk.dialect;
 
-import java.util.HashMap;
-import java.util.Iterator;
+import java.util.LinkedList;
 import java.util.List;
-import java.util.Map;
-import java.util.Set;
 
 import net.cellcloud.talk.Primitive;
 import net.cellcloud.talk.stuff.ObjectiveStuff;
 import net.cellcloud.talk.stuff.PredicateStuff;
 import net.cellcloud.talk.stuff.SubjectStuff;
+
+import org.json.JSONException;
+import org.json.JSONObject;
 
 /** 动作方言。
  * 
@@ -46,7 +46,8 @@ public class ActionDialect extends Dialect {
 	public final static String DIALECT_NAME = "ActionDialect";
 
 	private String action;
-	private HashMap<String, String> params;
+	private LinkedList<String> nameList;
+	private LinkedList<ObjectiveStuff> valueList;
 
 	private Object customContext;
 
@@ -55,7 +56,8 @@ public class ActionDialect extends Dialect {
 	 */
 	public ActionDialect() {
 		super(ActionDialect.DIALECT_NAME);
-		this.params = new HashMap<String, String>(2);
+		this.nameList = new LinkedList<String>();
+		this.valueList = new LinkedList<ObjectiveStuff>();
 	}
 
 	/**
@@ -64,7 +66,8 @@ public class ActionDialect extends Dialect {
 	 */
 	public ActionDialect(String tracker) {
 		super(ActionDialect.DIALECT_NAME, tracker);
-		this.params = new HashMap<String, String>(2);
+		this.nameList = new LinkedList<String>();
+		this.valueList = new LinkedList<ObjectiveStuff>();
 	}
 
 	/**
@@ -75,7 +78,8 @@ public class ActionDialect extends Dialect {
 	public ActionDialect(String tracker, String action) {
 		super(ActionDialect.DIALECT_NAME, tracker);
 		this.action = action;
-		this.params = new HashMap<String, String>(2);
+		this.nameList = new LinkedList<String>();
+		this.valueList = new LinkedList<ObjectiveStuff>();
 	}
 
 	/** 设置自定义上下文。
@@ -98,16 +102,14 @@ public class ActionDialect extends Dialect {
 
 		Primitive primitive = new Primitive(this);
 
-		Iterator<Map.Entry<String, String>> iter = this.params.entrySet().iterator();
-		while (iter.hasNext()) {
-			Map.Entry<String, String> entry = iter.next();
-			String name = entry.getKey();
-			String value = entry.getValue();
+		synchronized (this) {
+			for (int i = 0, size = this.nameList.size(); i < size; ++i) {
+				SubjectStuff nameStuff = new SubjectStuff(this.nameList.get(i));
+				ObjectiveStuff valueStuff = this.valueList.get(i);
 
-			SubjectStuff nameStuff = new SubjectStuff(name);
-			ObjectiveStuff valueStuff = new ObjectiveStuff(value);
-			primitive.commit(nameStuff);
-			primitive.commit(valueStuff);
+				primitive.commit(nameStuff);
+				primitive.commit(valueStuff);
+			}
 		}
 
 		PredicateStuff actionStuff = new PredicateStuff(this.action);
@@ -123,8 +125,11 @@ public class ActionDialect extends Dialect {
 		if (null != primitive.subjects()) {
 			List<SubjectStuff> names = primitive.subjects();
 			List<ObjectiveStuff> values = primitive.objectives();
-			for (int i = 0, size = names.size(); i < size; ++i) {
-				this.params.put(names.get(i).getValueAsString(), values.get(i).getValueAsString());
+			synchronized (this) {
+				for (int i = 0, size = names.size(); i < size; ++i) {
+					this.nameList.add(names.get(i).getValueAsString());
+					this.valueList.add(values.get(i));
+				}
 			}
 		}
 	}
@@ -144,64 +149,113 @@ public class ActionDialect extends Dialect {
 	/** 添加动作参数键值对。
 	 */
 	public void appendParam(final String name, final String value) {
-		this.params.put(name, value);
+		synchronized (this) {
+			this.nameList.add(name);
+			this.valueList.add(new ObjectiveStuff(value));
+		}
 	}
 	/** 添加动作参数键值对。
 	 */
 	public void appendParam(final String name, final int value) {
-		this.params.put(name, Integer.toString(value));
+		synchronized (this) {
+			this.nameList.add(name);
+			this.valueList.add(new ObjectiveStuff(value));
+		}
 	}
 	/** 添加动作参数键值对。
 	 */
 	public void appendParam(final String name, final long value) {
-		this.params.put(name, Long.toString(value));
+		synchronized (this) {
+			this.nameList.add(name);
+			this.valueList.add(new ObjectiveStuff(value));
+		}
 	}
 	/** 添加动作参数键值对。
 	 */
 	public void appendParam(final String name, final boolean value) {
-		this.params.put(name, Boolean.toString(value));
+		synchronized (this) {
+			this.nameList.add(name);
+			this.valueList.add(new ObjectiveStuff(value));
+		}
+	}
+	/** 添加动作参数键值对。
+	 */
+	public void appendParam(final String name, final JSONObject value) {
+		synchronized (this) {
+			this.nameList.add(name);
+			this.valueList.add(new ObjectiveStuff(value));
+		}
 	}
 
 	/** 返回指定名称的参数值。
 	 */
 	public String getParamAsString(final String name) {
-		return this.params.get(name);
+		synchronized (this) {
+			int index = this.nameList.indexOf(name);
+			if (index >= 0)
+				return this.valueList.get(index).getValueAsString();
+		}
+
+		return null;
 	}
 	/** 返回指定名称的参数值。
 	 */
 	public int getParamAsInt(final String name) {
-		if (this.params.containsKey(name))
-			return Integer.parseInt(this.params.get(name));
-		else
-			return 0;
+		synchronized (this) {
+			int index = this.nameList.indexOf(name);
+			if (index >= 0)
+				return this.valueList.get(index).getValueAsInt();
+		}
+
+		return 0;
 	}
 	/** 返回指定名称的参数值。
 	 */
 	public long getParamAsLong(final String name) {
-		if (this.params.containsKey(name))
-			return Long.parseLong(this.params.get(name));
-		else
-			return 0;
+		synchronized (this) {
+			int index = this.nameList.indexOf(name);
+			if (index >= 0)
+				return this.valueList.get(index).getValueAsLong();
+		}
+
+		return 0;
 	}
 	/** 返回指定名称的参数值。
 	 */
 	public boolean getParamAsBoolean(final String name) {
-		if (this.params.containsKey(name))
-			return Boolean.parseBoolean(this.params.get(name));
-		else
-			return false;
+		synchronized (this) {
+			int index = this.nameList.indexOf(name);
+			if (index >= 0)
+				return this.valueList.get(index).getValueAsBool();
+		}
+
+		return false;
+	}
+	/** 返回指定名称的参数值。
+	 * @throws JSONException 
+	 */
+	public JSONObject getParamAsJSON(final String name) throws JSONException {
+		synchronized (this) {
+			int index = this.nameList.indexOf(name);
+			if (index >= 0)
+				return this.valueList.get(index).getValueAsJSON();
+		}
+
+		return null;
 	}
 
 	/** 判断指定名称的参数是否存在。
 	 */
 	public boolean existParam(final String name) {
-		return this.params.containsKey(name);
+		synchronized (this) {
+			return this.nameList.contains(name);
+		}
 	}
 
 	/** 返回所有参数名。
 	 */
-	public Set<String> getParamNames() {
-		return this.params.keySet();
+	public List<String> getParamNames() {
+		return this.nameList;
 	}
 
 	/** 执行动作委派（异步）。
