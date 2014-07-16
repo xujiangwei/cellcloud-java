@@ -117,6 +117,10 @@ public class NonblockingAcceptor extends MessageService implements MessageAccept
 			}
 		}
 
+		if (null == this.bindAddress) {
+			return false;
+		}
+
 		// 创建句柄线程
 		this.handleThread = new Thread() {
 			@Override
@@ -240,6 +244,8 @@ public class NonblockingAcceptor extends MessageService implements MessageAccept
 		}
 
 		this.sessions.clear();
+
+		this.bindAddress = null;
 	}
 
 	@Override

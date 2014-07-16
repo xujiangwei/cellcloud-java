@@ -119,6 +119,9 @@ public final class NucleusConfig {
 	 * 集群配置项。
 	 */
 	public final class ClusterConfig {
+		/// 是否启用集群
+		public boolean enable = false;
+
 		/// 集群绑定主机名
 		public String host = "127.0.0.1";
 

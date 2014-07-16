@@ -156,24 +156,26 @@ public final class Nucleus {
 
 			//---- 配置集群 ----
 
-			if (null == this.clusterController) {
-				this.clusterController = new ClusterController(this.config.cluster.host
-						, this.config.cluster.preferredPort, this.config.cluster.numVNode);
-			}
-			// 添加集群地址
-			if (null != this.config.cluster.addressList) {
-				this.clusterController.addClusterAddress(this.config.cluster.addressList);
-			}
-			// 设置自动扫描网络
-			this.clusterController.autoScanNetwork = this.config.cluster.autoScan
-					&& (this.config.device == NucleusConfig.Device.SERVER
-						|| this.config.device == NucleusConfig.Device.DESKTOP);
-			// 启动集群控制器
-			if (this.clusterController.startup()) {
-				Logger.i(Nucleus.class, "Starting cluster controller service success.");
-			}
-			else {
-				Logger.e(Nucleus.class, "Starting cluster controller service failure.");
+			if (this.config.cluster.enable) {
+				if (null == this.clusterController) {
+					this.clusterController = new ClusterController(this.config.cluster.host
+							, this.config.cluster.preferredPort, this.config.cluster.numVNode);
+				}
+				// 添加集群地址
+				if (null != this.config.cluster.addressList) {
+					this.clusterController.addClusterAddress(this.config.cluster.addressList);
+				}
+				// 设置自动扫描网络
+				this.clusterController.autoScanNetwork = this.config.cluster.autoScan
+						&& (this.config.device == NucleusConfig.Device.SERVER
+							|| this.config.device == NucleusConfig.Device.DESKTOP);
+				// 启动集群控制器
+				if (this.clusterController.startup()) {
+					Logger.i(Nucleus.class, "Starting cluster controller service success.");
+				}
+				else {
+					Logger.e(Nucleus.class, "Starting cluster controller service failure.");
+				}
 			}
 
 			//---- 配置 HTTP 服务  ----
