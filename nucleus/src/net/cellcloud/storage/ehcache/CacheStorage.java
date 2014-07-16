@@ -26,10 +26,16 @@ THE SOFTWARE.
 
 package net.cellcloud.storage.ehcache;
 
+import javax.swing.Action;
+
 import net.cellcloud.storage.ResultSet;
 import net.cellcloud.storage.Schema;
 import net.cellcloud.storage.Storage;
 import net.cellcloud.util.Properties;
+import net.cellcloud.util.StringProperty;
+import net.sf.ehcache.Cache;
+import net.sf.ehcache.CacheManager;
+import net.sf.ehcache.Element;
 
 /** 缓存存储器。
  * 
@@ -40,6 +46,9 @@ public class CacheStorage implements Storage {
 	public final static String TYPE_NAME = "CacheStorage";
 
 	private String name;
+	
+	private static CacheManager manager = null;
+	
 
 	protected CacheStorage(String name) {
 		this.name = name;
@@ -57,11 +66,18 @@ public class CacheStorage implements Storage {
 
 	@Override
 	public boolean open(Properties properties) {
+		if (properties.hasProperty(CacheProperties.CACHE_XML)){
+			manager = CacheManager.create(((StringProperty)properties.getProperty(CacheProperties.CACHE_XML)).getValueAsString());
+			return true;
+		}
 		return false;
 	}
 
 	@Override
 	public void close() {
+		if (null != manager){
+			manager.shutdown();
+		}
 	}
 
 	@Override
@@ -69,8 +85,82 @@ public class CacheStorage implements Storage {
 		return null;
 	}
 
+	/**
+	 * 重写ehcache返回的结果集
+	 */
 	@Override
 	public ResultSet store(Schema schema) {
-		return null;
+		if (null == schema)
+			return null;
+		CacheSchema cacheSchema = (CacheSchema)schema;
+		CacheSchema.Action action = cacheSchema.getAction();
+		
+		CacheResultSet retSet = new CacheResultSet();
+		retSet.setCacheName(cacheSchema.getCacheName());
+		retSet.setKey(cacheSchema.getKey().toString());
+		
+		switch(action)
+		{
+		case ADD:
+			{
+				put(cacheSchema.getCacheName(), cacheSchema.getKey().toString(), cacheSchema.getValue());
+				break;
+			}
+			
+		case REMOVE:
+			{
+				remove(cacheSchema.getCacheName(),cacheSchema.getKey().toString());
+				break;
+			}
+		case UPDATE:
+			{
+				replace(cacheSchema.getCacheName(),cacheSchema.getKey().toString(), cacheSchema.getValue());
+				break;
+			}
+		case GET:
+			{
+				Object ret = get(cacheSchema.getCacheName(),cacheSchema.getKey().toString());
+				retSet.setValue(ret);
+				break;
+			}
+		}
+		
+		return retSet;
 	}
+	
+	/**
+	 * 存入缓存
+	 * @param cacheName
+	 * @param key
+	 * @param value
+	 */
+	private void put(String cacheName, String key, Object value) {  
+        Cache cache = manager.getCache(cacheName);  
+        Element element = new Element(key, value);  
+        //cache.put(element);
+        cache.put(element);
+    } 
+	
+	/**
+	 * 从缓存中取元素
+	 * @param cacheName
+	 * @param key
+	 * @return
+	 */
+	private Object get(String cacheName, String key) {  
+        Cache cache = manager.getCache(cacheName);  
+        Element element = cache.get(key);  
+        return element == null ? null : element.getObjectValue();  
+    }
+	
+	private void replace(String cacheName, String key, Object value)
+	{
+		 Cache cache = manager.getCache(cacheName); 
+		 cache.replace(new Element(key, value));
+	}
+	
+	private void remove(String cacheName, String key) {  
+        Cache cache = manager.getCache(cacheName);  
+        cache.remove(key);  
+    }
 }

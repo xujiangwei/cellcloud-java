@@ -26,6 +26,7 @@ THE SOFTWARE.
 
 package net.cellcloud.storage.ehcache;
 
+import net.cellcloud.exception.StorageException;
 import net.cellcloud.storage.Storage;
 import net.cellcloud.storage.StorageFactory;
 import net.cellcloud.storage.StorageMetaData;
@@ -47,6 +48,11 @@ public final class CacheStorageFactory extends StorageFactory {
 
 	@Override
 	public void destroy(Storage instance) {
-		instance = null;
+		//instance = null;
+		try {
+			instance.close();
+		} catch (StorageException e) {
+			e.printStackTrace();
+		}
 	}
 }

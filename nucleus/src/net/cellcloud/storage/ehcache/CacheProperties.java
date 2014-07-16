@@ -27,6 +27,7 @@ THE SOFTWARE.
 package net.cellcloud.storage.ehcache;
 
 import net.cellcloud.util.Properties;
+import net.cellcloud.util.StringProperty;
 
 /** 缓存属性。
  * 
@@ -34,6 +35,20 @@ import net.cellcloud.util.Properties;
  */
 public final class CacheProperties extends Properties {
 
+	public final static String CACHE_XML = "EhcacheXml";
+	
 	public CacheProperties() {
+	}
+	
+	/** 添加ehcache配置文件路径，默认文件名为：ehcache.xml。
+	 */
+	public void setEhcacheXmlPath(String xmlPath){
+		if (null == xmlPath)
+		{
+			xmlPath =  this.getClass().getResource("/").getPath() + "ehcache.xml";
+		}
+		StringProperty cachePro = new StringProperty(CACHE_XML, xmlPath);
+		this.addProperty(cachePro);
+
 	}
 }
