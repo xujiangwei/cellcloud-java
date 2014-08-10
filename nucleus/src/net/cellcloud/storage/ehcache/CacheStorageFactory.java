@@ -48,7 +48,6 @@ public final class CacheStorageFactory extends StorageFactory {
 
 	@Override
 	public void destroy(Storage instance) {
-		//instance = null;
 		try {
 			instance.close();
 		} catch (StorageException e) {

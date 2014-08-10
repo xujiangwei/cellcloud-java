@@ -42,13 +42,12 @@ public final class CacheProperties extends Properties {
 	
 	/** 添加ehcache配置文件路径，默认文件名为：ehcache.xml。
 	 */
-	public void setEhcacheXmlPath(String xmlPath){
+	public void setEhcacheXmlPath(String xmlPath) {
 		if (null == xmlPath)
 		{
 			xmlPath =  this.getClass().getResource("/").getPath() + "ehcache.xml";
 		}
 		StringProperty cachePro = new StringProperty(CACHE_XML, xmlPath);
 		this.addProperty(cachePro);
-
 	}
 }

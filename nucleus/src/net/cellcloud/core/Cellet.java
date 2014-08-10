@@ -41,6 +41,13 @@ public abstract class Cellet extends AbstractCellet {
 	private CelletFeature feature;
 	private CelletSandbox sandbox;
 
+	/**
+	 * 构造函数。
+	 */
+	public Cellet() {
+		super();
+	}
+
 	/** 构造函数。
 	 */
 	public Cellet(CelletFeature feature) {
@@ -53,6 +60,17 @@ public abstract class Cellet extends AbstractCellet {
 	 */
 	public CelletFeature getFeature() {
 		return this.feature;
+	}
+
+	/**
+	 * 设置 Cellet 特性描述。
+	 * @param feature
+	 */
+	public synchronized void setFeature(CelletFeature feature) {
+		if (null == this.feature) {
+			this.feature = feature;
+			this.sandbox = new CelletSandbox(feature);
+		}
 	}
 
 	/** 发送原语到消费端进行会话。
