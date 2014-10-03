@@ -26,11 +26,17 @@ THE SOFTWARE.
 
 package net.cellcloud.talk;
 
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.nio.charset.Charset;
+import java.util.ArrayList;
+import java.util.Queue;
 
 import net.cellcloud.common.LogLevel;
 import net.cellcloud.common.Logger;
+import net.cellcloud.common.Message;
+import net.cellcloud.common.Packet;
+import net.cellcloud.core.Nucleus;
 import net.cellcloud.http.AbstractJSONHandler;
 import net.cellcloud.http.CapsuleHolder;
 import net.cellcloud.http.HttpHandler;
@@ -39,6 +45,7 @@ import net.cellcloud.http.HttpResponse;
 import net.cellcloud.http.HttpSession;
 import net.cellcloud.talk.stuff.PrimitiveSerializer;
 
+import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -52,6 +59,7 @@ public final class HttpDialogueHandler extends AbstractJSONHandler implements Ca
 
 	protected static final String Tag = "tag";
 	protected static final String Primitive = "primitive";
+	protected static final String Primitives = "primitives";
 	protected static final String Queue = "queue";
 
 	private TalkService talkService;
@@ -87,9 +95,43 @@ public final class HttpDialogueHandler extends AbstractJSONHandler implements Ca
 				PrimitiveSerializer.read(primitive, primitiveJSON);
 				// 处理原语
 				this.talkService.processDialogue(session, speakerTag, primitive);
+
 				// 响应
+				// FIXME 2014/10/03 修改为直接携带回数据
 				JSONObject responseData = new JSONObject();
-				responseData.put(Queue, session.getQueue().size());
+
+				// 获取消息队列
+				Queue<Message> queue = session.getQueue();
+				if (!queue.isEmpty()) {
+					ArrayList<Primitive> primitives = new ArrayList<Primitive>(queue.size());
+					for (int i = 0, size = queue.size(); i < size; ++i) {
+						// 消息出队
+						Message message = queue.poll();
+						// 解包
+						Packet packet = Packet.unpack(message.get());
+						if (null != packet) {
+							// 将包数据转为输入流进行反序列化
+							byte[] body = packet.getBody();
+							ByteArrayInputStream stream = new ByteArrayInputStream(body);
+
+							// 反序列化
+							Primitive prim = new Primitive(Nucleus.getInstance().getTagAsString());
+							prim.read(stream);
+
+							// 添加到数组
+							primitives.add(prim);
+						}
+					}
+
+					// 写入原语数据
+					JSONArray jsonPrimitives = this.convert(primitives);
+					responseData.put(Primitives, jsonPrimitives);
+				}
+
+				// 返回队列大小
+				responseData.put(Queue, queue.size());
+
+				// 返回数据
 				this.respondWithOk(response, responseData);
 			} catch (JSONException e) {
 				Logger.log(HttpDialogueHandler.class, e, LogLevel.ERROR);
@@ -99,5 +141,27 @@ public final class HttpDialogueHandler extends AbstractJSONHandler implements Ca
 		else {
 			this.respond(response, HttpResponse.SC_UNAUTHORIZED);
 		}
+	}
+
+	/**
+	 * 将原语队列转为 JSON 数组。
+	 * @param queue
+	 * @return
+	 */
+	private JSONArray convert(ArrayList<Primitive> list) {
+		JSONArray ret = new JSONArray();
+
+		try {
+			for (Primitive prim : list) {
+				JSONObject json = new JSONObject();
+				PrimitiveSerializer.write(json, prim);
+				// 写入数组
+				ret.put(json);
+			}
+		} catch (JSONException e) {
+			// Nothing
+		}
+
+		return ret;
 	}
 }
