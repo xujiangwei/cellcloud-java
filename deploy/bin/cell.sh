@@ -99,16 +99,16 @@ else
 fi
 
 # Add on extra jar files to CLASSPATH
-CLASSPATH="$CLASSPATH":"$CC_HOME"/bin/nucleus-0.5.0.jar:"$CC_HOME"/bin/cell-0.5.0.jar
-# Scan lib path
-for file in ` ls "$CC_HOME"/lib `
+CLASSPATH="$CLASSPATH":"$CC_HOME"/bin/nucleus-1.0.0.jar:"$CC_HOME"/bin/cell-1.0.0.jar
+# Scan libs path
+for file in ` ls "$CC_HOME"/libs `
 do
-  CLASSPATH="$CLASSPATH":"$CC_HOME"/lib/$file
+  CLASSPATH="$CLASSPATH":"$CC_HOME"/libs/$file
 done
 
 # Option for server
-# JAVA_OPTS="-server -Xmx2048m -Xms2048m -Xmn768m -Xss128k -XX:PermSize=32m -XX:MaxPermSize=64m -XX:SurvivorRatio=8 -XX:LargePageSizeInBytes=128m -XX:MaxTenuringThreshold=7 -XX:GCTimeRatio=19 -XX:+DisableExplicitGC -XX:+UseParNewGC -XX:+UseConcMarkSweepGC -XX:+CMSClassUnloadingEnabled -XX:-CMSParallelRemarkEnabled -XX:+UseCMSCompactAtFullCollection -XX:+UseFastAccessorMethods -XX:+UseCMSInitiatingOccupancyOnly -XX:CMSInitiatingOccupancyFraction=70 -XX:CMSFullGCsBeforeCompaction=5 -XX:SoftRefLRUPolicyMSPerMB=0 -XX:+UseAdaptiveSizePolicy -XX:+PrintClassHistogram -XX:+PrintGCDetails -XX:+PrintGCTimeStamps -XX:+PrintHeapAtGC -Xloggc:logs/gc.log"
-JAVA_OPTS="-server -Xmx1024m -Xms1024m -Xmn384m -Xss128k -XX:PermSize=16m -XX:MaxPermSize=32m -XX:SurvivorRatio=8 -XX:LargePageSizeInBytes=128m -XX:MaxTenuringThreshold=7 -XX:GCTimeRatio=19 -XX:+DisableExplicitGC -XX:+UseParNewGC -XX:+UseConcMarkSweepGC -XX:+CMSClassUnloadingEnabled -XX:-CMSParallelRemarkEnabled -XX:+UseCMSCompactAtFullCollection -XX:+UseFastAccessorMethods -XX:+UseCMSInitiatingOccupancyOnly -XX:CMSInitiatingOccupancyFraction=70 -XX:CMSFullGCsBeforeCompaction=5 -XX:SoftRefLRUPolicyMSPerMB=0 -XX:+UseAdaptiveSizePolicy -XX:+PrintClassHistogram -XX:+PrintGCDetails -XX:+PrintGCTimeStamps -XX:+PrintHeapAtGC -Xloggc:logs/gc.log"
+# JAVA_OPTS="-server -Xmx2048m -Xms2048m -Xmn768m -Xss256k -XX:PermSize=32m -XX:MaxPermSize=64m -XX:SurvivorRatio=8 -XX:LargePageSizeInBytes=128m -XX:MaxTenuringThreshold=7 -XX:GCTimeRatio=19 -XX:+DisableExplicitGC -XX:+UseParNewGC -XX:+UseConcMarkSweepGC -XX:+CMSClassUnloadingEnabled -XX:-CMSParallelRemarkEnabled -XX:+UseCMSCompactAtFullCollection -XX:+UseFastAccessorMethods -XX:+UseCMSInitiatingOccupancyOnly -XX:CMSInitiatingOccupancyFraction=70 -XX:CMSFullGCsBeforeCompaction=5 -XX:SoftRefLRUPolicyMSPerMB=0 -XX:+PrintClassHistogram -XX:+PrintGCDetails -XX:+PrintGCTimeStamps -XX:+PrintHeapAtGC -Xloggc:logs/gc.log"
+JAVA_OPTS="-server -Xmx1024m -Xms1024m -Xmn384m -Xss256k -XX:PermSize=16m -XX:MaxPermSize=32m -XX:SurvivorRatio=8 -XX:LargePageSizeInBytes=128m -XX:MaxTenuringThreshold=7 -XX:GCTimeRatio=19 -XX:+DisableExplicitGC -XX:+UseParNewGC -XX:+UseConcMarkSweepGC -XX:+CMSClassUnloadingEnabled -XX:-CMSParallelRemarkEnabled -XX:+UseCMSCompactAtFullCollection -XX:+UseFastAccessorMethods -XX:+UseCMSInitiatingOccupancyOnly -XX:CMSInitiatingOccupancyFraction=70 -XX:CMSFullGCsBeforeCompaction=5 -XX:SoftRefLRUPolicyMSPerMB=0 -XX:+PrintClassHistogram -XX:+PrintGCDetails -XX:+PrintGCTimeStamps -XX:+PrintHeapAtGC -Xloggc:logs/gc.log"
 
 if [ -z "$CC_BASE" ] ; then
   CC_BASE="$CC_HOME"
@@ -174,7 +174,7 @@ elif [ "$1" = "start" ] ; then
   touch "$CC_BASE"/logs/cell.out
   "$_RUNJAVA" $JAVA_OPTS \
     -classpath "$CLASSPATH" \
-    net.cellcloud.cell.Cell "$@" start \
+    net.cellcloud.cell.Cell "$@" start -console=false \
     > "$CC_BASE"/logs/cell.out 2>&1 &
 
     if [ ! -z "$CC_PID" ]; then

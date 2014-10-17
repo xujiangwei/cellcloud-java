@@ -9,8 +9,10 @@ CLASSPATH="$CLASSPATH"
 # Make sure prerequisite environment variables are set
 if [ -z "$JAVA_HOME" -a -z "$JRE_HOME" ]; then
   # Bugzilla 37284
-  if $darwin && [ -d "/System/Library/Frameworks/JavaVM.framework/Versions/1.5/Home" ]; then
-    export JAVA_HOME="/System/Library/Frameworks/JavaVM.framework/Versions/1.5/Home"
+  if $darwin && [ -d "/System/Library/Frameworks/JavaVM.framework/Versions/1.7/Home" ]; then
+    export JAVA_HOME="/System/Library/Frameworks/JavaVM.framework/Versions/1.7/Home"
+  elif $darwin && [ -d "/Library/Java/JavaVirtualMachines/jdk1.7.0_09.jdk/Contents/Home" ]; then
+    export JAVA_HOME="/Library/Java/JavaVirtualMachines/jdk1.7.0_09.jdk/Contents/Home"
   else
     echo "Neither the JAVA_HOME nor the JRE_HOME environment variable is defined"
     echo "At least one of these environment variable is needed to run this program"

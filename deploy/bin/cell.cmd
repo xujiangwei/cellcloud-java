@@ -55,8 +55,8 @@ set BASEDIR=%CC_HOME%
 call "%CC_HOME%\bin\setclasspath.cmd" %1
 if errorlevel 1 goto end
 
-set CLASSPATH=%CLASSPATH%;%CC_HOME%\bin\nucleus-0.5.0.jar;%CC_HOME%\bin\cell-0.5.0.jar
-for /r %CC_HOME%\lib\ %%i in (*.jar) do (
+set CLASSPATH=%CLASSPATH%;%CC_HOME%\bin\nucleus-1.0.0.jar;%CC_HOME%\bin\cell-1.0.0.jar
+for /r %CC_HOME%\libs\ %%i in (*.jar) do (
 set file=%%i
 set CLASSPATH=!CLASSPATH!;!file!
 )
@@ -110,7 +110,7 @@ set ACTION=stop
 goto execCmd
 
 :doVersion
-%_EXECJAVA% -classpath "%CC_HOME%\bin\cell-0.5.0.jar" net.cellcloud.cell.VersionInfo
+%_EXECJAVA% -classpath "%CC_HOME%\bin\cell-1.0.0.jar" net.cellcloud.cell.VersionInfo
 goto end
 
 

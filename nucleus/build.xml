@@ -10,7 +10,7 @@
 	Author: Jiangwei Xu
 	</description>
 
-	<property name="version.brand" value="0.5.0" />
+	<property name="version.brand" value="1.0.0" />
 
 	<property name="build.dir" value="${basedir}/build" />
 	<property name="src.dir" value="${basedir}/src" />

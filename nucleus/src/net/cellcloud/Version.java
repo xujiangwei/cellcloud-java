@@ -33,10 +33,10 @@ package net.cellcloud;
 public final class Version {
 
 	/// 主版本号
-	public static final int MAJOR = 0;
+	public static final int MAJOR = 1;
 
 	/// 副版本号
-	public static final int MINOR = 5;
+	public static final int MINOR = 0;
 
 	/// 修订号
 	public static final int REVISION = 0;
