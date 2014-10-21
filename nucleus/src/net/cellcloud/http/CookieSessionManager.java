@@ -56,7 +56,7 @@ public class CookieSessionManager implements SessionManager {
 	public CookieSessionManager() {
 		// 默认会话有效期：12 小时
 		this.sessionExpires = 12 * 60 * 60 * 1000;
-		this.maxSessionNum = 5000;
+		this.maxSessionNum = 50000;
 		this.sessions = new ConcurrentHashMap<Long, HttpSession>();
 		this.maintainTime = System.currentTimeMillis();
 		this.listeners = new ArrayList<SessionListener>(1);

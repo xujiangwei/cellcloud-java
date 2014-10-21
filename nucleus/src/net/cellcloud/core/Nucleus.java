@@ -205,6 +205,8 @@ public final class Nucleus {
 				this.talkService.setPort(this.config.talk.port);
 				// 设置 Block
 				this.talkService.setBlockSize(this.config.talk.block);
+				// 设置 HTTP 会话超时时间
+				this.talkService.settHttpSessionTimeout(this.config.talk.httpSessionTimeout);
 
 				// 启动 Talk Service
 				if (this.talkService.startup()) {

@@ -111,6 +111,9 @@ public final class NucleusConfig {
 		/// 是否使用 HTTP 服务
 		public boolean httpd = false;
 
+		/// HTTP 服务会话超时时间，默认 5 分钟
+		public long httpSessionTimeout = 5 * 60 * 1000;
+
 		private TalkConfig() {
 		}
 	}

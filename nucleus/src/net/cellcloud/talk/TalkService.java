@@ -80,6 +80,7 @@ public final class TalkService implements Service, SpeakerDelegate {
 
 	private CookieSessionManager httpSessionManager;
 	private HttpSessionListener httpSessionListener;
+	private long httpSessionTimeout;
 
 	private NonblockingAcceptor acceptor;
 	private NucleusContext nucleusContext;
@@ -123,6 +124,9 @@ public final class TalkService implements Service, SpeakerDelegate {
 
 			this.httpPort = 7070;
 			this.httpEnabled = true;
+
+			// 5 分钟
+			this.httpSessionTimeout = 5 * 60 * 1000;
 
 			// 创建执行器
 			this.executor = CachedQueueExecutor.newCachedQueueThreadPool(8);
@@ -259,6 +263,12 @@ public final class TalkService implements Service, SpeakerDelegate {
 		}
 
 		this.httpEnabled = enabled;
+	}
+
+	/** 设置 HTTP 会话超时时间。
+	 */
+	public void settHttpSessionTimeout(long timeoutInMillisecond) {
+		this.httpSessionTimeout = timeoutInMillisecond;
 	}
 
 	/**
@@ -1193,7 +1203,7 @@ public final class TalkService implements Service, SpeakerDelegate {
 				long time = daemon.getTickTime();
 				List<HttpSession> list = httpSessionManager.getSessions();
 				for (HttpSession session : list) {
-					if (time - session.getHeartbeat() > 60000) {
+					if (time - session.getHeartbeat() > httpSessionTimeout) {
 						httpSessionManager.unmanage(session);
 					}
 				}
