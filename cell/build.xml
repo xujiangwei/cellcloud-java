@@ -85,7 +85,7 @@
 	<!-- =================================================================== -->
 	<target name="dist-debug">
 		<copy file="${dist.dir}/cell-${version.brand}-build${touch.time}-d.jar"
-			tofile="${deploy.dir}/cell-${version.brand}.jar">
+			tofile="${deploy.dir}/cell.jar">
 		</copy>
 	</target>
 
@@ -94,7 +94,7 @@
 	<!-- =================================================================== -->
 	<target name="dist-release">
 		<copy file="${dist.dir}/cell-${version.brand}-build${touch.time}.jar"
-			tofile="${deploy.dir}/cell-${version.brand}.jar">
+			tofile="${deploy.dir}/cell.jar">
 		</copy>
 	</target>
 

@@ -64,6 +64,11 @@ public final class ComplementStuff extends Stuff {
 	}
 
 	/** 构造函数。 */
+	public ComplementStuff(double value) {
+		super(StuffType.COMPLEMENT, value);
+	}
+
+	/** 构造函数。 */
 	public ComplementStuff(boolean value) {
 		super(StuffType.COMPLEMENT, value);
 	}

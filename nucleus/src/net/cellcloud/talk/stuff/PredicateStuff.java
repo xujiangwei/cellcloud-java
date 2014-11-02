@@ -64,6 +64,11 @@ public final class PredicateStuff extends Stuff {
 	}
 
 	/** 构造函数。 */
+	public PredicateStuff(double value) {
+		super(StuffType.PREDICATE, value);
+	}
+
+	/** 构造函数。 */
 	public PredicateStuff(boolean value) {
 		super(StuffType.PREDICATE, value);
 	}

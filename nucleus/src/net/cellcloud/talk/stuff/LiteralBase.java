@@ -40,13 +40,25 @@ public enum LiteralBase {
 	 */
 	INT,
 
+	/** 无符号整数型。
+	 */
+	UINT,
+
 	/** 长整数型。
 	 */
 	LONG,
 
-	/** 浮点类型。
+	/** 无符号长整型。
+	 */
+	ULONG,
+
+	/** 浮点型。
 	 */
 	FLOAT,
+
+	/** 双精浮点型。
+	 */
+	DOUBLE,
 
 	/** 布尔型。
 	 */

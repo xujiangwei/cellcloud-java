@@ -64,6 +64,11 @@ public final class ObjectiveStuff extends Stuff {
 	}
 
 	/** 构造函数。 */
+	public ObjectiveStuff(double value) {
+		super(StuffType.OBJECTIVE, value);
+	}
+
+	/** 构造函数。 */
 	public ObjectiveStuff(boolean value) {
 		super(StuffType.OBJECTIVE, value);
 	}

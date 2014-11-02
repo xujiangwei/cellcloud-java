@@ -5,7 +5,7 @@
 *.pydevproject
 .project
 .metadata
-bin/
+#bin/
 tmp/
 *.tmp
 *.bak
@@ -162,7 +162,10 @@ pip-log.txt
 # Mac crap
 .DS_Store
 
+##############
 # Cell Cloud
+##############
 cell.log
 cell.out
-nucleus*.jar
+cell/bin/
+nucleus/bin/

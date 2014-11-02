@@ -93,6 +93,13 @@ public abstract class Stuff {
 	}
 
 	/** 构造函数。 */
+	public Stuff(StuffType type, double value) {
+		this.type = type;
+		this.value = DF.format(value);
+		this.literalBase = LiteralBase.DOUBLE;
+	}
+
+	/** 构造函数。 */
 	public Stuff(StuffType type, boolean value) {
 		this.type = type;
 		this.value = Boolean.toString(value);
@@ -150,6 +157,12 @@ public abstract class Stuff {
 	 */
 	public float getValueAsFloat() {
 		return Float.parseFloat(this.value);
+	}
+
+	/** 按照双精浮点数形式返回值。
+	 */
+	public double getValueAsDouble() {
+		return Double.parseDouble(this.value);
 	}
 
 	/** 按照布尔值形式返回值。
@@ -212,6 +225,11 @@ public abstract class Stuff {
 	 */
 	protected void setValue(boolean value) {
 		this.value = Boolean.toString(value);
+	}
+	/** @private
+	 */
+	protected void setValue(float value) {
+		this.value = DF.format(value);
 	}
 	/** @private
 	 */

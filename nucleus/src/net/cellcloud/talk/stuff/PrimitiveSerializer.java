@@ -74,6 +74,7 @@ public final class PrimitiveSerializer {
 	private static final String LITERALBASE_LONG = "long";
 	private static final String LITERALBASE_ULONG = "ulong";
 	private static final String LITERALBASE_FLOAT = "float";
+	private static final String LITERALBASE_DOUBLE = "double";
 	private static final String LITERALBASE_BOOL = "bool";
 	private static final String LITERALBASE_JSON = "json";
 	private static final String LITERALBASE_XML = "xml";
@@ -84,6 +85,7 @@ public final class PrimitiveSerializer {
 	private static final byte[] LITERALBASE_LONG_BYTES = LITERALBASE_LONG.getBytes();
 	private static final byte[] LITERALBASE_ULONG_BYTES = LITERALBASE_ULONG.getBytes();
 	private static final byte[] LITERALBASE_FLOAT_BYTES = LITERALBASE_FLOAT.getBytes();
+	private static final byte[] LITERALBASE_DOUBLE_BYTES = LITERALBASE_DOUBLE.getBytes();
 	private static final byte[] LITERALBASE_BOOL_BYTES = LITERALBASE_BOOL.getBytes();
 	private static final byte[] LITERALBASE_JSON_BYTES = LITERALBASE_JSON.getBytes();
 	private static final byte[] LITERALBASE_XML_BYTES = LITERALBASE_XML.getBytes();
@@ -123,7 +125,7 @@ public final class PrimitiveSerializer {
 		原语序列化格式：
 		[version]{sutff}...{stuff}[dialect@tracker]
 		示例：
-		[01.00]{sub=cloud:string}{pre=add:string}[FileReader@Lynx]
+		[01.00]{sub=cloud:string}{pre=add:string}[Action@Ambrose]
 		*/
 
 		try {
@@ -287,7 +289,7 @@ public final class PrimitiveSerializer {
 		原语序列化格式：
 		[version]{sutff}...{stuff}[dialect@tracker]
 		示例：
-		[01.00]{sub=cloud:string}{pre=add:string}[FileReader@Lynx]
+		[01.00]{sub=cloud:string}{pre=add:string}[Action@Ambrose]
 		*/
 
 		try {
@@ -507,20 +509,29 @@ public final class PrimitiveSerializer {
 		if (literal == LiteralBase.STRING) {
 			return LITERALBASE_STRING_BYTES;
 		}
+		else if (literal == LiteralBase.JSON) {
+			return LITERALBASE_JSON_BYTES;
+		}
 		else if (literal == LiteralBase.INT) {
 			return LITERALBASE_INT_BYTES;
 		}
 		else if (literal == LiteralBase.LONG) {
 			return LITERALBASE_LONG_BYTES;
 		}
-		else if (literal == LiteralBase.FLOAT) {
-			return LITERALBASE_FLOAT_BYTES;
-		}
 		else if (literal == LiteralBase.BOOL) {
 			return LITERALBASE_BOOL_BYTES;
 		}
-		else if (literal == LiteralBase.JSON) {
-			return LITERALBASE_JSON_BYTES;
+		else if (literal == LiteralBase.FLOAT) {
+			return LITERALBASE_FLOAT_BYTES;
+		}
+		else if (literal == LiteralBase.DOUBLE) {
+			return LITERALBASE_DOUBLE_BYTES;
+		}
+		else if (literal == LiteralBase.UINT) {
+			return LITERALBASE_UINT_BYTES;
+		}
+		else if (literal == LiteralBase.ULONG) {
+			return LITERALBASE_ULONG_BYTES;
 		}
 		else if (literal == LiteralBase.XML) {
 			return LITERALBASE_XML_BYTES;
@@ -539,15 +550,10 @@ public final class PrimitiveSerializer {
 		else if (literal[0] == LITERALBASE_JSON_BYTES[0] && literal[1] == LITERALBASE_JSON_BYTES[1]) {
 			return LiteralBase.JSON;
 		}
-		else if (literal[0] == LITERALBASE_XML_BYTES[0] && literal[1] == LITERALBASE_XML_BYTES[1]) {
-			return LiteralBase.XML;
-		}
-		else if ((literal[0] == LITERALBASE_INT_BYTES[0] && literal[1] == LITERALBASE_INT_BYTES[1])
-				|| (literal[0] == LITERALBASE_UINT_BYTES[0] && literal[1] == LITERALBASE_UINT_BYTES[1])) {
+		else if (literal[0] == LITERALBASE_INT_BYTES[0] && literal[1] == LITERALBASE_INT_BYTES[1]) {
 			return LiteralBase.INT;
 		}
-		else if ((literal[0] == LITERALBASE_LONG_BYTES[0] && literal[1] == LITERALBASE_LONG_BYTES[1])
-				|| (literal[0] == LITERALBASE_ULONG_BYTES[0] && literal[1] == LITERALBASE_ULONG_BYTES[1])) {
+		else if (literal[0] == LITERALBASE_LONG_BYTES[0] && literal[1] == LITERALBASE_LONG_BYTES[1]) {
 			return LiteralBase.LONG;
 		}
 		else if (literal[0] == LITERALBASE_BOOL_BYTES[0] && literal[1] == LITERALBASE_BOOL_BYTES[1]) {
@@ -555,6 +561,18 @@ public final class PrimitiveSerializer {
 		}
 		else if (literal[0] == LITERALBASE_FLOAT_BYTES[0] && literal[1] == LITERALBASE_FLOAT_BYTES[1]) {
 			return LiteralBase.FLOAT;
+		}
+		else if (literal[0] == LITERALBASE_DOUBLE_BYTES[0] && literal[1] == LITERALBASE_DOUBLE_BYTES[1]) {
+			return LiteralBase.DOUBLE;
+		}
+		else if ((literal[0] == LITERALBASE_UINT_BYTES[0] && literal[1] == LITERALBASE_UINT_BYTES[1])) {
+			return LiteralBase.UINT;
+		}
+		else if (literal[0] == LITERALBASE_ULONG_BYTES[0] && literal[1] == LITERALBASE_ULONG_BYTES[1]) {
+			return LiteralBase.ULONG;
+		}
+		else if (literal[0] == LITERALBASE_XML_BYTES[0] && literal[1] == LITERALBASE_XML_BYTES[1]) {
+			return LiteralBase.XML;
 		}
 		else {
 			return null;
@@ -758,6 +776,10 @@ public final class PrimitiveSerializer {
 			output.put(JSONKEY_STUFFVALUE, stuff.getValueAsString());
 			output.put(JSONKEY_LITERALBASE, LITERALBASE_STRING);
 		}
+		else if (stuff.literalBase == LiteralBase.JSON) {
+			output.put(JSONKEY_STUFFVALUE, stuff.getValueAsJSON());
+			output.put(JSONKEY_LITERALBASE, LITERALBASE_JSON);
+		}
 		else if (stuff.literalBase == LiteralBase.INT) {
 			output.put(JSONKEY_STUFFVALUE, stuff.getValueAsInt());
 			output.put(JSONKEY_LITERALBASE, LITERALBASE_INT);
@@ -766,10 +788,6 @@ public final class PrimitiveSerializer {
 			output.put(JSONKEY_STUFFVALUE, stuff.getValueAsLong());
 			output.put(JSONKEY_LITERALBASE, LITERALBASE_LONG);
 		}
-		else if (stuff.literalBase == LiteralBase.JSON) {
-			output.put(JSONKEY_STUFFVALUE, stuff.getValueAsJSON());
-			output.put(JSONKEY_LITERALBASE, LITERALBASE_JSON);
-		}
 		else if (stuff.literalBase == LiteralBase.BOOL) {
 			output.put(JSONKEY_STUFFVALUE, stuff.getValueAsBool());
 			output.put(JSONKEY_LITERALBASE, LITERALBASE_BOOL);
@@ -777,6 +795,21 @@ public final class PrimitiveSerializer {
 		else if (stuff.literalBase == LiteralBase.FLOAT) {
 			output.put(JSONKEY_STUFFVALUE, stuff.getValueAsFloat());
 			output.put(JSONKEY_LITERALBASE, LITERALBASE_FLOAT);
+		}
+		else if (stuff.literalBase == LiteralBase.DOUBLE) {
+			output.put(JSONKEY_STUFFVALUE, stuff.getValueAsDouble());
+			output.put(JSONKEY_LITERALBASE, LITERALBASE_DOUBLE);
+		}
+		else if (stuff.literalBase == LiteralBase.UINT) {
+			output.put(JSONKEY_STUFFVALUE, stuff.getValueAsInt());
+			output.put(JSONKEY_LITERALBASE, LITERALBASE_UINT);
+		}
+		else if (stuff.literalBase == LiteralBase.ULONG) {
+			output.put(JSONKEY_STUFFVALUE, stuff.getValueAsLong());
+			output.put(JSONKEY_LITERALBASE, LITERALBASE_ULONG);
+		}
+		else if (stuff.literalBase == LiteralBase.XML) {
+			Logger.e(PrimitiveSerializer.class, "Don't support XML literal in JSON format.");
 		}
 	}
 
@@ -792,6 +825,10 @@ public final class PrimitiveSerializer {
 			output.setValue(json.getString(JSONKEY_STUFFVALUE));
 			output.setLiteralBase(LiteralBase.STRING);
 		}
+		else if (literal.equals(LITERALBASE_JSON)) {
+			output.setValue(json.getJSONObject(JSONKEY_STUFFVALUE));
+			output.setLiteralBase(LiteralBase.JSON);
+		}
 		else if (literal.equals(LITERALBASE_INT)) {
 			output.setValue(json.getInt(JSONKEY_STUFFVALUE));
 			output.setLiteralBase(LiteralBase.INT);
@@ -800,10 +837,6 @@ public final class PrimitiveSerializer {
 			output.setValue(json.getLong(JSONKEY_STUFFVALUE));
 			output.setLiteralBase(LiteralBase.LONG);
 		}
-		else if (literal.equals(LITERALBASE_JSON)) {
-			output.setValue(json.getJSONObject(JSONKEY_STUFFVALUE));
-			output.setLiteralBase(LiteralBase.JSON);
-		}
 		else if (literal.equals(LITERALBASE_BOOL)) {
 			output.setValue(json.getBoolean(JSONKEY_STUFFVALUE));
 			output.setLiteralBase(LiteralBase.BOOL);
@@ -811,6 +844,21 @@ public final class PrimitiveSerializer {
 		else if (literal.equals(LITERALBASE_FLOAT)) {
 			output.setValue(json.getDouble(JSONKEY_STUFFVALUE));
 			output.setLiteralBase(LiteralBase.FLOAT);
+		}
+		else if (literal.equals(LITERALBASE_DOUBLE)) {
+			output.setValue(json.getDouble(JSONKEY_STUFFVALUE));
+			output.setLiteralBase(LiteralBase.DOUBLE);
+		}
+		else if (literal.equals(LITERALBASE_UINT)) {
+			output.setValue(json.getInt(JSONKEY_STUFFVALUE));
+			output.setLiteralBase(LiteralBase.UINT);
+		}
+		else if (literal.equals(LITERALBASE_ULONG)) {
+			output.setValue(json.getLong(JSONKEY_STUFFVALUE));
+			output.setLiteralBase(LiteralBase.ULONG);
+		}
+		else if (literal.equals(LITERALBASE_XML)) {
+			Logger.e(PrimitiveSerializer.class, "Don't support XML literal in JSON format.");
 		}
 	}
 }

@@ -64,6 +64,11 @@ public final class AttributiveStuff extends Stuff {
 	}
 
 	/** 构造函数。 */
+	public AttributiveStuff(double value) {
+		super(StuffType.ATTRIBUTIVE, value);
+	}
+
+	/** 构造函数。 */
 	public AttributiveStuff(boolean value) {
 		super(StuffType.ATTRIBUTIVE, value);
 	}

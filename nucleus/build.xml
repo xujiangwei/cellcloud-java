@@ -86,7 +86,7 @@
 	<!-- =================================================================== -->
 	<target name="dist-debug">
 		<copy file="${dist.dir}/nucleus-${version.brand}-build${touch.time}-d.jar"
-			tofile="${deploy.dir}/nucleus-${version.brand}.jar">
+			tofile="${deploy.dir}/nucleus.jar">
 		</copy>
 		<copy file="${dist.dir}/nucleus-${version.brand}-build${touch.time}-d.jar"
 			tofile="${libs.dir}/nucleus-${version.brand}.jar">
@@ -98,7 +98,7 @@
 	<!-- =================================================================== -->
 	<target name="dist-release">
 		<copy file="${dist.dir}/nucleus-${version.brand}-build${touch.time}.jar"
-			tofile="${deploy.dir}/nucleus-${version.brand}.jar">
+			tofile="${deploy.dir}/nucleus.jar">
 		</copy>
 		<copy file="${dist.dir}/nucleus-${version.brand}-build${touch.time}.jar"
 			tofile="${libs.dir}/nucleus-${version.brand}.jar">
