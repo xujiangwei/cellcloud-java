@@ -108,6 +108,9 @@ public final class NucleusConfig {
 		/// Block 设置
 		public int block = 8192;
 
+		/// 最大连接数
+		public int maxConnections = 1000;
+
 		/// 是否使用 HTTP 服务
 		public boolean httpd = false;
 

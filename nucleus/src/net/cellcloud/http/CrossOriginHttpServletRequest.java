@@ -40,6 +40,7 @@ import java.util.Vector;
 
 import javax.servlet.AsyncContext;
 import javax.servlet.DispatcherType;
+import javax.servlet.ReadListener;
 import javax.servlet.RequestDispatcher;
 import javax.servlet.ServletContext;
 import javax.servlet.ServletException;
@@ -50,6 +51,7 @@ import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
+import javax.servlet.http.HttpUpgradeHandler;
 import javax.servlet.http.Part;
 
 import net.cellcloud.common.LogLevel;
@@ -483,6 +485,22 @@ public class CrossOriginHttpServletRequest implements HttpServletRequest {
 	public void logout() throws ServletException {
 	}
 
+	@Override
+	public long getContentLengthLong() {
+		return this.soul.getContentLengthLong();
+	}
+
+	@Override
+	public String changeSessionId() {
+		return this.soul.changeSessionId();
+	}
+
+	@Override
+	public <T extends HttpUpgradeHandler> T upgrade(Class<T> arg0)
+			throws IOException, ServletException {
+		return this.soul.upgrade(arg0);
+	}
+
 	/**
 	 * 封装的 Servlet 流。
 	 * 
@@ -510,6 +528,21 @@ public class CrossOriginHttpServletRequest implements HttpServletRequest {
 		@Override
 		public int read(byte[] b, int off, int len) {
 			return this.inputStream.read(b, off, len);
+		}
+
+		@Override
+		public boolean isFinished() {
+			return true;
+		}
+
+		@Override
+		public boolean isReady() {
+			return true;
+		}
+
+		@Override
+		public void setReadListener(ReadListener arg0) {
+			// TODO
 		}
 	}
 }

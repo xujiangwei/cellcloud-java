@@ -73,6 +73,7 @@ public final class TalkService implements Service, SpeakerDelegate {
 
 	private int port;
 	private int block;
+	private int maxConnections;
 
 	private int httpPort;
 	// 服务器端是否启用 HTTP 服务
@@ -121,6 +122,7 @@ public final class TalkService implements Service, SpeakerDelegate {
 
 			this.port = 7000;
 			this.block = 8192;
+			this.maxConnections = 1000;
 
 			this.httpPort = 7070;
 			this.httpEnabled = true;
@@ -184,7 +186,7 @@ public final class TalkService implements Service, SpeakerDelegate {
 		}
 
 		// 最大连接数
-		this.acceptor.setMaxConnectNum(1000);
+		this.acceptor.setMaxConnectNum(this.maxConnections);
 
 		boolean succeeded = this.acceptor.bind(this.port);
 		if (succeeded) {
@@ -277,6 +279,18 @@ public final class TalkService implements Service, SpeakerDelegate {
 	 */
 	public void setBlockSize(int size) {
 		this.block = size;
+	}
+
+	/**
+	 * 设置最大连接数。
+	 * @param num 指定最大连接数。
+	 */
+	public void setMaxConnections(int num) {
+		if (null != this.acceptor && this.acceptor.isRunning()) {
+			throw new InvalidException("Can't set the max number of connections in talk service after the start");
+		}
+
+		this.maxConnections = num;
 	}
 
 	/** 启动任务表守护线程。
@@ -659,7 +673,7 @@ public final class TalkService implements Service, SpeakerDelegate {
 	 */
 	private void startHttpService() {
 		if (null == HttpService.getInstance()) {
-			Logger.w(TalkService.class, "Starts talk http service failed, http model is not started.");
+			Logger.w(TalkService.class, "Starts talk http service failed, http service is not started.");
 			return;
 		}
 

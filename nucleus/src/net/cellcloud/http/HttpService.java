@@ -123,6 +123,12 @@ public final class HttpService implements Service {
 		context.setHandler(cdh.getHttpHandler());
 		contextList.add(context);
 
+		// 添加 WebSocket 支持
+		DefaultWebSocketHandler wsh = new DefaultWebSocketHandler();
+		context = new ContextHandler(cdh.getPathSpec());
+		context.setHandler(wsh);
+		contextList.add(context);
+
 		ServerConnector[] connectors = new ServerConnector[connectorList.size()];
 		connectorList.toArray(connectors);
 		this.server.setConnectors(connectors);

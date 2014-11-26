@@ -293,8 +293,14 @@ public class CrossOriginHttpServletResponse implements HttpServletResponse {
 		this.soul.setStatus(status);
 	}
 
+	@SuppressWarnings("deprecation")
 	@Override
-	public void setStatus(int arg0, String arg1) {
-		// Nothing
+	public void setStatus(int status, String arg) {
+		this.soul.setStatus(status, arg);
+	}
+
+	@Override
+	public void setContentLengthLong(long length) {
+		this.soul.setContentLengthLong(length);
 	}
 }
