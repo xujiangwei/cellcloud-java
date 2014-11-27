@@ -65,8 +65,12 @@ public final class Cell {
 			return false;
 		}
 
+		Arguments arguments = new Arguments();
+		arguments.console = console;
+		arguments.logFile = logFile;
+
 		// 实例化 App
-		Cell.app = new Application(console, logFile);
+		Cell.app = new Application(arguments);
 
 		Cell.daemon = new Thread() {
 			@Override
@@ -208,7 +212,7 @@ public final class Cell {
 				// 解析参数
 				Arguments arguments = Cell.parseArgs(args);
 
-				Cell.app = new Application(arguments.console, arguments.logFile);
+				Cell.app = new Application(arguments);
 
 				if (Cell.app.startup()) {
 
@@ -279,6 +283,7 @@ public final class Cell {
 
 		// -console=<true|false>
 		// -log=<filename>
+		// -config=<filename|none>
 
 		if (args.length > 1) {
 			HashMap<String, String> map = new HashMap<String, String>(2);
@@ -289,11 +294,11 @@ public final class Cell {
 				}
 			}
 
-			// 判断是否使用交互式控制台
 			for (Map.Entry<String, String> entry : map.entrySet()) {
 				String name = entry.getKey();
 				String value = entry.getValue();
 				if (name.equals("-console")) {
+					// 交互式控制台
 					try {
 						ret.console = Boolean.parseBoolean(value);
 					} catch (Exception e) {
@@ -301,7 +306,15 @@ public final class Cell {
 					}
 				}
 				else if (name.equals("-log")) {
+					// 日志文件
 					ret.logFile = value;
+				}
+				else if (name.equals("-config")) {
+					// 配置文件
+					if (value.equals("none") || value.equals("null"))
+						ret.confileFile = null;
+					else
+						ret.confileFile = value;
 				}
 			}
 		}

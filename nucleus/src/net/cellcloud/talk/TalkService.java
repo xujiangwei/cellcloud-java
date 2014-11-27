@@ -677,6 +677,8 @@ public final class TalkService implements Service, SpeakerDelegate {
 			return;
 		}
 
+		HttpService.getInstance().activeWebSocket(this.httpPort + 1);
+
 		// 创建 Session 管理器
 		this.httpSessionManager = new CookieSessionManager();
 
@@ -685,7 +687,7 @@ public final class TalkService implements Service, SpeakerDelegate {
 		this.httpSessionManager.addSessionListener(this.httpSessionListener);
 
 		// 创建服务节点
-		HttpCapsule capsule = new HttpCapsule(this.httpPort, 1000);
+		HttpCapsule capsule = new HttpCapsule(this.httpPort, this.maxConnections);
 		// 设置 Session 管理器
 		capsule.setSessionManager(this.httpSessionManager);
 		// 依次添加 Holder 点

@@ -34,10 +34,10 @@ import org.eclipse.jetty.websocket.servlet.WebSocketServletFactory;
  * 
  * @author Jiangwei Xu
  */
-public final class DefaultWebSocketHandler extends WebSocketHandler implements CapsuleHolder {
+public final class DefaultWebSocketHandler extends WebSocketHandler {
 
 	public DefaultWebSocketHandler() {
-		
+		super();
 	}
 
 	public DefaultWebSocketHandler(ByteBufferPool bufferPool) {
@@ -46,17 +46,8 @@ public final class DefaultWebSocketHandler extends WebSocketHandler implements C
 
 	@Override
 	public void configure(WebSocketServletFactory factory) {
-		factory.getPolicy().setIdleTimeout(60000);
+		// 超期时间 5 分钟
+		factory.getPolicy().setIdleTimeout(5 * 60 * 1000);
 		factory.setCreator(new DefaultWebSocketCreator());
-	}
-
-	@Override
-	public String getPathSpec() {
-		return "/ws";
-	}
-
-	@Override
-	public HttpHandler getHttpHandler() {
-		return null;
 	}
 }

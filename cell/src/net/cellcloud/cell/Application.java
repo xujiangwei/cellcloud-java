@@ -68,7 +68,9 @@ public final class Application {
 
 	private Console console;
 
-	public Application(boolean consoleMode, String logFile) {
+	private String configFile;
+
+	public Application(Arguments args) {
 		StringBuilder buf = new StringBuilder();
 		buf.append("Cell Cloud ");
 		buf.append(Version.MAJOR);
@@ -93,14 +95,17 @@ public final class Application {
 
 		this.monitor = new byte[0];
 
-		if (consoleMode)
+		if (args.console)
 			this.console = new Console(this);
 		else
 			this.console = null;
 
 		// 使用文件日志
-		if (null != logFile)
-			FileLogger.getInstance().open("logs" + File.separator + logFile);
+		if (null != args.logFile)
+			FileLogger.getInstance().open("logs" + File.separator + args.logFile);
+
+		// 配置文件
+		this.configFile = args.confileFile;
 	}
 
 	/** 启动程序。
@@ -111,35 +116,42 @@ public final class Application {
 		config.device = NucleusConfig.Device.SERVER;
 
 		// 加载内核配置
-		HashMap<String, ArrayList<String>> cellets = this.loadConfig(config);
-		if (null == cellets || cellets.isEmpty()) {
-			Logger.e(Application.class, "Can not find cellet in config file, start failed!");
-			return false;
+		HashMap<String, ArrayList<String>> cellets = null;
+		if (null != this.configFile) {
+			cellets = this.loadConfig(config, this.configFile);
+			if (null == cellets || cellets.isEmpty()) {
+				Logger.e(Application.class, "Can not find cellet in config file, start failed!");
+				return false;
+			}
 		}
 
-		Nucleus nucleus = null;
-		try {
-			if (null == Nucleus.getInstance()) {
+		Nucleus nucleus = Nucleus.getInstance();
+		if (null == nucleus) {
+			try {
 				nucleus = Nucleus.createInstance(config);
+			} catch (SingletonException e) {
+				Logger.log(Application.class, e, LogLevel.ERROR);
+				return false;
 			}
-		} catch (SingletonException e) {
-			Logger.log(Application.class, e, LogLevel.ERROR);
-			return false;
 		}
 
 		// 为内核准备 Cellet 信息
-		Iterator<Map.Entry<String, ArrayList<String>>> iter = cellets.entrySet().iterator();
-		while (iter.hasNext()) {
-			Map.Entry<String, ArrayList<String>> e = iter.next();
-			nucleus.prepareCelletJar(e.getKey(), e.getValue());
+		if (null != cellets) {
+			Iterator<Map.Entry<String, ArrayList<String>>> iter = cellets.entrySet().iterator();
+			while (iter.hasNext()) {
+				Map.Entry<String, ArrayList<String>> e = iter.next();
+				nucleus.prepareCelletJar(e.getKey(), e.getValue());
+			}
+
+			cellets.clear();
+			cellets = null;
 		}
 
+		// 启动内核
 		if (!nucleus.startup()) {
+			Logger.e(Application.class, "Nucleus start failed!");
 			return false;
 		}
-
-		cellets.clear();
-		cellets = null;
 
 		this.spinning = true;
 
@@ -206,14 +218,14 @@ public final class Application {
 
 	/** 加载配置。
 	 */
-	private HashMap<String, ArrayList<String>> loadConfig(NucleusConfig config) {
+	private HashMap<String, ArrayList<String>> loadConfig(NucleusConfig config, String configFile) {
 		HashMap<String, ArrayList<String>> celletMap = new HashMap<String, ArrayList<String>>();
 
 		try {
 			// 检测配置文件
 			URL pathURL = this.getClass().getClassLoader().getResource(".");
 			String resourcePath = (null != pathURL) ? pathURL.getPath() : "./";
-			String fileName = resourcePath + "cell.xml";
+			String fileName = resourcePath + configFile;
 			File file = new File(fileName);
 			if (!file.exists()) {
 				String[] array = resourcePath.split("/");
@@ -230,7 +242,7 @@ public final class Application {
 				path = null;
 			}
 
-			fileName = resourcePath + "cell.xml";
+			fileName = resourcePath + configFile;
 			file = new File(fileName);
 			if (file.exists()) {
 				// 解析文件

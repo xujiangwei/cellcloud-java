@@ -52,6 +52,7 @@ public final class HttpRequestHandler extends AbstractJSONHandler implements Cap
 	protected static final String Identifier = "identifier";
 	protected static final String Tag = "tag";
 	protected static final String Version = "version";
+	protected static final String Error = "error";
 
 	private TalkService talkService;
 
@@ -98,7 +99,11 @@ public final class HttpRequestHandler extends AbstractJSONHandler implements Cap
 				}
 				else {
 					// 失败
-					this.respond(response, HttpResponse.SC_NOT_FOUND);
+					JSONObject ret = new JSONObject();
+					ret.put(Tag, tag);
+					ret.put(Identifier, identifier);
+					ret.put(Error, 0);
+					this.respondWithOk(response, ret);
 				}
 			} catch (JSONException e) {
 				Logger.log(HttpRequestHandler.class, e, LogLevel.WARNING);

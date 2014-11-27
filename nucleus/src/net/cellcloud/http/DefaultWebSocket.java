@@ -29,45 +29,79 @@ package net.cellcloud.http;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 
-import javax.websocket.RemoteEndpoint.Async;
-import javax.websocket.Session;
-
 import net.cellcloud.common.Logger;
 
-import org.eclipse.jetty.websocket.api.annotations.OnWebSocketMessage;
+import org.eclipse.jetty.websocket.api.BatchMode;
+import org.eclipse.jetty.websocket.api.RemoteEndpoint;
+import org.eclipse.jetty.websocket.api.WebSocketListener;
 
 /**
  * 
  * @author Jiangwei Xu
  */
-public class DefaultWebSocket {
+public class DefaultWebSocket implements WebSocketListener {
+
+	private org.eclipse.jetty.websocket.api.Session session;
 
 	public DefaultWebSocket() {
+		this.session = null;
 	}
 
-	@OnWebSocketMessage
-	public void onBinary(Session session, byte buf[], int offset, int length) throws IOException {
-		if (!session.isOpen()) {
-			Logger.w(DefaultWebSocket.class, "Session is closed");
+	@Override
+	public void onWebSocketBinary(byte[] buf, int offset, int length) {
+		Logger.d(this.getClass(), "onWebSocketBinary");
+
+		if (!this.session.isOpen())
+		{
+			Logger.w(this.getClass(), "Session is closed");
 			return;
 		}
 
-		Async remote = session.getAsyncRemote();
-		remote.sendBinary(ByteBuffer.wrap(buf, offset, length), null);
-		if (remote.getBatchingAllowed())
-			remote.flushBatch();
+		RemoteEndpoint remote = this.session.getRemote();
+		remote.sendBytes(ByteBuffer.wrap(buf, offset, length), null);
+		if (remote.getBatchMode() == BatchMode.ON) {
+			try {
+				remote.flush();
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+		}
 	}
 
-	@OnWebSocketMessage
-	public void onText(Session session, String message) throws IOException {
-		if (!session.isOpen()) {
-			Logger.w(DefaultWebSocket.class, "Session is closed");
+	@Override
+	public void onWebSocketText(String text) {
+		Logger.d(this.getClass(), "onWebSocketText");
+
+		if (!this.session.isOpen()) {
+			Logger.w(this.getClass(), "Session is closed");
 			return;
 		}
 
-		Async remote = session.getAsyncRemote();
-		remote.sendText(message, null);
-		if (remote.getBatchingAllowed())
-			remote.flushBatch();
+		RemoteEndpoint remote = this.session.getRemote();
+		remote.sendString(text, null);
+		if (remote.getBatchMode() == BatchMode.ON) {
+			try {
+				remote.flush();
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+		}
+	}
+
+	@Override
+	public void onWebSocketConnect(org.eclipse.jetty.websocket.api.Session session) {
+		Logger.d(this.getClass(), "onWebSocketConnect");
+
+		this.session = session;
+	}
+
+	@Override
+	public void onWebSocketClose(int code, String reason) {
+		Logger.d(this.getClass(), "onWebSocketClose");
+	}
+
+	@Override
+	public void onWebSocketError(Throwable error) {
+		Logger.d(this.getClass(), "onWebSocketError");
 	}
 }

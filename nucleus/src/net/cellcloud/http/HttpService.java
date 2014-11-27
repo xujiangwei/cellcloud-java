@@ -41,6 +41,7 @@ import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.ServerConnector;
 import org.eclipse.jetty.server.handler.ContextHandler;
 import org.eclipse.jetty.server.handler.ContextHandlerCollection;
+import org.eclipse.jetty.server.handler.ResourceHandler;
 
 /** HTTP 服务。
  * 
@@ -56,6 +57,9 @@ public final class HttpService implements Service {
 
 	// HTTP URI 上下文 Holder
 	protected ConcurrentHashMap<String, CapsuleHolder> holders;
+
+	private Server wsServer = null;
+	private int webSocketPort = 7777;
 
 	/**
 	 * 构造函数。
@@ -120,19 +124,15 @@ public final class HttpService implements Service {
 		// 添加跨域支持
 		HttpCrossDomainHandler cdh = new HttpCrossDomainHandler(this);
 		ContextHandler context = new ContextHandler(cdh.getPathSpec());
-		context.setHandler(cdh.getHttpHandler());
+		context.setHandler(cdh);
 		contextList.add(context);
 
-		// 添加 WebSocket 支持
-		DefaultWebSocketHandler wsh = new DefaultWebSocketHandler();
-		context = new ContextHandler(cdh.getPathSpec());
-		context.setHandler(wsh);
-		contextList.add(context);
-
+		// 连接器
 		ServerConnector[] connectors = new ServerConnector[connectorList.size()];
 		connectorList.toArray(connectors);
 		this.server.setConnectors(connectors);
 
+		// 处理器
 		ContextHandler[] handlers = new ContextHandler[contextList.size()];
 		contextList.toArray(handlers);
 		ContextHandlerCollection contexts = new ContextHandlerCollection();
@@ -150,6 +150,29 @@ public final class HttpService implements Service {
 			Logger.log(HttpService.class, e, LogLevel.ERROR);
 		}
 
+		// WebSocket 支持
+		if (null != this.wsServer) {
+			ServerConnector connector = new ServerConnector(this.wsServer);
+			connector.setPort(this.webSocketPort);
+			connector.setAcceptQueueSize(5000);
+
+			this.wsServer.addConnector(connector);
+
+			DefaultWebSocketHandler wsh = new DefaultWebSocketHandler();
+			this.wsServer.setHandler(wsh);
+
+			ResourceHandler rHandler = new ResourceHandler();
+			rHandler.setDirectoriesListed(true);
+			rHandler.setResourceBase("cell");
+			wsh.setHandler(rHandler);
+
+			try {
+				this.wsServer.start();
+			} catch (Exception e) {
+				Logger.log(HttpService.class, e, LogLevel.ERROR);
+			}
+		}
+
 		return true;
 	}
 
@@ -159,6 +182,14 @@ public final class HttpService implements Service {
 			this.server.stop();
 		} catch (Exception e) {
 			Logger.log(HttpService.class, e, LogLevel.WARNING);
+		}
+
+		if (null != this.wsServer) {
+			try {
+				this.wsServer.stop();
+			} catch (Exception e) {
+				Logger.log(HttpService.class, e, LogLevel.WARNING);
+			}
 		}
 	}
 
@@ -200,5 +231,19 @@ public final class HttpService implements Service {
 		}
 
 		return false;
+	}
+
+	/**
+	 * 激活 WebSocket 。
+	 * @param port 指定 WebSocket 接口。
+	 */
+	public boolean activeWebSocket(int port) {
+		if (port <= 80) {
+			return false;
+		}
+
+		this.wsServer = new Server();
+		this.webSocketPort = port;
+		return true;
 	}
 }

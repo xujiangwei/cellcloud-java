@@ -44,6 +44,11 @@ public final class Arguments {
 	 */
 	protected String logFile = "cell.log";
 
+	/**
+	 * 配置文件。
+	 */
+	protected String confileFile = "cell.xml";
+
 	protected Arguments() {
 	}
 }

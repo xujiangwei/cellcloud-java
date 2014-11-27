@@ -2,7 +2,7 @@
 -----------------------------------------------------------------------------
 This source file is part of Cell Cloud.
 
-Copyright (c) 2009-2013 Cell Cloud Team (www.cellcloud.net)
+Copyright (c) 2009-2014 Cell Cloud Team (www.cellcloud.net)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -26,19 +26,25 @@ THE SOFTWARE.
 
 package net.cellcloud.http;
 
-/** HTTP 处理句柄接入器接口。
+import net.cellcloud.common.Message;
+import net.cellcloud.common.MessageService;
+import net.cellcloud.common.Session;
+
+/**
  * 
  * @author Jiangwei Xu
  */
-public interface CapsuleHolder {
+public class WebSocketService extends MessageService {
 
-	/** 返回路径描述。
-	 * @return
-	 */
-	public String getPathSpec();
+	@Override
+	public void write(Session session, Message message) {
+		
+	}
 
-	/** 返回对应的处理句柄 。
-	 * @return
-	 */
-	public HttpHandler getHttpHandler();
+	@Override
+	public void read(Message message, Session session) {
+		
+	}
+
+	
 }
