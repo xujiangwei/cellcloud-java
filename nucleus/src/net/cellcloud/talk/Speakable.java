@@ -26,7 +26,7 @@ THE SOFTWARE.
 
 package net.cellcloud.talk;
 
-import java.net.InetSocketAddress;
+import java.util.List;
 
 /**
  * 通信会话器接口。
@@ -37,10 +37,10 @@ public interface Speakable {
 
 	/**
 	 * 向指定地址发起请求 Cellet 服务。
-	 * @param address
+	 * @param identifiers
 	 * @return
 	 */
-	public boolean call(InetSocketAddress address);
+	public boolean call(List<String> identifiers);
 
 	/**
 	 * 挂起服务。
@@ -61,10 +61,11 @@ public interface Speakable {
 
 	/**
 	 * 向 Cellet 发送原语数据。
+	 * @param identifier
 	 * @param primitive
 	 * @return
 	 */
-	public boolean speak(Primitive primitive);
+	public boolean speak(String celletIdentifier, Primitive primitive);
 
 	/**
 	 * 是否已经与 Cellet 建立服务。
@@ -79,10 +80,10 @@ public interface Speakable {
 	public boolean isSuspended();
 
 	/**
-	 * 返回与会话器对话的 Cellet 的识别符。
+	 * 返回会话器请求的所有 Cellet 标识符列表。
 	 * @return
 	 */
-	public String getIdentifier();
+	public List<String> getIdentifiers();
 
 	/**
 	 * 返回远端的内核标签。

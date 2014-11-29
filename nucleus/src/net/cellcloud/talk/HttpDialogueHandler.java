@@ -44,6 +44,7 @@ import net.cellcloud.http.HttpRequest;
 import net.cellcloud.http.HttpResponse;
 import net.cellcloud.http.HttpSession;
 import net.cellcloud.talk.stuff.PrimitiveSerializer;
+import net.cellcloud.util.Utils;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -58,6 +59,7 @@ import org.json.JSONObject;
 public final class HttpDialogueHandler extends AbstractJSONHandler implements CapsuleHolder {
 
 	protected static final String Tag = "tag";
+	protected static final String Identifier = "identifier";
 	protected static final String Primitive = "primitive";
 	protected static final String Primitives = "primitives";
 	protected static final String Queue = "queue";
@@ -89,12 +91,13 @@ public final class HttpDialogueHandler extends AbstractJSONHandler implements Ca
 				JSONObject json = new JSONObject(new String(request.readRequestData(), Charset.forName("UTF-8")));
 				// 解析 JSON 数据
 				String speakerTag = json.getString(Tag);
+				String celletIdentifier = json.getString(Identifier);
 				JSONObject primitiveJSON = json.getJSONObject(Primitive);
 				// 解析原语
 				Primitive primitive = new Primitive(speakerTag);
 				PrimitiveSerializer.read(primitive, primitiveJSON);
 				// 处理原语
-				this.talkService.processDialogue(session, speakerTag, primitive);
+				this.talkService.processDialogue(session, speakerTag, celletIdentifier, primitive);
 
 				// 响应
 				// FIXME 2014/10/03 修改为直接携带回数据
@@ -103,6 +106,7 @@ public final class HttpDialogueHandler extends AbstractJSONHandler implements Ca
 				// 获取消息队列
 				Queue<Message> queue = session.getQueue();
 				if (!queue.isEmpty()) {
+					ArrayList<String> identifiers = new ArrayList<String>(queue.size());
 					ArrayList<Primitive> primitives = new ArrayList<Primitive>(queue.size());
 					for (int i = 0, size = queue.size(); i < size; ++i) {
 						// 消息出队
@@ -110,21 +114,25 @@ public final class HttpDialogueHandler extends AbstractJSONHandler implements Ca
 						// 解包
 						Packet packet = Packet.unpack(message.get());
 						if (null != packet) {
+							// 获取 cellet identifier
+							byte[] identifier = packet.getSubsegment(1);
+
 							// 将包数据转为输入流进行反序列化
-							byte[] body = packet.getBody();
-							ByteArrayInputStream stream = new ByteArrayInputStream(body);
+							byte[] primData = packet.getSubsegment(0);
+							ByteArrayInputStream stream = new ByteArrayInputStream(primData);
 
 							// 反序列化
 							Primitive prim = new Primitive(Nucleus.getInstance().getTagAsString());
 							prim.read(stream);
 
 							// 添加到数组
+							identifiers.add(Utils.bytes2String(identifier));
 							primitives.add(prim);
 						}
 					}
 
 					// 写入原语数据
-					JSONArray jsonPrimitives = this.convert(primitives);
+					JSONArray jsonPrimitives = this.convert(identifiers, primitives);
 					responseData.put(Primitives, jsonPrimitives);
 				}
 
@@ -148,13 +156,21 @@ public final class HttpDialogueHandler extends AbstractJSONHandler implements Ca
 	 * @param queue
 	 * @return
 	 */
-	private JSONArray convert(ArrayList<Primitive> list) {
+	private JSONArray convert(ArrayList<String> identifiers, ArrayList<Primitive> list) {
 		JSONArray ret = new JSONArray();
 
 		try {
-			for (Primitive prim : list) {
+			for (int i = 0, size = identifiers.size(); i < size; ++i) {
+				String identifier = identifiers.get(i);
+				Primitive prim = list.get(i);
+
+				JSONObject primJson = new JSONObject();
+				PrimitiveSerializer.write(primJson, prim);
+
 				JSONObject json = new JSONObject();
-				PrimitiveSerializer.write(json, prim);
+				json.put(Identifier, identifier);
+				json.put(Primitive, primJson);
+
 				// 写入数组
 				ret.put(json);
 			}

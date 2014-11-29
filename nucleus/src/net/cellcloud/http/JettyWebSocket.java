@@ -26,37 +26,38 @@ THE SOFTWARE.
 
 package net.cellcloud.http;
 
-import java.io.IOException;
-import java.nio.ByteBuffer;
+import java.net.InetSocketAddress;
 
 import net.cellcloud.common.Logger;
+import net.cellcloud.common.Message;
+import net.cellcloud.common.MessageHandler;
 
-import org.eclipse.jetty.websocket.api.BatchMode;
-import org.eclipse.jetty.websocket.api.RemoteEndpoint;
 import org.eclipse.jetty.websocket.api.WebSocketListener;
 
 /**
  * 
  * @author Jiangwei Xu
  */
-public class DefaultWebSocket implements WebSocketListener {
+public class JettyWebSocket implements WebSocketListener {
 
 	private org.eclipse.jetty.websocket.api.Session session;
+	private MessageHandler handler;
+	private WebSocketSession wsSession;
 
-	public DefaultWebSocket() {
-		this.session = null;
+	public JettyWebSocket(MessageHandler handler) {
+		this.handler = handler;
 	}
 
 	@Override
 	public void onWebSocketBinary(byte[] buf, int offset, int length) {
 		Logger.d(this.getClass(), "onWebSocketBinary");
 
-		if (!this.session.isOpen())
-		{
+		if (!this.session.isOpen()) {
 			Logger.w(this.getClass(), "Session is closed");
 			return;
 		}
 
+		/*
 		RemoteEndpoint remote = this.session.getRemote();
 		remote.sendBytes(ByteBuffer.wrap(buf, offset, length), null);
 		if (remote.getBatchMode() == BatchMode.ON) {
@@ -66,17 +67,24 @@ public class DefaultWebSocket implements WebSocketListener {
 				e.printStackTrace();
 			}
 		}
+		*/
 	}
 
 	@Override
 	public void onWebSocketText(String text) {
-		Logger.d(this.getClass(), "onWebSocketText");
+		//Logger.d(this.getClass(), "onWebSocketText");
 
 		if (!this.session.isOpen()) {
 			Logger.w(this.getClass(), "Session is closed");
 			return;
 		}
 
+		if (null != this.handler) {
+			Message message = new Message(text);
+			this.handler.messageReceived(this.wsSession, message);
+		}
+
+		/*
 		RemoteEndpoint remote = this.session.getRemote();
 		remote.sendString(text, null);
 		if (remote.getBatchMode() == BatchMode.ON) {
@@ -86,6 +94,7 @@ public class DefaultWebSocket implements WebSocketListener {
 				e.printStackTrace();
 			}
 		}
+		*/
 	}
 
 	@Override
@@ -93,15 +102,31 @@ public class DefaultWebSocket implements WebSocketListener {
 		Logger.d(this.getClass(), "onWebSocketConnect");
 
 		this.session = session;
+
+		InetSocketAddress address = new InetSocketAddress(session.getRemoteAddress().getHostName()
+				, session.getRemoteAddress().getPort());
+		this.wsSession = new WebSocketSession(address, session);
+
+		if (null != this.handler) {
+			this.handler.sessionCreated(this.wsSession);
+			this.handler.sessionOpened(this.wsSession);
+		}
 	}
 
 	@Override
 	public void onWebSocketClose(int code, String reason) {
 		Logger.d(this.getClass(), "onWebSocketClose");
+
+		if (null != this.handler) {
+			this.handler.sessionClosed(this.wsSession);
+			this.handler.sessionDestroyed(this.wsSession);
+		}
+
+		this.wsSession = null;
 	}
 
 	@Override
 	public void onWebSocketError(Throwable error) {
-		Logger.d(this.getClass(), "onWebSocketError");
+		Logger.w(this.getClass(), "onWebSocketError: " + error.getMessage());
 	}
 }

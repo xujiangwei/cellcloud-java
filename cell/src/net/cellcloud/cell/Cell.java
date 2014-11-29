@@ -30,12 +30,14 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 
 import net.cellcloud.common.LogLevel;
 import net.cellcloud.common.Logger;
 import net.cellcloud.core.Nucleus;
+import net.cellcloud.util.Utils;
 
 /** Cell Cloud 容器。
  * 
@@ -186,6 +188,8 @@ public final class Cell {
 
 			FileOutputStream fos = new FileOutputStream(file);
 			fos.write(Nucleus.getInstance().getTagAsString().getBytes());
+			fos.write('\n');
+			fos.write(Utils.string2Bytes(Utils.convertDateToSimpleString(new Date())));
 			fos.flush();
 			fos.close();
 		} catch (IOException e) {
@@ -233,7 +237,8 @@ public final class Cell {
 			}
 			else if (args[0].equals("stop")) {
 				File file = new File("bin/tag");
-				if (file.exists()) {
+				if (file.exists() && file.length() <= 36) {
+					// 删除文件
 					file.delete();
 
 					System.out.println("\nStopping Cell Cloud process, please waiting...");
@@ -261,6 +266,9 @@ public final class Cell {
 
 					System.out.println("\nCell Cloud process exit, progress elapsed time " +
 							(int)((System.currentTimeMillis() - startTime)/1000) + " seconds.\n");
+				}
+				else {
+					System.out.println("Can not find Cell Cloud process.");
 				}
 			}
 			else {

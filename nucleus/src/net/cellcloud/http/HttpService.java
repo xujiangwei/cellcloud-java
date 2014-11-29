@@ -33,6 +33,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import net.cellcloud.common.LogLevel;
 import net.cellcloud.common.Logger;
+import net.cellcloud.common.MessageHandler;
 import net.cellcloud.common.Service;
 import net.cellcloud.core.NucleusContext;
 import net.cellcloud.exception.SingletonException;
@@ -60,6 +61,7 @@ public final class HttpService implements Service {
 
 	private Server wsServer = null;
 	private int webSocketPort = 7777;
+	private MessageHandler wsMessagehandler;
 
 	/**
 	 * 构造函数。
@@ -158,7 +160,8 @@ public final class HttpService implements Service {
 
 			this.wsServer.addConnector(connector);
 
-			DefaultWebSocketHandler wsh = new DefaultWebSocketHandler();
+			JettyWebSocketHandler wsh = new JettyWebSocketHandler();
+			wsh.setMessageHandler(this.wsMessagehandler);
 			this.wsServer.setHandler(wsh);
 
 			ResourceHandler rHandler = new ResourceHandler();
@@ -234,16 +237,32 @@ public final class HttpService implements Service {
 	}
 
 	/**
-	 * 激活 WebSocket 。
+	 * 激活 WebSocket 服务。
 	 * @param port 指定 WebSocket 接口。
 	 */
-	public boolean activeWebSocket(int port) {
+	public boolean activeWebSocket(int port, MessageHandler handler) {
 		if (port <= 80) {
 			return false;
 		}
 
 		this.wsServer = new Server();
 		this.webSocketPort = port;
+		this.wsMessagehandler = handler;
 		return true;
+	}
+
+	/**
+	 * 禁用 WebSocket 服务。
+	 */
+	public void deactiveWebSocket() {
+		if (this.wsServer != null) {
+			try {
+				this.wsServer.stop();
+			} catch (Exception e) {
+				Logger.log(HttpService.class, e, LogLevel.WARNING);
+			}
+
+			this.wsServer = null;
+		}
 	}
 }

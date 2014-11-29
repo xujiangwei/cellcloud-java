@@ -46,8 +46,6 @@ public final class LogManager {
 	private LogManager() {
 		this.handles = new ArrayList<LogHandle>();
 		this.level = LogLevel.DEBUG;
-
-		this.handles.add(createSystemOutHandle());
 	}
 
 	public static LogManager getInstance() {
@@ -69,8 +67,10 @@ public final class LogManager {
 	 */
 	public void log(byte level, String tag, String log) {
 		synchronized (this) {
-			if (this.handles.isEmpty() || this.level > level)
+			if (this.handles.isEmpty() || this.level > level) {
+				System.err.println("No log handler in logger manager.");
 				return;
+			}
 
 			for (LogHandle handle : this.handles) {
 				switch (level) {

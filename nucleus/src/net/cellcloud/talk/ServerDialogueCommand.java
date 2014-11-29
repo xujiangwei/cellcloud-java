@@ -57,16 +57,18 @@ public final class ServerDialogueCommand extends ServerCommand {
 			return;
 		}
 
-		byte[] pridata = this.packet.getSubsegment(0);
-		ByteArrayInputStream stream = new ByteArrayInputStream(pridata);
+		byte[] priData = this.packet.getSubsegment(0);
+		ByteArrayInputStream stream = new ByteArrayInputStream(priData);
 
-		byte[] tagdata = this.packet.getSubsegment(1);
-		String speakerTag = Utils.bytes2String(tagdata);
+		byte[] tagData = this.packet.getSubsegment(1);
+		String speakerTag = Utils.bytes2String(tagData);
+
+		byte[] identifierData = this.packet.getSubsegment(2);
 
 		// 反序列化原语
 		Primitive primitive = new Primitive(speakerTag);
 		primitive.read(stream);
 
-		this.service.processDialogue(this.session, speakerTag, primitive);
+		this.service.processDialogue(this.session, speakerTag, Utils.bytes2String(identifierData), primitive);
 	}
 }

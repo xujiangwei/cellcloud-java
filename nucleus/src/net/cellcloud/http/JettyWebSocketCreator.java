@@ -26,6 +26,8 @@ THE SOFTWARE.
 
 package net.cellcloud.http;
 
+import net.cellcloud.common.MessageHandler;
+
 import org.eclipse.jetty.websocket.servlet.ServletUpgradeRequest;
 import org.eclipse.jetty.websocket.servlet.ServletUpgradeResponse;
 import org.eclipse.jetty.websocket.servlet.WebSocketCreator;
@@ -34,12 +36,12 @@ import org.eclipse.jetty.websocket.servlet.WebSocketCreator;
  * 
  * @author Jiangwei Xu
  */
-public final class DefaultWebSocketCreator implements WebSocketCreator {
+public final class JettyWebSocketCreator implements WebSocketCreator {
 
-	private DefaultWebSocket socket;
+	private JettyWebSocket socket;
 
-	public DefaultWebSocketCreator() {
-		this.socket = new DefaultWebSocket();
+	public JettyWebSocketCreator(MessageHandler handler) {
+		this.socket = new JettyWebSocket(handler);
 	}
 
 	@Override

@@ -46,6 +46,7 @@ import javax.xml.parsers.ParserConfigurationException;
 import net.cellcloud.Version;
 import net.cellcloud.cell.log.FileLogger;
 import net.cellcloud.common.LogLevel;
+import net.cellcloud.common.LogManager;
 import net.cellcloud.common.Logger;
 import net.cellcloud.core.Nucleus;
 import net.cellcloud.core.NucleusConfig;
@@ -95,14 +96,18 @@ public final class Application {
 
 		this.monitor = new byte[0];
 
-		if (args.console)
+		if (args.console) {
 			this.console = new Console(this);
-		else
+		}
+		else {
 			this.console = null;
+			LogManager.getInstance().addHandle(LogManager.getInstance().createSystemOutHandle());
+		}
 
 		// 使用文件日志
-		if (null != args.logFile)
+		if (null != args.logFile) {
 			FileLogger.getInstance().open("logs" + File.separator + args.logFile);
+		}
 
 		// 配置文件
 		this.configFile = args.confileFile;

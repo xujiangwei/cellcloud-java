@@ -52,7 +52,7 @@ public final class FileLogger implements LogHandle {
 
 	private String lineBreak = Utils.isWindowsOS() ? "\r\n" : "\n";
 
-	private int bufSize = 4096;
+	private int bufSize = 256;
 
 	private FileLogger() {
 		this.outputStream = null;
@@ -67,7 +67,7 @@ public final class FileLogger implements LogHandle {
 	/** 设置日志 Flush 门限。
 	 */
 	public void setBufferSize(int value) {
-		if (value < 0) {
+		if (value < 0 || this.bufSize == value) {
 			return;
 		}
 
@@ -123,7 +123,6 @@ public final class FileLogger implements LogHandle {
 		}
 
 		// 设置日志操作器
-		LogManager.getInstance().removeAllHandles();
 		LogManager.getInstance().addHandle(this);
 	}
 
@@ -133,6 +132,8 @@ public final class FileLogger implements LogHandle {
 		if (null == this.outputStream) {
 			return;
 		}
+
+		LogManager.getInstance().removeHandle(this);
 
 		synchronized (this.stringBuf) {
 			try {

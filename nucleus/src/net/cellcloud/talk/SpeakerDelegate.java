@@ -38,19 +38,19 @@ public interface SpeakerDelegate {
 	 * @param speaker
 	 * @param primitive
 	 */
-	public void onDialogue(Speakable speaker, Primitive primitive);
+	public void onDialogue(Speakable speaker, String celletIdentifier, Primitive primitive);
 
 	/**
 	 * 
 	 * @param speaker
 	 */
-	public void onContacted(Speakable speaker);
+	public void onContacted(Speakable speaker, String celletIdentifier);
 
 	/**
 	 * 
 	 * @param speaker
 	 */
-	public void onQuitted(Speakable speaker);
+	public void onQuitted(Speakable speaker, String celletIdentifier);
 
 	/**
 	 * 

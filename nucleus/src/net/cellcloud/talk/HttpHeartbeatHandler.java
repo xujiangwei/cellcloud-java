@@ -43,6 +43,7 @@ import net.cellcloud.http.HttpRequest;
 import net.cellcloud.http.HttpResponse;
 import net.cellcloud.http.HttpSession;
 import net.cellcloud.talk.stuff.PrimitiveSerializer;
+import net.cellcloud.util.Utils;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -56,6 +57,8 @@ import org.json.JSONObject;
  */
 public final class HttpHeartbeatHandler extends AbstractJSONHandler implements CapsuleHolder {
 
+	protected static final String Identifier = "identifier";
+	protected static final String Primitive = "primitive";
 	protected static final String Primitives = "primitives";
 
 	public HttpHeartbeatHandler() {
@@ -82,6 +85,7 @@ public final class HttpHeartbeatHandler extends AbstractJSONHandler implements C
 			// 获取消息队列
 			Queue<Message> queue = session.getQueue();
 			if (!queue.isEmpty()) {
+				ArrayList<String> identifiers = new ArrayList<String>(queue.size());
 				ArrayList<Primitive> primitives = new ArrayList<Primitive>(queue.size());
 				for (int i = 0, size = queue.size(); i < size; ++i) {
 					// 消息出队
@@ -90,19 +94,20 @@ public final class HttpHeartbeatHandler extends AbstractJSONHandler implements C
 					Packet packet = Packet.unpack(message.get());
 					if (null != packet) {
 						// 将包数据转为输入流进行反序列化
-						byte[] body = packet.getBody();
-						ByteArrayInputStream stream = new ByteArrayInputStream(body);
+						byte[] primData = packet.getSubsegment(0);
+						ByteArrayInputStream stream = new ByteArrayInputStream(primData);
 
 						// 反序列化
 						Primitive prim = new Primitive(Nucleus.getInstance().getTagAsString());
 						prim.read(stream);
 
 						// 添加到数组
+						identifiers.add(Utils.bytes2String(packet.getSubsegment(1)));
 						primitives.add(prim);
 					}
 				}
 
-				JSONArray jsonPrimitives = this.convert(primitives);
+				JSONArray jsonPrimitives = this.convert(identifiers, primitives);
 				JSONObject json = new JSONObject();
 				try {
 					json.put(Primitives, jsonPrimitives);
@@ -127,13 +132,21 @@ public final class HttpHeartbeatHandler extends AbstractJSONHandler implements C
 	 * @param queue
 	 * @return
 	 */
-	private JSONArray convert(ArrayList<Primitive> list) {
+	private JSONArray convert(ArrayList<String> identifiers, ArrayList<Primitive> list) {
 		JSONArray ret = new JSONArray();
 
 		try {
-			for (Primitive prim : list) {
+			for (int i = 0, size = identifiers.size(); i < size; ++i) {
+				String identifier = identifiers.get(i);
+				Primitive prim = list.get(i);
+
+				JSONObject primJson = new JSONObject();
+				PrimitiveSerializer.write(primJson, prim);
+
 				JSONObject json = new JSONObject();
-				PrimitiveSerializer.write(json, prim);
+				json.put(Identifier, identifier);
+				json.put(Primitive, primJson);
+
 				// 写入数组
 				ret.put(json);
 			}

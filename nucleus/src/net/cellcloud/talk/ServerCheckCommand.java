@@ -34,6 +34,7 @@ import net.cellcloud.common.Packet;
 import net.cellcloud.common.Session;
 import net.cellcloud.core.Nucleus;
 import net.cellcloud.talk.TalkService.Certificate;
+import net.cellcloud.util.Utils;
 
 /** Talk check command
  * 
@@ -59,6 +60,8 @@ public final class ServerCheckCommand extends ServerCommand {
 			return;
 		}
 
+		byte[] tag = this.packet.getSubsegment(1);
+
 		boolean checkin = false;
 		String pt = new String(plaintext, Charset.forName("UTF-8"));
 		if (pt.equals(cert.plaintext)) {
@@ -75,7 +78,7 @@ public final class ServerCheckCommand extends ServerCommand {
 
 		if (checkin) {
 			log.append(" checkin.");
-			this.service.acceptSession(this.session);
+			this.service.acceptSession(this.session, Utils.bytes2String(tag));
 
 			// 包格式：成功码|内核标签
 

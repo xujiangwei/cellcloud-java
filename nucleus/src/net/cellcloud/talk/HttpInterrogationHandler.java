@@ -79,6 +79,7 @@ public final class HttpInterrogationHandler extends AbstractJSONHandler implemen
 				byte[] ciphertext = Cryptology.getInstance().simpleEncrypt(cert.plaintext.getBytes(), cert.key.getBytes());
 				JSONObject json = new JSONObject();
 				try {
+					// {"ciphertext": ciphertext, "key": key}
 					json.put(Ciphertext, Cryptology.getInstance().encodeBase64(ciphertext));
 					json.put(Key, cert.key);
 				} catch (JSONException e) {

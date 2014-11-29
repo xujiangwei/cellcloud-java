@@ -27,8 +27,6 @@ THE SOFTWARE.
 package net.cellcloud.talk;
 
 import java.net.InetSocketAddress;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 
 import net.cellcloud.common.Session;
 
@@ -40,16 +38,18 @@ public final class TalkSessionContext {
 
 	private Session session;
 
-	/// Key：内核标签，Value：追踪器。
-	private ConcurrentHashMap<String, TalkTracker> trackers;
+	private String tag;
+
+	private TalkTracker tracker;
 
 	public long tickTime = 0;
 
 	/** 构造函数。
 	 */
-	public TalkSessionContext(Session session) {
+	public TalkSessionContext(Session session, String tag, InetSocketAddress address) {
 		this.session = session;
-		this.trackers = new ConcurrentHashMap<String, TalkTracker>();
+		this.tag = tag;
+		this.tracker = new TalkTracker(tag, address);
 	}
 
 	/** 返回上下文对应的 Session 。
@@ -58,33 +58,49 @@ public final class TalkSessionContext {
 		return this.session;
 	}
 
+	/**
+	 * 返回标签。
+	 * @return
+	 */
+	public String getTag() {
+		return this.tag;
+	}
+
+	/**
+	 * 返回追踪器。
+	 * @return
+	 */
+	public TalkTracker getTracker() {
+		return this.tracker;
+	}
+
 	/** 返回所有 Tracker 。
 	 */
-	public Map<String, TalkTracker> getTrackers() {
-		return this.trackers;
-	}
+//	public Map<String, TalkTracker> getTrackers() {
+//		return this.trackers;
+//	}
 
 	/** 返回指定 Tag 的 Tracker 。
 	 */
-	public TalkTracker getTracker(final String tag) {
-		return this.trackers.get(tag);
-	}
+//	public TalkTracker getTracker(final String tag) {
+//		return this.trackers.get(tag);
+//	}
 
 	/** 添加 Tracker 。
 	 */
-	public TalkTracker addTracker(final String tag, final InetSocketAddress address) {
-		if (this.trackers.containsKey(tag)) {
-			this.trackers.remove(tag);
-		}
-
-		TalkTracker tracker = new TalkTracker(tag, address);
-		this.trackers.put(tag, tracker);
-		return tracker;
-	}
+//	public TalkTracker addTracker(final String tag, final InetSocketAddress address) {
+//		if (this.trackers.containsKey(tag)) {
+//			this.trackers.remove(tag);
+//		}
+//
+//		TalkTracker tracker = new TalkTracker(tag, address);
+//		this.trackers.put(tag, tracker);
+//		return tracker;
+//	}
 
 	/** 删除 Tracker 。
 	 */
-	public void removeTracker(final String tag) {
-		this.trackers.remove(tag);
-	}
+//	public void removeTracker(final String tag) {
+//		this.trackers.remove(tag);
+//	}
 }

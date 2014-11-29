@@ -28,6 +28,8 @@ package net.cellcloud.talk;
 
 import java.net.InetSocketAddress;
 import java.nio.charset.Charset;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeoutException;
 
@@ -63,10 +65,10 @@ public class HttpSpeaker implements Speakable {
 	// TODO HTTP 增加 hang up 接口
 //	private static final String URI_HANGUP = "/talk/hangup";
 
-	private String identifier;
 	private SpeakerDelegate delegate;
 	private volatile int state = SpeakerState.HANGUP;
 
+	private ArrayList<String> identifierList;
 	private InetSocketAddress address;
 	private HttpClient client;
 
@@ -84,8 +86,8 @@ public class HttpSpeaker implements Speakable {
 	/// 最大心跳失败次数
 	private int hbMaxFailed;
 
-	public HttpSpeaker(String identifier, SpeakerDelegate delegate, int heartbeatPeriod) {
-		this.identifier = identifier;
+	public HttpSpeaker(InetSocketAddress address, SpeakerDelegate delegate, int heartbeatPeriod) {
+		this.address = address;
 		this.delegate = delegate;
 		this.client = new HttpClient();
 		this.client.setConnectTimeout(10000);
@@ -93,11 +95,12 @@ public class HttpSpeaker implements Speakable {
 		this.hbPeriod = heartbeatPeriod;
 		this.hbFailedCounts = 0;
 		this.hbMaxFailed = 10;
+		this.identifierList = new ArrayList<String>(2);
 	}
 
 	@Override
-	public String getIdentifier() {
-		return this.identifier;
+	public List<String> getIdentifiers() {
+		return this.identifierList;
 	}
 
 	@Override
@@ -106,7 +109,7 @@ public class HttpSpeaker implements Speakable {
 	}
 
 	@Override
-	public boolean call(InetSocketAddress address) {
+	public boolean call(List<String> identifiers) {
 		if (SpeakerState.CALLING == this.state) {
 			// 正在 Call 返回 false
 			return false;
@@ -114,6 +117,20 @@ public class HttpSpeaker implements Speakable {
 
 		if (this.client.isStarting()) {
 			// 正在启动则返回失败
+			return false;
+		}
+
+		if (null != identifiers) {
+			for (String identifier : identifiers) {
+				if (this.identifierList.contains(identifier)) {
+					continue;
+				}
+	
+				this.identifierList.add(identifier);
+			}
+		}
+
+		if (this.identifierList.isEmpty()) {
 			return false;
 		}
 
@@ -141,12 +158,9 @@ public class HttpSpeaker implements Speakable {
 		// 更新状态
 		this.state = SpeakerState.CALLING;
 
-		// 地址
-		this.address = address;
-
 		// 拼装 URL
 		StringBuilder url = new StringBuilder("http://");
-		url.append(address.getHostString()).append(":").append(address.getPort());
+		url.append(this.address.getHostString()).append(":").append(this.address.getPort());
 		url.append(URI_INTERROGATION);
 
 		try {
@@ -192,12 +206,15 @@ public class HttpSpeaker implements Speakable {
 
 		if (this.state != SpeakerState.HANGUP) {
 			this.state = SpeakerState.HANGUP;
-			this.fireQuitted();
+
+			for (String identifier : this.identifierList) {
+				this.fireQuitted(identifier);
+			}
 		}
 	}
 
 	@Override
-	public boolean speak(Primitive primitive) {
+	public boolean speak(String celletIdentifier, Primitive primitive) {
 		if (this.state != SpeakerState.CALLED
 			|| !this.client.isStarted()) {
 			return false;
@@ -211,6 +228,8 @@ public class HttpSpeaker implements Speakable {
 			JSONObject primJSON = new JSONObject();
 			PrimitiveSerializer.write(primJSON, primitive);
 			json.put(HttpDialogueHandler.Primitive, primJSON);
+			// Cellet
+			json.put(HttpDialogueHandler.Identifier, celletIdentifier);
 		} catch (JSONException e) {
 			Logger.log(this.getClass(), e, LogLevel.ERROR);
 			return false;
@@ -288,7 +307,7 @@ public class HttpSpeaker implements Speakable {
 			this.hbTick = 0;
 
 			if (Logger.isDebugLevel()) {
-				Logger.d(HttpSpeaker.class, "Http heartbeat request : " + this.getIdentifier());
+				Logger.d(HttpSpeaker.class, "Http heartbeat request : " + this.address.getHostString());
 			}
 
 			// 执行心跳
@@ -363,10 +382,14 @@ public class HttpSpeaker implements Speakable {
 		}
 
 		// 解密
-		byte[] plaintext = Cryptology.getInstance().simpleDecrypt(ciphertext, key); 
+		byte[] plaintext = Cryptology.getInstance().simpleDecrypt(ciphertext, key);
+
 		JSONObject data = new JSONObject();
 		try {
+			// 明文
 			data.put(HttpCheckHandler.Plaintext, new String(plaintext, Charset.forName("UTF-8")));
+			// 自 Tag
+			data.put(HttpCheckHandler.Tag, Nucleus.getInstance().getTagAsString());
 		} catch (JSONException e) {
 			Logger.log(HttpSpeaker.class, e, LogLevel.ERROR);
 			return;
@@ -395,7 +418,7 @@ public class HttpSpeaker implements Speakable {
 					TalkService.getInstance().executor.execute(new Runnable() {
 						@Override
 						public void run() {
-							requestCellet();
+							requestCellets();
 						}
 					});
 				}
@@ -407,7 +430,7 @@ public class HttpSpeaker implements Speakable {
 				Logger.e(HttpSpeaker.class, "Request check failed: " + response.getStatus());
 
 				TalkServiceFailure failure = new TalkServiceFailure(TalkFailureCode.CALL_FAILED, this.getClass());
-				failure.setSourceCelletIdentifier(this.identifier);
+				failure.setSourceCelletIdentifiers(this.identifierList);
 				this.fireFailed(failure);
 			}
 		} catch (InterruptedException | TimeoutException | ExecutionException | JSONException e) {
@@ -420,72 +443,78 @@ public class HttpSpeaker implements Speakable {
 	/**
 	 * 请求 Cellet 。
 	 */
-	private void requestCellet() {
+	private void requestCellets() {
 		// 拼装 URL
 		StringBuilder url = new StringBuilder("http://");
 		url.append(this.address.getHostString()).append(":").append(this.address.getPort());
 		url.append(URI_REQUEST);
 
-		JSONObject data = new JSONObject();
-		try {
-			data.put(HttpRequestHandler.Identifier, this.identifier);
-			data.put(HttpRequestHandler.Tag, Nucleus.getInstance().getTagAsString());
-		} catch (JSONException e) {
-			Logger.log(getClass(), e, LogLevel.ERROR);
-		}
-
-		StringContentProvider content = new StringContentProvider(data.toString(), "UTF-8");
-		try {
-			// 发送请求
-			ContentResponse response = this.client.newRequest(url.toString())
-											.method(HttpMethod.POST)
-											.header(HttpHeader.COOKIE, this.cookie)
-											.content(content)
-											.send();
-			if (response.getStatus() == HttpResponse.SC_OK) {
-				StringBuilder buf = new StringBuilder();
-				buf.append("Cellet '");
-				buf.append(this.identifier);
-				buf.append("' has called at ");
-				buf.append(this.address.getAddress().getHostAddress());
-				buf.append(":");
-				buf.append(this.address.getPort());
-				Logger.i(HttpSpeaker.class, buf.toString());
-				buf = null;
-
-				// 变更状态
-				this.state = SpeakerState.CALLED;
-
-				// 回调事件
-				this.fireContacted();
+		for (String identifier : this.identifierList) {
+			JSONObject data = new JSONObject();
+			try {
+				// 请求 identifier
+				data.put(HttpRequestHandler.Identifier, identifier);
+				// 源 Tag
+				data.put(HttpRequestHandler.Tag, Nucleus.getInstance().getTagAsString());
+			} catch (JSONException e) {
+				Logger.log(getClass(), e, LogLevel.ERROR);
 			}
-			else {
-				Logger.e(HttpSpeaker.class, "Request cellet failed: " + response.getStatus());
+
+			StringContentProvider content = new StringContentProvider(data.toString(), "UTF-8");
+			try {
+				// 发送请求
+				ContentResponse response = this.client.newRequest(url.toString())
+												.method(HttpMethod.POST)
+												.header(HttpHeader.COOKIE, this.cookie)
+												.content(content)
+												.send();
+				if (response.getStatus() == HttpResponse.SC_OK) {
+					StringBuilder buf = new StringBuilder();
+					buf.append("Cellet '");
+					buf.append(identifier);
+					buf.append("' has called at ");
+					buf.append(this.address.getAddress().getHostAddress());
+					buf.append(":");
+					buf.append(this.address.getPort());
+					Logger.i(HttpSpeaker.class, buf.toString());
+					buf = null;
+
+					// 变更状态
+					this.state = SpeakerState.CALLED;
+
+					// 回调事件
+					this.fireContacted(identifier);
+				}
+				else {
+					Logger.e(HttpSpeaker.class, "Request cellet failed: " + response.getStatus());
+				}
+			} catch (InterruptedException | TimeoutException | ExecutionException e) {
+				Logger.log(getClass(), e, LogLevel.ERROR);
 			}
-		} catch (InterruptedException | TimeoutException | ExecutionException e) {
-			Logger.log(getClass(), e, LogLevel.ERROR);
 		}
 	}
 
 	private void doDialogue(JSONObject data) throws JSONException {
+		String identifier = data.getString(HttpDialogueHandler.Identifier);
+		JSONObject primData = data.getJSONObject(HttpDialogueHandler.Primitive);
 		// 解析原语
 		Primitive primitive = new Primitive(this.remoteTag);
-		primitive.setCelletIdentifier(this.identifier);
-		PrimitiveSerializer.read(primitive, data);
+		primitive.setCelletIdentifier(identifier);
+		PrimitiveSerializer.read(primitive, primData);
 
-		this.fireDialogue(primitive);
+		this.fireDialogue(identifier, primitive);
 	}
 
-	private void fireDialogue(Primitive primitive) {
-		this.delegate.onDialogue(this, primitive);
+	private void fireDialogue(String celletIdentifier, Primitive primitive) {
+		this.delegate.onDialogue(this, celletIdentifier, primitive);
 	}
 
-	private void fireContacted() {
-		this.delegate.onContacted(this);
+	private void fireContacted(String celletIdentifier) {
+		this.delegate.onContacted(this, celletIdentifier);
 	}
 
-	private void fireQuitted() {
-		this.delegate.onQuitted(this);
+	private void fireQuitted(String celletIdentifier) {
+		this.delegate.onQuitted(this, celletIdentifier);
 	}
 
 	private void fireFailed(TalkServiceFailure failure) {

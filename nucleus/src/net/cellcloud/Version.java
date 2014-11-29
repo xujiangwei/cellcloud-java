@@ -36,7 +36,7 @@ public final class Version {
 	public static final int MAJOR = 1;
 
 	/// 副版本号
-	public static final int MINOR = 0;
+	public static final int MINOR = 1;
 
 	/// 修订号
 	public static final int REVISION = 0;
@@ -44,6 +44,6 @@ public final class Version {
 	/// 版本名
 	public static final String NAME = "Journey";
 
-	/// 调试
+	/// 是否调试模式
 	public static boolean DEBUG = true;
 }

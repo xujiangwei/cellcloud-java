@@ -47,13 +47,13 @@ public interface TalkListener {
 
 	/** 当前访问会话被挂起。
 	 */
-	public void suspended(String identifier, String tag, long timestamp, int mode);
+	public void suspended(String tag, long timestamp, int mode);
 
 	/** 恢复之前被挂起的会话原语。
 	 */
-	public void resumed(String identifier, String tag, long timestamp, Primitive primitive);
+	public void resumed(String tag, long timestamp, Primitive primitive);
 
 	/** 发生错误。
-	*/
-	public void failed(String identifier, String tag, TalkServiceFailure failure);
+	 */
+	public void failed(String tag, TalkServiceFailure failure);
 }

@@ -29,6 +29,7 @@ package net.cellcloud.talk;
 import net.cellcloud.common.Message;
 import net.cellcloud.common.Packet;
 import net.cellcloud.common.Session;
+import net.cellcloud.core.Cellet;
 import net.cellcloud.util.Utils;
 
 /** Talk request cellet command
@@ -61,14 +62,15 @@ public final class ServerRequestCommand extends ServerCommand {
 		TalkTracker tracker = this.service.processRequest(this.session,
 				Utils.bytes2String(talkTag), Utils.bytes2String(identifier));
 
-		if (null != tracker && null != tracker.activeCellet) {
+		if (null != tracker) {
+			Cellet cellet = tracker.getCellet(Utils.bytes2String(identifier));
+
 			// 成功码
 			packet.appendSubsegment(TalkDefinition.SC_SUCCESS);
 			// Cellet识别串
 			packet.appendSubsegment(identifier);
 			// Cellet版本
-			String ret = tracker.activeCellet.getFeature().getVersion().toString();
-			packet.appendSubsegment(Utils.string2Bytes(ret));
+			packet.appendSubsegment(Utils.string2Bytes(cellet.getFeature().getVersion().toString()));
 		}
 		else {
 			// 失败码

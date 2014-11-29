@@ -27,6 +27,9 @@ THE SOFTWARE.
 package net.cellcloud.talk;
 
 import java.net.InetSocketAddress;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Vector;
 
 import net.cellcloud.core.Cellet;
 import net.cellcloud.core.Endpoint;
@@ -44,11 +47,12 @@ public final class TalkTracker {
 	private boolean autoSuspend = false;
 	private long suspendDuration = 5000;
 
-	protected Cellet activeCellet = null;
+	private Vector<Cellet> cellets = null;
 
-	public TalkTracker(String tag, InetSocketAddress address) {
+	protected TalkTracker(String tag, InetSocketAddress address) {
 		this.tag = tag;
 		this.endpoint = new Endpoint(tag, NucleusConfig.Role.CONSUMER, address);
+		this.cellets = new Vector<Cellet>();
 	}
 
 	/** 返回标签。
@@ -90,5 +94,44 @@ public final class TalkTracker {
 			this.suspendDuration = duration;
 
 		return this.suspendDuration;
+	}
+
+	protected void addCellet(Cellet cellet) {
+		if (this.cellets.contains(cellet)) {
+			return;
+		}
+
+		this.cellets.add(cellet);
+	}
+
+	protected void removeCellet(Cellet cellet) {
+		this.cellets.remove(cellet);
+	}
+
+	protected Cellet getCellet(String identifier) {
+		for (Cellet cellet : this.cellets) {
+			if (cellet.getFeature().getIdentifier().equals(identifier)) {
+				return cellet;
+			}
+		}
+		return null;
+	}
+
+	protected boolean hasCellet(Cellet cellet) {
+		return this.cellets.contains(cellet);
+	}
+	protected boolean hasCellet(String identifier) {
+		for (Cellet cellet : this.cellets) {
+			if (cellet.getFeature().getIdentifier().equals(identifier)) {
+				return true;
+			}
+		}
+		return false;
+	}
+
+	protected List<Cellet> getCelletList() {
+		ArrayList<Cellet> list = new ArrayList<Cellet>();
+		list.addAll(this.cellets);
+		return list;
 	}
 }
