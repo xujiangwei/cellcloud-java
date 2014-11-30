@@ -130,6 +130,7 @@ public class Speaker implements Speakable {
 		}
 
 		if (this.identifierList.isEmpty()) {
+			Logger.w(Speaker.class, "Can not find any cellets to call in param 'identifiers'.");
 			return false;
 		}
 

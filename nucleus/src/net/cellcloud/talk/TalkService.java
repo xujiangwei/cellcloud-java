@@ -102,9 +102,11 @@ public final class TalkService implements Service, SpeakerDelegate {
 	private ConcurrentSkipListSet<String> tagList;
 
 	// 私有协议 Speaker
-	protected ConcurrentHashMap<String, Speaker> speakers;
+	private ConcurrentHashMap<String, Speaker> speakerMap;
+	protected ConcurrentSkipListSet<Speaker> speakers;
 	// HTTP 协议 Speaker
-	protected ConcurrentHashMap<String, HttpSpeaker> httpSpeakers;
+	private ConcurrentHashMap<String, HttpSpeaker> httpSpeakerMap;
+	protected ConcurrentSkipListSet<HttpSpeaker> httpSpeakers;
 
 	private TalkServiceDaemon daemon;
 	private ArrayList<TalkListener> listeners;
@@ -233,6 +235,25 @@ public final class TalkService implements Service, SpeakerDelegate {
 			this.tagContexts.clear();
 			this.tagList.clear();
 		}
+
+		if (null != this.speakers) {
+			for (Speaker speaker : this.speakers) {
+				speaker.hangUp();
+			}
+			this.speakers.clear();
+		}
+		if (null != this.httpSpeakers) {
+			for (HttpSpeaker speaker : this.httpSpeakers) {
+				speaker.hangUp();
+			}
+			this.httpSpeakers.clear();
+		}
+		if (null != this.speakerMap) {
+			this.speakerMap.clear();
+		}
+		if (null != this.httpSpeakerMap) {
+			this.httpSpeakerMap.clear();
+		}
 	}
 
 	/** 设置服务端口。
@@ -337,29 +358,6 @@ public final class TalkService implements Service, SpeakerDelegate {
 			this.daemon = null;
 		}
 	}
-
-	///@Server
-	/** 查找指定 Cellet 里的标签对应的服务追踪器。
-	 */
-//	public TalkTracker findTracker(String tag) {
-//		Vector<TalkSessionContext> list = this.tagSessionsMap.get(tag);
-//		if (null == list) {
-//			return null;
-//		}
-//
-//		for (TalkSessionContext context : list) {
-//			TalkTracker tt = context.getTracker(tag);
-//			if (null == tt) {
-//				continue;
-//			}
-//
-//			if (tt.activeCellet == cellet) {
-//				return tt;
-//			}
-//		}
-//
-//		return null;
-//	}
 
 	/** 添加会话监听器。
 	 */
@@ -519,30 +517,33 @@ public final class TalkService implements Service, SpeakerDelegate {
 	 * 
 	 * @note Client
 	 */
-	public boolean call(List<String> identifiers, InetSocketAddress address, TalkCapacity capacity, boolean http) {
+	public synchronized boolean call(List<String> identifiers, InetSocketAddress address, TalkCapacity capacity, boolean http) {
 		if (!http) {
 			// 私有协议 Speaker
 
-			if (null == this.speakers)
-				this.speakers = new ConcurrentHashMap<String, Speaker>();
+			if (null == this.speakers) {
+				this.speakers = new ConcurrentSkipListSet<Speaker>();
+				this.speakerMap = new ConcurrentHashMap<String, Speaker>();
+			}
 
 			for (String identifier : identifiers) {
-				if (this.speakers.containsKey(identifier)) {
+				if (this.speakerMap.containsKey(identifier)) {
 					// 列表里已经有对应的 Cellet，不允许再次 Call
 					return false;
 				}
 			}
 
+			// 创建新的 Speaker
 			Speaker speaker = new Speaker(address, this, this.block, capacity);
+			this.speakers.add(speaker);
 
 			// FIXME 28/11/14 原先在 call 检查 Speaker 是否是 Lost 状态，如果 lost 是 true，则置为 false
+			// 复位 Speaker 参数
+			//speaker.reset();
 
 			for (String identifier : identifiers) {
-				this.speakers.put(identifier, speaker);
+				this.speakerMap.put(identifier, speaker);
 			}
-
-			// 复位 Speaker 参数
-			speaker.reset();
 
 			// Call
 			return speaker.call(identifiers);
@@ -551,20 +552,24 @@ public final class TalkService implements Service, SpeakerDelegate {
 			// HTTP 协议 Speaker
 
 			// TODO
-			if (null == this.httpSpeakers)
-				this.httpSpeakers = new ConcurrentHashMap<String, HttpSpeaker>();
+			if (null == this.httpSpeakers) {
+				this.httpSpeakers= new ConcurrentSkipListSet<HttpSpeaker>();
+				this.httpSpeakerMap = new ConcurrentHashMap<String, HttpSpeaker>();
+			}
 
 			for (String identifier : identifiers) {
-				if (this.httpSpeakers.containsKey(identifier)) {
+				if (this.httpSpeakerMap.containsKey(identifier)) {
 					// 列表里已经有对应的 Cellet，不允许再次 Call
 					return false;
 				}
 			}
 
-			HttpSpeaker speaker = new HttpSpeaker(address, this, 2);
+			// 创建新的 HttpSpeaker
+			HttpSpeaker speaker = new HttpSpeaker(address, this, 30);
+			this.httpSpeakers.add(speaker);
 
 			for (String identifier : identifiers) {
-				this.httpSpeakers.put(identifier, speaker);
+				this.httpSpeakerMap.put(identifier, speaker);
 			}
 
 			// Call
@@ -577,10 +582,10 @@ public final class TalkService implements Service, SpeakerDelegate {
 	 * @note Client
 	 */
 	public void suspend(final String identifier, final long duration) {
-		if (null == this.speakers || !this.speakers.containsKey(identifier))
+		if (null == this.speakerMap || !this.speakerMap.containsKey(identifier))
 			return;
 
-		Speaker speaker = this.speakers.get(identifier);
+		Speaker speaker = this.speakerMap.get(identifier);
 		if (null != speaker) {
 			speaker.suspend(duration);
 		}
@@ -591,10 +596,10 @@ public final class TalkService implements Service, SpeakerDelegate {
 	 * @note Client
 	 */
 	public void resume(final String identifier, final long startTime) {
-		if (null == this.speakers || !this.speakers.containsKey(identifier))
+		if (null == this.speakerMap || !this.speakerMap.containsKey(identifier))
 			return;
 
-		Speaker speaker = this.speakers.get(identifier);
+		Speaker speaker = this.speakerMap.get(identifier);
 		if (null != speaker) {
 			speaker.resume(startTime);
 		}
@@ -605,16 +610,26 @@ public final class TalkService implements Service, SpeakerDelegate {
 	 * @note Client
 	 */
 	public void hangUp(String identifier) {
-		if (null != this.speakers && this.speakers.containsKey(identifier)) {
-			Speaker speaker = this.speakers.get(identifier);
+		if (null != this.speakerMap && this.speakerMap.containsKey(identifier)) {
+			Speaker speaker = this.speakerMap.get(identifier);
 			speaker.hangUp();
-			this.speakers.remove(identifier);
+
+			for (String celletIdentifier : speaker.getIdentifiers()) {
+				this.speakerMap.remove(celletIdentifier);
+			}
+
+			this.speakers.remove(speaker);
 		}
 
-		if (null != this.httpSpeakers && this.httpSpeakers.containsKey(identifier)) {
-			HttpSpeaker hs = this.httpSpeakers.get(identifier);
-			hs.hangUp();
-			this.httpSpeakers.remove(identifier);
+		if (null != this.httpSpeakerMap && this.httpSpeakerMap.containsKey(identifier)) {
+			HttpSpeaker speaker = this.httpSpeakerMap.get(identifier);
+			speaker.hangUp();
+
+			for (String celletIdentifier : speaker.getIdentifiers()) {
+				this.httpSpeakerMap.remove(celletIdentifier);
+			}
+
+			this.httpSpeakers.remove(speaker);
 		}
 	}
 
@@ -623,19 +638,19 @@ public final class TalkService implements Service, SpeakerDelegate {
 	 * @note Client
 	 */
 	public boolean talk(final String identifier, final Primitive primitive) {
-		if (null != this.speakers) {
-			Speaker speaker = this.speakers.get(identifier);
+		if (null != this.speakerMap) {
+			Speaker speaker = this.speakerMap.get(identifier);
 			if (null != speaker) {
 				// Speak
 				return speaker.speak(identifier, primitive);
 			}
 		}
 
-		if (null != this.httpSpeakers) {
-			HttpSpeaker hs = this.httpSpeakers.get(identifier);
-			if (null != hs) {
+		if (null != this.httpSpeakerMap) {
+			HttpSpeaker speaker = this.httpSpeakerMap.get(identifier);
+			if (null != speaker) {
 				// Speak
-				return hs.speak(identifier, primitive);
+				return speaker.speak(identifier, primitive);
 			}
 		}
 
@@ -647,7 +662,7 @@ public final class TalkService implements Service, SpeakerDelegate {
 	 * @note Client
 	 */
 	public boolean talk(final String identifier, final Dialect dialect) {
-		if (null == this.speakers && null == this.httpSpeakers)
+		if (null == this.speakerMap && null == this.httpSpeakerMap)
 			return false;
 
 		Primitive primitive = dialect.translate();
@@ -663,17 +678,17 @@ public final class TalkService implements Service, SpeakerDelegate {
 	 * @note Client
 	 */
 	public boolean isCalled(final String identifier) {
-		if (null != this.speakers) {
-			Speaker speaker = this.speakers.get(identifier);
+		if (null != this.speakerMap) {
+			Speaker speaker = this.speakerMap.get(identifier);
 			if (null != speaker) {
 				return speaker.isCalled();
 			}
 		}
 
-		if (null != this.httpSpeakers) {
-			HttpSpeaker hs = this.httpSpeakers.get(identifier);
-			if (null != hs) {
-				return hs.isCalled();
+		if (null != this.httpSpeakerMap) {
+			HttpSpeaker speaker = this.httpSpeakerMap.get(identifier);
+			if (null != speaker) {
+				return speaker.isCalled();
 			}
 		}
 
@@ -684,10 +699,10 @@ public final class TalkService implements Service, SpeakerDelegate {
 	 * @note Client
 	 */
 	public boolean isSuspended(final String identifier) {
-		if (null == this.speakers)
+		if (null == this.speakerMap)
 			return false;
 
-		Speaker speaker = this.speakers.get(identifier);
+		Speaker speaker = this.speakerMap.get(identifier);
 		if (null != speaker) {
 			return speaker.isSuspended();
 		}

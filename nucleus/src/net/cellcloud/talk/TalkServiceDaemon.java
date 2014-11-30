@@ -62,7 +62,6 @@ public final class TalkServiceDaemon extends Thread {
 		TalkService service = TalkService.getInstance();
 
 		int heartbeatCount = 0;
-		int checkSuspendedCount = 0;
 
 		do {
 			// 当前时间
@@ -70,12 +69,15 @@ public final class TalkServiceDaemon extends Thread {
 
 			// 心跳计数
 			++heartbeatCount;
+			if (heartbeatCount >= 6000) {
+				heartbeatCount = 0;
+			}
 
 			// HTTP 客户端管理
 			if (heartbeatCount % 5 == 0) {
 				// 每 5 秒一次计数
 				if (null != service.httpSpeakers) {
-					for (HttpSpeaker speaker : service.httpSpeakers.values()) {
+					for (HttpSpeaker speaker : service.httpSpeakers) {
 						speaker.tick();
 					}
 				}
@@ -86,20 +88,18 @@ public final class TalkServiceDaemon extends Thread {
 				service.checkHttpSessionHeartbeat();
 			}
 
-			if (heartbeatCount >= 120) {
+			if (heartbeatCount % 120 == 0) {
 				// 120 秒一次心跳
 				if (null != service.speakers) {
-					for (Speaker speaker : service.speakers.values()) {
+					for (Speaker speaker : service.speakers) {
 						speaker.heartbeat();
 					}
 				}
-
-				heartbeatCount = 0;
 			}
 
 			// 检查丢失连接的 Speaker
 			if (null != service.speakers) {
-				Iterator<Speaker> iter = service.speakers.values().iterator();
+				Iterator<Speaker> iter = service.speakers.iterator();
 				while (iter.hasNext()) {
 					Speaker speaker = iter.next();
 					if (speaker.lost
@@ -147,11 +147,9 @@ public final class TalkServiceDaemon extends Thread {
 			service.processUnidentifiedSessions(this.tickTime);
 
 			// 1 分钟检查一次挂起状态下的会话器是否失效
-			++checkSuspendedCount;
-			if (checkSuspendedCount >= 60) {
+			if (heartbeatCount % 60 == 0) {
 				// 检查并删除挂起的会话
 				service.checkAndDeleteSuspendedTalk();
-				checkSuspendedCount = 0;
 			}
 
 			// 休眠 1 秒
@@ -173,7 +171,7 @@ public final class TalkServiceDaemon extends Thread {
 
 		// 关闭所有 Speaker
 		if (null != service.speakers) {
-			Iterator<Speaker> iter = service.speakers.values().iterator();
+			Iterator<Speaker> iter = service.speakers.iterator();
 			while (iter.hasNext()) {
 				Speaker speaker = iter.next();
 				speaker.hangUp();
@@ -181,7 +179,7 @@ public final class TalkServiceDaemon extends Thread {
 			service.speakers.clear();
 		}
 		if (null != service.httpSpeakers) {
-			Iterator<HttpSpeaker> iter = service.httpSpeakers.values().iterator();
+			Iterator<HttpSpeaker> iter = service.httpSpeakers.iterator();
 			while (iter.hasNext()) {
 				HttpSpeaker speaker = iter.next();
 				speaker.hangUp();

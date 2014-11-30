@@ -73,6 +73,13 @@ public final class Application {
 
 	public Application(Arguments args) {
 		StringBuilder buf = new StringBuilder();
+		buf.append("Cell Application Server version: ");
+		buf.append(VersionInfo.MAJOR);
+		buf.append(".");
+		buf.append(VersionInfo.MINOR);
+		buf.append(".");
+		buf.append(VersionInfo.REVISION);
+		buf.append("\n");
 		buf.append("Cell Cloud ");
 		buf.append(Version.MAJOR);
 		buf.append(".");
@@ -83,6 +90,7 @@ public final class Application {
 		buf.append(Version.NAME);
 		buf.append(")\n");
 
+		buf.append("-----------------------------------------------------------------------\n");
 		buf.append(" ___ ___ __  __     ___ __  ___ _ _ ___\n");
 		buf.append("| __| __| | | |    | __| | |   | | | _ \\\n");
 		buf.append("| |_| _|| |_| |_   | |_| |_| | | | | | |\n");
@@ -272,6 +280,11 @@ public final class Application {
 						nl = elTalk.getElementsByTagName("block");
 						if (nl.getLength() > 0) {
 							config.talk.block = Integer.parseInt(nl.item(0).getTextContent());
+						}
+						// connections
+						nl = elTalk.getElementsByTagName("connections");
+						if (nl.getLength() > 0) {
+							config.talk.maxConnections = Integer.parseInt(nl.item(0).getTextContent());
 						}
 						// httpd
 						nl = elTalk.getElementsByTagName("httpd");
