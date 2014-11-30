@@ -61,7 +61,7 @@ public final class HttpService implements Service {
 
 	private Server wsServer = null;
 	private int webSocketPort = 7777;
-	private MessageHandler wsMessagehandler;
+	private JettyWebSocket webSocket;
 
 	/**
 	 * 构造函数。
@@ -160,8 +160,7 @@ public final class HttpService implements Service {
 
 			this.wsServer.addConnector(connector);
 
-			JettyWebSocketHandler wsh = new JettyWebSocketHandler();
-			wsh.setMessageHandler(this.wsMessagehandler);
+			JettyWebSocketHandler wsh = new JettyWebSocketHandler(this.webSocket);
 			this.wsServer.setHandler(wsh);
 
 			ResourceHandler rHandler = new ResourceHandler();
@@ -240,15 +239,15 @@ public final class HttpService implements Service {
 	 * 激活 WebSocket 服务。
 	 * @param port 指定 WebSocket 接口。
 	 */
-	public boolean activeWebSocket(int port, MessageHandler handler) {
+	public WebSocketManager activeWebSocket(int port, MessageHandler handler) {
 		if (port <= 80) {
-			return false;
+			return null;
 		}
 
 		this.wsServer = new Server();
 		this.webSocketPort = port;
-		this.wsMessagehandler = handler;
-		return true;
+		this.webSocket = new JettyWebSocket(handler);
+		return this.webSocket;
 	}
 
 	/**
@@ -263,6 +262,7 @@ public final class HttpService implements Service {
 			}
 
 			this.wsServer = null;
+			this.webSocket = null;
 		}
 	}
 }

@@ -34,6 +34,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Queue;
 import java.util.Set;
+import java.util.Vector;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentSkipListSet;
 import java.util.concurrent.ExecutorService;
@@ -57,11 +58,16 @@ import net.cellcloud.http.CookieSessionManager;
 import net.cellcloud.http.HttpCapsule;
 import net.cellcloud.http.HttpService;
 import net.cellcloud.http.HttpSession;
+import net.cellcloud.http.WebSocketManager;
+import net.cellcloud.http.WebSocketSession;
 import net.cellcloud.talk.dialect.ActionDialectFactory;
 import net.cellcloud.talk.dialect.Dialect;
 import net.cellcloud.talk.dialect.DialectEnumerator;
 import net.cellcloud.util.CachedQueueExecutor;
 import net.cellcloud.util.Utils;
+
+import org.json.JSONException;
+import org.json.JSONObject;
 
 /** 会话服务。
  *
@@ -82,6 +88,8 @@ public final class TalkService implements Service, SpeakerDelegate {
 	private CookieSessionManager httpSessionManager;
 	private HttpSessionListener httpSessionListener;
 	private long httpSessionTimeout;
+
+	private WebSocketManager webSocketManager;
 
 	private NonblockingAcceptor acceptor;
 	private NucleusContext nucleusContext;
@@ -104,10 +112,10 @@ public final class TalkService implements Service, SpeakerDelegate {
 
 	// 私有协议 Speaker
 	private ConcurrentHashMap<String, Speaker> speakerMap;
-	protected ConcurrentSkipListSet<Speaker> speakers;
+	protected Vector<Speaker> speakers;
 	// HTTP 协议 Speaker
 	private ConcurrentHashMap<String, HttpSpeaker> httpSpeakerMap;
-	protected ConcurrentSkipListSet<HttpSpeaker> httpSpeakers;
+	protected Vector<HttpSpeaker> httpSpeakers;
 
 	private TalkServiceDaemon daemon;
 	private ArrayList<TalkListener> listeners;
@@ -523,7 +531,7 @@ public final class TalkService implements Service, SpeakerDelegate {
 			// 私有协议 Speaker
 
 			if (null == this.speakers) {
-				this.speakers = new ConcurrentSkipListSet<Speaker>();
+				this.speakers = new Vector<Speaker>();
 				this.speakerMap = new ConcurrentHashMap<String, Speaker>();
 			}
 
@@ -554,7 +562,7 @@ public final class TalkService implements Service, SpeakerDelegate {
 
 			// TODO
 			if (null == this.httpSpeakers) {
-				this.httpSpeakers= new ConcurrentSkipListSet<HttpSpeaker>();
+				this.httpSpeakers= new Vector<HttpSpeaker>();
 				this.httpSpeakerMap = new ConcurrentHashMap<String, HttpSpeaker>();
 			}
 
@@ -719,7 +727,7 @@ public final class TalkService implements Service, SpeakerDelegate {
 			return;
 		}
 
-		HttpService.getInstance().activeWebSocket(this.httpPort + 1, new WebSocketMessageHandler(this));
+		this.webSocketManager = HttpService.getInstance().activeWebSocket(this.httpPort + 1, new WebSocketMessageHandler(this));
 
 		// 创建 Session 管理器
 		this.httpSessionManager = new CookieSessionManager();
@@ -860,7 +868,7 @@ public final class TalkService implements Service, SpeakerDelegate {
 
 	/** 开启 Session 。
 	 */
-	protected Certificate openSession(Session session) {
+	protected synchronized Certificate openSession(Session session) {
 		Long sid = session.getId();
 		if (this.unidentifiedSessions.containsKey(sid)) {
 			return this.unidentifiedSessions.get(sid);
@@ -1015,8 +1023,12 @@ public final class TalkService implements Service, SpeakerDelegate {
 		this.unidentifiedSessions.remove(sid);
 		this.sessionContexts.remove(session);
 
-		if (!(session instanceof HttpSession)) {
+		if (!(session instanceof HttpSession)
+			&& !(session instanceof WebSocketSession)) {
 			this.acceptor.close(session);
+		}
+		else if (session instanceof WebSocketSession) {
+			this.webSocketManager.close((WebSocketSession)session);
 		}
 	}
 
@@ -1273,6 +1285,10 @@ public final class TalkService implements Service, SpeakerDelegate {
 					// 删除 HTTP 的 Session
 					this.httpSessionManager.unmanage((HttpSession)session);
 				}
+				else if (session instanceof WebSocketSession) {
+					// 删除 WebSocket 的 Session
+					this.webSocketManager.close((WebSocketSession)session);
+				}
 				else {
 					// 关闭私有协议的 Session
 					this.acceptor.close(session);
@@ -1405,6 +1421,28 @@ public final class TalkService implements Service, SpeakerDelegate {
 	private void deliverChecking(Session session, String text, String key) {
 		// 如果是来自 HTTP 协议的 Session 则直接返回
 		if (session instanceof HttpSession) {
+			return;
+		}
+
+		// 是否是 WebSocket 的 Session
+		if (session instanceof WebSocketSession) {
+			byte[] ciphertext = Cryptology.getInstance().simpleEncrypt(text.getBytes(), key.getBytes());
+			JSONObject data = new JSONObject();
+			try {
+				JSONObject packet = new JSONObject();
+				// {"ciphertext": ciphertext, "key": key}
+				packet.put(HttpInterrogationHandler.Ciphertext, Cryptology.getInstance().encodeBase64(ciphertext));
+				packet.put(HttpInterrogationHandler.Key, key);
+
+				data.put(WebSocketMessageHandler.TALK_PACKET_TAG, WebSocketMessageHandler.TPT_INTERROGATE);
+				data.put(WebSocketMessageHandler.TALK_PACKET, packet);
+			} catch (JSONException e) {
+				Logger.log(TalkService.class, e, LogLevel.ERROR);
+			}
+
+			Message message = new Message(data.toString());
+			this.webSocketManager.write((WebSocketSession)session, message);
+			message = null;
 			return;
 		}
 

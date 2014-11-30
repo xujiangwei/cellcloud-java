@@ -26,9 +26,6 @@ THE SOFTWARE.
 
 package net.cellcloud.http;
 
-import net.cellcloud.common.MessageHandler;
-
-import org.eclipse.jetty.io.ByteBufferPool;
 import org.eclipse.jetty.websocket.server.WebSocketHandler;
 import org.eclipse.jetty.websocket.servlet.WebSocketServletFactory;
 
@@ -38,24 +35,17 @@ import org.eclipse.jetty.websocket.servlet.WebSocketServletFactory;
  */
 public final class JettyWebSocketHandler extends WebSocketHandler {
 
-	private MessageHandler handler;
+	private JettyWebSocket webSocket;
 
-	public JettyWebSocketHandler() {
+	public JettyWebSocketHandler(JettyWebSocket webSocket) {
 		super();
-	}
-
-	public JettyWebSocketHandler(ByteBufferPool bufferPool) {
-		super(bufferPool);
+		this.webSocket = webSocket;
 	}
 
 	@Override
 	public void configure(WebSocketServletFactory factory) {
 		// 超期时间 5 分钟
 		factory.getPolicy().setIdleTimeout(5 * 60 * 1000);
-		factory.setCreator(new JettyWebSocketCreator(this.handler));
-	}
-
-	public void setMessageHandler(MessageHandler handler) {
-		this.handler = handler;
+		factory.setCreator(new JettyWebSocketCreator(this.webSocket));
 	}
 }

@@ -26,32 +26,25 @@ THE SOFTWARE.
 
 package net.cellcloud.http;
 
-import org.eclipse.jetty.websocket.servlet.ServletUpgradeRequest;
-import org.eclipse.jetty.websocket.servlet.ServletUpgradeResponse;
-import org.eclipse.jetty.websocket.servlet.WebSocketCreator;
+import net.cellcloud.common.Message;
 
 /**
  * 
  * @author Jiangwei Xu
+ *
  */
-public final class JettyWebSocketCreator implements WebSocketCreator {
+public interface WebSocketManager {
 
-	private JettyWebSocket socket;
+	/**
+	 * 
+	 * @param session
+	 * @param message
+	 */
+	public void write(WebSocketSession session, Message message);
 
-	public JettyWebSocketCreator(JettyWebSocket socket) {
-		this.socket = socket;
-	}
-
-	@Override
-	public Object createWebSocket(ServletUpgradeRequest request,
-			ServletUpgradeResponse response) {
-		for (String protocol : request.getSubProtocols()) {
-			if (protocol.equals("cell")) {
-				response.setAcceptedSubProtocol(protocol);
-				return this.socket;
-			}
-		}
-
-		return null;
-	}
+	/**
+	 * 关闭指定的 session 。
+	 * @param session
+	 */
+	public void close(WebSocketSession session);
 }

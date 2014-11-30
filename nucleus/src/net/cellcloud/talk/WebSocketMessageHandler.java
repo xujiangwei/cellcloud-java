@@ -35,10 +35,21 @@ import net.cellcloud.common.Session;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+/**
+ * 
+ * @author Jiangwei Xu
+ *
+ */
 public class WebSocketMessageHandler implements MessageHandler {
 
 	protected final static String TALK_PACKET_TAG = "tpt";
-	protected final static String TPT_INTERROGATE = "int";
+	protected final static String TALK_PACKET = "packet";
+
+	protected final static String TPT_INTERROGATE = "interrogate";
+	protected final static String TPT_CHECK = "check";
+	protected final static String TPT_REQUEST = "request";
+	protected final static String TPT_DIALOGUE = "dialogue";
+	protected final static String TPT_HEARTBEAT = "hb";
 
 	private TalkService service;
 
@@ -58,12 +69,12 @@ public class WebSocketMessageHandler implements MessageHandler {
 
 	@Override
 	public void sessionOpened(Session session) {
-		// Nothing
+		this.service.openSession(session);
 	}
 
 	@Override
 	public void sessionClosed(Session session) {
-		// Nothing
+		this.service.closeSession(session);
 	}
 
 	@Override
@@ -72,7 +83,21 @@ public class WebSocketMessageHandler implements MessageHandler {
 			JSONObject data = new JSONObject(message.getAsString());
 			String packetTag = data.getString(TALK_PACKET_TAG);
 			if (null != packetTag) {
-				
+				if (packetTag.equals(TPT_DIALOGUE)) {
+					
+				}
+				else if (packetTag.equals(TPT_HEARTBEAT)) {
+					
+				}
+				else if (packetTag.equals(TPT_REQUEST)) {
+					
+				}
+				else if (packetTag.equals(TPT_CHECK)) {
+					this.processCheck(data.getJSONObject(TALK_PACKET), session);
+				}
+				else {
+					Logger.w(this.getClass(), "Unknown TPT: " + packetTag);
+				}
 			}
 			else {
 				Logger.w(this.getClass(), "No talk packet tag in web socket stream");
@@ -90,10 +115,6 @@ public class WebSocketMessageHandler implements MessageHandler {
 	@Override
 	public void errorOccurred(int errorCode, Session session) {
 		// Nothing
-	}
-
-	private void processInterrogate(JSONObject data, Session session) {
-		
 	}
 
 	private void processCheck(JSONObject data, Session session) {
