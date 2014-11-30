@@ -48,6 +48,7 @@ import net.cellcloud.common.Service;
 import net.cellcloud.common.Session;
 import net.cellcloud.core.Cellet;
 import net.cellcloud.core.CelletSandbox;
+import net.cellcloud.core.Endpoint;
 import net.cellcloud.core.Nucleus;
 import net.cellcloud.core.NucleusContext;
 import net.cellcloud.exception.InvalidException;
@@ -841,6 +842,20 @@ public final class TalkService implements Service, SpeakerDelegate {
 				listener.failed(tag, failure);
 			}
 		}
+	}
+
+	/**
+	 * 查找指定的 Endpoint 。
+	 * @param remoteTag
+	 * @return
+	 */
+	public Endpoint findEndpoint(String remoteTag) {
+		TalkSessionContext ctx = this.tagContexts.get(remoteTag);
+		if (null != ctx) {
+			return ctx.getTracker().getEndpoint();
+		}
+
+		return null;
 	}
 
 	/** 开启 Session 。
