@@ -63,6 +63,7 @@ import net.cellcloud.http.WebSocketSession;
 import net.cellcloud.talk.dialect.ActionDialectFactory;
 import net.cellcloud.talk.dialect.Dialect;
 import net.cellcloud.talk.dialect.DialectEnumerator;
+import net.cellcloud.talk.stuff.PrimitiveSerializer;
 import net.cellcloud.util.CachedQueueExecutor;
 import net.cellcloud.util.Utils;
 
@@ -451,7 +452,7 @@ public final class TalkService implements Service, SpeakerDelegate {
 		synchronized (context) {
 			if (context.getTracker().hasCellet(cellet)) {
 				Session session = context.getSession();
-				message = this.packetDialogue(cellet, primitive);
+				message = this.packetDialogue(cellet, primitive, (session instanceof WebSocketSession));
 				if (null != message) {
 					session.write(message);
 				}
@@ -1484,20 +1485,43 @@ public final class TalkService implements Service, SpeakerDelegate {
 
 	/** 打包对话原语。
 	 */
-	private Message packetDialogue(Cellet cellet, Primitive primitive) {
-		// 包格式：原语序列
+	private Message packetDialogue(Cellet cellet, Primitive primitive, boolean jsonFormat) {
+		Message message = null;
 
-		// 序列化原语
-		ByteArrayOutputStream stream = primitive.write();
+		if (jsonFormat) {
+			try {
+				JSONObject primJson = new JSONObject();
+				PrimitiveSerializer.write(primJson, primitive);
+				JSONObject packet = new JSONObject();
+				packet.put(HttpDialogueHandler.Primitive, primJson);
+				packet.put(HttpDialogueHandler.Identifier, cellet.getFeature().getIdentifier());
 
-		// 封装数据包
-		Packet packet = new Packet(TalkDefinition.TPT_DIALOGUE, 99, 1, 0);
-		packet.appendSubsegment(stream.toByteArray());
-		packet.appendSubsegment(Utils.string2Bytes(cellet.getFeature().getIdentifier()));
+				JSONObject data = new JSONObject();
+				data.put(WebSocketMessageHandler.TALK_PACKET_TAG, WebSocketMessageHandler.TPT_DIALOGUE);
+				data.put(WebSocketMessageHandler.TALK_PACKET, packet);
 
-		// 打包数据
-		byte[] data = Packet.pack(packet);
-		Message message = new Message(data);
+				// 创建 message
+				message = new Message(data.toString());
+			} catch (JSONException e) {
+				Logger.log(this.getClass(), e, LogLevel.ERROR);
+			}
+		}
+		else {
+			// 包格式：原语序列|Cellet
+
+			// 序列化原语
+			ByteArrayOutputStream stream = primitive.write();
+
+			// 封装数据包
+			Packet packet = new Packet(TalkDefinition.TPT_DIALOGUE, 99, 1, 0);
+			packet.appendSubsegment(stream.toByteArray());
+			packet.appendSubsegment(Utils.string2Bytes(cellet.getFeature().getIdentifier()));
+
+			// 打包数据
+			byte[] data = Packet.pack(packet);
+			message = new Message(data);
+		}
+
 		return message;
 	}
 

@@ -29,6 +29,8 @@ package net.cellcloud.http;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 
+import net.cellcloud.common.LogLevel;
+import net.cellcloud.common.Logger;
 import net.cellcloud.common.Message;
 import net.cellcloud.common.Session;
 
@@ -44,9 +46,19 @@ public class WebSocketSession extends Session {
 
 	private org.eclipse.jetty.websocket.api.Session rawSession;
 
+	private long heartbeat;
+
 	public WebSocketSession(InetSocketAddress address, org.eclipse.jetty.websocket.api.Session session) {
 		super(null, address);
 		this.rawSession = session;
+	}
+
+	public long getHeartbeat() {
+		return this.heartbeat;
+	}
+
+	public void heartbeat() {
+		this.heartbeat = System.currentTimeMillis();
 	}
 
 	@Override
@@ -57,7 +69,7 @@ public class WebSocketSession extends Session {
 			try {
 				remote.flush();
 			} catch (IOException e) {
-				e.printStackTrace();
+				Logger.log(this.getClass(), e, LogLevel.ERROR);
 			}
 		}
 	}

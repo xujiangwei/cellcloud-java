@@ -52,6 +52,7 @@ public final class HttpCheckHandler extends AbstractJSONHandler implements Capsu
 
 	protected static final String Plaintext = "plaintext";
 	protected static final String Tag = "tag";
+	protected static final String Error = "error";
 
 	private TalkService talkService;
 
