@@ -265,7 +265,7 @@ public final class ClusterController implements Service, Observer {
 			ClusterConnector connector = this.getOrCreateConnector(address, hash);
 
 			// 连接器执行发现协议
-			if (!connector.doDiscover(this.network.getBindAddress().getHostName(), this.network.getPort(), this.root)) {
+			if (!connector.doDiscover(this.network.getBindAddress().getAddress().getHostAddress(), this.network.getPort(), this.root)) {
 				Logger.i(this.getClass(), new StringBuilder("Discovering error: ")
 					.append(address.getAddress().getHostAddress()).append(":").append(address.getPort()).toString());
 
@@ -360,7 +360,7 @@ public final class ClusterController implements Service, Observer {
 			if (this.root.containsOwnVirtualNode(hash)) {
 				if (Logger.isDebugLevel()) {
 					Logger.d(this.getClass(), new StringBuilder("Hit target hash: ").append(hash).append(" at ")
-							.append(this.root.getCoordinate().getAddress().getHostName())
+							.append(this.root.getCoordinate().getAddress().getAddress().getHostAddress())
 							.append(this.root.getCoordinate().getAddress().getPort()).toString());
 				}
 
@@ -375,7 +375,7 @@ public final class ClusterController implements Service, Observer {
 			else {
 				if (Logger.isDebugLevel()) {
 					Logger.d(this.getClass(), new StringBuilder("Don't hit target hash: ").append(hash).append(" at ")
-							.append(this.root.getCoordinate().getAddress().getHostName())
+							.append(this.root.getCoordinate().getAddress().getAddress().getHostAddress())
 							.append(this.root.getCoordinate().getAddress().getPort()).toString());
 				}
 

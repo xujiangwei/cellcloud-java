@@ -118,7 +118,7 @@ public final class JettyWebSocket implements WebSocketManager {
 			return;
 		}
 
-		InetSocketAddress address = new InetSocketAddress(session.getRemoteAddress().getHostName()
+		InetSocketAddress address = new InetSocketAddress(session.getRemoteAddress().getAddress().getHostAddress()
 				, session.getRemoteAddress().getPort());
 		WebSocketSession wsSession = new WebSocketSession(address, session);
 
