@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<classpath>
+	<classpathentry kind="src" path="src"/>
+	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER/org.eclipse.jdt.internal.debug.ui.launcher.StandardVMType/JavaSE-1.7"/>
+	<classpathentry kind="lib" path="/Users/MD318/Repositories/cellcloud-java/libs/mariadb-java-client-1.1.2.jar"/>
+	<classpathentry kind="lib" path="/Users/MD318/Repositories/cellcloud-java/libs/mongo-2.9.3.jar"/>
+	<classpathentry kind="lib" path="/Users/MD318/Repositories/cellcloud-java/libs/sqljet-1.1.5.jar"/>
+	<classpathentry kind="lib" path="/Users/MD318/Repositories/cellcloud-java/libs/ehcache-2.8.3.jar"/>
+	<classpathentry kind="lib" path="/Users/MD318/Repositories/cellcloud-java/libs/jetty-annotations-9.2.5.v20141112.jar"/>
+	<classpathentry kind="lib" path="/Users/MD318/Repositories/cellcloud-java/libs/jetty-client-9.2.5.v20141112.jar"/>
+	<classpathentry kind="lib" path="/Users/MD318/Repositories/cellcloud-java/libs/jetty-continuation-9.2.5.v20141112.jar"/>
+	<classpathentry kind="lib" path="/Users/MD318/Repositories/cellcloud-java/libs/jetty-http-9.2.5.v20141112.jar"/>
+	<classpathentry kind="lib" path="/Users/MD318/Repositories/cellcloud-java/libs/jetty-io-9.2.5.v20141112.jar"/>
+	<classpathentry kind="lib" path="/Users/MD318/Repositories/cellcloud-java/libs/jetty-security-9.2.5.v20141112.jar"/>
+	<classpathentry kind="lib" path="/Users/MD318/Repositories/cellcloud-java/libs/jetty-server-9.2.5.v20141112.jar"/>
+	<classpathentry kind="lib" path="/Users/MD318/Repositories/cellcloud-java/libs/jetty-servlet-9.2.5.v20141112.jar"/>
+	<classpathentry kind="lib" path="/Users/MD318/Repositories/cellcloud-java/libs/jetty-servlets-9.2.5.v20141112.jar"/>
+	<classpathentry kind="lib" path="/Users/MD318/Repositories/cellcloud-java/libs/jetty-util-9.2.5.v20141112.jar"/>
+	<classpathentry kind="lib" path="/Users/MD318/Repositories/cellcloud-java/libs/jetty-xml-9.2.5.v20141112.jar"/>
+	<classpathentry kind="lib" path="/Users/MD318/Repositories/cellcloud-java/libs/servlet-api-3.1.jar"/>
+	<classpathentry kind="lib" path="/Users/MD318/Repositories/cellcloud-java/libs/websocket-api-9.2.5.v20141112.jar"/>
+	<classpathentry kind="lib" path="/Users/MD318/Repositories/cellcloud-java/libs/websocket-common-9.2.5.v20141112.jar"/>
+	<classpathentry kind="lib" path="/Users/MD318/Repositories/cellcloud-java/libs/websocket-servlet-9.2.5.v20141112.jar"/>
+	<classpathentry kind="lib" path="/Users/MD318/Repositories/cellcloud-java/libs/websocket-server-9.2.5.v20141112.jar"/>
+	<classpathentry kind="lib" path="/Users/MD318/Repositories/cellcloud-java/libs/javax-websocket-server-impl-9.2.5.v20141112.jar"/>
+	<classpathentry kind="lib" path="/Users/MD318/Repositories/cellcloud-java/libs/javax.websocket-api-1.0.jar"/>
+	<classpathentry kind="lib" path="/Users/MD318/Repositories/cellcloud-java/libs/javax-websocket-client-impl-9.2.5.v20141112.jar"/>
+	<classpathentry kind="lib" path="/Users/MD318/Repositories/cellcloud-java/libs/websocket-client-9.2.5.v20141112.jar"/>
+	<classpathentry kind="output" path="bin"/>
+</classpath>
