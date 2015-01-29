@@ -1492,6 +1492,7 @@ public final class TalkService implements Service, SpeakerDelegate {
 			try {
 				JSONObject primJson = new JSONObject();
 				PrimitiveSerializer.write(primJson, primitive);
+
 				JSONObject packet = new JSONObject();
 				packet.put(HttpDialogueHandler.Primitive, primJson);
 				packet.put(HttpDialogueHandler.Identifier, cellet.getFeature().getIdentifier());
