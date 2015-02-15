@@ -69,6 +69,7 @@ public final class LogManager {
 		synchronized (this) {
 			if (this.handles.isEmpty() || this.level > level) {
 				System.err.println("No log handler in logger manager.");
+				System.out.println(tag + " " + log);
 				return;
 			}
 

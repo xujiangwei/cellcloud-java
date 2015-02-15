@@ -140,7 +140,7 @@ fi
 # Bugzilla 37848: only output this if we have a TTY
 if [ $have_tty -eq 1 ]; then
   echo "Welcome to Cell Cloud."
-  echo "Copyright (C) 2010,2013 Cell Cloud Team, www.cellcloud.net"
+  echo "Copyright (C) 2010,2015 Cell Cloud Team, www.cellcloud.net"
   echo "--------------------------------------------------------------------"
   echo "Using CC_BASE:     $CC_BASE"
   echo "Using CC_HOME:     $CC_HOME"

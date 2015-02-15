@@ -44,7 +44,7 @@ public final class DialectEnumerator {
 
 	/** 返回对象实例。
 	 */
-	public synchronized static DialectEnumerator getInstance() {
+	public static DialectEnumerator getInstance() {
 		return instance;
 	}
 
@@ -77,5 +77,13 @@ public final class DialectEnumerator {
 	 */
 	public DialectFactory getFactory(String name) {
 		return this.factories.get(name);
+	}
+
+	/** 关闭所有方言工厂。
+	 */
+	public void shutdownAll() {
+		for (DialectFactory fact : this.factories.values()) {
+			fact.shutdown();
+		}
 	}
 }

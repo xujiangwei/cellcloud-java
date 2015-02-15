@@ -39,4 +39,8 @@ public abstract class DialectFactory {
 	/** 创建方言。
 	 */
 	abstract public Dialect create(final String tracker);
+
+	/** 关闭。
+	 */
+	abstract public void shutdown();
 }

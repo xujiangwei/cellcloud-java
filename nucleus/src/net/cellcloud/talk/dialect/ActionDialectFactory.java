@@ -62,6 +62,19 @@ public final class ActionDialectFactory extends DialectFactory {
 		return new ActionDialect(tracker);
 	}
 
+	@Override
+	public void shutdown() {
+		synchronized (this.metaData) {
+			this.dialects.clear();
+			this.delegates.clear();
+		}
+
+		if (null != this.executor) {
+			this.executor.shutdown();
+			this.executor = null;
+		}
+	}
+
 	/** 执行动作。
 	 */
 	protected void doAction(final ActionDialect dialect, final ActionDelegate delegate) {
@@ -102,18 +115,6 @@ public final class ActionDialectFactory extends DialectFactory {
 					--threadCount;
 				}
 			});
-		}
-	}
-
-	public void shutdown() {
-		synchronized (this.metaData) {
-			this.dialects.clear();
-			this.delegates.clear();
-		}
-
-		if (null != this.executor) {
-			this.executor.shutdown();
-			this.executor = null;
 		}
 	}
 }

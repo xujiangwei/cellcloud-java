@@ -61,6 +61,7 @@ import net.cellcloud.http.HttpSession;
 import net.cellcloud.http.WebSocketManager;
 import net.cellcloud.http.WebSocketSession;
 import net.cellcloud.talk.dialect.ActionDialectFactory;
+import net.cellcloud.talk.dialect.ChunkDialectFactory;
 import net.cellcloud.talk.dialect.Dialect;
 import net.cellcloud.talk.dialect.DialectEnumerator;
 import net.cellcloud.talk.stuff.PrimitiveSerializer;
@@ -146,6 +147,7 @@ public final class TalkService implements Service, SpeakerDelegate {
 
 			// 添加默认方言工厂
 			DialectEnumerator.getInstance().addFactory(new ActionDialectFactory());
+			DialectEnumerator.getInstance().addFactory(new ChunkDialectFactory());
 		}
 		else {
 			throw new SingletonException(TalkService.class.getName());
