@@ -43,6 +43,7 @@ import net.cellcloud.talk.stuff.SubjectStuff;
 public class ChunkDialect extends Dialect {
 
 	public final static String DIALECT_NAME = "ChunkDialect";
+	public final static int DEFAULT_LENGTH = 6144;
 
 	protected String sign;
 	protected int chunkIndex;
@@ -119,11 +120,16 @@ public class ChunkDialect extends Dialect {
 
 	public boolean hasCompleted() {
 		ChunkDialectFactory fact = (ChunkDialectFactory) DialectEnumerator.getInstance().getFactory(ChunkDialect.DIALECT_NAME);
-		return fact.checkCompleted(this.sign);
+		return fact.checkCompleted(this.getOwnerTag(), this.sign);
 	}
 
 	public int read(int index, byte[] buffer) {
 		ChunkDialectFactory fact = (ChunkDialectFactory) DialectEnumerator.getInstance().getFactory(ChunkDialect.DIALECT_NAME);
-		return fact.read(this.sign, index, buffer);
+		return fact.read(this.getOwnerTag(), this.sign, index, buffer);
+	}
+
+	public void clearAll() {
+		ChunkDialectFactory fact = (ChunkDialectFactory) DialectEnumerator.getInstance().getFactory(ChunkDialect.DIALECT_NAME);
+		fact.clear(this.getOwnerTag(), this.sign);
 	}
 }
