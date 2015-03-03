@@ -51,6 +51,10 @@ public class ChunkDialect extends Dialect {
 	protected byte[] data;
 	protected int length;
 
+	private ChunkListener listener;
+
+	private int readIndex = 0;
+
 	public ChunkDialect() {
 		super(ChunkDialect.DIALECT_NAME);
 	}
@@ -64,7 +68,16 @@ public class ChunkDialect extends Dialect {
 		this.sign = sign;
 		this.chunkIndex = chunkIndex;
 		this.chunkNum = chunkNum;
-		this.data = data;
+		this.data = new byte[length];
+		System.arraycopy(data, 0, this.data, 0, length);
+		this.length = length;
+	}
+
+	public void copyData(int chunkIndex, int chunkNum, byte[] data, int length) {
+		this.chunkIndex = chunkIndex;
+		this.chunkNum = chunkNum;
+		this.data = new byte[length];
+		System.arraycopy(data, 0, this.data, 0, length);
 		this.length = length;
 	}
 
@@ -84,16 +97,22 @@ public class ChunkDialect extends Dialect {
 		return this.length;
 	}
 
+	public void setListener(ChunkListener listener) {
+		this.listener = listener;
+	}
+
 	@Override
 	public Primitive translate() {
 		Primitive primitive = new Primitive(this);
+		primitive.commit(new SubjectStuff(this.sign));
+		primitive.commit(new SubjectStuff(this.chunkIndex));
+		primitive.commit(new SubjectStuff(this.chunkNum));
+		primitive.commit(new SubjectStuff(Base64.encodeBytes(this.data)));
+		primitive.commit(new SubjectStuff(this.length));
 
-		synchronized (this) {
-			primitive.commit(new SubjectStuff(this.sign));
-			primitive.commit(new SubjectStuff(this.chunkIndex));
-			primitive.commit(new SubjectStuff(this.chunkNum));
-			primitive.commit(new SubjectStuff(Base64.encodeBytes(this.data)));
-			primitive.commit(new SubjectStuff(this.length));
+		if (null != this.listener) {
+			this.listener.onProgress(this.sign, this.chunkIndex, this.chunkNum, this.length);
+			this.listener = null;
 		}
 
 		return primitive;
@@ -126,6 +145,21 @@ public class ChunkDialect extends Dialect {
 	public int read(int index, byte[] buffer) {
 		ChunkDialectFactory fact = (ChunkDialectFactory) DialectEnumerator.getInstance().getFactory(ChunkDialect.DIALECT_NAME);
 		return fact.read(this.getOwnerTag(), this.sign, index, buffer);
+	}
+
+	public int read(byte[] buffer) {
+		if (this.readIndex >= this.chunkNum) {
+			return -1;
+		}
+
+		ChunkDialectFactory fact = (ChunkDialectFactory) DialectEnumerator.getInstance().getFactory(ChunkDialect.DIALECT_NAME);
+		int length = fact.read(this.getOwnerTag(), this.sign, this.readIndex, buffer);
+		++this.readIndex;
+		return length;
+	}
+
+	public void resetRead() {
+		this.readIndex = 0;
 	}
 
 	public void clearAll() {
