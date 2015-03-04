@@ -83,7 +83,12 @@ public class ChunkDialectFactory extends DialectFactory {
 		// 更新内存大小
 		this.cacheMemorySize += chunk.length;
 
-		Logger.i(ChunkDialectFactory.class, "Cache memory size: " + (long)(cacheMemorySize / 1024) + " KB");
+		if (this.cacheMemorySize > 1024) {
+			Logger.i(ChunkDialectFactory.class, "Cache memory size: " + (long)(this.cacheMemorySize / 1024) + " KB");
+		}
+		else {
+			Logger.i(ChunkDialectFactory.class, "Cache memory size: " + this.cacheMemorySize + " Bytes");
+		}
 
 		if (this.cacheMemorySize > this.clearThreshold) {
 			synchronized (this.mutex) {
