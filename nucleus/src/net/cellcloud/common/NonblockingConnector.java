@@ -33,8 +33,8 @@ import java.nio.ByteBuffer;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.nio.channels.SocketChannel;
-import java.util.ArrayList;
 import java.util.Iterator;
+import java.util.LinkedList;
 import java.util.Set;
 import java.util.Vector;
 
@@ -551,7 +551,7 @@ public class NonblockingConnector extends MessageService implements MessageConne
 	private void process(byte[] data) {
 		// 根据数据标志获取数据
 		if (this.existDataMark()) {
-			ArrayList<byte[]> out = new ArrayList<byte[]>(2);
+			LinkedList<byte[]> out = new LinkedList<byte[]>();
 			// 数据递归提取
 			this.extract(out, data);
 
@@ -664,7 +664,7 @@ public class NonblockingConnector extends MessageService implements MessageConne
 	/**
 	 * 数据提取并输出。
 	 */
-	private void extract(final ArrayList<byte[]> out, final byte[] data) {
+	private void extract(final LinkedList<byte[]> out, final byte[] data) {
 		final byte[] headMark = this.getHeadMark();
 		final byte[] tailMark = this.getTailMark();
 
