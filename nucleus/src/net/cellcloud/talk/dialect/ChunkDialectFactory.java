@@ -30,6 +30,7 @@ import java.util.LinkedList;
 import java.util.concurrent.ConcurrentHashMap;
 
 import net.cellcloud.common.Logger;
+import net.cellcloud.core.Cellet;
 
 /** 块数据传输方言工厂。
  * 
@@ -66,6 +67,40 @@ public class ChunkDialectFactory extends DialectFactory {
 	public void shutdown() {
 		this.cacheMap.clear();
 		this.cacheMemorySize = 0;
+	}
+
+	@Override
+	protected boolean onTalk(String identifier, Dialect dialect) {
+		return true;
+	}
+
+	@Override
+	protected boolean onDialogue(String identifier, Dialect dialect) {
+		return true;
+	}
+
+	@Override
+	protected boolean onDialogue(Cellet cellet, Dialect dialect) {
+		// 回送确认
+		ChunkDialect chunk = (ChunkDialect) dialect;
+		if (!chunk.ack) {
+			// 回送确认
+			String sign = chunk.getSign();
+
+			ChunkDialect ack = new ChunkDialect();
+			ack.setAck(sign, chunk.getChunkIndex(), chunk.getChunkNum());
+
+			// 回送 ACK
+			cellet.talk(dialect.getOwnerTag(), ack);
+
+			// 不劫持
+			return true;
+		}
+		else {
+			// 劫持
+			// TODO
+			return false;
+		}
 	}
 
 	protected void write(ChunkDialect chunk) {

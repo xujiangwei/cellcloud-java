@@ -30,6 +30,8 @@ import java.util.LinkedList;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
+import net.cellcloud.core.Cellet;
+
 /** 动作方言工厂。
  * 
  * @author Jiangwei Xu
@@ -73,6 +75,21 @@ public final class ActionDialectFactory extends DialectFactory {
 			this.executor.shutdown();
 			this.executor = null;
 		}
+	}
+
+	@Override
+	protected boolean onTalk(String identifier, Dialect dialect) {
+		return true;
+	}
+
+	@Override
+	protected boolean onDialogue(String identifier, Dialect dialect) {
+		return true;
+	}
+
+	@Override
+	protected boolean onDialogue(Cellet cellet, Dialect dialect) {
+		return true;
 	}
 
 	/** 执行动作。

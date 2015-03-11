@@ -28,11 +28,15 @@ package net.cellcloud.talk.dialect;
 
 import java.util.concurrent.ConcurrentHashMap;
 
+import net.cellcloud.core.Cellet;
+import net.cellcloud.talk.CelletCallbackListener;
+import net.cellcloud.talk.TalkDelegate;
+
 /** 方言枚举器。
  * 
  * @author Jiangwei Xu
  */
-public final class DialectEnumerator {
+public final class DialectEnumerator implements TalkDelegate, CelletCallbackListener {
 
 	private static final DialectEnumerator instance = new DialectEnumerator();
 
@@ -85,5 +89,48 @@ public final class DialectEnumerator {
 		for (DialectFactory fact : this.factories.values()) {
 			fact.shutdown();
 		}
+	}
+
+	@Override
+	public boolean doTalk(String identifier, Dialect dialect) {
+		DialectFactory fact = this.factories.get(dialect.getName());
+		if (null == fact) {
+			// 返回 true ，不劫持
+			return true;
+		}
+
+		return fact.onTalk(identifier, dialect);
+	}
+
+	@Override
+	public void didTalk(String identifier, Dialect dialect) {
+		// Nothing
+	}
+
+	@Override
+	public boolean doDialogue(String identifier, Dialect dialect) {
+		DialectFactory fact = this.factories.get(dialect.getName());
+		if (null == fact) {
+			// 返回 true ，不劫持
+			return true;
+		}
+
+		return fact.onTalk(identifier, dialect);
+	}
+
+	@Override
+	public void didDialogue(String identifier, Dialect dialect) {
+		// Nothing
+	}
+
+	@Override
+	public boolean doDialogue(Cellet cellet, Dialect dialect) {
+		DialectFactory fact = this.factories.get(dialect.getName());
+		if (null == fact) {
+			// 返回 true ，不劫持
+			return true;
+		}
+
+		return true;
 	}
 }

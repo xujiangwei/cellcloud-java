@@ -122,6 +122,8 @@ public final class TalkService implements Service, SpeakerDelegate {
 	private TalkServiceDaemon daemon;
 	private ArrayList<TalkListener> listeners;
 
+	private CelletCallbackListener callbackListener;
+
 	/** 构造函数。
 	 * @throws SingletonException 
 	 */
@@ -148,6 +150,8 @@ public final class TalkService implements Service, SpeakerDelegate {
 			// 添加默认方言工厂
 			DialectEnumerator.getInstance().addFactory(new ActionDialectFactory());
 			DialectEnumerator.getInstance().addFactory(new ChunkDialectFactory());
+
+			this.callbackListener = DialectEnumerator.getInstance();
 		}
 		else {
 			throw new SingletonException(TalkService.class.getName());
@@ -459,21 +463,6 @@ public final class TalkService implements Service, SpeakerDelegate {
 					session.write(message);
 				}
 			}
-//			for (TalkSessionContext ctx : contexts) {
-//				// 查找上文里指定的会话追踪器
-//				TalkTracker tracker = ctx.getTracker(targetTag);
-//				if (null != tracker) {
-//					// 判断是否是同一个 Cellet
-//					if (tracker.activeCellet == cellet) {
-//						Session session = ctx.getSession();
-//						message = this.packetDialogue(primitive);
-//						if (null != message) {
-//							session.write(message);
-//						}
-//						break;
-//					}
-//				}
-//			}
 		}
 
 		return (null != message);
@@ -1134,16 +1123,18 @@ public final class TalkService implements Service, SpeakerDelegate {
 			if (null != cellet) {
 				primitive.setCelletIdentifier(cellet.getFeature().getIdentifier());
 				primitive.setCellet(cellet);
+
+				if (null != this.callbackListener && primitive.isDialectal()) {
+					boolean ret = this.callbackListener.doDialogue(cellet, primitive.getDialect());
+					if (!ret) {
+						// 被劫持，直接返回
+						return;
+					}
+				}
+
+				// 回调 Cellet
 				cellet.dialogue(speakerTag, primitive);
 			}
-
-//			if (null != tracker && null != tracker.activeCellet) {
-//				// 设置原语的 Cellet 标识
-//				primitive.setCelletIdentifier(tracker.activeCellet.getFeature().getIdentifier());
-//				primitive.setCellet(tracker.activeCellet);
-//				// 回调
-//				tracker.activeCellet.dialogue(speakerTag, primitive);
-//			}
 		}
 	}
 

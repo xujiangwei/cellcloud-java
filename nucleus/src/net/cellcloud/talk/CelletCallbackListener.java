@@ -2,7 +2,7 @@
 -----------------------------------------------------------------------------
 This source file is part of Cell Cloud.
 
-Copyright (c) 2009-2012 Cell Cloud Team (www.cellcloud.net)
+Copyright (c) 2009-2015 Cell Cloud Team (www.cellcloud.net)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -24,46 +24,12 @@ THE SOFTWARE.
 -----------------------------------------------------------------------------
 */
 
-package net.cellcloud.talk.dialect;
+package net.cellcloud.talk;
 
 import net.cellcloud.core.Cellet;
+import net.cellcloud.talk.dialect.Dialect;
 
-/*! 方言工厂。
- * 
- * \author Jiangwei Xu
- */
-public abstract class DialectFactory {
+public interface CelletCallbackListener {
 
-	/*! 返回元数据。
-	 */
-	abstract public DialectMetaData getMetaData();
-
-	/*! 创建方言。
-	 */
-	abstract public Dialect create(final String tracker);
-
-	/*! 关闭。
-	 */
-	abstract public void shutdown();
-
-	/*! 发送回调。
-	 * \param identifier
-	 * \param dialect
-	 * \return
-	 */
-	abstract protected boolean onTalk(String identifier, Dialect dialect);
-
-	/*! 接收回调。
-	 * \param identifier
-	 * \param dialect
-	 * \return
-	 */
-	abstract protected boolean onDialogue(String identifier, Dialect dialect);
-
-	/*!
-	 * \param cellet
-	 * \param dialect
-	 * \return
-	 */
-	abstract protected boolean onDialogue(Cellet cellet, Dialect dialect);
+	public boolean doDialogue(Cellet cellet, Dialect dialect);
 }
