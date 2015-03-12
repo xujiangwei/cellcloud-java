@@ -131,6 +131,6 @@ public final class DialectEnumerator implements TalkDelegate, CelletCallbackList
 			return true;
 		}
 
-		return true;
+		return fact.onDialogue(cellet, dialect);
 	}
 }

@@ -32,5 +32,5 @@ package net.cellcloud.talk.dialect;
  */
 public interface ChunkListener {
 
-	public void onProgress(String sign, int chunkIndex, int chunkNum, int chunkLength);
+	public void onProgress(String sign, long totalLength, int chunkIndex, int chunkNum, int chunkLength);
 }

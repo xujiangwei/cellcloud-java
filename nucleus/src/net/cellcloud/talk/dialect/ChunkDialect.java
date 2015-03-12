@@ -36,15 +36,14 @@ import net.cellcloud.talk.Primitive;
 import net.cellcloud.talk.stuff.PredicateStuff;
 import net.cellcloud.talk.stuff.SubjectStuff;
 
-/** 块数据方言。
+/*! 块数据方言。
  * 
- * @author Jiangwei Xu
- *
+ * \author Jiangwei Xu
  */
 public class ChunkDialect extends Dialect {
 
 	public final static String DIALECT_NAME = "ChunkDialect";
-	public final static int DEFAULT_LENGTH = 6144;
+	public final static int CHUNK_SIZE = 4096;
 
 	protected boolean ack = false;
 
@@ -53,6 +52,11 @@ public class ChunkDialect extends Dialect {
 	protected int chunkNum;
 	protected byte[] data;
 	protected int length;
+	protected long totalLength;
+
+	// 用于标识该区块是否能写入缓存队列
+	// 如果为 true ，表示已经“污染”，不能进入队列，必须直接发送
+	protected boolean infectant = false;
 
 	private ChunkListener listener;
 
@@ -66,9 +70,10 @@ public class ChunkDialect extends Dialect {
 		super(ChunkDialect.DIALECT_NAME, tracker);
 	}
 
-	public ChunkDialect(String sign, int chunkIndex, int chunkNum, byte[] data, int length) {
+	public ChunkDialect(String sign, long totalLength, int chunkIndex, int chunkNum, byte[] data, int length) {
 		super(ChunkDialect.DIALECT_NAME);
 		this.sign = sign;
+		this.totalLength = totalLength;
 		this.chunkIndex = chunkIndex;
 		this.chunkNum = chunkNum;
 		this.data = new byte[length];
@@ -93,6 +98,10 @@ public class ChunkDialect extends Dialect {
 
 	public String getSign() {
 		return this.sign;
+	}
+
+	public long getTotalLength() {
+		return this.totalLength;
 	}
 
 	public int getChunkIndex() {
@@ -127,9 +136,10 @@ public class ChunkDialect extends Dialect {
 			primitive.commit(new SubjectStuff(this.chunkNum));
 			primitive.commit(new SubjectStuff(Base64.encodeBytes(this.data)));
 			primitive.commit(new SubjectStuff(this.length));
+			primitive.commit(new SubjectStuff(this.totalLength));
 
 			if (null != this.listener) {
-				this.listener.onProgress(this.sign, this.chunkIndex, this.chunkNum, this.length);
+				this.listener.onProgress(this.sign, this.totalLength, this.chunkIndex, this.chunkNum, this.length);
 				this.listener = null;
 			}
 		}
@@ -158,6 +168,7 @@ public class ChunkDialect extends Dialect {
 				Logger.log(ChunkDialect.class, e, LogLevel.ERROR);
 			}
 			this.length = list.get(4).getValueAsInt();
+			this.totalLength = list.get(5).getValueAsLong();
 
 			if (null != this.data) {
 				ChunkDialectFactory fact = (ChunkDialectFactory) DialectEnumerator.getInstance().getFactory(ChunkDialect.DIALECT_NAME);
