@@ -29,7 +29,24 @@ package net.cellcloud.talk;
 import net.cellcloud.core.Cellet;
 import net.cellcloud.talk.dialect.Dialect;
 
+/*!
+ * \author Jiangwei Xu
+ */
 public interface CelletCallbackListener {
 
-	public boolean doDialogue(Cellet cellet, Dialect dialect);
+	/*!
+	 * 
+	 * \param cellet
+	 * \param dialect
+	 * \return
+	 */
+	public boolean doTalk(Cellet cellet, String targetTag, Dialect dialect);
+
+	/*!
+	 * 
+	 * \param cellet
+	 * \param dialect
+	 * \return
+	 */
+	public boolean doDialogue(Cellet cellet, String sourceTag, Dialect dialect);
 }

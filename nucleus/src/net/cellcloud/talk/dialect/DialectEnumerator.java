@@ -124,13 +124,24 @@ public final class DialectEnumerator implements TalkDelegate, CelletCallbackList
 	}
 
 	@Override
-	public boolean doDialogue(Cellet cellet, Dialect dialect) {
+	public boolean doTalk(Cellet cellet, String targetTag, Dialect dialect) {
 		DialectFactory fact = this.factories.get(dialect.getName());
 		if (null == fact) {
 			// 返回 true ，不劫持
 			return true;
 		}
 
-		return fact.onDialogue(cellet, dialect);
+		return fact.onTalk(cellet, targetTag, dialect);
+	}
+
+	@Override
+	public boolean doDialogue(Cellet cellet, String sourceTag, Dialect dialect) {
+		DialectFactory fact = this.factories.get(dialect.getName());
+		if (null == fact) {
+			// 返回 true ，不劫持
+			return true;
+		}
+
+		return fact.onDialogue(cellet, sourceTag, dialect);
 	}
 }

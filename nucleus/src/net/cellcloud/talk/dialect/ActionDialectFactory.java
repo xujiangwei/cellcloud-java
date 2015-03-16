@@ -88,7 +88,12 @@ public final class ActionDialectFactory extends DialectFactory {
 	}
 
 	@Override
-	protected boolean onDialogue(Cellet cellet, Dialect dialect) {
+	protected boolean onTalk(Cellet cellet, String targetTag, Dialect dialect) {
+		return true;
+	}
+
+	@Override
+	protected boolean onDialogue(Cellet cellet, String sourceTag, Dialect dialect) {
 		return true;
 	}
 

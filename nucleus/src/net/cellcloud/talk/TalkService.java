@@ -457,6 +457,15 @@ public final class TalkService implements Service, SpeakerDelegate {
 
 		synchronized (context) {
 			if (context.getTracker().hasCellet(cellet)) {
+
+				if (null != this.callbackListener && primitive.isDialectal()) {
+					boolean ret = this.callbackListener.doTalk(cellet, targetTag, primitive.getDialect());
+					if (!ret) {
+						// 劫持会话
+						return true;
+					}
+				}
+
 				Session session = context.getSession();
 				message = this.packetDialogue(cellet, primitive, (session instanceof WebSocketSession));
 				if (null != message) {
@@ -1125,7 +1134,7 @@ public final class TalkService implements Service, SpeakerDelegate {
 				primitive.setCellet(cellet);
 
 				if (null != this.callbackListener && primitive.isDialectal()) {
-					boolean ret = this.callbackListener.doDialogue(cellet, primitive.getDialect());
+					boolean ret = this.callbackListener.doDialogue(cellet, speakerTag, primitive.getDialect());
 					if (!ret) {
 						// 被劫持，直接返回
 						return;

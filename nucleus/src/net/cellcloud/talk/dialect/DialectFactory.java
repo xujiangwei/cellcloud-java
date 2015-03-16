@@ -62,8 +62,17 @@ public abstract class DialectFactory {
 
 	/*!
 	 * \param cellet
+	 * \param targetTag
 	 * \param dialect
 	 * \return
 	 */
-	abstract protected boolean onDialogue(Cellet cellet, Dialect dialect);
+	abstract protected boolean onTalk(Cellet cellet, String targetTag, Dialect dialect);
+
+	/*!
+	 * \param cellet
+	 * \param sourceTag
+	 * \param dialect
+	 * \return
+	 */
+	abstract protected boolean onDialogue(Cellet cellet, String sourceTag, Dialect dialect);
 }
