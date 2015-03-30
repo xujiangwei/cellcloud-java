@@ -89,8 +89,11 @@ public final class JettyWebSocket implements WebSocketManager {
 			return;
 		}
 
-		int index = this.sessions.indexOf(session);
-		WebSocketSession wsSession = this.wsSessions.get(index);
+		WebSocketSession wsSession = null;
+		synchronized (this.sessions) {
+			int index = this.sessions.indexOf(session);
+			wsSession = this.wsSessions.get(index);
+		}
 
 		if (null != this.handler) {
 			Message message = new Message(text);
@@ -114,8 +117,10 @@ public final class JettyWebSocket implements WebSocketManager {
 	public void onWebSocketConnect(Session session) {
 		Logger.d(this.getClass(), "onWebSocketConnect");
 
-		if (this.sessions.contains(session)) {
-			return;
+		synchronized (this.sessions) {
+			if (this.sessions.contains(session)) {
+				return;
+			}
 		}
 
 		InetSocketAddress address = new InetSocketAddress(session.getRemoteAddress().getAddress().getHostAddress()
@@ -138,10 +143,16 @@ public final class JettyWebSocket implements WebSocketManager {
 	public void onWebSocketClose(Session session, int code, String reason) {
 		Logger.d(this.getClass(), "onWebSocketClose");
 
-		WebSocketSession wsSession = null;
+		int index = -1;
+		synchronized (this.sessions) {
+			index = this.sessions.indexOf(session);
+			if (index < 0) {
+				return;
+			}
+		}
 
-		int index = this.sessions.indexOf(session);
-		if (index >= 0) {
+		WebSocketSession wsSession = null;
+		synchronized (this.sessions) {
 			wsSession = this.wsSessions.get(index);
 		}
 
