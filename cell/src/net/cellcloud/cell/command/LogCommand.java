@@ -41,7 +41,7 @@ public class LogCommand extends ConsoleCommand {
 	public LogCommand() {
 		super("log", "Print log text on screen.", "");
 		this.state = ConsoleCommand.CCS_FINISHED;
-		this.logHandle = LogManager.getInstance().createSystemOutHandle();
+		this.logHandle = LogManager.createSystemOutHandle();
 	}
 
 	@Override

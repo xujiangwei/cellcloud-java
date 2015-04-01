@@ -96,7 +96,7 @@ public final class Application {
 		buf.append("| |_| _|| |_| |_   | |_| |_| | | | | | |\n");
 		buf.append("|___|___|___|___|  |___|___|___|___|___/\n\n");
 
-		buf.append("Copyright (c) 2009,2014 Cell Cloud Team, www.cellcloud.net\n");
+		buf.append("Copyright (c) 2009,2015 Cell Cloud Team, www.cellcloud.net\n");
 		buf.append("-----------------------------------------------------------------------");
 
 		System.out.println(buf);
@@ -109,7 +109,7 @@ public final class Application {
 		}
 		else {
 			this.console = null;
-			LogManager.getInstance().addHandle(LogManager.getInstance().createSystemOutHandle());
+			LogManager.getInstance().addHandle(LogManager.createSystemOutHandle());
 		}
 
 		// 使用文件日志

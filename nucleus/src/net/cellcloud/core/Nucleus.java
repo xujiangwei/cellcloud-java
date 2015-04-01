@@ -91,8 +91,9 @@ public final class Nucleus {
 			}
 			else {
 				this.tag = new NucleusTag();
-				if (this.config.role != NucleusConfig.Role.CONSUMER)
-					Logger.w(Nucleus.class, "Nucleus Warning: No nucleus tag setting, use random tag: " + this.tag.asString());
+				if (this.config.role != NucleusConfig.Role.CONSUMER) {
+					Logger.d(Nucleus.class, "Nucleus Warning: No nucleus tag setting, use random tag: " + this.tag.asString());
+				}
 			}
 
 			this.context = new NucleusContext();

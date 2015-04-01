@@ -48,8 +48,8 @@ public final class NucleusConfig {
 		public static final byte STORAGE = 0x02;
 
 		/// 网关。
-		/// 内核启动标准的 Talk 服务并启动代理模式。
-		public static final byte GATE = 0x04;
+		/// 内核启动标准的 Talk 服务并启动网关模式。
+		public static final byte GATEWAY = 0x04;
 
 		/// 消费。
 		/// 内存启动 Talk 会话机制。

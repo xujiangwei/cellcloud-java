@@ -45,6 +45,7 @@ public final class FileLogger implements LogHandle {
 
 	private static final FileLogger instance = new FileLogger();
 
+	private String name;
 	private StringBuilder stringBuf = new StringBuilder();
 
 	private FileOutputStream outputStream = null;
@@ -55,6 +56,7 @@ public final class FileLogger implements LogHandle {
 	private int bufSize = 256;
 
 	private FileLogger() {
+		this.name = "CellFileLogger";
 		this.outputStream = null;
 	}
 
@@ -149,6 +151,11 @@ public final class FileLogger implements LogHandle {
 				// Nothing
 			}
 		}
+	}
+
+	@Override
+	public String getName() {
+		return this.name;
 	}
 
 	@Override

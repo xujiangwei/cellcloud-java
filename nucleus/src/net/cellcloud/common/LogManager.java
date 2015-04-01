@@ -67,9 +67,14 @@ public final class LogManager {
 	 */
 	public void log(byte level, String tag, String log) {
 		synchronized (this) {
-			if (this.handles.isEmpty() || this.level > level) {
+			if (this.handles.isEmpty()) {
 				System.err.println("No log handler in logger manager.");
 				System.out.println(tag + " " + log);
+				return;
+			}
+
+			if (this.level > level) {
+				// 过滤日志等级
 				return;
 			}
 
@@ -98,6 +103,16 @@ public final class LogManager {
 	 */
 	public void addHandle(LogHandle handle) {
 		synchronized (this) {
+			if (this.handles.contains(handle)) {
+				return;
+			}
+
+			for (LogHandle h : this.handles) {
+				if (h.getName().equals(handle.getName())) {
+					return;
+				}
+			}
+
 			this.handles.add(handle);
 		}
 	}
@@ -120,10 +135,16 @@ public final class LogManager {
 
 	/** 创建 System.out 日志。
 	 */
-	public LogHandle createSystemOutHandle() {
+	public static LogHandle createSystemOutHandle() {
 		return new LogHandle() {
 
+			private String name = "DefaultSystemOutHandle";
 			private StringBuilder buf = new StringBuilder();
+
+			@Override
+			public String getName() {
+				return this.name;
+			}
 
 			@Override
 			public void logDebug(String tag, String log) {

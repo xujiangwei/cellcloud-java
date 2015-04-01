@@ -1347,6 +1347,10 @@ public final class TalkService implements Service, SpeakerDelegate {
 	/** 检查并删除挂起的会话。
 	 */
 	protected void checkAndDeleteSuspendedTalk() {
+		if (null == this.suspendedTrackers) {
+			return;
+		}
+
 		// 两个判断依据，满足任一一个时即可进行删除：
 		// 1、挂起会话超时
 		// 2、挂起会话所标识的消费端已经和 Cellet 重建连接
