@@ -621,7 +621,7 @@ public final class TalkService implements Service, SpeakerDelegate {
 	 */
 	public void hangUp(String identifier) {
 		if (null != this.speakerMap && this.speakerMap.containsKey(identifier)) {
-			Speaker speaker = this.speakerMap.get(identifier);
+			Speaker speaker = this.speakerMap.remove(identifier);
 			speaker.hangUp();
 
 			for (String celletIdentifier : speaker.getIdentifiers()) {
@@ -632,7 +632,7 @@ public final class TalkService implements Service, SpeakerDelegate {
 		}
 
 		if (null != this.httpSpeakerMap && this.httpSpeakerMap.containsKey(identifier)) {
-			HttpSpeaker speaker = this.httpSpeakerMap.get(identifier);
+			HttpSpeaker speaker = this.httpSpeakerMap.remove(identifier);
 			speaker.hangUp();
 
 			for (String celletIdentifier : speaker.getIdentifiers()) {
