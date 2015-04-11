@@ -219,6 +219,7 @@ public class Speaker implements Speakable {
 	public synchronized void hangUp() {
 		if (null != this.connector) {
 			this.connector.disconnect();
+			this.connector = null;
 		}
 
 		this.lost = false;

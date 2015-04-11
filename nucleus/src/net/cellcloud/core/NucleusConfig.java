@@ -100,7 +100,7 @@ public final class NucleusConfig {
 	 */
 	public final class TalkConfig {
 		/// 是否启用 Talk 服务
-		public boolean enable = true;
+		public boolean enabled = true;
 
 		/// Talk 服务端口
 		public int port = 7000;
@@ -109,10 +109,16 @@ public final class NucleusConfig {
 		public int block = 16384;
 
 		/// 最大连接数
-		public int maxConnections = 1000;
+		public int maxConnections = 2000;
 
 		/// 是否使用 HTTP 服务
-		public boolean httpd = false;
+		public boolean httpEnabled = true;
+
+		/// HTTP 服务端口号
+		public int httpPort = 7070;
+
+		/// HTTP 连接队列长度
+		public int httpQueueSize = 2000;
 
 		/// HTTP 服务会话超时时间，默认 5 分钟
 		public long httpSessionTimeout = 5 * 60 * 1000;
@@ -126,7 +132,7 @@ public final class NucleusConfig {
 	 */
 	public final class ClusterConfig {
 		/// 是否启用集群
-		public boolean enable = false;
+		public boolean enabled = false;
 
 		/// 集群绑定主机名
 		public String host = "127.0.0.1";

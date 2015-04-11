@@ -83,9 +83,10 @@ public final class TalkService implements Service, SpeakerDelegate {
 	private int block;
 	private int maxConnections;
 
-	private int httpPort;
 	// 服务器端是否启用 HTTP 服务
 	private boolean httpEnabled;
+	private int httpPort;
+	private int httpQueueSize;
 
 	private CookieSessionManager httpSessionManager;
 	private HttpSessionListener httpSessionListener;
@@ -135,11 +136,12 @@ public final class TalkService implements Service, SpeakerDelegate {
 			this.nucleusContext = nucleusContext;
 
 			this.port = 7000;
-			this.block = 8192;
+			this.block = 16384;
 			this.maxConnections = 1000;
 
-			this.httpPort = 7070;
 			this.httpEnabled = true;
+			this.httpPort = 7070;
+			this.httpQueueSize = 1000;
 
 			// 5 分钟
 			this.httpSessionTimeout = 5 * 60 * 1000;
@@ -291,40 +293,6 @@ public final class TalkService implements Service, SpeakerDelegate {
 		return this.port;
 	}
 
-	/** 设置 HTTP 服务端口。
-	 * @note 在 startup 之前设置才能生效。
-	 */
-	public void setHttpPort(int port) {
-		if (null != this.acceptor && this.acceptor.isRunning()) {
-			throw new InvalidException("Can't set the http port in talk service after the start");
-		}
-
-		this.httpPort = port;
-	}
-
-	/** 返回 HTTP 服务端口。
-	 * @return
-	 */
-	public int getHttpPort() {
-		return this.httpPort;
-	}
-
-	/** 设置是否激活 HTTP 服务。
-	 */
-	public void httpEnabled(boolean enabled) {
-		if (null != HttpService.getInstance() && HttpService.getInstance().hasCapsule(this.httpPort)) {
-			throw new InvalidException("Can't set the http enabled in talk service after the start");
-		}
-
-		this.httpEnabled = enabled;
-	}
-
-	/** 设置 HTTP 会话超时时间。
-	 */
-	public void settHttpSessionTimeout(long timeoutInMillisecond) {
-		this.httpSessionTimeout = timeoutInMillisecond;
-	}
-
 	/**
 	 * 设置适配器缓存块大小。
 	 * @param size
@@ -343,6 +311,47 @@ public final class TalkService implements Service, SpeakerDelegate {
 		}
 
 		this.maxConnections = num;
+	}
+
+	/** 设置是否激活 HTTP 服务。
+	 */
+	public void httpEnabled(boolean enabled) {
+		if (null != HttpService.getInstance() && HttpService.getInstance().hasCapsule(this.httpPort)) {
+			throw new InvalidException("Can't set the http enabled in talk service after the start");
+		}
+
+		this.httpEnabled = enabled;
+	}
+
+	/** 设置 HTTP 服务端口。
+	 * @note 在 startup 之前设置才能生效。
+	 */
+	public void setHttpPort(int port) {
+		if (null != this.acceptor && this.acceptor.isRunning()) {
+			throw new InvalidException("Can't set the http port in talk service after the start");
+		}
+
+		this.httpPort = port;
+	}
+
+	/** 返回 HTTP 服务端口。
+	 * @return
+	 */
+	public int getHttpPort() {
+		return this.httpPort;
+	}
+
+	/** 设置 HTTP 服务的允许接收连接的队列长度。
+	 * @param value
+	 */
+	public void setHttpQueueSize(int value) {
+		this.httpQueueSize = value;
+	}
+
+	/** 设置 HTTP 会话超时时间。
+	 */
+	public void settHttpSessionTimeout(long timeoutInMillisecond) {
+		this.httpSessionTimeout = timeoutInMillisecond;
 	}
 
 	/** 启动任务表守护线程。
@@ -622,24 +631,26 @@ public final class TalkService implements Service, SpeakerDelegate {
 	public void hangUp(String identifier) {
 		if (null != this.speakerMap && this.speakerMap.containsKey(identifier)) {
 			Speaker speaker = this.speakerMap.remove(identifier);
-			speaker.hangUp();
 
 			for (String celletIdentifier : speaker.getIdentifiers()) {
 				this.speakerMap.remove(celletIdentifier);
 			}
 
 			this.speakers.remove(speaker);
+
+			speaker.hangUp();
 		}
 
 		if (null != this.httpSpeakerMap && this.httpSpeakerMap.containsKey(identifier)) {
 			HttpSpeaker speaker = this.httpSpeakerMap.remove(identifier);
-			speaker.hangUp();
 
 			for (String celletIdentifier : speaker.getIdentifiers()) {
 				this.httpSpeakerMap.remove(celletIdentifier);
 			}
 
 			this.httpSpeakers.remove(speaker);
+
+			speaker.hangUp();
 		}
 	}
 
@@ -728,7 +739,8 @@ public final class TalkService implements Service, SpeakerDelegate {
 			return;
 		}
 
-		this.webSocketManager = HttpService.getInstance().activeWebSocket(this.httpPort + 1, new WebSocketMessageHandler(this));
+		this.webSocketManager = HttpService.getInstance().activeWebSocket(this.httpPort + 1
+				, this.httpQueueSize, new WebSocketMessageHandler(this));
 
 		// 创建 Session 管理器
 		this.httpSessionManager = new CookieSessionManager();
@@ -738,7 +750,7 @@ public final class TalkService implements Service, SpeakerDelegate {
 		this.httpSessionManager.addSessionListener(this.httpSessionListener);
 
 		// 创建服务节点
-		HttpCapsule capsule = new HttpCapsule(this.httpPort, this.maxConnections);
+		HttpCapsule capsule = new HttpCapsule(this.httpPort, this.httpQueueSize);
 		// 设置 Session 管理器
 		capsule.setSessionManager(this.httpSessionManager);
 		// 依次添加 Holder 点

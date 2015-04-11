@@ -157,7 +157,7 @@ public final class Nucleus {
 
 			//---- 配置集群 ----
 
-			if (this.config.cluster.enable) {
+			if (this.config.cluster.enabled) {
 				if (null == this.clusterController) {
 					this.clusterController = new ClusterController(this.config.cluster.host
 							, this.config.cluster.preferredPort, this.config.cluster.numVNode);
@@ -193,7 +193,7 @@ public final class Nucleus {
 			//---- 配置 Talk Service  ----
 
 			// 创建 Talk Service
-			if (this.config.talk.enable && (null == this.talkService)) {
+			if (this.config.talk.enabled && (null == this.talkService)) {
 				try {
 					this.talkService = new TalkService(this.context);
 				} catch (SingletonException e) {
@@ -201,13 +201,19 @@ public final class Nucleus {
 				}
 			}
 
-			if (this.config.talk.enable) {
+			if (this.config.talk.enabled) {
 				// 设置服务端口号
 				this.talkService.setPort(this.config.talk.port);
 				// 设置 Block
 				this.talkService.setBlockSize(this.config.talk.block);
 				// 设置最大连接数
 				this.talkService.setMaxConnections(this.config.talk.maxConnections);
+				// 设置是否启用 HTTP 服务
+				this.talkService.httpEnabled(this.config.talk.httpEnabled);
+				// 设置 HTTP 端口号
+				this.talkService.setHttpPort(this.config.talk.httpPort);
+				// 设置 HTTP 队列长度
+				this.talkService.setHttpQueueSize(this.config.talk.httpQueueSize);
 				// 设置 HTTP 会话超时时间
 				this.talkService.settHttpSessionTimeout(this.config.talk.httpSessionTimeout);
 
