@@ -143,27 +143,24 @@ public final class JettyWebSocket implements WebSocketManager {
 	public void onWebSocketClose(Session session, int code, String reason) {
 		Logger.d(this.getClass(), "onWebSocketClose");
 
+		WebSocketSession wsSession = null;
+
 		int index = -1;
 		synchronized (this.sessions) {
 			index = this.sessions.indexOf(session);
 			if (index < 0) {
 				return;
 			}
-		}
 
-		WebSocketSession wsSession = null;
-		synchronized (this.sessions) {
 			wsSession = this.wsSessions.get(index);
+
+			this.sessions.remove(index);
+			this.wsSessions.remove(index);
 		}
 
 		if (null != this.handler) {
 			this.handler.sessionClosed(wsSession);
 			this.handler.sessionDestroyed(wsSession);
-		}
-
-		synchronized (this.sessions) {
-			this.sessions.remove(index);
-			this.wsSessions.remove(index);
 		}
 	}
 
@@ -173,9 +170,11 @@ public final class JettyWebSocket implements WebSocketManager {
 
 		WebSocketSession wsSession = null;
 
-		int index = this.sessions.indexOf(session);
-		if (index >= 0) {
-			wsSession = this.wsSessions.get(index);
+		synchronized (this.sessions) {
+			int index = this.sessions.indexOf(session);
+			if (index >= 0) {
+				wsSession = this.wsSessions.get(index);
+			}
 		}
 
 		if (null != this.handler) {
@@ -190,9 +189,16 @@ public final class JettyWebSocket implements WebSocketManager {
 
 	@Override
 	public void close(WebSocketSession session) {
-		int index = this.wsSessions.indexOf(session);
-		if (index >= 0) {
-			Session rawSession = this.sessions.get(index);
+		Session rawSession = null;
+
+		synchronized (this.sessions) {
+			int index = this.wsSessions.indexOf(session);
+			if (index >= 0) {
+				rawSession = this.sessions.get(index);
+			}
+		}
+
+		if (null != rawSession) {
 			rawSession.close(1000, "Server close this session");
 		}
 	}
