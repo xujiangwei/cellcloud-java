@@ -2,7 +2,7 @@
 -----------------------------------------------------------------------------
 This source file is part of Cell Cloud.
 
-Copyright (c) 2009-2014 Cell Cloud Team (www.cellcloud.net)
+Copyright (c) 2009-2015 Cell Cloud Team (www.cellcloud.net)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -24,55 +24,61 @@ THE SOFTWARE.
 -----------------------------------------------------------------------------
 */
 
-package net.cellcloud.http;
+package net.cellcloud.util;
 
-import java.io.IOException;
-import java.net.InetSocketAddress;
-
-import net.cellcloud.common.LogLevel;
-import net.cellcloud.common.Logger;
-import net.cellcloud.common.Message;
-import net.cellcloud.common.Session;
-import net.cellcloud.util.Clock;
-
-import org.eclipse.jetty.websocket.api.BatchMode;
-import org.eclipse.jetty.websocket.api.RemoteEndpoint;
+import java.util.Timer;
+import java.util.TimerTask;
+import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * 
  * @author Jiangwei Xu
  *
  */
-public class WebSocketSession extends Session {
+public final class Clock {
 
-	private org.eclipse.jetty.websocket.api.Session rawSession;
+	private static final Clock instance = new Clock();
 
-	private long heartbeat;
+	private Timer timer;
 
-	public WebSocketSession(InetSocketAddress address, org.eclipse.jetty.websocket.api.Session session) {
-		super(null, address);
-		this.rawSession = session;
-		this.heartbeat = Clock.currentTimeMillis();
+	private AtomicLong time;
+
+	private Clock() {
+		this.time = new AtomicLong(System.currentTimeMillis());
 	}
 
-	public long getHeartbeat() {
-		return this.heartbeat;
+	private void startTimer() {
+		this.timer = new Timer();
+		this.timer.scheduleAtFixedRate(new ClockTask(), 1000, 500);
 	}
 
-	public void heartbeat() {
-		this.heartbeat = Clock.currentTimeMillis();
+	private void stopTimer() {
+		if (null != this.timer) {
+			this.timer.purge();
+			this.timer.cancel();
+			this.timer = null;
+		}
 	}
 
-	@Override
-	public void write(Message message) {
-		RemoteEndpoint remote = this.rawSession.getRemote();
-		remote.sendString(message.getAsString(), null);
-		if (remote.getBatchMode() == BatchMode.ON) {
-			try {
-				remote.flush();
-			} catch (IOException e) {
-				Logger.log(this.getClass(), e, LogLevel.ERROR);
-			}
+	public static void start() {
+		Clock.instance.startTimer();
+	}
+
+	public static void stop() {
+		Clock.instance.stopTimer();
+	}
+
+	public static long currentTimeMillis() {
+		return Clock.instance.time.get();
+	}
+
+	private class ClockTask extends TimerTask {
+		private ClockTask() {
+		}
+
+		@Override
+		public void run() {
+			time.set(System.currentTimeMillis());
 		}
 	}
 }

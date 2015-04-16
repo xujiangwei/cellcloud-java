@@ -47,6 +47,7 @@ import net.cellcloud.exception.CelletSandboxException;
 import net.cellcloud.exception.SingletonException;
 import net.cellcloud.http.HttpService;
 import net.cellcloud.talk.TalkService;
+import net.cellcloud.util.Clock;
 
 /** Cell Cloud 软件栈内核类。
  * 
@@ -151,6 +152,9 @@ public final class Nucleus {
 	/** 启动内核。 */
 	public boolean startup() {
 		Logger.i(Nucleus.class, "*-*-* Cell Initializing *-*-*");
+
+		// 启动时钟
+		Clock.start();
 
 		// 角色：节点
 		if ((this.config.role & NucleusConfig.Role.NODE) != 0) {
@@ -292,6 +296,9 @@ public final class Nucleus {
 		if ((this.config.role & NucleusConfig.Role.CONSUMER) != 0) {
 			this.talkService.stopDaemon();
 		}
+
+		// 关闭时钟
+		Clock.stop();
 	}
 
 	/** 返回注册在该内核上的指定的 Cellet 。

@@ -46,6 +46,7 @@ public final class JettyWebSocketHandler extends WebSocketHandler {
 	public void configure(WebSocketServletFactory factory) {
 		// 超期时间 5 分钟
 		factory.getPolicy().setIdleTimeout(5 * 60 * 1000);
+		factory.getPolicy().setAsyncWriteTimeout(10 * 1000);
 		factory.setCreator(new JettyWebSocketCreator(this.webSocket));
 	}
 }

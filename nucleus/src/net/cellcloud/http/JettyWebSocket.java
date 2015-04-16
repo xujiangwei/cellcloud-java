@@ -27,12 +27,14 @@ THE SOFTWARE.
 package net.cellcloud.http;
 
 import java.net.InetSocketAddress;
+import java.util.ArrayList;
 import java.util.Vector;
 
 import net.cellcloud.common.Logger;
 import net.cellcloud.common.Message;
 import net.cellcloud.common.MessageErrorCode;
 import net.cellcloud.common.MessageHandler;
+import net.cellcloud.util.Clock;
 
 import org.eclipse.jetty.websocket.api.Session;
 import org.eclipse.jetty.websocket.api.annotations.OnWebSocketClose;
@@ -51,6 +53,8 @@ public final class JettyWebSocket implements WebSocketManager {
 	private MessageHandler handler;
 	private Vector<Session> sessions;
 	private Vector<WebSocketSession> wsSessions;
+
+	private final long timeout = 60 * 1000 + 5000;
 
 	public JettyWebSocket(MessageHandler handler) {
 		this.handler = handler;
@@ -118,8 +122,10 @@ public final class JettyWebSocket implements WebSocketManager {
 		Logger.d(this.getClass(), "onWebSocketConnect");
 
 		synchronized (this.sessions) {
-			if (this.sessions.contains(session)) {
-				return;
+			int index = this.sessions.indexOf(session);
+			if (index >= 0) {
+				this.sessions.remove(index);
+				this.wsSessions.remove(index);
 			}
 		}
 
@@ -137,6 +143,9 @@ public final class JettyWebSocket implements WebSocketManager {
 			this.handler.sessionCreated(wsSession);
 			this.handler.sessionOpened(wsSession);
 		}
+
+		// 校验会话是否超时
+		this.checkSessionTimeout();
 	}
 
 	@OnWebSocketClose
@@ -162,6 +171,9 @@ public final class JettyWebSocket implements WebSocketManager {
 			this.handler.sessionClosed(wsSession);
 			this.handler.sessionDestroyed(wsSession);
 		}
+
+		// 校验会话是否超时
+		this.checkSessionTimeout();
 	}
 
 	@OnWebSocketError
@@ -201,5 +213,30 @@ public final class JettyWebSocket implements WebSocketManager {
 		if (null != rawSession) {
 			rawSession.close(1000, "Server close this session");
 		}
+	}
+
+	private void checkSessionTimeout() {
+		ArrayList<Session> closedList = new ArrayList<Session>();
+
+		synchronized (this.sessions) {
+			long time = Clock.currentTimeMillis();
+
+			for (int i = 0; i < this.sessions.size(); ++i) {
+				Session rawSession = this.sessions.get(i);
+				WebSocketSession wsSession = this.wsSessions.get(i);
+
+				if (time - wsSession.getHeartbeat() >= this.timeout) {
+					closedList.add(rawSession);
+				}
+			}
+		}
+
+		if (!closedList.isEmpty()) {
+			for (Session s : closedList) {
+				s.close(1000, "Server close this session");
+			}
+			closedList.clear();
+		}
+		closedList = null;
 	}
 }
