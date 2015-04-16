@@ -94,7 +94,6 @@ public class WebSocketMessageHandler implements MessageHandler {
 					this.processDialogue(data.getJSONObject(TALK_PACKET), session);
 				}
 				else if (packetTag.equals(TPT_HEARTBEAT)) {
-					// TODO 收集客户端时间
 					((WebSocketSession)session).heartbeat();
 				}
 				else if (packetTag.equals(TPT_REQUEST)) {

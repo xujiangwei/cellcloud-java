@@ -65,6 +65,10 @@ public class WebSocketSession extends Session {
 
 	@Override
 	public void write(Message message) {
+		if (!this.rawSession.isOpen()) {
+			return;
+		}
+
 		RemoteEndpoint remote = this.rawSession.getRemote();
 		remote.sendString(message.getAsString(), null);
 		if (remote.getBatchMode() == BatchMode.ON) {
