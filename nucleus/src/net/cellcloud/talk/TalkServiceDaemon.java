@@ -119,7 +119,11 @@ public final class TalkServiceDaemon extends Thread {
 						}
 
 						if (this.tickTime - speaker.retryTimestamp >= speaker.capacity.retryDelay) {
-							if (Logger.isDebugLevel()) {
+							// 重连
+							speaker.retryTimestamp = this.tickTime;
+							speaker.retryCounts++;
+							// 执行 call
+							if (speaker.call(null)) {
 								StringBuilder buf = new StringBuilder();
 								buf.append("Retry call cellet '");
 								buf.append(speaker.getRemoteTag());
@@ -127,15 +131,20 @@ public final class TalkServiceDaemon extends Thread {
 								buf.append(speaker.getAddress().getAddress().getHostAddress());
 								buf.append(":");
 								buf.append(speaker.getAddress().getPort());
-								Logger.d(TalkServiceDaemon.class, buf.toString());
+								Logger.i(TalkServiceDaemon.class, buf.toString());
 								buf = null;
 							}
-
-							// 重连
-							speaker.retryTimestamp = this.tickTime;
-							speaker.retryCounts++;
-							// 执行 call
-							speaker.call(null);
+							else {
+								StringBuilder buf = new StringBuilder();
+								buf.append("Failed retry call cellet '");
+								buf.append(speaker.getRemoteTag());
+								buf.append("' at ");
+								buf.append(speaker.getAddress().getAddress().getHostAddress());
+								buf.append(":");
+								buf.append(speaker.getAddress().getPort());
+								Logger.w(TalkServiceDaemon.class, buf.toString());
+								buf = null;
+							}
 						}
 					}
 				}
