@@ -628,29 +628,37 @@ public final class TalkService implements Service, SpeakerDelegate {
 	 * 
 	 * @note Client
 	 */
-	public void hangUp(String identifier) {
-		if (null != this.speakerMap && this.speakerMap.containsKey(identifier)) {
-			Speaker speaker = this.speakerMap.remove(identifier);
+	public void hangUp(List<String> identifiers) {
+		if (null != this.speakerMap) {
+			for (String identifier : identifiers) {
+				if (this.speakerMap.containsKey(identifier)) {
+					Speaker speaker = this.speakerMap.remove(identifier);
 
-			for (String celletIdentifier : speaker.getIdentifiers()) {
-				this.speakerMap.remove(celletIdentifier);
+					for (String celletIdentifier : speaker.getIdentifiers()) {
+						this.speakerMap.remove(celletIdentifier);
+					}
+
+					this.speakers.remove(speaker);
+
+					speaker.hangUp();
+				}
 			}
-
-			this.speakers.remove(speaker);
-
-			speaker.hangUp();
 		}
 
-		if (null != this.httpSpeakerMap && this.httpSpeakerMap.containsKey(identifier)) {
-			HttpSpeaker speaker = this.httpSpeakerMap.remove(identifier);
+		if (null != this.httpSpeakerMap) {
+			for (String identifier : identifiers) {
+				if (this.httpSpeakerMap.containsKey(identifier)) {
+					HttpSpeaker speaker = this.httpSpeakerMap.remove(identifier);
 
-			for (String celletIdentifier : speaker.getIdentifiers()) {
-				this.httpSpeakerMap.remove(celletIdentifier);
+					for (String celletIdentifier : speaker.getIdentifiers()) {
+						this.httpSpeakerMap.remove(celletIdentifier);
+					}
+
+					this.httpSpeakers.remove(speaker);
+
+					speaker.hangUp();
+				}
 			}
-
-			this.httpSpeakers.remove(speaker);
-
-			speaker.hangUp();
 		}
 	}
 
@@ -936,68 +944,6 @@ public final class TalkService implements Service, SpeakerDelegate {
 				}
 			}
 
-			/*
-			// 遍历此 Session 所访问的所有 Cellet
-			Map<String, TalkTracker> map = ctx.getTrackers();
-			Iterator<Map.Entry<String, TalkTracker>> iter = map.entrySet().iterator();
-			while (iter.hasNext()) {
-				Map.Entry<String, TalkTracker> entry = iter.next();
-				String tag = entry.getKey();
-				TalkTracker tracker = entry.getValue();
-
-				// 判断是否需要进行挂起
-				if (tracker.isAutoSuspend()) {
-					// 将消费者挂起，被动挂起
-					this.suspendTalk(tracker, SuspendMode.PASSIVE);
-					if (null != tracker.activeCellet) {
-						// 通知 Cellet 对端挂起
-						tracker.activeCellet.suspended(tag);
-					}
-				}
-				else if (this.suspendedTrackers.containsKey(tag)) {
-					// 已经挂起的对端，判断是否有指定 Cellet 上的挂起记录
-					if (null != tracker.activeCellet) {
-						SuspendedTracker st = this.suspendedTrackers.get(tag);
-						if (!st.exist(tracker.activeCellet)) {
-							// 没有记录，对端退出
-							tracker.activeCellet.quitted(tag);
-						}
-						else {
-							// 有记录，对端挂起
-							// FIXME 01/01/2013 如果已经挂起说明之前已经是主动挂起了，
-							// 不需要再回调事件。
-							//tracker.activeCellet.suspended(tag);
-						}
-					}
-				}
-				else {
-					// 不进行挂起
-					if (null != tracker.activeCellet) {
-						// 通知 Cellet 对端退出
-						tracker.activeCellet.quitted(tag);
-					}
-				}
-
-				// 处理标签和上下文映射列表
-				Vector<TalkSessionContext> list = this.tagSessionsMap.get(tag);
-				if (list != null) {
-					for (int i = 0, size = list.size(); i < size; ++i) {
-						TalkSessionContext c = list.get(i);
-						if (c.getSession().getId() == session.getId()) {
-							list.remove(i);
-							break;
-						}
-					}
-
-					// 如果清单为空，则删除此记录
-					if (list.isEmpty()) {
-						this.tagSessionsMap.remove(tag);
-						this.tagList.remove(tag);
-					}
-				}
-			} // # while
-			*/
-
 			// 清理上下文记录
 			this.tagContexts.remove(tag);
 			this.sessionContexts.remove(session);
@@ -1064,25 +1010,6 @@ public final class TalkService implements Service, SpeakerDelegate {
 		}
 
 		Cellet cellet = Nucleus.getInstance().getCellet(identifier, this.nucleusContext);
-
-//		if (null != tracker) {
-//			if (tracker.activeCellet != null && tracker.activeCellet.getFeature().getIdentifier().equals(identifier)) {
-//				cellet = null;
-//			}
-//			else {
-//				cellet = Nucleus.getInstance().getCellet(identifier, this.nucleusContext);
-//				if (null != cellet) {
-//					tracker.activeCellet = cellet;
-//				}
-//			}
-//		}
-//		else {
-//			tracker = ctx.addTracker(tag, session.getAddress());
-//			cellet = Nucleus.getInstance().getCellet(identifier, this.nucleusContext);
-//			if (null != cellet) {
-//				tracker.activeCellet = cellet;
-//			}
-//		}
 
 		TalkTracker tracker = null;
 
