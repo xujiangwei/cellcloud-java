@@ -154,7 +154,11 @@ public final class TalkServiceDaemon extends Thread {
 			service.processUnidentifiedSessions(this.tickTime);
 
 			// 1 分钟检查一次挂起状态下的会话器是否失效
+			// 1 分钟检查一次会话是否超时
 			if (heartbeatCount % 60 == 0) {
+				// 检查会话超时情况
+				service.checkSessionHeartbeat();
+
 				// 检查并删除挂起的会话
 				service.checkAndDeleteSuspendedTalk();
 			}

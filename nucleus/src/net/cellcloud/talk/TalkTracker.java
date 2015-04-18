@@ -26,45 +26,24 @@ THE SOFTWARE.
 
 package net.cellcloud.talk;
 
-import java.net.InetSocketAddress;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Vector;
 
 import net.cellcloud.core.Cellet;
-import net.cellcloud.core.Endpoint;
-import net.cellcloud.core.NucleusConfig;
 
 /** Talk 追踪器。
  * 
  * @author Jiangwei Xu
  */
 public final class TalkTracker {
-
-	private String tag;
-	private Endpoint endpoint;
-
 	private boolean autoSuspend = false;
 	private long suspendDuration = 5000;
 
 	private Vector<Cellet> cellets = null;
 
-	protected TalkTracker(String tag, InetSocketAddress address) {
-		this.tag = tag;
-		this.endpoint = new Endpoint(tag, NucleusConfig.Role.CONSUMER, address);
+	protected TalkTracker() {
 		this.cellets = new Vector<Cellet>();
-	}
-
-	/** 返回标签。
-	 */
-	public String getTag() {
-		return this.tag;
-	}
-
-	/** 返回终端。
-	 */
-	public Endpoint getEndpoint() {
-		return this.endpoint;
 	}
 
 	/** 返回是否进行自动挂起。

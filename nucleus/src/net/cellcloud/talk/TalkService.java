@@ -30,6 +30,7 @@ import java.io.ByteArrayOutputStream;
 import java.net.InetSocketAddress;
 import java.util.ArrayList;
 import java.util.Iterator;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Queue;
@@ -82,6 +83,8 @@ public final class TalkService implements Service, SpeakerDelegate {
 	private int port;
 	private int block;
 	private int maxConnections;
+
+	private long sessionTimeout;
 
 	// 服务器端是否启用 HTTP 服务
 	private boolean httpEnabled;
@@ -142,6 +145,9 @@ public final class TalkService implements Service, SpeakerDelegate {
 			this.httpEnabled = true;
 			this.httpPort = 7070;
 			this.httpQueueSize = 1000;
+
+			// 10 分钟
+			this.sessionTimeout = 10 * 60 * 1000;
 
 			// 5 分钟
 			this.httpSessionTimeout = 5 * 60 * 1000;
@@ -245,7 +251,7 @@ public final class TalkService implements Service, SpeakerDelegate {
 				Map.Entry<Session, TalkSessionContext> entry = iter.next();
 				TalkSessionContext ctx = entry.getValue();
 				for (Cellet cellet : ctx.getTracker().getCelletList()) {
-					cellet.quitted(ctx.getTracker().getTag());
+					cellet.quitted(ctx.getTag());
 				}
 			}
 
@@ -446,7 +452,7 @@ public final class TalkService implements Service, SpeakerDelegate {
 		TalkSessionContext context = this.tagContexts.get(targetTag);
 		if (null == context) {
 			if (Logger.isDebugLevel()) {
-				Logger.d(TalkService.class, "Can't find target tag in context list : " + targetTag);
+				Logger.w(TalkService.class, "Can't find target tag in context list : " + targetTag);
 			}
 
 			// 尝试在已挂起的的追踪器里查找
@@ -881,7 +887,7 @@ public final class TalkService implements Service, SpeakerDelegate {
 	public Endpoint findEndpoint(String remoteTag) {
 		TalkSessionContext ctx = this.tagContexts.get(remoteTag);
 		if (null != ctx) {
-			return ctx.getTracker().getEndpoint();
+			return ctx.getEndpoint();
 		}
 
 		return null;
@@ -910,12 +916,12 @@ public final class TalkService implements Service, SpeakerDelegate {
 		TalkSessionContext ctx = this.sessionContexts.get(session);
 		if (null != ctx) {
 			TalkTracker tracker = ctx.getTracker();
-			String tag = tracker.getTag();
+			String tag = ctx.getTag();
 
 			// 判断是否需要进行挂起
 			if (tracker.isAutoSuspend()) {
 				// 将消费者挂起，被动挂起
-				this.suspendTalk(tracker, SuspendMode.PASSIVE);
+				this.suspendTalk(ctx, SuspendMode.PASSIVE);
 				for (Cellet cellet : tracker.getCelletList()) {
 					// 通知 Cellet 对端挂起
 					cellet.suspended(tag);
@@ -944,9 +950,12 @@ public final class TalkService implements Service, SpeakerDelegate {
 				}
 			}
 
+			Logger.i(this.getClass(), "Clear session: " + tag);
+
 			// 清理上下文记录
 			this.tagContexts.remove(tag);
 			this.sessionContexts.remove(session);
+			this.tagList.remove(tag);
 		}
 
 		// 清理未授权表
@@ -1000,16 +1009,17 @@ public final class TalkService implements Service, SpeakerDelegate {
 		}
 
 		// 标签与上下文映射
-		if (!this.tagContexts.containsKey(tag)) {
-			this.tagContexts.put(tag, ctx);
+		if (this.tagContexts.containsKey(tag)) {
+			this.tagContexts.remove(tag);
 		}
+		this.tagContexts.put(tag, ctx);
 
 		// 缓存 Tag
 		if (!this.tagList.contains(tag)) {
 			this.tagList.add(tag);
 		}
 
-		Cellet cellet = Nucleus.getInstance().getCellet(identifier, this.nucleusContext);
+		final Cellet cellet = Nucleus.getInstance().getCellet(identifier, this.nucleusContext);
 
 		TalkTracker tracker = null;
 
@@ -1028,6 +1038,21 @@ public final class TalkService implements Service, SpeakerDelegate {
 				// 回调 contacted
 				cellet.contacted(tag);
 			}
+
+			/*this.executor.execute(new Runnable() {
+				@Override
+				public void run() {
+					// 尝试恢复被动挂起的 Talk
+					if (tryResumeTalk(tag, cellet, SuspendMode.PASSIVE, 0)) {
+						// 回调 resumed
+						cellet.resumed(tag);
+					}
+					else {
+						// 回调 contacted
+						cellet.contacted(tag);
+					}
+				}
+			});*/
 		}
 
 		return tracker;
@@ -1096,7 +1121,7 @@ public final class TalkService implements Service, SpeakerDelegate {
 
 		TalkTracker talkTracker = ctx.getTracker();
 		// 进行主动挂起
-		SuspendedTracker st = this.suspendTalk(talkTracker, SuspendMode.INITATIVE);
+		SuspendedTracker st = this.suspendTalk(ctx, SuspendMode.INITATIVE);
 		if (null != st) {
 			// 更新有效时长
 			st.liveDuration = duration;
@@ -1262,6 +1287,28 @@ public final class TalkService implements Service, SpeakerDelegate {
 		return this.daemon.getTickTime();
 	}
 
+	/**
+	 * 检查会话是否超时。
+	 * @param timeout
+	 */
+	protected void checkSessionHeartbeat() {
+		LinkedList<Session> closeList = new LinkedList<Session>();
+
+		for (Map.Entry<Session, TalkSessionContext> entry : this.sessionContexts.entrySet()) {
+			TalkSessionContext ctx = entry.getValue();
+			if (this.daemon.getTickTime() - ctx.tickTime > this.sessionTimeout) {
+				closeList.add(entry.getKey());
+			}
+		}
+
+		for (Session session : closeList) {
+			this.closeSession(session);
+		}
+
+		closeList.clear();
+		closeList = null;
+	}
+
 	/** 检查 HTTP Session 心跳。
 	 */
 	protected void checkHttpSessionHeartbeat() {
@@ -1317,21 +1364,21 @@ public final class TalkService implements Service, SpeakerDelegate {
 
 	/** 挂起会话。
 	 */
-	private SuspendedTracker suspendTalk(TalkTracker talkTracker, int suspendMode) {
-		if (this.suspendedTrackers.containsKey(talkTracker.getTag())) {
-			SuspendedTracker tracker = this.suspendedTrackers.get(talkTracker.getTag());
-			for (Cellet cellet : talkTracker.getCelletList()) {
+	private SuspendedTracker suspendTalk(TalkSessionContext ctx, int suspendMode) {
+		if (this.suspendedTrackers.containsKey(ctx.getTag())) {
+			SuspendedTracker tracker = this.suspendedTrackers.get(ctx.getTag());
+			for (Cellet cellet : ctx.getTracker().getCelletList()) {
 				tracker.track(cellet, suspendMode);
 			}
 			return tracker;
 		}
 
-		SuspendedTracker tracker = new SuspendedTracker(talkTracker.getTag());
-		for (Cellet cellet : talkTracker.getCelletList()) {
+		SuspendedTracker tracker = new SuspendedTracker(ctx.getTag());
+		for (Cellet cellet : ctx.getTracker().getCelletList()) {
 			tracker.track(cellet, suspendMode);
 		}
-		tracker.liveDuration = talkTracker.getSuspendDuration();
-		this.suspendedTrackers.put(talkTracker.getTag(), tracker);
+		tracker.liveDuration = ctx.getTracker().getSuspendDuration();
+		this.suspendedTrackers.put(ctx.getTag(), tracker);
 		return tracker;
 	}
 

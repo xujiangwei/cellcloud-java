@@ -29,6 +29,8 @@ package net.cellcloud.talk;
 import java.net.InetSocketAddress;
 
 import net.cellcloud.common.Session;
+import net.cellcloud.core.Endpoint;
+import net.cellcloud.core.NucleusConfig;
 
 /** Talk 会话上下文。
  * 
@@ -40,6 +42,8 @@ public final class TalkSessionContext {
 
 	private String tag;
 
+	private Endpoint endpoint;
+
 	private TalkTracker tracker;
 
 	public long tickTime = 0;
@@ -49,7 +53,8 @@ public final class TalkSessionContext {
 	public TalkSessionContext(Session session, String tag, InetSocketAddress address) {
 		this.session = session;
 		this.tag = tag;
-		this.tracker = new TalkTracker(tag, address);
+		this.endpoint = new Endpoint(tag, NucleusConfig.Role.CONSUMER, address);
+		this.tracker = new TalkTracker();
 	}
 
 	/** 返回上下文对应的 Session 。
@@ -66,6 +71,12 @@ public final class TalkSessionContext {
 		return this.tag;
 	}
 
+	/** 返回终端。
+	 */
+	public Endpoint getEndpoint() {
+		return this.endpoint;
+	}
+
 	/**
 	 * 返回追踪器。
 	 * @return
@@ -73,34 +84,4 @@ public final class TalkSessionContext {
 	public TalkTracker getTracker() {
 		return this.tracker;
 	}
-
-	/** 返回所有 Tracker 。
-	 */
-//	public Map<String, TalkTracker> getTrackers() {
-//		return this.trackers;
-//	}
-
-	/** 返回指定 Tag 的 Tracker 。
-	 */
-//	public TalkTracker getTracker(final String tag) {
-//		return this.trackers.get(tag);
-//	}
-
-	/** 添加 Tracker 。
-	 */
-//	public TalkTracker addTracker(final String tag, final InetSocketAddress address) {
-//		if (this.trackers.containsKey(tag)) {
-//			this.trackers.remove(tag);
-//		}
-//
-//		TalkTracker tracker = new TalkTracker(tag, address);
-//		this.trackers.put(tag, tracker);
-//		return tracker;
-//	}
-
-	/** 删除 Tracker 。
-	 */
-//	public void removeTracker(final String tag) {
-//		this.trackers.remove(tag);
-//	}
 }
