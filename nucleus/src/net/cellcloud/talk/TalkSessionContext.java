@@ -26,11 +26,14 @@ THE SOFTWARE.
 
 package net.cellcloud.talk;
 
-import java.net.InetSocketAddress;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.concurrent.atomic.AtomicLong;
 
 import net.cellcloud.common.Session;
 import net.cellcloud.core.Endpoint;
 import net.cellcloud.core.NucleusConfig;
+import net.cellcloud.util.Clock;
 
 /** Talk 会话上下文。
  * 
@@ -38,7 +41,8 @@ import net.cellcloud.core.NucleusConfig;
  */
 public final class TalkSessionContext {
 
-	private Session session;
+	private LinkedList<Session> sessions;
+	private LinkedList<AtomicLong> sessionHeartbeats;
 
 	private String tag;
 
@@ -46,21 +50,81 @@ public final class TalkSessionContext {
 
 	private TalkTracker tracker;
 
-	public long tickTime = 0;
+	protected long dialogueTickTime = 0;
 
 	/** 构造函数。
 	 */
-	public TalkSessionContext(Session session, String tag, InetSocketAddress address) {
-		this.session = session;
+	public TalkSessionContext(String tag, Session session) {
 		this.tag = tag;
-		this.endpoint = new Endpoint(tag, NucleusConfig.Role.CONSUMER, address);
+
+		this.sessions = new LinkedList<Session>();
+		this.sessions.add(session);
+
+		this.sessionHeartbeats = new LinkedList<AtomicLong>();
+		this.sessionHeartbeats.add(new AtomicLong(Clock.currentTimeMillis()));
+
+		this.endpoint = new Endpoint(tag, NucleusConfig.Role.CONSUMER, session.getAddress());
 		this.tracker = new TalkTracker();
 	}
 
 	/** 返回上下文对应的 Session 。
 	 */
-	public Session getSession() {
-		return this.session;
+	public Session getLastSession() {
+		synchronized (this.sessions) {
+			return this.sessions.getLast();
+		}
+	}
+
+	/** 返回 Session 会话列表。
+	 * @return
+	 */
+	public List<Session> getSessions() {
+		synchronized (this.sessions) {
+			return this.sessions;
+		}
+	}
+
+	public List<AtomicLong> getSessionHeartbeats() {
+		synchronized (this.sessions) {
+			return this.sessionHeartbeats;
+		}
+	}
+
+	public void addSession(Session session) {
+		synchronized (this.sessions) {
+			if (this.sessions.contains(session)) {
+				return;
+			}
+
+			this.sessions.add(session);
+			this.sessionHeartbeats.add(new AtomicLong(Clock.currentTimeMillis()));
+		}
+	}
+
+	public void removeSession(Session session) {
+		synchronized (this.sessions) {
+			int index = this.sessions.indexOf(session);
+			if (index >= 0) {
+				this.sessions.remove(index);
+				this.sessionHeartbeats.remove(index);
+			}
+		}
+	}
+
+	public int numSessions() {
+		synchronized (this.sessions) {
+			return this.sessions.size();
+		}
+	}
+
+	public void updateSessionHeartbeat(Session session, long time) {
+		synchronized (this.sessions) {
+			int index = this.sessions.indexOf(session);
+			if (index >= 0) {
+				AtomicLong value = this.sessionHeartbeats.get(index);
+				value.set(time);
+			}
+		}
 	}
 
 	/**

@@ -37,6 +37,7 @@ import net.cellcloud.util.Utils;
 public class Session {
 
 	private Long id;
+	private long timestamp;
 	private MessageService service;
 	private InetSocketAddress address;
 
@@ -46,20 +47,22 @@ public class Session {
 
 	public Session(MessageService service, InetSocketAddress address) {
 		this.id = Math.abs(Utils.randomLong());
+		this.timestamp = System.currentTimeMillis();
 		this.service = service;
 		this.address = address;
 
-		this.cacheSize = 1024;
+		this.cacheSize = 2048;
 		this.cache = new byte[this.cacheSize];
 		this.cacheCursor = 0;
 	}
 
 	public Session(long id, MessageService service, InetSocketAddress address) {
 		this.id = id;
+		this.timestamp = System.currentTimeMillis();
 		this.service = service;
 		this.address = address;
 
-		this.cacheSize = 1024;
+		this.cacheSize = 2048;
 		this.cache = new byte[this.cacheSize];
 		this.cacheCursor = 0;
 	}
@@ -68,6 +71,13 @@ public class Session {
 	 */
 	public Long getId() {
 		return this.id;
+	}
+
+	/** 返回会话创建的时间戳。
+	 * @return
+	 */
+	public long getTimestamp() {
+		return this.timestamp;
 	}
 
 	/** 返回消息服务实例。

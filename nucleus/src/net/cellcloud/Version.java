@@ -36,7 +36,7 @@ public final class Version {
 	public static final int MAJOR = 1;
 
 	/// 副版本号
-	public static final int MINOR = 1;
+	public static final int MINOR = 2;
 
 	/// 修订号
 	public static final int REVISION = 0;

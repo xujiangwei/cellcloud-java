@@ -35,7 +35,7 @@ import net.cellcloud.Version;
 public final class VersionInfo {
 
 	public final static int MAJOR = 1;
-	public final static int MINOR = 1;
+	public final static int MINOR = 2;
 	public final static int REVISION = 0;
 
 	public static void main(String[] args) {

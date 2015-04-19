@@ -50,6 +50,6 @@ public final class ServerHeartbeatCommand extends ServerCommand {
 
 	@Override
 	public void execute() {
-		this.service.updateSessionTickTime(this.session);
+		this.service.updateSessionHeartbeat(this.session);
 	}
 }
