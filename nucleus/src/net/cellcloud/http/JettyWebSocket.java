@@ -27,14 +27,12 @@ THE SOFTWARE.
 package net.cellcloud.http;
 
 import java.net.InetSocketAddress;
-import java.util.ArrayList;
 import java.util.Vector;
 
 import net.cellcloud.common.Logger;
 import net.cellcloud.common.Message;
 import net.cellcloud.common.MessageErrorCode;
 import net.cellcloud.common.MessageHandler;
-import net.cellcloud.util.Clock;
 
 import org.eclipse.jetty.websocket.api.Session;
 import org.eclipse.jetty.websocket.api.annotations.OnWebSocketClose;
@@ -53,8 +51,6 @@ public final class JettyWebSocket implements WebSocketManager {
 	private MessageHandler handler;
 	private Vector<Session> sessions;
 	private Vector<WebSocketSession> wsSessions;
-
-	private final long timeout = 60 * 1000 + 5000;
 
 	public JettyWebSocket(MessageHandler handler) {
 		this.handler = handler;
@@ -143,9 +139,6 @@ public final class JettyWebSocket implements WebSocketManager {
 			this.handler.sessionCreated(wsSession);
 			this.handler.sessionOpened(wsSession);
 		}
-
-		// 校验会话是否超时
-		this.checkSessionTimeout();
 	}
 
 	@OnWebSocketClose
@@ -171,9 +164,6 @@ public final class JettyWebSocket implements WebSocketManager {
 			this.handler.sessionClosed(wsSession);
 			this.handler.sessionDestroyed(wsSession);
 		}
-
-		// 校验会话是否超时
-		this.checkSessionTimeout();
 	}
 
 	@OnWebSocketError
@@ -215,7 +205,7 @@ public final class JettyWebSocket implements WebSocketManager {
 		}
 	}
 
-	private void checkSessionTimeout() {
+	/*private void checkSessionTimeout() {
 		ArrayList<Session> closedList = new ArrayList<Session>();
 
 		synchronized (this.sessions) {
@@ -238,5 +228,5 @@ public final class JettyWebSocket implements WebSocketManager {
 			closedList.clear();
 		}
 		closedList = null;
-	}
+	}*/
 }

@@ -2,7 +2,7 @@
 -----------------------------------------------------------------------------
 This source file is part of Cell Cloud.
 
-Copyright (c) 2009-2014 Cell Cloud Team (www.cellcloud.net)
+Copyright (c) 2009-2015 Cell Cloud Team (www.cellcloud.net)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -33,7 +33,6 @@ import net.cellcloud.common.LogLevel;
 import net.cellcloud.common.Logger;
 import net.cellcloud.common.Message;
 import net.cellcloud.common.Session;
-import net.cellcloud.util.Clock;
 
 import org.eclipse.jetty.websocket.api.BatchMode;
 import org.eclipse.jetty.websocket.api.RemoteEndpoint;
@@ -47,20 +46,9 @@ public class WebSocketSession extends Session {
 
 	private org.eclipse.jetty.websocket.api.Session rawSession;
 
-	private long heartbeat;
-
 	public WebSocketSession(InetSocketAddress address, org.eclipse.jetty.websocket.api.Session session) {
 		super(null, address);
 		this.rawSession = session;
-		this.heartbeat = Clock.currentTimeMillis();
-	}
-
-	public long getHeartbeat() {
-		return this.heartbeat;
-	}
-
-	public void heartbeat() {
-		this.heartbeat = Clock.currentTimeMillis();
 	}
 
 	@Override

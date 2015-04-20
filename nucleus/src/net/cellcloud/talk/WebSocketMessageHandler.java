@@ -34,7 +34,6 @@ import net.cellcloud.common.Message;
 import net.cellcloud.common.MessageHandler;
 import net.cellcloud.common.Session;
 import net.cellcloud.core.Nucleus;
-import net.cellcloud.http.WebSocketSession;
 import net.cellcloud.talk.stuff.PrimitiveSerializer;
 
 import org.json.JSONException;
@@ -94,7 +93,6 @@ public class WebSocketMessageHandler implements MessageHandler {
 					this.processDialogue(data.getJSONObject(TALK_PACKET), session);
 				}
 				else if (packetTag.equals(TPT_HEARTBEAT)) {
-					((WebSocketSession)session).heartbeat();
 					// 更新心跳
 					this.service.updateSessionHeartbeat(session);
 				}
