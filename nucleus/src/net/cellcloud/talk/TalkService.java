@@ -730,6 +730,7 @@ public final class TalkService implements Service, SpeakerDelegate {
 
 		return false;
 	}
+
 	/** Cellet 服务是否已经被挂起。
 	 * 
 	 * @note Client
@@ -744,6 +745,10 @@ public final class TalkService implements Service, SpeakerDelegate {
 		}
 
 		return false;
+	}
+
+	public ExecutorService getExecutor() {
+		return this.executor;
 	}
 
 	/** 启动 HTTP 服务。

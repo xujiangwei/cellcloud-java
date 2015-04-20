@@ -33,6 +33,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import net.cellcloud.common.Logger;
 import net.cellcloud.core.Cellet;
+import net.cellcloud.talk.TalkService;
 
 /** 块数据传输方言工厂。
  * 
@@ -88,74 +89,75 @@ public class ChunkDialectFactory extends DialectFactory {
 	protected boolean onTalk(Cellet cellet, String targetTag, Dialect dialect) {
 		ChunkDialect chunk = (ChunkDialect) dialect;
 
-		synchronized (this.metaData) {
-			if (chunk.getChunkIndex() == 0 || chunk.infectant || chunk.ack) {
-				// 直接发送
+		if (chunk.getChunkIndex() == 0 || chunk.infectant || chunk.ack) {
+			// 直接发送
 
-				// 回调已处理
-				chunk.fireProgress(targetTag);
+			// 回调已处理
+			chunk.fireProgress(targetTag);
 
-				return true;
+			return true;
+		}
+		else {
+			Queue queue = this.queueMap.get(chunk.getSign());
+			if (null != queue) {
+				// 写入队列
+				queue.enqueue(chunk);
+				// 劫持，由队列发送
+				return false;
 			}
 			else {
-				Queue queue = this.queueMap.get(chunk.getSign());
-				if (null != queue) {
-					// 写入队列
-					queue.enqueue(chunk);
-					// 劫持，由队列发送
-					return false;
-				}
-				else {
-					queue = new Queue(targetTag.toString(), chunk.getChunkNum());
-					queue.enqueue(chunk);
-					this.queueMap.put(chunk.getSign(), queue);
-					// 劫持，由队列发送
-					return false;
-				}
+				queue = new Queue(targetTag.toString(), chunk.getChunkNum());
+				queue.enqueue(chunk);
+				this.queueMap.put(chunk.getSign(), queue);
+				// 劫持，由队列发送
+				return false;
 			}
 		}
 	}
 
 	@Override
-	protected boolean onDialogue(Cellet cellet, String sourceTag, Dialect dialect) {
+	protected boolean onDialogue(final Cellet cellet, final String sourceTag, Dialect dialect) {
 		ChunkDialect chunk = (ChunkDialect) dialect;
 
-		synchronized (this.metaData) {
-			if (!chunk.ack) {
-				// 回送确认
-				String sign = chunk.getSign();
+		if (!chunk.ack) {
+			// 回送确认
+			String sign = chunk.getSign();
 
-				ChunkDialect ack = new ChunkDialect();
-				ack.setAck(sign, chunk.getChunkIndex(), chunk.getChunkNum());
+			final ChunkDialect ack = new ChunkDialect();
+			ack.setAck(sign, chunk.getChunkIndex(), chunk.getChunkNum());
 
-				// 回送 ACK
-				cellet.talk(sourceTag, ack);
+			TalkService.getInstance().getExecutor().execute(new Runnable() {
+				@Override
+				public void run() {
+					// 回送 ACK
+					cellet.talk(sourceTag, ack);
+				}
+			});
 
-				// 不劫持
-				return true;
-			}
-			else {
-				// 收到 ACK ，发送下一个
-				String sign = chunk.getSign();
-				Queue queue = this.queueMap.get(sign);
-				if (null != queue) {
-					// 更新应答索引
-					queue.ackIndex = chunk.getChunkIndex();
-					// 发送下一条数据
-					ChunkDialect response = queue.dequeue();
-					if (null != response) {
-						cellet.talk(queue.target, response);
-					}
-
-					// 检查
-					if (queue.ackIndex == chunk.getChunkNum() - 1) {
-						this.checkAndClearQueue();
-					}
+			// 不劫持
+			return true;
+		}
+		else {
+			// 收到 ACK ，发送下一个
+			String sign = chunk.getSign();
+			Queue queue = this.queueMap.get(sign);
+			if (null != queue) {
+				// 更新应答索引
+				queue.ackIndex = chunk.getChunkIndex();
+				// 发送下一条数据
+				ChunkDialect response = queue.dequeue();
+				if (null != response) {
+					cellet.talk(queue.target, response);
 				}
 
-				// 应答包，劫持
-				return false;
+				// 检查
+				if (queue.ackIndex == chunk.getChunkNum() - 1) {
+					this.checkAndClearQueue();
+				}
 			}
+
+			// 应答包，劫持
+			return false;
 		}
 	}
 
@@ -249,9 +251,7 @@ public class ChunkDialectFactory extends DialectFactory {
 			for (String sign : deleteList) {
 				this.queueMap.remove(sign);
 
-				if (Logger.isDebugLevel()) {
-					Logger.i(this.getClass(), "Clear chunk factory queue: " + sign);
-				}
+				Logger.i(this.getClass(), "Clear chunk factory queue: " + sign);
 			}
 
 			deleteList.clear();
