@@ -106,7 +106,7 @@ public class ChunkDialectFactory extends DialectFactory {
 					return false;
 				}
 				else {
-					queue = new Queue(cellet.getFeature().getIdentifier(), chunk.getChunkNum());
+					queue = new Queue(targetTag.toString(), chunk.getChunkNum());
 					queue.enqueue(chunk);
 					this.queueMap.put(chunk.getSign(), queue);
 					// 劫持，由队列发送
@@ -129,7 +129,7 @@ public class ChunkDialectFactory extends DialectFactory {
 				ack.setAck(sign, chunk.getChunkIndex(), chunk.getChunkNum());
 
 				// 回送 ACK
-				cellet.talk(dialect.getOwnerTag(), ack);
+				cellet.talk(sourceTag, ack);
 
 				// 不劫持
 				return true;
@@ -365,7 +365,6 @@ public class ChunkDialectFactory extends DialectFactory {
 
 	private class Queue {
 		private String target;
-//		private long timestamp;
 		private Vector<ChunkDialect> queue;
 
 		protected int ackIndex = -1;
@@ -375,7 +374,6 @@ public class ChunkDialectFactory extends DialectFactory {
 		private Queue(String target, int chunkNum) {
 			this.target = target;
 			this.chunkNum = chunkNum;
-//			this.timestamp = System.currentTimeMillis();
 			this.queue = new Vector<ChunkDialect>();
 		}
 

@@ -967,7 +967,7 @@ public final class TalkService implements Service, SpeakerDelegate {
 		}
 		else {
 			//
-			Logger.w(this.getClass(), "Can NOT find tag with session: " + session.getAddress().getHostString());
+			Logger.i(this.getClass(), "Can NOT find tag with session: " + session.getAddress().getHostString());
 		}
 
 		// 清理未授权表
@@ -1315,6 +1315,10 @@ public final class TalkService implements Service, SpeakerDelegate {
 	 * @param timeout
 	 */
 	protected void checkSessionHeartbeat() {
+		if (null == this.tagContexts) {
+			return;
+		}
+
 		LinkedList<Session> closeList = new LinkedList<Session>();
 
 		for (Map.Entry<String, TalkSessionContext> entry : this.tagContexts.entrySet()) {
