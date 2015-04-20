@@ -146,8 +146,8 @@ public final class TalkService implements Service, SpeakerDelegate {
 			this.httpPort = 7070;
 			this.httpQueueSize = 1000;
 
-			// 30 天
-			this.sessionTimeout = 30 * 24 * 60 * 60 * 1000;
+			// 24 小时
+			this.sessionTimeout = 24 * 60 * 60 * 1000;
 
 			// 5 分钟
 			this.httpSessionTimeout = 5 * 60 * 1000;
@@ -1316,14 +1316,14 @@ public final class TalkService implements Service, SpeakerDelegate {
 			List<Session> sl = ctx.getSessions();
 			for (Session s : sl) {
 				long time = ctx.getSessionHeartbeat(s);
-				if (time < this.daemon.getTickTime()) {
+				if (time == 0) {
 					continue;
 				}
 
 				if (this.daemon.getTickTime() - time > this.sessionTimeout) {
 					// 超时的 Session 添加到关闭列表
 					closeList.add(s);
-					Logger.d(this.getClass(), "Session timeout in check: " + s.getAddress().getHostString());
+					Logger.d(this.getClass(), "Session timeout in heartbeat: " + s.getAddress().getHostString());
 				}
 			}
 		}

@@ -95,6 +95,8 @@ public class WebSocketMessageHandler implements MessageHandler {
 				}
 				else if (packetTag.equals(TPT_HEARTBEAT)) {
 					((WebSocketSession)session).heartbeat();
+					// 更新心跳
+					this.service.updateSessionHeartbeat(session);
 				}
 				else if (packetTag.equals(TPT_REQUEST)) {
 					this.processRequest(data.getJSONObject(TALK_PACKET), session);
