@@ -28,7 +28,7 @@ package net.cellcloud.talk;
 
 import java.util.LinkedList;
 import java.util.List;
-import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.ConcurrentHashMap;
 
 import net.cellcloud.common.Session;
 import net.cellcloud.core.Endpoint;
@@ -42,7 +42,7 @@ import net.cellcloud.util.Clock;
 public final class TalkSessionContext {
 
 	private LinkedList<Session> sessions;
-	private LinkedList<AtomicLong> sessionHeartbeats;
+	private ConcurrentHashMap<Long, Long> sessionHeartbeats;
 
 	private String tag;
 
@@ -60,8 +60,8 @@ public final class TalkSessionContext {
 		this.sessions = new LinkedList<Session>();
 		this.sessions.add(session);
 
-		this.sessionHeartbeats = new LinkedList<AtomicLong>();
-		this.sessionHeartbeats.add(new AtomicLong(Clock.currentTimeMillis()));
+		this.sessionHeartbeats = new ConcurrentHashMap<Long, Long>();
+		this.sessionHeartbeats.put(session.getId(), Clock.currentTimeMillis());
 
 		this.endpoint = new Endpoint(tag, NucleusConfig.Role.CONSUMER, session.getAddress());
 		this.tracker = new TalkTracker();
@@ -84,9 +84,13 @@ public final class TalkSessionContext {
 		}
 	}
 
-	public List<AtomicLong> getSessionHeartbeats() {
+	public long getSessionHeartbeat(Session session) {
 		synchronized (this.sessions) {
-			return this.sessionHeartbeats;
+			Long v = this.sessionHeartbeats.get(session.getId());
+			if (null == v) {
+				return 0;
+			}
+			return v.longValue();
 		}
 	}
 
@@ -97,17 +101,14 @@ public final class TalkSessionContext {
 			}
 
 			this.sessions.add(session);
-			this.sessionHeartbeats.add(new AtomicLong(Clock.currentTimeMillis()));
+			this.sessionHeartbeats.put(session.getId(), Clock.currentTimeMillis());
 		}
 	}
 
 	public void removeSession(Session session) {
 		synchronized (this.sessions) {
-			int index = this.sessions.indexOf(session);
-			if (index >= 0) {
-				this.sessions.remove(index);
-				this.sessionHeartbeats.remove(index);
-			}
+			this.sessions.remove(session);
+			this.sessionHeartbeats.remove(session.getId());
 		}
 	}
 
@@ -119,11 +120,7 @@ public final class TalkSessionContext {
 
 	public void updateSessionHeartbeat(Session session, long time) {
 		synchronized (this.sessions) {
-			int index = this.sessions.indexOf(session);
-			if (index >= 0) {
-				AtomicLong value = this.sessionHeartbeats.get(index);
-				value.set(time);
-			}
+			this.sessionHeartbeats.put(session.getId(), time);
 		}
 	}
 

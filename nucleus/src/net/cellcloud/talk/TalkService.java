@@ -39,7 +39,6 @@ import java.util.Vector;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentSkipListSet;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.atomic.AtomicLong;
 
 import net.cellcloud.common.Cryptology;
 import net.cellcloud.common.LogLevel;
@@ -147,8 +146,8 @@ public final class TalkService implements Service, SpeakerDelegate {
 			this.httpPort = 7070;
 			this.httpQueueSize = 1000;
 
-			// 10 分钟
-			this.sessionTimeout = 10 * 60 * 1000;
+			// 30 天
+			this.sessionTimeout = 30 * 24 * 60 * 60 * 1000;
 
 			// 5 分钟
 			this.httpSessionTimeout = 5 * 60 * 1000;
@@ -1069,21 +1068,6 @@ public final class TalkService implements Service, SpeakerDelegate {
 				// 回调 contacted
 				cellet.contacted(tag);
 			}
-
-			/*this.executor.execute(new Runnable() {
-				@Override
-				public void run() {
-					// 尝试恢复被动挂起的 Talk
-					if (tryResumeTalk(tag, cellet, SuspendMode.PASSIVE, 0)) {
-						// 回调 resumed
-						cellet.resumed(tag);
-					}
-					else {
-						// 回调 contacted
-						cellet.contacted(tag);
-					}
-				}
-			});*/
 		}
 
 		return tracker;
@@ -1243,8 +1227,8 @@ public final class TalkService implements Service, SpeakerDelegate {
 				deliverChecking(cert.session, cert.plaintext, cert.key);
 			}
 			else {
-				// 10 秒超时检测
-				if (time - cert.time > 10000) {
+				// 20 秒超时检测
+				if (time - cert.time > 20000) {
 					if (null == sessionList) {
 						sessionList = new ArrayList<Session>();
 					}
@@ -1330,14 +1314,16 @@ public final class TalkService implements Service, SpeakerDelegate {
 			TalkSessionContext ctx = entry.getValue();
 
 			List<Session> sl = ctx.getSessions();
-			List<AtomicLong> hl = ctx.getSessionHeartbeats();
-			synchronized (sl) {
-				for (int i = 0, size = hl.size(); i < size; ++i) {
-					AtomicLong time = hl.get(i);
-					if (this.daemon.getTickTime() - time.get() > this.sessionTimeout) {
-						// 超时的 Session 添加到关闭列表
-						closeList.add(sl.get(i));
-					}
+			for (Session s : sl) {
+				long time = ctx.getSessionHeartbeat(s);
+				if (time < this.daemon.getTickTime()) {
+					continue;
+				}
+
+				if (this.daemon.getTickTime() - time > this.sessionTimeout) {
+					// 超时的 Session 添加到关闭列表
+					closeList.add(s);
+					Logger.d(this.getClass(), "Session timeout in check: " + s.getAddress().getHostString());
 				}
 			}
 		}
