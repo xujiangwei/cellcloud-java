@@ -51,6 +51,10 @@ public class WebSocketSession extends Session {
 		this.rawSession = session;
 	}
 
+	public boolean isOpen() {
+		return this.rawSession.isOpen();
+	}
+
 	@Override
 	public void write(Message message) {
 		if (!this.rawSession.isOpen()) {
