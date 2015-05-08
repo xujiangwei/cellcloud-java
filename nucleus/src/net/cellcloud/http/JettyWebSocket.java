@@ -27,7 +27,7 @@ THE SOFTWARE.
 package net.cellcloud.http;
 
 import java.net.InetSocketAddress;
-import java.util.Vector;
+import java.util.LinkedList;
 
 import net.cellcloud.common.Logger;
 import net.cellcloud.common.Message;
@@ -49,13 +49,13 @@ import org.eclipse.jetty.websocket.api.annotations.WebSocket;
 public final class JettyWebSocket implements WebSocketManager {
 
 	private MessageHandler handler;
-	private Vector<Session> sessions;
-	private Vector<WebSocketSession> wsSessions;
+	private LinkedList<Session> sessions;
+	private LinkedList<WebSocketSession> wsSessions;
 
 	public JettyWebSocket(MessageHandler handler) {
 		this.handler = handler;
-		this.sessions = new Vector<Session>();
-		this.wsSessions = new Vector<WebSocketSession>();
+		this.sessions = new LinkedList<Session>();
+		this.wsSessions = new LinkedList<WebSocketSession>();
 	}
 
 	@OnWebSocketMessage

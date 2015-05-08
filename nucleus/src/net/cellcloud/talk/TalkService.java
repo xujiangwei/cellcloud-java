@@ -472,7 +472,7 @@ public final class TalkService implements Service, SpeakerDelegate {
 
 		synchronized (context) {
 			if (context.getTracker().hasCellet(cellet)) {
-
+				// 对方言进行是否劫持处理
 				if (null != this.callbackListener && primitive.isDialectal()) {
 					boolean ret = this.callbackListener.doTalk(cellet, targetTag, primitive.getDialect());
 					if (!ret) {
@@ -482,9 +482,14 @@ public final class TalkService implements Service, SpeakerDelegate {
 				}
 
 				Session session = context.getLastSession();
-				message = this.packetDialogue(cellet, primitive, (session instanceof WebSocketSession));
-				if (null != message) {
-					session.write(message);
+				if (null != session) {
+					message = this.packetDialogue(cellet, primitive, (session instanceof WebSocketSession));
+					if (null != message) {
+						session.write(message);
+					}
+				}
+				else {
+					Logger.w(this.getClass(), "Can NOT find valid session in context - tag: " + targetTag);
 				}
 			}
 		}
@@ -1186,6 +1191,10 @@ public final class TalkService implements Service, SpeakerDelegate {
 			// 判断是否是同一个 Cellet
 			if (tracker.getCellet(cellet.getFeature().getIdentifier()) == cellet) {
 				Session session = context.getLastSession();
+				if (null == session) {
+					Logger.w(this.getClass(), "Can NOT find valid session in context - tag: " + targetTag);
+					return;
+				}
 
 				// 发送所有原语
 				for (int i = 0, size = timestampQueue.size(); i < size; ++i) {

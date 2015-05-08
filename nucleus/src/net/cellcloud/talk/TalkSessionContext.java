@@ -71,6 +71,10 @@ public final class TalkSessionContext {
 	 */
 	public Session getLastSession() {
 		synchronized (this.sessions) {
+			if (this.sessions.isEmpty()) {
+				return null;
+			}
+
 			return this.sessions.getLast();
 		}
 	}
