@@ -27,6 +27,7 @@ THE SOFTWARE.
 package net.cellcloud.talk;
 
 import java.util.Iterator;
+import java.util.LinkedList;
 
 import net.cellcloud.common.LogLevel;
 import net.cellcloud.common.Logger;
@@ -56,6 +57,8 @@ public final class TalkServiceDaemon extends Thread {
 	public void run() {
 		this.running = true;
 		this.spinning = true;
+
+		LinkedList<Speaker> speakerList = new LinkedList<Speaker>();
 
 		TalkService service = TalkService.getInstance();
 
@@ -97,36 +100,47 @@ public final class TalkServiceDaemon extends Thread {
 			if (heartbeatCount % 120 == 0) {
 				// 120 秒一次心跳
 				if (null != service.speakers) {
-					for (Speaker speaker : service.speakers) {
-						speaker.heartbeat();
+					synchronized (service.speakers) {
+						for (Speaker speaker : service.speakers) {
+							speaker.heartbeat();
+						}
 					}
 				}
 			}
 
 			// 检查丢失连接的 Speaker
 			if (null != service.speakers) {
-				Iterator<Speaker> iter = service.speakers.iterator();
-				while (iter.hasNext()) {
-					Speaker speaker = iter.next();
-					if (speaker.lost
-						&& null != speaker.capacity
-						&& speaker.capacity.retryAttempts > 0) {
-						if (speaker.retryTimestamp == 0) {
-							// 建立时间戳
-							speaker.retryTimestamp = this.tickTime;
-							continue;
-						}
+				try {
+					synchronized (service.speakers) {
+						for (Speaker speaker : service.speakers) {
+							if (speaker.lost
+								&& null != speaker.capacity
+								&& speaker.capacity.retryAttempts > 0) {
+								if (speaker.retryTimestamp == 0) {
+									// 建立时间戳
+									speaker.retryTimestamp = this.tickTime;
+									continue;
+								}
 
-						// 判断是否达到最大重试次数
-						if (speaker.retryCounts >= speaker.capacity.retryAttempts) {
-							if (!speaker.retryEnd) {
-								speaker.retryEnd = true;
-								speaker.fireRetryEnd();
+								// 判断是否达到最大重试次数
+								if (speaker.retryCounts >= speaker.capacity.retryAttempts) {
+									if (!speaker.retryEnd) {
+										speaker.retryEnd = true;
+										speaker.fireRetryEnd();
+									}
+									continue;
+								}
+
+								// 可以进行重连尝试
+								if (this.tickTime - speaker.retryTimestamp >= speaker.capacity.retryDelay) {
+									speakerList.add(speaker);
+								}
 							}
-							continue;
 						}
+					} //#synchronized
 
-						if (this.tickTime - speaker.retryTimestamp >= speaker.capacity.retryDelay) {
+					if (!speakerList.isEmpty()) {
+						for (Speaker speaker : speakerList) {
 							// 重连
 							speaker.retryTimestamp = this.tickTime;
 							speaker.retryCounts++;
@@ -154,7 +168,12 @@ public final class TalkServiceDaemon extends Thread {
 								buf = null;
 							}
 						}
+
+						// 清空列表
+						speakerList.clear();
 					}
+				} catch (Exception e) {
+					Logger.log(this.getClass(), e, LogLevel.ERROR);
 				}
 			}
 
@@ -180,12 +199,12 @@ public final class TalkServiceDaemon extends Thread {
 
 		// 关闭所有 Speaker
 		if (null != service.speakers) {
-			Iterator<Speaker> iter = service.speakers.iterator();
-			while (iter.hasNext()) {
-				Speaker speaker = iter.next();
-				speaker.hangUp();
+			synchronized (service.speakers) {
+				for (Speaker speaker : service.speakers) {
+					speaker.hangUp();
+				}
+				service.speakers.clear();
 			}
-			service.speakers.clear();
 		}
 		if (null != service.httpSpeakers) {
 			Iterator<HttpSpeaker> iter = service.httpSpeakers.iterator();

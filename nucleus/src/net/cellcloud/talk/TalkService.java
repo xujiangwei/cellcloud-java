@@ -118,7 +118,7 @@ public final class TalkService implements Service, SpeakerDelegate {
 
 	// 私有协议 Speaker
 	private ConcurrentHashMap<String, Speaker> speakerMap;
-	protected Vector<Speaker> speakers;
+	protected LinkedList<Speaker> speakers;
 	// HTTP 协议 Speaker
 	private ConcurrentHashMap<String, HttpSpeaker> httpSpeakerMap;
 	protected Vector<HttpSpeaker> httpSpeakers;
@@ -261,10 +261,12 @@ public final class TalkService implements Service, SpeakerDelegate {
 		}
 
 		if (null != this.speakers) {
-			for (Speaker speaker : this.speakers) {
-				speaker.hangUp();
+			synchronized (this.speakers) {
+				for (Speaker speaker : this.speakers) {
+					speaker.hangUp();
+				}
+				this.speakers.clear();
 			}
-			this.speakers.clear();
 		}
 		if (null != this.httpSpeakers) {
 			for (HttpSpeaker speaker : this.httpSpeakers) {
@@ -552,7 +554,7 @@ public final class TalkService implements Service, SpeakerDelegate {
 			// 私有协议 Speaker
 
 			if (null == this.speakers) {
-				this.speakers = new Vector<Speaker>();
+				this.speakers = new LinkedList<Speaker>();
 				this.speakerMap = new ConcurrentHashMap<String, Speaker>();
 			}
 
@@ -565,7 +567,9 @@ public final class TalkService implements Service, SpeakerDelegate {
 
 			// 创建新的 Speaker
 			Speaker speaker = new Speaker(address, this, this.block, capacity);
-			this.speakers.add(speaker);
+			synchronized (this.speakers) {
+				this.speakers.add(speaker);
+			}
 
 			// FIXME 28/11/14 原先在 call 检查 Speaker 是否是 Lost 状态，如果 lost 是 true，则置为 false
 			// 复位 Speaker 参数
@@ -649,7 +653,9 @@ public final class TalkService implements Service, SpeakerDelegate {
 						this.speakerMap.remove(celletIdentifier);
 					}
 
-					this.speakers.remove(speaker);
+					synchronized (this.speakers) {
+						this.speakers.remove(speaker);
+					}
 
 					speaker.hangUp();
 				}
