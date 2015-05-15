@@ -99,8 +99,7 @@ public final class Application {
 		buf.append("Copyright (c) 2009,2015 Cell Cloud Team, www.cellcloud.net\n");
 		buf.append("-----------------------------------------------------------------------");
 
-		System.out.println(buf);
-		buf = null;
+		System.out.println(buf.toString());
 
 		this.monitor = new byte[0];
 
@@ -117,8 +116,13 @@ public final class Application {
 			FileLogger.getInstance().open("logs" + File.separator + args.logFile);
 		}
 
+		// 记录版本日志
+		Logger.i(Application.class, buf.toString());
+
 		// 配置文件
 		this.configFile = args.confileFile;
+
+		buf = null;
 	}
 
 	/** 启动程序。

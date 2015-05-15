@@ -2,29 +2,28 @@
 <classpath>
 	<classpathentry kind="src" path="src"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER/org.eclipse.jdt.internal.debug.ui.launcher.StandardVMType/JavaSE-1.7"/>
-	<classpathentry kind="lib" path="../libs/mariadb-java-client-1.1.2.jar"/>
-	<classpathentry kind="lib" path="../libs/mongo-2.9.3.jar"/>
-	<classpathentry kind="lib" path="../libs/sqljet-1.1.5.jar"/>
-	<classpathentry kind="lib" path="../libs/ehcache-2.8.3.jar"/>
-	<classpathentry kind="lib" path="../libs/jetty-annotations-9.2.5.v20141112.jar"/>
-	<classpathentry kind="lib" path="../libs/jetty-client-9.2.5.v20141112.jar"/>
-	<classpathentry kind="lib" path="../libs/jetty-continuation-9.2.5.v20141112.jar"/>
-	<classpathentry kind="lib" path="../libs/jetty-http-9.2.5.v20141112.jar"/>
-	<classpathentry kind="lib" path="../libs/jetty-io-9.2.5.v20141112.jar"/>
-	<classpathentry kind="lib" path="../libs/jetty-security-9.2.5.v20141112.jar"/>
-	<classpathentry kind="lib" path="../libs/jetty-server-9.2.5.v20141112.jar"/>
-	<classpathentry kind="lib" path="../libs/jetty-servlet-9.2.5.v20141112.jar"/>
-	<classpathentry kind="lib" path="../libs/jetty-servlets-9.2.5.v20141112.jar"/>
-	<classpathentry kind="lib" path="../libs/jetty-util-9.2.5.v20141112.jar"/>
-	<classpathentry kind="lib" path="../libs/jetty-xml-9.2.5.v20141112.jar"/>
-	<classpathentry kind="lib" path="../libs/servlet-api-3.1.jar"/>
-	<classpathentry kind="lib" path="../libs/websocket-api-9.2.5.v20141112.jar"/>
-	<classpathentry kind="lib" path="../libs/websocket-common-9.2.5.v20141112.jar"/>
-	<classpathentry kind="lib" path="../libs/websocket-servlet-9.2.5.v20141112.jar"/>
-	<classpathentry kind="lib" path="../libs/websocket-server-9.2.5.v20141112.jar"/>
-	<classpathentry kind="lib" path="../libs/javax-websocket-server-impl-9.2.5.v20141112.jar"/>
-	<classpathentry kind="lib" path="../libs/javax.websocket-api-1.0.jar"/>
-	<classpathentry kind="lib" path="../libs/javax-websocket-client-impl-9.2.5.v20141112.jar"/>
-	<classpathentry kind="lib" path="../libs/websocket-client-9.2.5.v20141112.jar"/>
+	<classpathentry kind="lib" path="/Users/MD318/Repositories/cellcloud-java/deploy/libs/javax-websocket-client-impl-9.2.10.v20150310.jar"/>
+	<classpathentry kind="lib" path="/Users/MD318/Repositories/cellcloud-java/deploy/libs/javax-websocket-server-impl-9.2.10.v20150310.jar"/>
+	<classpathentry kind="lib" path="/Users/MD318/Repositories/cellcloud-java/deploy/libs/javax.websocket-api-1.0.jar"/>
+	<classpathentry kind="lib" path="/Users/MD318/Repositories/cellcloud-java/deploy/libs/jetty-annotations-9.2.10.v20150310.jar"/>
+	<classpathentry kind="lib" path="/Users/MD318/Repositories/cellcloud-java/deploy/libs/jetty-client-9.2.10.v20150310.jar"/>
+	<classpathentry kind="lib" path="/Users/MD318/Repositories/cellcloud-java/deploy/libs/jetty-continuation-9.2.10.v20150310.jar"/>
+	<classpathentry kind="lib" path="/Users/MD318/Repositories/cellcloud-java/deploy/libs/jetty-http-9.2.10.v20150310.jar"/>
+	<classpathentry kind="lib" path="/Users/MD318/Repositories/cellcloud-java/deploy/libs/jetty-io-9.2.10.v20150310.jar"/>
+	<classpathentry kind="lib" path="/Users/MD318/Repositories/cellcloud-java/deploy/libs/jetty-security-9.2.10.v20150310.jar"/>
+	<classpathentry kind="lib" path="/Users/MD318/Repositories/cellcloud-java/deploy/libs/jetty-server-9.2.10.v20150310.jar"/>
+	<classpathentry kind="lib" path="/Users/MD318/Repositories/cellcloud-java/deploy/libs/jetty-servlet-9.2.10.v20150310.jar"/>
+	<classpathentry kind="lib" path="/Users/MD318/Repositories/cellcloud-java/deploy/libs/jetty-servlets-9.2.10.v20150310.jar"/>
+	<classpathentry kind="lib" path="/Users/MD318/Repositories/cellcloud-java/deploy/libs/jetty-util-9.2.10.v20150310.jar"/>
+	<classpathentry kind="lib" path="/Users/MD318/Repositories/cellcloud-java/deploy/libs/jetty-xml-9.2.10.v20150310.jar"/>
+	<classpathentry kind="lib" path="/Users/MD318/Repositories/cellcloud-java/deploy/libs/servlet-api-3.1.jar"/>
+	<classpathentry kind="lib" path="/Users/MD318/Repositories/cellcloud-java/deploy/libs/sqljet-1.1.5.jar"/>
+	<classpathentry kind="lib" path="/Users/MD318/Repositories/cellcloud-java/deploy/libs/websocket-api-9.2.10.v20150310.jar"/>
+	<classpathentry kind="lib" path="/Users/MD318/Repositories/cellcloud-java/deploy/libs/websocket-client-9.2.10.v20150310.jar"/>
+	<classpathentry kind="lib" path="/Users/MD318/Repositories/cellcloud-java/deploy/libs/websocket-common-9.2.10.v20150310.jar"/>
+	<classpathentry kind="lib" path="/Users/MD318/Repositories/cellcloud-java/deploy/libs/websocket-server-9.2.10.v20150310.jar"/>
+	<classpathentry kind="lib" path="/Users/MD318/Repositories/cellcloud-java/deploy/libs/websocket-servlet-9.2.10.v20150310.jar"/>
+	<classpathentry kind="lib" path="/Users/MD318/Repositories/cellcloud-java/deploy/libs/ehcache-2.8.3.jar"/>
+	<classpathentry kind="lib" path="/Users/MD318/Repositories/cellcloud-java/deploy/libs/mongo-2.9.3.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

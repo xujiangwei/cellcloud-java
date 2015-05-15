@@ -61,14 +61,18 @@ public class WebSocketSession extends Session {
 			return;
 		}
 
-		RemoteEndpoint remote = this.rawSession.getRemote();
-		remote.sendString(message.getAsString(), null);
-		if (remote.getBatchMode() == BatchMode.ON) {
-			try {
-				remote.flush();
-			} catch (IOException e) {
-				Logger.log(this.getClass(), e, LogLevel.ERROR);
+		try {
+			RemoteEndpoint remote = this.rawSession.getRemote();
+			remote.sendString(message.getAsString(), null);
+			if (remote.getBatchMode() == BatchMode.ON) {
+				try {
+					remote.flush();
+				} catch (IOException e) {
+					Logger.log(this.getClass(), e, LogLevel.ERROR);
+				}
 			}
+		} catch (Exception e) {
+			Logger.log(this.getClass(), e, LogLevel.ERROR);
 		}
 	}
 }

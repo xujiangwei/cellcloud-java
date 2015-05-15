@@ -124,7 +124,20 @@ public final class TalkSessionContext {
 
 	public void updateSessionHeartbeat(Session session, long time) {
 		synchronized (this.sessions) {
+			if (this.sessions.isEmpty()) {
+				return;
+			}
+
+			// 先删除
+			this.sessionHeartbeats.remove(session.getId());
+
+			// 更新
 			this.sessionHeartbeats.put(session.getId(), time);
+
+			// 将心跳的 Session 放到队尾
+			if (this.sessions.remove(session)) {
+				this.sessions.offer(session);
+			}
 		}
 	}
 
