@@ -117,6 +117,9 @@ public final class JettyWebSocket implements WebSocketManager {
 	public void onWebSocketConnect(Session session) {
 		Logger.d(this.getClass(), "onWebSocketConnect");
 
+		// 设置闲置超时时间
+		session.setIdleTimeout(60 * 60 * 1000);
+
 		synchronized (this.sessions) {
 			int index = this.sessions.indexOf(session);
 			if (index >= 0) {
