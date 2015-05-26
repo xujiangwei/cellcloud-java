@@ -30,7 +30,7 @@ import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.nio.ByteBuffer;
 import java.nio.channels.SelectionKey;
-import java.util.Vector;
+import java.util.LinkedList;
 
 /** 非阻塞网络接收器会话。
  * 
@@ -42,7 +42,7 @@ public class NonblockingAcceptorSession extends Session {
 	private ByteBuffer writeBuffer;
 
 	// 待发送消息列表
-	protected Vector<Message> messages = new Vector<Message>();
+	private LinkedList<Message> messages = new LinkedList<Message>();
 
 	protected SelectionKey selectionKey = null;
 	protected Socket socket = null;
@@ -67,5 +67,23 @@ public class NonblockingAcceptorSession extends Session {
 	/** 返回写缓存。 */
 	public ByteBuffer getWriteBuffer() {
 		return this.writeBuffer;
+	}
+
+	protected void addMessage(Message message) {
+		synchronized (this.messages) {
+			this.messages.add(message);
+		}
+	}
+
+	protected boolean isMessageEmpty() {
+		synchronized (this.messages) {
+			return this.messages.isEmpty();
+		}
+	}
+
+	protected Message pollMessage() {
+		synchronized (this.messages) {
+			return this.messages.poll();
+		}
 	}
 }

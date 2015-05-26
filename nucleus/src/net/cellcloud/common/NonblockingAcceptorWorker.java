@@ -78,20 +78,24 @@ public final class NonblockingAcceptorWorker extends Thread {
 				}
 			}
 
-			if (!this.receiveSessions.isEmpty()) {
-				// 执行接收数据任务，并移除已执行的 Session
-				session = this.receiveSessions.remove(0);
-				if (null != session.socket) {
-					processReceive(session);
+			try {
+				if (!this.receiveSessions.isEmpty()) {
+					// 执行接收数据任务，并移除已执行的 Session
+					session = this.receiveSessions.remove(0);
+					if (null != session.socket) {
+						processReceive(session);
+					}
 				}
-			}
 
-			if (!this.sendSessions.isEmpty()) {
-				// 执行发送数据任务，并移除已执行的 Session
-				session = this.sendSessions.remove(0);
-				if (null != session.socket) {
-					processSend(session);
+				if (!this.sendSessions.isEmpty()) {
+					// 执行发送数据任务，并移除已执行的 Session
+					session = this.sendSessions.remove(0);
+					if (null != session.socket) {
+						processSend(session);
+					}
 				}
+			} catch (Exception e) {
+				Logger.log(this.getClass(), e, LogLevel.WARNING);
 			}
 
 			// 让步
@@ -164,7 +168,7 @@ public final class NonblockingAcceptorWorker extends Thread {
 			return;
 		}
 
-		if (session.messages.isEmpty()) {
+		if (session.isMessageEmpty()) {
 			return;
 		}
 
@@ -178,14 +182,18 @@ public final class NonblockingAcceptorWorker extends Thread {
 	/** 从所有列表中移除指定的 Session 。
 	 */
 	private void removeSession(NonblockingAcceptorSession session) {
-		boolean exist = this.receiveSessions.remove(session);
-		while (exist) {
-			exist = this.receiveSessions.remove(session);
-		}
+		try {
+			boolean exist = this.receiveSessions.remove(session);
+			while (exist) {
+				exist = this.receiveSessions.remove(session);
+			}
 
-		exist = this.sendSessions.remove(session);
-		while (exist) {
 			exist = this.sendSessions.remove(session);
+			while (exist) {
+				exist = this.sendSessions.remove(session);
+			}
+		} catch (Exception e) {
+			Logger.log(this.getClass(), e, LogLevel.WARNING);
 		}
 	}
 
@@ -279,7 +287,7 @@ public final class NonblockingAcceptorWorker extends Thread {
 			return;
 		}
 
-		if (!session.messages.isEmpty()) {
+		if (!session.isMessageEmpty()) {
 			// 有消息，进行发送
 
 			Message message = null;
@@ -287,8 +295,11 @@ public final class NonblockingAcceptorWorker extends Thread {
 			// 获取 Session 的写缓存
 			ByteBuffer buf = session.getWriteBuffer();
 			synchronized (buf) {
-				while (!session.messages.isEmpty()) {
-					message = session.messages.remove(0);
+				while (!session.isMessageEmpty()) {
+					message = session.pollMessage();
+					if (null == message) {
+						break;
+					}
 
 					// 根据是否有数据掩码组装数据包
 					if (this.acceptor.existDataMark()) {
