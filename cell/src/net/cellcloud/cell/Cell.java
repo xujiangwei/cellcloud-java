@@ -234,6 +234,9 @@ public final class Cell {
 				Cell.app = null;
 
 				System.out.println("\nProcess exit.");
+
+				// 执行 exit
+				System.exit(0);
 			}
 			else if (args[0].equals("stop")) {
 				File file = new File("bin/tag");

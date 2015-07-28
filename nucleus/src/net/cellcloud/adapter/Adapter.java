@@ -2,7 +2,7 @@
 -----------------------------------------------------------------------------
 This source file is part of Cell Cloud.
 
-Copyright (c) 2009-2012 Cell Cloud Team (www.cellcloud.net)
+Copyright (c) 2009-2015 Cell Cloud Team (www.cellcloud.net)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -40,4 +40,10 @@ public interface Adapter {
 
 	/** 拆卸适配器。该方法由适配器管理器调用。 */
 	public void teardown();
+
+	/**
+	 * 是否就绪。
+	 * @return
+	 */
+	public boolean isReady();
 }

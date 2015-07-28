@@ -28,6 +28,7 @@ package net.cellcloud.core;
 
 import java.util.Set;
 
+import net.cellcloud.adapter.RelationNucleusAdapter;
 import net.cellcloud.talk.Primitive;
 import net.cellcloud.talk.TalkService;
 import net.cellcloud.talk.dialect.Dialect;
@@ -96,6 +97,18 @@ public abstract class Cellet extends AbstractCellet {
 	 */
 	protected final void prepare() {
 		Nucleus.getInstance().prepareCellet(this, this.sandbox);
+	}
+
+	/** 加载指定的适配器。
+	 */
+	public RelationNucleusAdapter loadRelationNucleusAdapter() {
+		return null;
+	}
+
+	/** 卸载指定的适配器。
+	 */
+	public void unloadRelationNucleusAdapter() {
+		
 	}
 
 	/**

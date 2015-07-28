@@ -39,7 +39,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 
-import net.cellcloud.adapter.RelationNucleusAdapter;
+import net.cellcloud.adapter.Adapter;
 import net.cellcloud.cluster.ClusterController;
 import net.cellcloud.common.LogLevel;
 import net.cellcloud.common.Logger;
@@ -74,8 +74,8 @@ public final class Nucleus {
 	private ConcurrentHashMap<String, Cellet> cellets = null;
 	private ConcurrentHashMap<String, CelletSandbox> sandboxes = null;
 
-	// RNA
-	private ConcurrentHashMap<String, RelationNucleusAdapter> adapters = null;
+	// Adapter
+	private ConcurrentHashMap<String, Adapter> adapters = null;
 
 	/** 构造函数。
 	 */
@@ -157,7 +157,8 @@ public final class Nucleus {
 		Clock.start();
 
 		// 角色：节点
-		if ((this.config.role & NucleusConfig.Role.NODE) != 0) {
+		if ((this.config.role & NucleusConfig.Role.NODE) != 0 ||
+			(this.config.role & NucleusConfig.Role.GATEWAY) != 0) {
 
 			//---- 配置集群 ----
 
@@ -247,6 +248,13 @@ public final class Nucleus {
 					Logger.i(Nucleus.class, "Starting http service failure.");
 				}
 			}
+
+			// 配置适配器
+			if (null != this.adapters) {
+				for (Adapter adapter : this.adapters.values()) {
+					adapter.setup();
+				}
+			}
 		}
 
 		// 角色：消费者
@@ -272,7 +280,8 @@ public final class Nucleus {
 		Logger.i(Nucleus.class, "*-*-* Cell Finalizing *-*-*");
 
 		// 角色：节点
-		if ((this.config.role & NucleusConfig.Role.NODE) != 0) {
+		if ((this.config.role & NucleusConfig.Role.NODE) != 0 ||
+			(this.config.role & NucleusConfig.Role.GATEWAY) != 0) {
 			// 关闭集群服务
 			if (null != this.clusterController) {
 				this.clusterController.shutdown();
@@ -289,6 +298,13 @@ public final class Nucleus {
 			// 关闭 HTTP Service
 			if (null != this.httpService) {
 				this.httpService.shutdown();
+			}
+
+			// 关闭适配器
+			if (null != this.adapters) {
+				for (Adapter adapter : this.adapters.values()) {
+					adapter.teardown();
+				}
 			}
 		}
 
@@ -381,24 +397,34 @@ public final class Nucleus {
 		return false;
 	}
 
-	/** TODO
+	/** 返回指定名称的适配器。
 	 */
-	public RelationNucleusAdapter getAdapter(final String name) {
+	public Adapter getAdapter(final String name) {
+		if (null != this.adapters) {
+			return this.adapters.get(name);
+		}
+
 		return null;
 	}
 
-	/** TODO
+	/** 添加适配器。
 	 */
-	public void addAdapter(RelationNucleusAdapter adapter) {
+	public void addAdapter(Adapter adapter) {
 		if (null == this.adapters) {
-			this.adapters = new ConcurrentHashMap<String, RelationNucleusAdapter>();
+			this.adapters = new ConcurrentHashMap<String, Adapter>();
 		}
+
+		this.adapters.put(adapter.getName(), adapter);
 	}
 
-	/** TODO
+	/** 移除适配器。
 	 */
-	public void removeAdapter(RelationNucleusAdapter adapter) {
-		
+	public void removeAdapter(Adapter adapter) {
+		if (null == this.adapters) {
+			return;
+		}
+
+		this.adapters.remove(adapter.getName());
 	}
 
 	protected synchronized void prepareCellet(Cellet cellet, CelletSandbox sandbox) {

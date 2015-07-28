@@ -186,6 +186,16 @@ public final class LocalFileResultSet implements ResultSet {
 	}
 
 	@Override
+	public Object getObject(int index) {
+		return null;
+	}
+
+	@Override
+	public Object getObject(final String label) {
+		return null;
+	}
+
+	@Override
 	public byte[] getRaw(String label, long offset, long length) {
 		if (this.cursor != 0
 			|| !label.equals(LocalFileStorage.LABEL_RAW_DATA)) {

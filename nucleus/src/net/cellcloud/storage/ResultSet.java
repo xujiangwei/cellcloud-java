@@ -106,9 +106,23 @@ public interface ResultSet {
 	*/
 	boolean getBool(final String label);
 
+	/**
+	 * 
+	 * @param index
+	 * @return
+	 */
+	Object getObject(int index);
+
+	/**
+	 * 
+	 * @param label
+	 * @return
+	 */
+	Object getObject(final String label);
+
 	/** 获取原始数据。
-	@return 返回数据长度。
-	*/
+	 * @return 返回数据长度。
+	 */
 	byte[] getRaw(final String label, long offset, long length);
 
 	/** 更新指定索引处字符值。

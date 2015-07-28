@@ -28,6 +28,8 @@ package net.cellcloud.storage;
 
 import java.util.concurrent.ConcurrentHashMap;
 
+import net.cellcloud.storage.ehcache.EhcacheStorage;
+import net.cellcloud.storage.ehcache.EhcacheStorageFactory;
 import net.cellcloud.storage.file.LocalFileStorageFactory;
 import net.cellcloud.storage.mongodb.MongoDBStorageFactory;
 
@@ -37,12 +39,17 @@ import net.cellcloud.storage.mongodb.MongoDBStorageFactory;
  */
 public final class StorageEnumerator {
 
+	public final static String EHCACHE = EhcacheStorage.TYPE_NAME;
+
 	private final static StorageEnumerator instance = new StorageEnumerator();
 
 	private ConcurrentHashMap<String, StorageFactory> factories;
 
+	private ConcurrentHashMap<String, Storage> instances;
+
 	private StorageEnumerator() {
 		this.factories = new ConcurrentHashMap<String, StorageFactory>();
+		this.instances = new ConcurrentHashMap<String, Storage>();
 
 		// 加入默认内置的存取器。
 		this.buildIn();
@@ -74,7 +81,7 @@ public final class StorageEnumerator {
 
 	/** 移除工厂。
 	 */
-	public void removeFactory(final String typeName) {
+	public void removeFactory(String typeName) {
 		if (this.factories.containsKey(typeName)) {
 			this.factories.remove(typeName);
 		}
@@ -84,7 +91,10 @@ public final class StorageEnumerator {
 	 */
 	public Storage createStorage(String typeName, String instanceName) {
 		if (this.factories.containsKey(typeName)) {
-			return this.factories.get(typeName).create(instanceName);
+			Storage storage = this.factories.get(typeName).create(instanceName);
+			// 添加到实例列表
+			this.instances.put(instanceName, storage);
+			return storage;
 		}
 
 		return null;
@@ -94,11 +104,24 @@ public final class StorageEnumerator {
 	 */
 	public void destroyStorage(Storage storage) {
 		if (this.factories.containsKey(storage.getTypeName())) {
+			// 从实例列表中删除
+			this.instances.remove(storage.getName());
 			this.factories.get(storage.getTypeName()).destroy(storage);
 		}
 	}
 
+	/**
+	 * 获取指定实例名的存储器。
+	 * 
+	 * @param instanceName
+	 * @return
+	 */
+	public Storage getStorage(String instanceName) {
+		return this.instances.get(instanceName);
+	}
+
 	private void buildIn() {
+		this.addFactory(new EhcacheStorageFactory());
 		this.addFactory(new LocalFileStorageFactory());
 		this.addFactory(new MongoDBStorageFactory());
 	}

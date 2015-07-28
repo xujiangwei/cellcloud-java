@@ -68,9 +68,10 @@ public final class LogManager {
 	public void log(byte level, String tag, String log) {
 		synchronized (this) {
 			if (this.handles.isEmpty()) {
-				System.err.println("No log handler in logger manager.");
-				System.out.println(tag + " " + log);
-				return;
+				this.addHandle(createSystemOutHandle());
+//				System.err.println("No log handler in logger manager.");
+//				System.out.println(tag + " " + log);
+//				return;
 			}
 
 			if (this.level > level) {

@@ -70,13 +70,13 @@ public final class TalkServiceDaemon extends Thread {
 
 			// 心跳计数
 			++heartbeatCount;
-			if (heartbeatCount >= 6000) {
+			if (heartbeatCount > 6000) {
 				heartbeatCount = 0;
 			}
 
-			// 10 秒周期处理
-			if (heartbeatCount % 10 == 0) {
-				// HTTP 客户端管理，每 10 秒一次计数
+			// 30 秒周期处理
+			if (heartbeatCount % 30 == 0) {
+				// HTTP 客户端管理，每 30 秒一次计数
 				if (null != service.httpSpeakers) {
 					for (HttpSpeaker speaker : service.httpSpeakers) {
 						speaker.tick();

@@ -27,8 +27,8 @@ THE SOFTWARE.
 package net.cellcloud.talk;
 
 import java.util.ArrayList;
+import java.util.LinkedList;
 import java.util.List;
-import java.util.Vector;
 
 import net.cellcloud.core.Cellet;
 
@@ -40,10 +40,10 @@ public final class TalkTracker {
 	private boolean autoSuspend = false;
 	private long suspendDuration = 5000;
 
-	private Vector<Cellet> cellets = null;
+	private LinkedList<Cellet> cellets = null;
 
 	protected TalkTracker() {
-		this.cellets = new Vector<Cellet>();
+		this.cellets = new LinkedList<Cellet>();
 	}
 
 	/** 返回是否进行自动挂起。
@@ -76,33 +76,43 @@ public final class TalkTracker {
 	}
 
 	protected void addCellet(Cellet cellet) {
-		if (this.cellets.contains(cellet)) {
-			return;
-		}
+		synchronized (this.cellets) {
+			if (this.cellets.contains(cellet)) {
+				return;
+			}
 
-		this.cellets.add(cellet);
+			this.cellets.add(cellet);
+		}
 	}
 
 	protected void removeCellet(Cellet cellet) {
-		this.cellets.remove(cellet);
+		synchronized (this.cellets) {
+			this.cellets.remove(cellet);
+		}
 	}
 
 	protected Cellet getCellet(String identifier) {
-		for (Cellet cellet : this.cellets) {
-			if (cellet.getFeature().getIdentifier().equals(identifier)) {
-				return cellet;
+		synchronized (this.cellets) {
+			for (Cellet cellet : this.cellets) {
+				if (cellet.getFeature().getIdentifier().equals(identifier)) {
+					return cellet;
+				}
 			}
 		}
 		return null;
 	}
 
 	protected boolean hasCellet(Cellet cellet) {
-		return this.cellets.contains(cellet);
+		synchronized (this.cellets) {
+			return this.cellets.contains(cellet);
+		}
 	}
 	protected boolean hasCellet(String identifier) {
-		for (Cellet cellet : this.cellets) {
-			if (cellet.getFeature().getIdentifier().equals(identifier)) {
-				return true;
+		synchronized (this.cellets) {
+			for (Cellet cellet : this.cellets) {
+				if (cellet.getFeature().getIdentifier().equals(identifier)) {
+					return true;
+				}
 			}
 		}
 		return false;
@@ -110,7 +120,9 @@ public final class TalkTracker {
 
 	protected List<Cellet> getCelletList() {
 		ArrayList<Cellet> list = new ArrayList<Cellet>();
-		list.addAll(this.cellets);
+		synchronized (this.cellets) {
+			list.addAll(this.cellets);
+		}
 		return list;
 	}
 }
