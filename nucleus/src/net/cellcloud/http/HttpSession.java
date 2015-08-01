@@ -32,6 +32,7 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 
 import net.cellcloud.common.Message;
 import net.cellcloud.common.Session;
+import net.cellcloud.util.Clock;
 
 /**
  * HTTP 会话。
@@ -106,7 +107,7 @@ public class HttpSession extends Session {
 	 * 心跳。
 	 */
 	public void heartbeat() {
-		this.heartbeat = System.currentTimeMillis();
+		this.heartbeat = Clock.currentTimeMillis();
 	}
 
 	@Override

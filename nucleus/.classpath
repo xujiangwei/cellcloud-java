@@ -23,7 +23,9 @@
 	<classpathentry kind="lib" path="/Users/MD318/Repositories/cellcloud-java/deploy/libs/websocket-common-9.2.10.v20150310.jar"/>
 	<classpathentry kind="lib" path="/Users/MD318/Repositories/cellcloud-java/deploy/libs/websocket-server-9.2.10.v20150310.jar"/>
 	<classpathentry kind="lib" path="/Users/MD318/Repositories/cellcloud-java/deploy/libs/websocket-servlet-9.2.10.v20150310.jar"/>
-	<classpathentry kind="lib" path="/Users/MD318/Repositories/cellcloud-java/deploy/libs/ehcache-2.8.3.jar"/>
 	<classpathentry kind="lib" path="/Users/MD318/Repositories/cellcloud-java/deploy/libs/mongo-2.9.3.jar"/>
+	<classpathentry kind="lib" path="/Users/MD318/Repositories/cellcloud-java/deploy/libs/ehcache-2.10.0.jar"/>
+	<classpathentry kind="lib" path="/Users/MD318/Repositories/cellcloud-java/deploy/libs/slf4j-api-1.7.7.jar"/>
+	<classpathentry kind="lib" path="/Users/MD318/Repositories/cellcloud-java/deploy/libs/slf4j-jdk14-1.7.7.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

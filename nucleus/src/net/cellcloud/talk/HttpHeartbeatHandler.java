@@ -2,7 +2,7 @@
 -----------------------------------------------------------------------------
 This source file is part of Cell Cloud.
 
-Copyright (c) 2009-2013 Cell Cloud Team (www.cellcloud.net)
+Copyright (c) 2009-2015 Cell Cloud Team (www.cellcloud.net)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -61,7 +61,10 @@ public final class HttpHeartbeatHandler extends AbstractJSONHandler implements C
 	protected static final String Primitive = "primitive";
 	protected static final String Primitives = "primitives";
 
-	public HttpHeartbeatHandler() {
+	private TalkService service;
+
+	public HttpHeartbeatHandler(TalkService service) {
+		this.service = service;
 	}
 
 	@Override
@@ -81,6 +84,9 @@ public final class HttpHeartbeatHandler extends AbstractJSONHandler implements C
 		if (null != session) {
 			// 心跳
 			session.heartbeat();
+
+			// 更新心跳
+			this.service.updateSessionHeartbeat(session);
 
 			// 获取消息队列
 			Queue<Message> queue = session.getQueue();

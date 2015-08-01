@@ -128,6 +128,9 @@ public final class TalkService implements Service, SpeakerDelegate {
 
 	private CelletCallbackListener callbackListener;
 
+	// 用于兼容 Flash Socket 安全策略的适配器
+	private FlashSocketSecurity fss;
+
 	/** 构造函数。
 	 * @throws SingletonException 
 	 */
@@ -223,6 +226,14 @@ public final class TalkService implements Service, SpeakerDelegate {
 			startHttpService();
 		}
 
+		// 启动 FSS
+		if (null == this.fss) {
+			this.fss = new FlashSocketSecurity();
+			if (!this.fss.startup()) {
+				Logger.e(TalkService.class, "Start Flash socket security policy failed.");
+			}
+		}
+
 		return succeeded;
 	}
 
@@ -279,6 +290,11 @@ public final class TalkService implements Service, SpeakerDelegate {
 		}
 		if (null != this.httpSpeakerMap) {
 			this.httpSpeakerMap.clear();
+		}
+
+		if (null != this.fss) {
+			this.fss.shutdown();
+			this.fss = null;
 		}
 	}
 
@@ -788,7 +804,7 @@ public final class TalkService implements Service, SpeakerDelegate {
 		capsule.addHolder(new HttpCheckHandler(this));
 		capsule.addHolder(new HttpRequestHandler(this));
 		capsule.addHolder(new HttpDialogueHandler(this));
-		capsule.addHolder(new HttpHeartbeatHandler());
+		capsule.addHolder(new HttpHeartbeatHandler(this));
 
 		// 添加 HTTP 服务节点
 		HttpService.getInstance().addCapsule(capsule);
