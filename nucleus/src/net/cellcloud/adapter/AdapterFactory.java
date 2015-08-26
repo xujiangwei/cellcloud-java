@@ -26,26 +26,15 @@ THE SOFTWARE.
 
 package net.cellcloud.adapter;
 
-import org.json.JSONObject;
+public final class AdapterFactory {
 
-public class AdapterEvent {
-
-	protected String name;
-	protected JSONObject body;
-
-	protected Gene source;
-
-	protected AdapterEvent(String name, JSONObject body, Gene source) {
-		this.name = name;
-		this.body = body;
-		this.source = source;
+	private AdapterFactory() {
 	}
 
-	public AdapterEvent(String name, JSONObject body) {
-		
-	}
-
-	public Gene getSource() {
-		return this.source;
+	public static Adapter createAdapter(String name) {
+		if (name.equals(PushAdapter.Name)) {
+			return new PushAdapter();
+		}
+		return null;
 	}
 }

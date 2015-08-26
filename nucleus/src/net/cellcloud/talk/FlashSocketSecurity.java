@@ -102,7 +102,7 @@ public final class FlashSocketSecurity implements Service {
 						client.close();
 						data = null;
 					} catch (IOException e) {
-						e.printStackTrace();
+						Logger.log(FlashSocketSecurity.class, e, LogLevel.INFO);
 					}
 				}
 			}
@@ -120,7 +120,7 @@ public final class FlashSocketSecurity implements Service {
 			try {
 				this.socket.close();
 			} catch (IOException e) {
-				e.printStackTrace();
+				Logger.log(FlashSocketSecurity.class, e, LogLevel.DEBUG);
 			}
 		}
 	}

@@ -36,6 +36,7 @@ import java.util.Enumeration;
 import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 
@@ -56,6 +57,8 @@ import net.cellcloud.util.Clock;
 public final class Nucleus {
 
 	private static Nucleus instance = null;
+
+	private AtomicBoolean working = new AtomicBoolean(false);
 
 	private NucleusTag tag = null;
 	private NucleusConfig config = null;
@@ -160,7 +163,7 @@ public final class Nucleus {
 		if ((this.config.role & NucleusConfig.Role.NODE) != 0 ||
 			(this.config.role & NucleusConfig.Role.GATEWAY) != 0) {
 
-			//---- 配置集群 ----
+			//-------------------- 配置集群 --------------------
 
 			if (this.config.cluster.enabled) {
 				if (null == this.clusterController) {
@@ -184,7 +187,7 @@ public final class Nucleus {
 				}
 			}
 
-			//---- 配置 HTTP 服务  ----
+			//-------------------- 配置 HTTP 服务 --------------------
 
 			if (this.config.httpd) {
 				// 创建 HTTP Service
@@ -195,7 +198,7 @@ public final class Nucleus {
 				}
 			}
 
-			//---- 配置 Talk Service  ----
+			//-------------------- 配置 Talk Service --------------------
 
 			// 创建 Talk Service
 			if (this.config.talk.enabled && (null == this.talkService)) {
@@ -203,6 +206,7 @@ public final class Nucleus {
 					this.talkService = new TalkService(this.context);
 				} catch (SingletonException e) {
 					Logger.log(Nucleus.class, e, LogLevel.ERROR);
+					return false;
 				}
 			}
 
@@ -228,10 +232,9 @@ public final class Nucleus {
 				}
 				else {
 					Logger.e(Nucleus.class, "Starting talk service failure.");
+					return false;
 				}
 			}
-
-			//---- 配置结束 ----
 
 			// 加载外部 Jar 包
 			this.loadExternalJar();
@@ -272,12 +275,16 @@ public final class Nucleus {
 			this.talkService.startDaemon();
 		}
 
+		this.working.set(true);
+
 		return true;
 	}
 
 	/** 关停内核。 */
 	public void shutdown() {
 		Logger.i(Nucleus.class, "*-*-* Cell Finalizing *-*-*");
+
+		this.working.set(false);
 
 		// 角色：节点
 		if ((this.config.role & NucleusConfig.Role.NODE) != 0 ||
@@ -415,6 +422,10 @@ public final class Nucleus {
 		}
 
 		this.adapters.put(adapter.getName(), adapter);
+
+		if (this.working.get()) {
+			adapter.setup();
+		}
 	}
 
 	/** 移除适配器。
@@ -425,6 +436,10 @@ public final class Nucleus {
 		}
 
 		this.adapters.remove(adapter.getName());
+
+		if (this.working.get()) {
+			adapter.teardown();
+		}
 	}
 
 	protected synchronized void prepareCellet(Cellet cellet, CelletSandbox sandbox) {

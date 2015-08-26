@@ -38,6 +38,17 @@ public class Endpoint {
 	private byte role;
 	private Coordinate coordinate;
 
+	public Endpoint(String host, int port) {
+		InetSocketAddress address = new InetSocketAddress(host, port);
+		this.coordinate = new Coordinate(address);
+	}
+
+	/** 构造函数。
+	 */
+	public Endpoint(InetSocketAddress address) {
+		this.coordinate = new Coordinate(address);
+	}
+
 	/** 构造函数。
 	 */
 	public Endpoint(String tag, byte role, InetSocketAddress address) {

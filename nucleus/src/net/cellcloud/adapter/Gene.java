@@ -26,21 +26,64 @@ THE SOFTWARE.
 
 package net.cellcloud.adapter;
 
+import java.nio.charset.Charset;
+import java.util.HashMap;
+import java.util.Map;
 
+/**
+ * 
+ * @author Jiangwei Xu
+ */
 public class Gene {
 
-	private String host;
-	private int port = 9813;
+	private String name;
+	private HashMap<String, String> header;
+	private String body;
 
-	public Gene(String host) {
-		this.host = host;
+	public Gene(String name) {
+		this.name = name;
+		this.header = new HashMap<String, String>();
 	}
 
-	public String getHost() {
-		return this.host;
+	public String getName() {
+		return this.name;
 	}
 
-	public int getPort() {
-		return this.port;
+	public void setHeader(String name, String value) {
+		this.header.put(name, value);
+	}
+
+	public String getHeader(String name) {
+		return this.header.get(name);
+	}
+
+	public void setBody(String body) {
+		this.body = body;
+	}
+
+	public String getBody() {
+		return this.body;
+	}
+
+	public byte[] packet() {
+		StringBuilder buf = new StringBuilder();
+
+		buf.append(this.name).append("\r\n");
+
+		for (Map.Entry<String, String> e : this.header.entrySet()) {
+			buf.append(e.getKey()).append(":").append(e.getValue()).append("\r\n");
+		}
+
+		if (null != this.body) {
+			buf.append("\r\n");
+			buf.append(this.body).append("\r\n");
+		}
+
+		buf.append("\0");
+
+		String str = buf.toString();
+		buf = null;
+
+		return str.getBytes(Charset.forName("UTF-8"));
 	}
 }

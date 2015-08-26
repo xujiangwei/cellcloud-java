@@ -36,10 +36,10 @@ public final class Version {
 	public static final int MAJOR = 1;
 
 	/// 副版本号
-	public static final int MINOR = 2;
+	public static final int MINOR = 3;
 
 	/// 修订号
-	public static final int REVISION = 22;
+	public static final int REVISION = 0;
 
 	/// 版本名
 	public static final String NAME = "Journey";

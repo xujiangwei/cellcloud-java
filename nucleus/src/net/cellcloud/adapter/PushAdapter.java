@@ -29,6 +29,7 @@ package net.cellcloud.adapter;
 import java.util.LinkedList;
 
 import net.cellcloud.common.Logger;
+import net.cellcloud.core.Endpoint;
 
 public class PushAdapter extends RelationNucleusAdapter {
 
@@ -47,19 +48,24 @@ public class PushAdapter extends RelationNucleusAdapter {
 	}
 
 	@Override
-	protected void onEvent(AdapterEvent event) {
+	protected void onReceive(Endpoint endpoint, Gene gene) {
 		for (PushAdapterListener l : this.listeners) {
-			l.onEvent(this, event);
+			l.onEvent(this, new PushEvent(endpoint, gene));
 		}
 	}
 
 	/**
 	 * 推送事件。
-	 * @param destination
+	 * 
 	 * @param event
 	 */
-	public void pushEvent(Gene destination, AdapterEvent event) {
-		super.transport(destination, event);
+	public void pushEvent(PushEvent event) {
+		if (null == event.destination) {
+			super.broadcast(event.toGene());
+		}
+		else {
+			super.transport(event.destination, event.toGene());
+		}
 	}
 
 	public void addListener(PushAdapterListener listener) {

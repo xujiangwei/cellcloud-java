@@ -26,7 +26,58 @@ THE SOFTWARE.
 
 package net.cellcloud.adapter;
 
-public interface PushAdapterListener {
+import net.cellcloud.core.Endpoint;
 
-	public void onEvent(PushAdapter adapter, PushEvent event);
+import org.json.JSONException;
+import org.json.JSONObject;
+
+public class PushEvent {
+
+	protected String name;
+	protected JSONObject body;
+	protected Endpoint destination;
+	protected Endpoint source;
+
+	public PushEvent(String name, JSONObject body) {
+		this.name = name;
+		this.body = body;
+	}
+
+	public PushEvent(Endpoint destination, String name, JSONObject body) {
+		this.destination = destination;
+		this.name = name;
+		this.body = body;
+	}
+
+	protected PushEvent(Endpoint source, Gene gene) {
+		this.source = source;
+		this.name = gene.getName();
+		String type = gene.getHeader("ContentType");
+		if (type.equalsIgnoreCase("json")) {
+			try {
+				this.body = new JSONObject(gene.getBody());
+			} catch (JSONException e) {
+				e.printStackTrace();
+			}
+		}
+	}
+
+	public String getName() {
+		return this.name;
+	}
+
+	public JSONObject getBody() {
+		return this.body;
+	}
+
+	public Endpoint getSource() {
+		return this.source;
+	}
+
+	protected Gene toGene() {
+		Gene gene = new Gene(this.name);
+		gene.setHeader("ContentType", "json");
+		gene.setBody(this.body.toString());
+		return gene;
+	}
 }

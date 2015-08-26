@@ -1,11 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <cell>
 	<nucleus>
+		<httpd>false</httpd>
 		<talk>
 			<port>7000</port>
 			<block>20480</block>
 			<connections>1000</connections>
-			<httpd>false</httpd>
 		</talk>
 	</nucleus>
 	<cellets>

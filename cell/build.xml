@@ -10,7 +10,7 @@
 	Author: Jiangwei Xu
 	</description>
 
-	<property name="version.brand" value="1.2.0" />
+	<property name="version.brand" value="1.3" />
 
 	<property name="build.dir" value="${basedir}/build" />
 	<property name="src.dir" value="${basedir}/src" />
@@ -103,7 +103,7 @@
 	<!-- =================================================================== -->
 	<target name="build-debug" depends="debug,dist-debug">
 		<echo>Debug the project.</echo>
-		<echo>Copyright (C) 2009,2014 Cell Cloud Team. All rights reserved.</echo>
+		<echo>Copyright (C) 2009,2015 Cell Cloud Team. All rights reserved.</echo>
 	</target>
 
 	<!-- =================================================================== -->
@@ -111,7 +111,7 @@
 	<!-- =================================================================== -->
 	<target name="build-release" depends="release,dist-release">
 		<echo>Release the project.</echo>
-		<echo>Copyright (C) 2009,2014 Cell Cloud Team. All rights reserved.</echo>
+		<echo>Copyright (C) 2009,2015 Cell Cloud Team. All rights reserved.</echo>
 	</target>
 
 </project>

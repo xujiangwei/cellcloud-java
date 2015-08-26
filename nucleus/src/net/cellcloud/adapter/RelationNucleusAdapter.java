@@ -27,21 +27,18 @@ THE SOFTWARE.
 package net.cellcloud.adapter;
 
 import java.io.IOException;
-import java.io.UnsupportedEncodingException;
 import java.net.InetAddress;
 import java.net.SocketException;
 import java.net.UnknownHostException;
 import java.nio.ByteBuffer;
+import java.util.ArrayList;
 import java.util.LinkedList;
 
 import net.cellcloud.common.LogLevel;
 import net.cellcloud.common.Logger;
+import net.cellcloud.core.Endpoint;
 import net.cellcloud.core.Nucleus;
 import net.cellcloud.util.CachedQueueExecutor;
-
-import org.json.JSONException;
-import org.json.JSONObject;
-
 import udt.UDTClient;
 import udt.UDTInputStream;
 import udt.UDTServerSocket;
@@ -57,7 +54,8 @@ public abstract class RelationNucleusAdapter implements Adapter {
 
 	private final int port = 9813;
 
-	private LinkedList<Gene> geneList;
+	private LinkedList<Endpoint> endpointList;
+	private LinkedList<UDTClient> clientList;
 
 	private ServerThread thread;
 	private CachedQueueExecutor executor;
@@ -69,7 +67,8 @@ public abstract class RelationNucleusAdapter implements Adapter {
 	public RelationNucleusAdapter(String name) {
 		this.name = name;
 		this.executor = CachedQueueExecutor.newCachedQueueThreadPool(4);
-		this.geneList = new LinkedList<Gene>();
+		this.endpointList = new LinkedList<Endpoint>();
+		this.clientList = new LinkedList<UDTClient>();
 	}
 
 	@Override
@@ -96,37 +95,9 @@ public abstract class RelationNucleusAdapter implements Adapter {
 
 	/**
 	 * 
-	 * @param gene
+	 * @param endpoint
 	 */
-	public void addGene(Gene gene) {
-		synchronized (this.geneList) {
-			this.geneList.add(gene);
-		}
-	}
-
-	/**
-	 * 
-	 * @param gene
-	 */
-	public void removeGene(Gene gene) {
-		synchronized (this.geneList) {
-			this.geneList.remove(gene);
-		}
-	}
-
-	protected Gene findGeneByHost(String host) {
-		synchronized (this.geneList) {
-			for (Gene gene : this.geneList) {
-				if (gene.getHost().equals(host)) {
-					return gene;
-				}
-			}
-		}
-
-		return null;
-	}
-
-	protected void transport(Gene destination, AdapterEvent event) {
+	public boolean addEndpoint(Endpoint endpoint) {
 		// 获取客户端
 		UDTClient client = null;
 		try {
@@ -138,38 +109,115 @@ public abstract class RelationNucleusAdapter implements Adapter {
 			Logger.log(this.getClass(), e, LogLevel.ERROR);
 		}
 
+		if (null == client) {
+			return false;
+		}
+
+		synchronized (this.endpointList) {
+			this.clientList.add(client);
+			this.endpointList.add(endpoint);
+		}
+
+		return true;
+	}
+
+	/**
+	 * 
+	 * @param endpoint
+	 */
+	public void removeEndpoint(Endpoint endpoint) {
+		UDTClient client = null;
+
+		synchronized (this.endpointList) {
+			int index = this.endpointList.indexOf(endpoint);
+			if (index < 0) {
+				return;
+			}
+
+			this.endpointList.remove(endpoint);
+			client = this.clientList.remove(index);
+		}
+
+		if (null != client) {
+			try {
+				client.shutdown();
+			} catch (Exception e) {
+				// Nothing
+			}
+		}
+	}
+
+	/**
+	 * 广播。
+	 * @param index
+	 */
+	protected void broadcast(final Gene data) {
+		final ArrayList<Endpoint> list = new ArrayList<Endpoint>(this.endpointList.size());
+
+		synchronized (this.endpointList) {
+			list.addAll(this.endpointList);
+		}
+
+		this.executor.execute(new Runnable() {
+			@Override
+			public void run() {
+				for (Endpoint ep : list) {
+
+					// 传输数据
+					transport(ep, data);
+
+					try {
+						Thread.sleep(100);
+					} catch (InterruptedException e) {
+						e.printStackTrace();
+					}
+				}
+
+				list.clear();
+			}
+		});
+	}
+
+	protected boolean transport(Endpoint destination, Gene data) {
+		UDTClient client = null;
+
+		synchronized (this.endpointList) {
+			int index = this.endpointList.indexOf(destination);
+			client = this.clientList.get(index);
+		}
+
+		if (null == client) {
+			return false;
+		}
+
 		// 连接
 		try {
-			client.connect(destination.getHost(), destination.getPort());
+			if (!client.isReady()) {
+				client.connect(destination.getCoordinate().getAddress().getHostString(), destination.getCoordinate().getAddress().getPort());
+			}
 		} catch (UnknownHostException e) {
 			Logger.log(this.getClass(), e, LogLevel.ERROR);
+			return false;
 		} catch (InterruptedException e) {
 			Logger.log(this.getClass(), e, LogLevel.ERROR);
+			return false;
 		} catch (IOException e) {
 			Logger.log(this.getClass(), e, LogLevel.ERROR);
+			return false;
 		}
 
 		// 发送数据
 		try {
-			client.sendBlocking(this.parseEvent(event));
+			client.sendBlocking(data.packet());
 		} catch (IOException e) {
 			Logger.log(this.getClass(), e, LogLevel.ERROR);
+			return false;
 		} catch (InterruptedException e) {
 			Logger.log(this.getClass(), e, LogLevel.ERROR);
+			return false;
 		}
 
-		try {
-			Thread.sleep(10);
-		} catch (InterruptedException e) {
-			e.printStackTrace();
-		}
-
-		// 关闭
-		try {
-			client.shutdown();
-		} catch (IOException e) {
-			// Nothing
-		}
+		return true;
 	}
 
 	/**
@@ -181,11 +229,23 @@ public abstract class RelationNucleusAdapter implements Adapter {
 	 * 收到事件。
 	 * @param event
 	 */
-	protected abstract void onEvent(AdapterEvent event);
+	protected abstract void onReceive(Endpoint endpoint, Gene gene);
 
 	/** 返回内核标签。 */
 	public String getNucleusTag() {
 		return Nucleus.getInstance().getTagAsString();
+	}
+
+	private Endpoint findEndpoint(String host) {
+		synchronized (this.endpointList) {
+			for (Endpoint ep : this.endpointList) {
+				if (ep.getCoordinate().getAddress().getHostString().equals(host)) {
+					return ep;
+				}
+			}
+		}
+
+		return null;
 	}
 
 	private class ServerThread extends Thread {
@@ -262,59 +322,53 @@ public abstract class RelationNucleusAdapter implements Adapter {
 					packet.put(buf, 0, len);
 				}
 
-				// 回调事件
-				AdapterEvent event = parseEvent(new String(packet.array(), "UTF-8"), this.socket);
-				if (null != event) {
-					onEvent(event);
+				String host = this.socket.getSession().getDestination().getAddress().getHostAddress();
+				Endpoint endpoint = findEndpoint(host);
+				if (null == endpoint) {
+					Logger.e(this.getClass(), "Can not find host by " + host);
+					return;
 				}
+
+				Gene gene = parse(new String(packet.array(), "UTF-8"));
+				if (null == gene) {
+					Logger.e(this.getClass(), "Parse gene data failed, from " + host);
+					return;
+				}
+
+				// 回调
+				onReceive(endpoint, gene);
 			} catch (IOException e) {
 				Logger.log(this.getClass(), e, LogLevel.ERROR);
 			}
 		}
 	}
 
-	private AdapterEvent parseEvent(String data, UDTSocket socket) {
+	private Gene parse(String data) {
 		String[] ret = data.split("\\\r\\\n");
-		if (ret.length != 2) {
-			Logger.w(this.getClass(), "Data format error");
+		if (ret.length < 2) {
+			Logger.w(RelationNucleusAdapter.class, "Data format error");
 			return null;
 		}
 
-		String host = socket.getSession().getDestination().getAddress().getHostAddress();
-		// 通过主机地址找到 Gene
-		Gene gene = findGeneByHost(host);
-		if (null == gene) {
-			Logger.w(this.getClass(), "Can not find gene with '" + host + "'");
-			gene = new Gene(host);
-			addGene(gene);
+		String name = ret[0];
+		Gene gene = new Gene(name);
+
+		for (int i = 1; i < ret.length; ++i) {
+			String r = ret[i];
+
+			if (r.length() == 0) {
+				gene.setBody(ret[i+1]);
+				break;
+			}
+
+			int index = r.indexOf(":");
+			if (index > 0) {
+				String key = r.substring(0, index);
+				String value = r.substring(index + 1);
+				gene.setHeader(key.trim(), value.trim());
+			}
 		}
 
-		AdapterEvent event = null;
-		try {
-			event = new AdapterEvent(ret[0].trim(), new JSONObject(ret[1]), gene);
-		} catch (JSONException e) {
-			Logger.log(this.getClass(), e, LogLevel.ERROR);
-		}
-		return event;
-	}
-
-	private byte[] parseEvent(AdapterEvent event) {
-		StringBuilder buf = new StringBuilder();
-		buf.append(event.name);
-		buf.append("\r\n");
-		if (null != event.body) {
-			buf.append(event.body.toString());
-		}
-		else {
-			buf.append("{}");
-		}
-
-		byte[] ret = null;
-		try {
-			ret = buf.toString().getBytes("UTF-8");
-		} catch (UnsupportedEncodingException e) {
-			// Nothing
-		}
-		return ret;
+		return gene;
 	}
 }

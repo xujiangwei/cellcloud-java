@@ -53,6 +53,8 @@ public class ChunkDialectFactory extends DialectFactory {
 	private Object mutex = new Object();
 	private boolean clearRunning = false;
 
+	private int logCounts = 0;
+
 	public ChunkDialectFactory() {
 		this.metaData = new DialectMetaData(ChunkDialect.DIALECT_NAME, "Chunk Dialect");
 		this.cacheMap = new ConcurrentHashMap<String, Cache>();
@@ -176,11 +178,17 @@ public class ChunkDialectFactory extends DialectFactory {
 		// 更新内存大小
 		this.cacheMemorySize += chunk.length;
 
-		if (this.cacheMemorySize > 1024) {
-			Logger.i(ChunkDialectFactory.class, "Cache memory size: " + (long)(this.cacheMemorySize / 1024) + " KB");
+		if ((this.logCounts % 100) == 0) {
+			if (this.cacheMemorySize > 1024) {
+				Logger.i(ChunkDialectFactory.class, "Cache memory size: " + (long)(this.cacheMemorySize / 1024) + " KB");
+			}
+			else {
+				Logger.i(ChunkDialectFactory.class, "Cache memory size: " + this.cacheMemorySize + " Bytes");
+			}
 		}
-		else {
-			Logger.i(ChunkDialectFactory.class, "Cache memory size: " + this.cacheMemorySize + " Bytes");
+		++this.logCounts;
+		if (this.logCounts > 9999) {
+			this.logCounts = 0;
 		}
 
 		if (this.cacheMemorySize > this.clearThreshold) {
@@ -211,6 +219,10 @@ public class ChunkDialectFactory extends DialectFactory {
 	}
 
 	protected boolean checkCompleted(String tag, String sign) {
+		if (null == tag || null == sign) {
+			return false;
+		}
+
 		Cache cache = this.cacheMap.get(tag);
 		if (null != cache) {
 			return cache.checkCompleted(sign);

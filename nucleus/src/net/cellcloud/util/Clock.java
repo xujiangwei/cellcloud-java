@@ -54,8 +54,8 @@ public final class Clock {
 
 	private void stopTimer() {
 		if (null != this.timer) {
-			this.timer.purge();
 			this.timer.cancel();
+			this.timer.purge();
 			this.timer = null;
 		}
 	}
