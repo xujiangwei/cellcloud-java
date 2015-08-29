@@ -52,13 +52,14 @@ public final class FileLogger implements LogHandle {
 	private FileOutputStream outputStream = null;
 	private BufferedOutputStream buffer = null;
 
-	private String lineBreak = Utils.isWindowsOS() ? "\r\n" : "\n";
+	private String lineBreak;
 
 	private int bufSize = 256;
 
 	private FileLogger() {
 		this.name = "CellFileLogger";
 		this.outputStream = null;
+		this.lineBreak = System.lineSeparator();
 	}
 
 	/** 返回单例。

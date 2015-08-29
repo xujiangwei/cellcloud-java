@@ -154,6 +154,11 @@ public final class Nucleus {
 
 	/** 启动内核。 */
 	public boolean startup() {
+		if (this.working.get()) {
+			Logger.i(Nucleus.class, "*-*-* Cell Initialized *-*-*");
+			return true;
+		}
+
 		Logger.i(Nucleus.class, "*-*-* Cell Initializing *-*-*");
 
 		// 启动时钟
@@ -282,6 +287,11 @@ public final class Nucleus {
 
 	/** 关停内核。 */
 	public void shutdown() {
+		if (!this.working.get()) {
+			Logger.i(Nucleus.class, "*-*-* Cell Finalized *-*-*");
+			return;
+		}
+
 		Logger.i(Nucleus.class, "*-*-* Cell Finalizing *-*-*");
 
 		this.working.set(false);

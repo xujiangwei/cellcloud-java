@@ -72,10 +72,6 @@ public class AckHistoryEntry {
 	 * @return
 	 */
 	public long getAge() {
-		return Util.getCurrentTime()-sentTime;
+		return Util.getCurrentTime() - sentTime;
 	}
-
-
-
-	
 }

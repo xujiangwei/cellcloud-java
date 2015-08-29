@@ -35,58 +35,54 @@ package udt.packets;
 import udt.UDTPacket;
 import udt.UDTSession;
 
-public class DataPacket implements UDTPacket, Comparable<UDTPacket>{
+public class DataPacket implements UDTPacket, Comparable<UDTPacket> {
 
-	private byte[] data ;
+	private byte[] data;
 	private long packetSequenceNumber;
 	private long messageNumber;
 	private long timeStamp;
 	private long destinationID;
 
 	private UDTSession session;
-	
-	public DataPacket(){
+
+	public DataPacket() {
 	}
 
 	/**
 	 * create a DataPacket
+	 * 
 	 * @param encodedData - network data
 	 */
-	public DataPacket(byte[] encodedData){
-		this(encodedData,encodedData.length);
+	public DataPacket(byte[] encodedData) {
+		this(encodedData, encodedData.length);
 	}
 
-	public DataPacket(byte[] encodedData, int length){
-		decode(encodedData,length);
+	public DataPacket(byte[] encodedData, int length) {
+		decode(encodedData, length);
 	}
-	
-	void decode(byte[]encodedData,int length){
-		packetSequenceNumber=PacketUtil.decode(encodedData, 0);
-		messageNumber=PacketUtil.decode(encodedData, 4);
-		timeStamp=PacketUtil.decode(encodedData, 8);
-		destinationID=PacketUtil.decode(encodedData, 12);
-		data=new byte[length-16];
+
+	void decode(byte[] encodedData, int length) {
+		packetSequenceNumber = PacketUtil.decode(encodedData, 0);
+		messageNumber = PacketUtil.decode(encodedData, 4);
+		timeStamp = PacketUtil.decode(encodedData, 8);
+		destinationID = PacketUtil.decode(encodedData, 12);
+		data = new byte[length - 16];
 		System.arraycopy(encodedData, 16, data, 0, data.length);
 	}
-
 
 	public byte[] getData() {
 		return this.data;
 	}
 
-	public double getLength(){
+	public double getLength() {
 		return data.length;
 	}
-
-	/*
-	 * aplivation data
-	 * @param
-	 */
 
 	public void setData(byte[] data) {
 		this.data = data;
 	}
 
+	@Override
 	public long getPacketSequenceNumber() {
 		return this.packetSequenceNumber;
 	}
@@ -95,37 +91,43 @@ public class DataPacket implements UDTPacket, Comparable<UDTPacket>{
 		this.packetSequenceNumber = sequenceNumber;
 	}
 
-
+	@Override
 	public long getMessageNumber() {
 		return this.messageNumber;
 	}
 
+	@Override
 	public void setMessageNumber(long messageNumber) {
 		this.messageNumber = messageNumber;
 	}
 
+	@Override
 	public long getDestinationID() {
 		return this.destinationID;
 	}
 
+	@Override
 	public long getTimeStamp() {
 		return this.timeStamp;
 	}
 
+	@Override
 	public void setDestinationID(long destinationID) {
-		this.destinationID=destinationID;
+		this.destinationID = destinationID;
 	}
 
+	@Override
 	public void setTimeStamp(long timeStamp) {
-		this.timeStamp=timeStamp;
+		this.timeStamp = timeStamp;
 	}
 
 	/**
 	 * complete header+data packet for transmission
 	 */
-	public byte[] getEncoded(){
-		//header.length is 16
-		byte[] result=new byte[16+data.length];
+	@Override
+	public byte[] getEncoded() {
+		// header.length is 16
+		byte[] result = new byte[16 + data.length];
 		System.arraycopy(PacketUtil.encode(packetSequenceNumber), 0, result, 0, 4);
 		System.arraycopy(PacketUtil.encode(messageNumber), 0, result, 4, 4);
 		System.arraycopy(PacketUtil.encode(timeStamp), 0, result, 8, 4);
@@ -134,22 +136,27 @@ public class DataPacket implements UDTPacket, Comparable<UDTPacket>{
 		return result;
 	}
 
-	public boolean isControlPacket(){
+	@Override
+	public boolean isControlPacket() {
 		return false;
 	}
 
-	public boolean forSender(){
+	@Override
+	public boolean forSender() {
 		return false;
 	}
 
-	public boolean isConnectionHandshake(){
+	@Override
+	public boolean isConnectionHandshake() {
 		return false;
 	}
-	
-	public int getControlPacketType(){
+
+	@Override
+	public int getControlPacketType() {
 		return -1;
 	}
-	
+
+	@Override
 	public UDTSession getSession() {
 		return session;
 	}
@@ -158,7 +165,8 @@ public class DataPacket implements UDTPacket, Comparable<UDTPacket>{
 		this.session = session;
 	}
 
-	public int compareTo(UDTPacket other){
-		return (int)(getPacketSequenceNumber()-other.getPacketSequenceNumber());
+	@Override
+	public int compareTo(UDTPacket other) {
+		return (int) (getPacketSequenceNumber() - other.getPacketSequenceNumber());
 	}
 }

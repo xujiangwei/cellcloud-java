@@ -101,8 +101,7 @@ public class UDTClient {
 		clientSession.getSocket().doWrite(data);
 	}
 
-	public void sendBlocking(byte[] data) throws IOException,
-			InterruptedException {
+	public void sendBlocking(byte[] data) throws IOException, InterruptedException {
 		clientSession.getSocket().doWriteBlocking(data);
 	}
 

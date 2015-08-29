@@ -35,59 +35,66 @@ package udt.packets;
 import udt.UDTPacket;
 import udt.UDTSession;
 
-public abstract class ControlPacket implements UDTPacket{
-	
+public abstract class ControlPacket implements UDTPacket {
+
 	protected int controlPacketType;
 
 	protected long messageNumber;
-	
-	protected long timeStamp;
-	
-	protected long destinationID;
-	
-	protected byte[] controlInformation;
-    
-	private UDTSession session;
-	
-	public ControlPacket(){
-    	
-    }
 
-	public int getControlPacketType(){
+	protected long timeStamp;
+
+	protected long destinationID;
+
+	protected byte[] controlInformation;
+
+	private UDTSession session;
+
+	public ControlPacket() {
+
+	}
+
+	@Override
+	public int getControlPacketType() {
 		return controlPacketType;
 	}
-	
+
+	@Override
 	public long getMessageNumber() {
 		return messageNumber;
 	}
+
+	@Override
 	public void setMessageNumber(long messageNumber) {
 		this.messageNumber = messageNumber;
 	}
-	
-	
+
+	@Override
 	public long getTimeStamp() {
 		return timeStamp;
 	}
-	
+
+	@Override
 	public void setTimeStamp(long timeStamp) {
 		this.timeStamp = timeStamp;
 	}
-	
-	
+
+	@Override
 	public long getDestinationID() {
 		return destinationID;
 	}
+
+	@Override
 	public void setDestinationID(long destinationID) {
 		this.destinationID = destinationID;
 	}
-	
-	
+
 	/**
 	 * return the header according to specification p.5
+	 * 
 	 * @return
 	 */
-	byte[] getHeader(){
-		byte[]res=new byte[16];
+	byte[] getHeader() {
+		byte[] res = new byte[16];
 		System.arraycopy(PacketUtil.encodeControlPacketType(controlPacketType), 0, res, 0, 4);
 		System.arraycopy(PacketUtil.encode(getAdditionalInfo()), 0, res, 4, 4);
 		System.arraycopy(PacketUtil.encode(timeStamp), 0, res, 8, 4);
@@ -98,35 +105,31 @@ public abstract class ControlPacket implements UDTPacket{
 	/**
 	 * this method gets the "additional info" for this type of control packet
 	 */
-	protected long getAdditionalInfo(){
+	protected long getAdditionalInfo() {
 		return 0L;
 	}
 
-	
 	/**
-	 * this method builds the control information
-	 * from the control parameters
+	 * this method builds the control information from the control parameters
+	 * 
 	 * @return
 	 */
-	public abstract byte[] encodeControlInformation(); 
+	public abstract byte[] encodeControlInformation();
 
 	/**
 	 * complete header+ControlInformation packet for transmission
 	 */
-	
-	public byte[] getEncoded(){
-		byte[] header=getHeader();
-		byte[] controlInfo=encodeControlInformation();
-		byte[] result=controlInfo!=null?
-				new byte[header.length + controlInfo.length]:
-				new byte[header.length]; 
+	@Override
+	public byte[] getEncoded() {
+		byte[] header = getHeader();
+		byte[] controlInfo = encodeControlInformation();
+		byte[] result = controlInfo != null ? new byte[header.length + controlInfo.length] : new byte[header.length];
 		System.arraycopy(header, 0, result, 0, header.length);
-		if(controlInfo!=null){
+		if (controlInfo != null) {
 			System.arraycopy(controlInfo, 0, result, header.length, controlInfo.length);
 		}
 		return result;
-		
-	};
+	}
 
 	@Override
 	public boolean equals(Object obj) {
@@ -146,18 +149,22 @@ public abstract class ControlPacket implements UDTPacket{
 		return true;
 	}
 
-	public boolean isControlPacket(){
+	@Override
+	public boolean isControlPacket() {
 		return true;
 	}
-	
-	public boolean forSender(){
+
+	@Override
+	public boolean forSender() {
 		return true;
 	}
-	
-	public boolean isConnectionHandshake(){
+
+	@Override
+	public boolean isConnectionHandshake() {
 		return false;
 	}
-	
+
+	@Override
 	public UDTSession getSession() {
 		return session;
 	}
@@ -165,17 +172,18 @@ public abstract class ControlPacket implements UDTPacket{
 	public void setSession(UDTSession session) {
 		this.session = session;
 	}
-	
-	public long getPacketSequenceNumber(){
+
+	@Override
+	public long getPacketSequenceNumber() {
 		return -1;
 	}
-	
-	public int compareTo(UDTPacket other){
-		return (int)(getPacketSequenceNumber()-other.getPacketSequenceNumber());
+
+	@Override
+	public int compareTo(UDTPacket other) {
+		return (int) (getPacketSequenceNumber() - other.getPacketSequenceNumber());
 	}
-	
+
 	public static enum ControlPacketType {
-		
 		CONNECTION_HANDSHAKE,
 		KEEP_ALIVE,
 		ACK,
@@ -192,7 +200,5 @@ public abstract class ControlPacket implements UDTPacket{
 		UNUNSED_7,
 		UNUNSED_8,
 		USER_DEFINED,
-		
 	}
-	
 }

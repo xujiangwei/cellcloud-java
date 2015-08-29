@@ -33,18 +33,20 @@ import java.util.concurrent.atomic.AtomicLong;
 /**
  * 
  * @author Jiangwei Xu
- *
  */
 public final class Clock {
 
 	private static final Clock instance = new Clock();
+
+	private long start;
 
 	private Timer timer;
 
 	private AtomicLong time;
 
 	private Clock() {
-		this.time = new AtomicLong(System.currentTimeMillis());
+		this.start = System.currentTimeMillis();
+		this.time = new AtomicLong(this.start);
 	}
 
 	private void startTimer() {
@@ -58,6 +60,10 @@ public final class Clock {
 			this.timer.purge();
 			this.timer = null;
 		}
+	}
+
+	public static long startTime() {
+		return Clock.instance.start;
 	}
 
 	public static void start() {

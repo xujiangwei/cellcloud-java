@@ -84,8 +84,7 @@ public class UDPEndPoint {
 	/**
 	 * create an endpoint on the given socket
 	 * 
-	 * @param socket
-	 *            - a UDP datagram socket
+	 * @param socket - a UDP datagram socket
 	 */
 	public UDPEndPoint(DatagramSocket socket) {
 		this.dgSocket = socket;
@@ -107,13 +106,12 @@ public class UDPEndPoint {
 	 * Bind to the given address and port
 	 * 
 	 * @param localAddress
-	 * @param localPort
-	 *            - the port to bind to. If the port is zero, the system will
-	 *            pick an ephemeral port.
+	 * @param localPort - the port to bind to. If the port is zero, the system will pick an ephemeral port.
 	 * @throws SocketException
 	 * @throws UnknownHostException
 	 */
-	public UDPEndPoint(InetAddress localAddress, int localPort) throws SocketException, UnknownHostException {
+	public UDPEndPoint(InetAddress localAddress, int localPort)
+			throws SocketException, UnknownHostException {
 		if (localAddress == null) {
 			dgSocket = new DatagramSocket(localPort, localAddress);
 		} else {
@@ -133,9 +131,7 @@ public class UDPEndPoint {
 	/**
 	 * bind to the default network interface on the machine
 	 * 
-	 * @param localPort
-	 *            - the port to bind to. If the port is zero, the system will
-	 *            pick an ephemeral port.
+	 * @param localPort - the port to bind to. If the port is zero, the system will pick an ephemeral port.
 	 * @throws SocketException
 	 * @throws UnknownHostException
 	 */
@@ -164,6 +160,7 @@ public class UDPEndPoint {
 		serverSocketMode = serverSocketModeEnabled;
 		// start receive thread
 		Runnable receive = new Runnable() {
+			@Override
 			public void run() {
 				try {
 					doReceive();
@@ -225,10 +222,8 @@ public class UDPEndPoint {
 	/**
 	 * wait the given time for a new connection
 	 * 
-	 * @param timeout
-	 *            - the time to wait
-	 * @param unit
-	 *            - the {@link TimeUnit}
+	 * @param timeout - the time to wait
+	 * @param unit - the {@link TimeUnit}
 	 * @return a new {@link UDTSession}
 	 * @throws InterruptedException
 	 */
@@ -236,8 +231,7 @@ public class UDPEndPoint {
 		return sessionHandoff.poll(timeout, unit);
 	}
 
-	final DatagramPacket dp = new DatagramPacket(new byte[DATAGRAM_SIZE],
-			DATAGRAM_SIZE);
+	final DatagramPacket dp = new DatagramPacket(new byte[DATAGRAM_SIZE], DATAGRAM_SIZE);
 
 	/**
 	 * single receive, run in the receiverThread, see {@link #start()}
@@ -270,9 +264,11 @@ public class UDPEndPoint {
 
 					// v.begin();
 
-					Destination peer = new Destination(dp.getAddress(), dp.getPort());
+					Destination peer = new Destination(dp.getAddress(),
+							dp.getPort());
 					int l = dp.getLength();
-					UDTPacket packet = PacketFactory.createPacket(dp.getData(), l);
+					UDTPacket packet = PacketFactory.createPacket(dp.getData(),
+							l);
 					lastPacket = packet;
 
 					// handle connection handshake
@@ -291,7 +287,8 @@ public class UDPEndPoint {
 									logger.fine("Request taken for processing.");
 								}
 							}
-							peer.setSocketID(((ConnectionHandshake) packet).getSocketID());
+							peer.setSocketID(((ConnectionHandshake) packet)
+									.getSocketID());
 							session.received(packet, peer);
 						}
 					} else {
@@ -308,19 +305,22 @@ public class UDPEndPoint {
 						if (session == null) {
 							n++;
 							if (n % 100 == 1) {
-								logger.warning("Unknown session <" + dest + "> requested from <" + peer + "> packet type " + packet.getClass().getName());
+								logger.warning("Unknown session <" + dest
+										+ "> requested from <" + peer
+										+ "> packet type "
+										+ packet.getClass().getName());
 							}
 						} else {
 							session.received(packet, peer);
 						}
 					}
 				} catch (SocketException ex) {
-					logger.log(Level.INFO, "SocketException: " + ex.getMessage());
+					logger.log(Level.INFO,
+							"SocketException: " + ex.getMessage());
 				} catch (SocketTimeoutException ste) {
 					// can safely ignore... we will retry until the endpoint is
 					// stopped
 				}
-
 			} catch (Exception ex) {
 				logger.log(Level.WARNING, "Got: " + ex.getMessage(), ex);
 			}
@@ -334,6 +334,7 @@ public class UDPEndPoint {
 		dgSocket.send(dgp);
 	}
 
+	@Override
 	public String toString() {
 		return "UDPEndpoint port=" + port;
 	}

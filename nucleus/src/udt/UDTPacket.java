@@ -32,38 +32,38 @@
 
 package udt;
 
-public interface UDTPacket extends Comparable<UDTPacket>{
-
+public interface UDTPacket extends Comparable<UDTPacket> {
 
 	public long getMessageNumber();
-	
-	public void setMessageNumber(long messageNumber) ;
-	
+
+	public void setMessageNumber(long messageNumber);
+
 	public void setTimeStamp(long timeStamp);
-	
+
 	public long getTimeStamp();
-	
+
 	public void setDestinationID(long destinationID);
-	
+
 	public long getDestinationID();
-	
+
 	public boolean isControlPacket();
-	
+
 	public int getControlPacketType();
 
 	public byte[] getEncoded();
-	
+
 	/**
-	 * return <code>true</code> if this packet should be routed to
-	 * the {@link UDTSender} 
+	 * return <code>true</code> if this packet should be routed to the
+	 * {@link UDTSender}
+	 * 
 	 * @return
 	 */
 	public boolean forSender();
-	
+
 	public boolean isConnectionHandshake();
-	
+
 	public UDTSession getSession();
 
 	public long getPacketSequenceNumber();
-	
+
 }

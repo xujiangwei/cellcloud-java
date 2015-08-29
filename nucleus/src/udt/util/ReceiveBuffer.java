@@ -10,60 +10,62 @@ import udt.UDTInputStream.AppData;
 /**
  * 
  * The receive buffer stores data chunks to be read by the application
- *
+ * 
  * @author schuller
  */
 public class ReceiveBuffer {
 
-	private final AppData[]buffer;
+	private final AppData[] buffer;
 
-	//the head of the buffer: contains the next chunk to be read by the application, 
-	//i.e. the one with the lowest sequence number
-	private volatile int readPosition=0;
+	// the head of the buffer: contains the next chunk to be read by the application,
+	// i.e. the one with the lowest sequence number
+	private volatile int readPosition = 0;
 
-	//the lowest sequence number stored in this buffer
+	// the lowest sequence number stored in this buffer
 	private final long initialSequenceNumber;
 
-	//the highest sequence number already read by the application
+	// the highest sequence number already read by the application
 	private long highestReadSequenceNumber;
 
-	//number of chunks
-	private final AtomicInteger numValidChunks=new AtomicInteger(0);
+	// number of chunks
+	private final AtomicInteger numValidChunks = new AtomicInteger(0);
 
-	//lock and condition for poll() with timeout
+	// lock and condition for poll() with timeout
 	private final Condition notEmpty;
 	private final ReentrantLock lock;
 
-	//the size of the buffer
+	// the size of the buffer
 	private final int size;
 
-	public ReceiveBuffer(int size, long initialSequenceNumber){
-		this.size=size;
-		this.buffer=new AppData[size];
-		this.initialSequenceNumber=initialSequenceNumber;
-		lock=new ReentrantLock(false);
-		notEmpty=lock.newCondition();
-		highestReadSequenceNumber=SequenceNumber.decrement(initialSequenceNumber);
-		System.out.println("SIZE: "+size);
+	public ReceiveBuffer(int size, long initialSequenceNumber) {
+		this.size = size;
+		this.buffer = new AppData[size];
+		this.initialSequenceNumber = initialSequenceNumber;
+		lock = new ReentrantLock(false);
+		notEmpty = lock.newCondition();
+		highestReadSequenceNumber = SequenceNumber
+				.decrement(initialSequenceNumber);
+		System.out.println("SIZE: " + size);
 	}
 
-	public boolean offer(AppData data){
-		if(numValidChunks.get()==size) {
+	public boolean offer(AppData data) {
+		if (numValidChunks.get() == size) {
 			return false;
 		}
 		lock.lock();
-		try{
-			long seq=data.getSequenceNumber();
-			//if already have this chunk, discard it
-			if(SequenceNumber.compare(seq, initialSequenceNumber)<0)return true;
-			//else compute insert position
-			int offset=(int)SequenceNumber.seqOffset(initialSequenceNumber, seq);
-			int insert=offset% size;
-			buffer[insert]=data;
+		try {
+			long seq = data.getSequenceNumber();
+			// if already have this chunk, discard it
+			if (SequenceNumber.compare(seq, initialSequenceNumber) < 0)
+				return true;
+			// else compute insert position
+			int offset = (int) SequenceNumber.seqOffset(initialSequenceNumber, seq);
+			int insert = offset % size;
+			buffer[insert] = data;
 			numValidChunks.incrementAndGet();
 			notEmpty.signal();
 			return true;
-		}finally{
+		} finally {
 			lock.unlock();
 		}
 	}
@@ -71,16 +73,14 @@ public class ReceiveBuffer {
 	/**
 	 * return a data chunk, guaranteed to be in-order, waiting up to the
 	 * specified wait time if necessary for a chunk to become available.
-	 *
-	 * @param timeout how long to wait before giving up, in units of
-	 *        <tt>unit</tt>
-	 * @param unit a <tt>TimeUnit</tt> determining how to interpret the
-	 *        <tt>timeout</tt> parameter
-	 * @return data chunk, or <tt>null</tt> if the
-	 *         specified waiting time elapses before an element is available
+	 * 
+	 * @param timeout how long to wait before giving up, in units of <tt>unit</tt>
+	 * @param unit a <tt>TimeUnit</tt> determining how to interpret the <tt>timeout</tt> parameter
+	 * @return data chunk, or <tt>null</tt> if the specified waiting time elapses before an element is available
 	 * @throws InterruptedException if interrupted while waiting
 	 */
-	public AppData poll(int timeout, TimeUnit units)throws InterruptedException{
+	public AppData poll(int timeout, TimeUnit units)
+			throws InterruptedException {
 		lock.lockInterruptibly();
 		long nanos = units.toNanos(timeout);
 
@@ -104,47 +104,47 @@ public class ReceiveBuffer {
 		}
 	}
 
-
 	/**
-	 * return a data chunk, guaranteed to be in-order. 
+	 * return a data chunk, guaranteed to be in-order.
 	 */
-	public AppData poll(){
-		if(numValidChunks.get()==0){
+	public AppData poll() {
+		if (numValidChunks.get() == 0) {
 			return null;
 		}
-		AppData r=buffer[readPosition];
-		if(r!=null){
-			long thisSeq=r.getSequenceNumber();
-			if(1==SequenceNumber.seqOffset(highestReadSequenceNumber,thisSeq)){
+		AppData r = buffer[readPosition];
+		if (r != null) {
+			long thisSeq = r.getSequenceNumber();
+			if (1 == SequenceNumber.seqOffset(highestReadSequenceNumber,
+					thisSeq)) {
 				increment();
-				highestReadSequenceNumber=thisSeq;
-			}
-			else return null;
+				highestReadSequenceNumber = thisSeq;
+			} else
+				return null;
 		}
-		//		else{
-		//			System.out.println("empty HEAD at pos="+readPosition);
-		//			try{
-		//				Thread.sleep(1000);
-		//				Thread.yield();
-		//			}catch(InterruptedException e){};
-		//		}
+		// else{
+		// System.out.println("empty HEAD at pos="+readPosition);
+		// try{
+		// Thread.sleep(1000);
+		// Thread.yield();
+		// }catch(InterruptedException e){};
+		// }
 
 		return r;
 	}
 
-	public int getSize(){
+	public int getSize() {
 		return size;
 	}
 
-	void increment(){
-		buffer[readPosition]=null;
+	void increment() {
+		buffer[readPosition] = null;
 		readPosition++;
-		if(readPosition==size)readPosition=0;
+		if (readPosition == size)
+			readPosition = 0;
 		numValidChunks.decrementAndGet();
 	}
 
-	public boolean isEmpty(){
-		return numValidChunks.get()==0;
+	public boolean isEmpty() {
+		return numValidChunks.get() == 0;
 	}
-
 }

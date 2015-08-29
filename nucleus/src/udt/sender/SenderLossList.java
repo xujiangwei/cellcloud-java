@@ -31,6 +31,7 @@
  *********************************************************************************/
 
 package udt.sender;
+
 import java.util.LinkedList;
 
 /**
@@ -38,21 +39,21 @@ import java.util.LinkedList;
  */
 public class SenderLossList {
 
-	private final LinkedList<Long>backingList;
+	private final LinkedList<Long> backingList;
 
 	/**
 	 * create a new sender lost list
 	 */
-	public SenderLossList(){
+	public SenderLossList() {
 		backingList = new LinkedList<Long>();
 	}
 
-	public void insert(Long obj){
+	public void insert(Long obj) {
 		synchronized (backingList) {
-			if(!backingList.contains(obj)){
-				for(int i=0;i<backingList.size();i++){
-					if(obj<backingList.getFirst()){
-						backingList.add(i,obj);	
+			if (!backingList.contains(obj)) {
+				for (int i = 0; i < backingList.size(); i++) {
+					if (obj < backingList.getFirst()) {
+						backingList.add(i, obj);
 						return;
 					}
 				}
@@ -64,23 +65,24 @@ public class SenderLossList {
 	/**
 	 * retrieves the loss list entry with the lowest sequence number
 	 */
-	public Long getFirstEntry(){
-		synchronized(backingList){
+	public Long getFirstEntry() {
+		synchronized (backingList) {
 			return backingList.poll();
 		}
 	}
 
-	public boolean isEmpty(){
+	public boolean isEmpty() {
 		return backingList.isEmpty();
 	}
 
-	public int size(){
+	public int size() {
 		return backingList.size();
 	}
 
-	public String toString(){
+	@Override
+	public String toString() {
 		synchronized (backingList) {
-			return backingList.toString();	
+			return backingList.toString();
 		}
 	}
 }

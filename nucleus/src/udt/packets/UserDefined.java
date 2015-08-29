@@ -32,17 +32,16 @@
 
 package udt.packets;
 
+public class UserDefined extends ControlPacket {
 
-public class UserDefined extends ControlPacket{
-	
-	public UserDefined(){
-		controlPacketType=ControlPacketType.USER_DEFINED.ordinal();
+	public UserDefined() {
+		controlPacketType = ControlPacketType.USER_DEFINED.ordinal();
 	}
-	
-	//Explained by bits 4-15,
-	//reserved for user defined Control Packet
-	public UserDefined(byte[]controlInformation){
-		this.controlInformation=controlInformation;
+
+	// Explained by bits 4-15,
+	// reserved for user defined Control Packet
+	public UserDefined(byte[] controlInformation) {
+		this.controlInformation = controlInformation;
 	}
 
 	@Override

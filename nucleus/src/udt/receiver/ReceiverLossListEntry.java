@@ -40,28 +40,28 @@ import udt.util.Util;
 public class ReceiverLossListEntry implements Comparable<ReceiverLossListEntry> {
 
 	private final long sequenceNumber;
-	private	long lastFeedbacktime;
+	private long lastFeedbacktime;
 	private long k = 2;
 
 	/**
 	 * constructor
+	 * 
 	 * @param sequenceNumber
 	 */
-	public ReceiverLossListEntry(long sequenceNumber){
-		if(sequenceNumber<=0){
-			throw new IllegalArgumentException("Got sequence number "+sequenceNumber);
+	public ReceiverLossListEntry(long sequenceNumber) {
+		if (sequenceNumber <= 0) {
+			throw new IllegalArgumentException("Got sequence number " + sequenceNumber);
 		}
-		this.sequenceNumber = sequenceNumber;	
-		this.lastFeedbacktime=Util.getCurrentTime();
+		this.sequenceNumber = sequenceNumber;
+		this.lastFeedbacktime = Util.getCurrentTime();
 	}
-
 
 	/**
 	 * call once when this seqNo is fed back in NAK
 	 */
-	public void feedback(){
+	public void feedback() {
 		k++;
-		lastFeedbacktime=Util.getCurrentTime();
+		lastFeedbacktime = Util.getCurrentTime();
 	}
 
 	public long getSequenceNumber() {
@@ -70,6 +70,7 @@ public class ReceiverLossListEntry implements Comparable<ReceiverLossListEntry> 
 
 	/**
 	 * k is initialised as 2 and increased by 1 each time the number is fed back
+	 * 
 	 * @return k the number of times that this seqNo has been feedback in NAK
 	 */
 	public long getK() {
@@ -79,19 +80,18 @@ public class ReceiverLossListEntry implements Comparable<ReceiverLossListEntry> 
 	public long getLastFeedbackTime() {
 		return lastFeedbacktime;
 	}
-	
+
 	/**
 	 * order by increasing sequence number
 	 */
 	public int compareTo(ReceiverLossListEntry o) {
-		return (int)(sequenceNumber-o.sequenceNumber);
+		return (int) (sequenceNumber - o.sequenceNumber);
 	}
 
-
-	public String toString(){
-		return sequenceNumber+"[k="+k+",time="+lastFeedbacktime+"]";
+	@Override
+	public String toString() {
+		return sequenceNumber + "[k=" + k + ",time=" + lastFeedbacktime + "]";
 	}
-
 
 	@Override
 	public int hashCode() {
@@ -102,7 +102,6 @@ public class ReceiverLossListEntry implements Comparable<ReceiverLossListEntry> 
 				+ (int) (sequenceNumber ^ (sequenceNumber >>> 32));
 		return result;
 	}
-
 
 	@Override
 	public boolean equals(Object obj) {
@@ -117,5 +116,4 @@ public class ReceiverLossListEntry implements Comparable<ReceiverLossListEntry> 
 			return false;
 		return true;
 	}
-
 }

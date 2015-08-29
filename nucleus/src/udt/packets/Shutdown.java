@@ -30,26 +30,21 @@
  * POSSIBILITY OF SUCH DAMAGE.
  *********************************************************************************/
 
-
 package udt.packets;
 
+public class Shutdown extends ControlPacket {
 
-
-public class Shutdown extends ControlPacket{
-	
-	public Shutdown(){
-		this.controlPacketType=ControlPacketType.SHUTDOWN.ordinal();	
+	public Shutdown() {
+		this.controlPacketType = ControlPacketType.SHUTDOWN.ordinal();
 	}
-	
+
 	@Override
-	public byte[] encodeControlInformation(){
+	public byte[] encodeControlInformation() {
 		return null;
 	}
-	
+
 	@Override
-	public boolean forSender(){
+	public boolean forSender() {
 		return false;
 	}
-
 }
-

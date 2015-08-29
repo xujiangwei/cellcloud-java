@@ -31,28 +31,27 @@
  *********************************************************************************/
 
 package udt.packets;
+
 import java.io.ByteArrayOutputStream;
 
-
-public class MessageDropRequest extends ControlPacket{
-	//Bits 35-64: Message number
-	
+public class MessageDropRequest extends ControlPacket {
+	// Bits 35-64: Message number
 	private long msgFirstSeqNo;
 	private long msgLastSeqNo;
-	
-	public MessageDropRequest(){
-		this.controlPacketType=ControlPacketType.MESSAGE_DROP_REQUEST.ordinal();
+
+	public MessageDropRequest() {
+		this.controlPacketType = ControlPacketType.MESSAGE_DROP_REQUEST.ordinal();
 	}
-	
-	public MessageDropRequest(byte[]controlInformation){
+
+	public MessageDropRequest(byte[] controlInformation) {
 		this();
-		//this.controlInformation=controlInformation;
-		decode(controlInformation );
+		// this.controlInformation=controlInformation;
+		decode(controlInformation);
 	}
-	
-	void decode(byte[]data){
-		msgFirstSeqNo =PacketUtil.decode(data, 0);
-		msgLastSeqNo =PacketUtil.decode(data, 4);
+
+	void decode(byte[] data) {
+		msgFirstSeqNo = PacketUtil.decode(data, 0);
+		msgLastSeqNo = PacketUtil.decode(data, 4);
 	}
 
 	public long getMsgFirstSeqNo() {
@@ -74,7 +73,7 @@ public class MessageDropRequest extends ControlPacket{
 	@Override
 	public byte[] encodeControlInformation() {
 		try {
-			ByteArrayOutputStream bos=new ByteArrayOutputStream();
+			ByteArrayOutputStream bos = new ByteArrayOutputStream();
 			bos.write(PacketUtil.encode(msgFirstSeqNo));
 			bos.write(PacketUtil.encode(msgLastSeqNo));
 			return bos.toByteArray();
@@ -82,7 +81,6 @@ public class MessageDropRequest extends ControlPacket{
 			// can't happen
 			return null;
 		}
-		
 	}
 
 	@Override
@@ -100,7 +98,4 @@ public class MessageDropRequest extends ControlPacket{
 			return false;
 		return true;
 	}
-	 
-	
-
 }

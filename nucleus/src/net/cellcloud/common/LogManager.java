@@ -2,7 +2,7 @@
 -----------------------------------------------------------------------------
 This source file is part of Cell Cloud.
 
-Copyright (c) 2009-2013 Cell Cloud Team (www.cellcloud.net)
+Copyright (c) 2009-2015 Cell Cloud Team (www.cellcloud.net)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -69,9 +69,6 @@ public final class LogManager {
 		synchronized (this) {
 			if (this.handles.isEmpty()) {
 				this.addHandle(createSystemOutHandle());
-//				System.err.println("No log handler in logger manager.");
-//				System.out.println(tag + " " + log);
-//				return;
 			}
 
 			if (this.level > level) {

@@ -49,72 +49,72 @@ import udt.packets.Shutdown;
  */
 public class ServerSession extends UDTSession {
 
-	private static final Logger logger=Logger.getLogger(ServerSession.class.getName());
+	private static final Logger logger = Logger.getLogger(ServerSession.class.getName());
 
 	private final UDPEndPoint endPoint;
 
-	//last received packet (for testing purposes)
+	// last received packet (for testing purposes)
 	private UDTPacket lastPacket;
 
-	public ServerSession(DatagramPacket dp, UDPEndPoint endPoint)throws SocketException,UnknownHostException{
-		super("ServerSession localPort="+endPoint.getLocalPort()+" peer="+dp.getAddress()+":"+dp.getPort(),new Destination(dp.getAddress(),dp.getPort()));
-		this.endPoint=endPoint;
-		logger.info("Created "+toString()+" talking to "+dp.getAddress()+":"+dp.getPort());
+	public ServerSession(DatagramPacket dp, UDPEndPoint endPoint) throws SocketException, UnknownHostException {
+		super("ServerSession localPort=" + endPoint.getLocalPort() + " peer=" + dp.getAddress() + ":" + dp.getPort(),
+				new Destination(dp.getAddress(), dp.getPort()));
+		this.endPoint = endPoint;
+		logger.info("Created " + toString() + " talking to " + dp.getAddress()+ ":" + dp.getPort());
 	}
 
-	int n_handshake=0;
+	int n_handshake = 0;
 
 	@Override
-	public void received(UDTPacket packet, Destination peer){
-		lastPacket=packet;
+	public void received(UDTPacket packet, Destination peer) {
+		lastPacket = packet;
 
-		if(packet instanceof ConnectionHandshake) {
-			ConnectionHandshake connectionHandshake=(ConnectionHandshake)packet;
-			logger.info("Received "+connectionHandshake);
+		if (packet instanceof ConnectionHandshake) {
+			ConnectionHandshake connectionHandshake = (ConnectionHandshake) packet;
+			logger.info("Received " + connectionHandshake);
 
-			if (getState()<=ready){
+			if (getState() <= ready) {
 				destination.setSocketID(connectionHandshake.getSocketID());
 
-				if(getState()<=handshaking){
+				if (getState() <= handshaking) {
 					setState(handshaking);
 				}
-				try{
+				try {
 					handleHandShake(connectionHandshake);
 					n_handshake++;
-					try{
+					try {
 						setState(ready);
-						socket=new UDTSocket(endPoint, this);
+						socket = new UDTSocket(endPoint, this);
 						cc.init();
-					}catch(Exception uhe){
-						//session is invalid
-						logger.log(Level.SEVERE,"",uhe);
+					} catch (Exception uhe) {
+						// session is invalid
+						logger.log(Level.SEVERE, "", uhe);
 						setState(invalid);
 					}
-				}catch(IOException ex){
-					//session invalid
-					logger.log(Level.WARNING,"Error processing ConnectionHandshake",ex);
+				} catch (IOException ex) {
+					// session invalid
+					logger.log(Level.WARNING, "Error processing ConnectionHandshake", ex);
 					setState(invalid);
 				}
 				return;
 			}
-
-		}else if(packet instanceof KeepAlive) {
+		} else if (packet instanceof KeepAlive) {
 			socket.getReceiver().resetEXPTimer();
 			active = true;
 			return;
 		}
 
-		if(getState()== ready) {
+		if (getState() == ready) {
 			active = true;
 
 			if (packet instanceof KeepAlive) {
-				//nothing to do here
+				// nothing to do here
 				return;
-			}else if (packet instanceof Shutdown) {
-				try{
+			} else if (packet instanceof Shutdown) {
+				try {
 					socket.getReceiver().stop();
-				}catch(IOException ex){
-					logger.log(Level.WARNING,"",ex);
+				} catch (IOException ex) {
+					logger.log(Level.WARNING, "", ex);
 				}
 				setState(shutdown);
 				System.out.println("SHUTDOWN ***");
@@ -122,31 +122,28 @@ public class ServerSession extends UDTSession {
 				logger.info("Connection shutdown initiated by the other side.");
 				return;
 			}
-
-			else{
-				try{
-					if(packet.forSender()){
+			else {
+				try {
+					if (packet.forSender()) {
 						socket.getSender().receive(packet);
-					}else{
-						socket.getReceiver().receive(packet);	
+					} else {
+						socket.getReceiver().receive(packet);
 					}
-				}catch(Exception ex){
-					//session invalid
-					logger.log(Level.SEVERE,"",ex);
+				} catch (Exception ex) {
+					// session invalid
+					logger.log(Level.SEVERE, "", ex);
 					setState(invalid);
 				}
 			}
 			return;
 
 		}
-
-
 	}
 
 	/**
 	 * for testing use only
 	 */
-	UDTPacket getLastPacket(){
+	UDTPacket getLastPacket() {
 		return lastPacket;
 	}
 
@@ -156,34 +153,30 @@ public class ServerSession extends UDTSession {
 	 * <li>set initial sequence number</li>
 	 * <li>send response handshake</li>
 	 * </ul>
+	 * 
 	 * @param handshake
 	 * @param peer
 	 * @throws IOException
 	 */
-	protected void handleHandShake(ConnectionHandshake handshake)throws IOException{
+	protected void handleHandShake(ConnectionHandshake handshake) throws IOException {
 		ConnectionHandshake responseHandshake = new ConnectionHandshake();
-		//compare the packet size and choose minimun
-		long clientBufferSize=handshake.getPacketSize();
-		long myBufferSize=getDatagramSize();
-		long bufferSize=Math.min(clientBufferSize, myBufferSize);
-		long initialSequenceNumber=handshake.getInitialSeqNo();
+		// compare the packet size and choose minimun
+		long clientBufferSize = handshake.getPacketSize();
+		long myBufferSize = getDatagramSize();
+		long bufferSize = Math.min(clientBufferSize, myBufferSize);
+		long initialSequenceNumber = handshake.getInitialSeqNo();
 		setInitialSequenceNumber(initialSequenceNumber);
-		setDatagramSize((int)bufferSize);
+		setDatagramSize((int) bufferSize);
 		responseHandshake.setPacketSize(bufferSize);
 		responseHandshake.setUdtVersion(4);
 		responseHandshake.setInitialSeqNo(initialSequenceNumber);
 		responseHandshake.setConnectionType(-1);
 		responseHandshake.setMaxFlowWndSize(handshake.getMaxFlowWndSize());
-		//tell peer what the socket ID on this side is 
+		// tell peer what the socket ID on this side is
 		responseHandshake.setSocketID(mySocketID);
 		responseHandshake.setDestinationID(this.getDestination().getSocketID());
 		responseHandshake.setSession(this);
-		logger.info("Sending reply "+responseHandshake);
+		logger.info("Sending reply " + responseHandshake);
 		endPoint.doSend(responseHandshake);
 	}
-
-
-
-
 }
-

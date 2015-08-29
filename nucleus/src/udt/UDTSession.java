@@ -43,92 +43,89 @@ import udt.util.UDTStatistics;
 
 public abstract class UDTSession {
 
-	private static final Logger logger=Logger.getLogger(UDTSession.class.getName());
+	private static final Logger logger = Logger.getLogger(UDTSession.class.getName());
 
 	protected int mode;
 	protected volatile boolean active;
-	private volatile int state=start;
+	private volatile int state = start;
 	protected volatile UDTPacket lastPacket;
-	
-	//state constants	
-	public static final int start=0;
-	public static final int handshaking=1;
-	public static final int ready=2;
-	public static final int keepalive=3;
-	public static final int shutdown=4;
-	
-	public static final int invalid=99;
+
+	// state constants
+	public static final int start = 0;
+	public static final int handshaking = 1;
+	public static final int ready = 2;
+	public static final int keepalive = 3;
+	public static final int shutdown = 4;
+
+	public static final int invalid = 99;
 
 	protected volatile UDTSocket socket;
-	
+
 	protected final UDTStatistics statistics;
-	
-	protected int receiveBufferSize=64*32768;
-	
+
+	protected int receiveBufferSize = 64 * 32768;
+
 	protected final CongestionControl cc;
-	
-	//cache dgPacket (peer stays the same always)
+
+	// cache dgPacket (peer stays the same always)
 	private DatagramPacket dgPacket;
 
 	/**
-	 * flow window size, i.e. how many data packets are
-	 * in-flight at a single time
+	 * flow window size, i.e. how many data packets are in-flight at a single time
 	 */
-	protected int flowWindowSize=1024;
+	protected int flowWindowSize = 1024;
 
 	/**
 	 * remote UDT entity (address and socket ID)
 	 */
 	protected final Destination destination;
-	
+
 	/**
 	 * local port
 	 */
 	protected int localPort;
-	
-	
-	public static final int DEFAULT_DATAGRAM_SIZE=UDPEndPoint.DATAGRAM_SIZE;
-	
+
+	public static final int DEFAULT_DATAGRAM_SIZE = UDPEndPoint.DATAGRAM_SIZE;
+
 	/**
 	 * key for a system property defining the CC class to be used
+	 * 
 	 * @see CongestionControl
 	 */
-	public static final String CC_CLASS="udt.congestioncontrol.class";
-	
+	public static final String CC_CLASS = "udt.congestioncontrol.class";
+
 	/**
-	 * Buffer size (i.e. datagram size)
-	 * This is negotiated during connection setup
+	 * Buffer size (i.e. datagram size) This is negotiated during connection
+	 * setup
 	 */
-	protected int datagramSize=DEFAULT_DATAGRAM_SIZE;
-	
-	protected Long initialSequenceNumber=null;
-	
+	protected int datagramSize = DEFAULT_DATAGRAM_SIZE;
+
+	protected Long initialSequenceNumber = null;
+
 	protected final long mySocketID;
-	
-	private final static AtomicLong nextSocketID=new AtomicLong(20+new Random().nextInt(5000));
-	
-	public UDTSession(String description, Destination destination){
-		statistics=new UDTStatistics(description);
-		mySocketID=nextSocketID.incrementAndGet();
-		this.destination=destination;
-		this.dgPacket=new DatagramPacket(new byte[0],0,destination.getAddress(),destination.getPort());
-		String clazzP=System.getProperty(CC_CLASS,UDTCongestionControl.class.getName());
-		Object ccObject=null;
-		try{
-			Class<?>clazz=Class.forName(clazzP);
-			ccObject=clazz.getDeclaredConstructor(UDTSession.class).newInstance(this);
-		}catch(Exception e){
-			logger.log(Level.WARNING,"Can't setup congestion control class <"+clazzP+">, using default.",e);
-			ccObject=new UDTCongestionControl(this);
+
+	private final static AtomicLong nextSocketID = new AtomicLong(20 + new Random().nextInt(5000));
+
+	public UDTSession(String description, Destination destination) {
+		statistics = new UDTStatistics(description);
+		mySocketID = nextSocketID.incrementAndGet();
+		this.destination = destination;
+		this.dgPacket = new DatagramPacket(new byte[0], 0, destination.getAddress(), destination.getPort());
+		String clazzP = System.getProperty(CC_CLASS, UDTCongestionControl.class.getName());
+		Object ccObject = null;
+		try {
+			Class<?> clazz = Class.forName(clazzP);
+			ccObject = clazz.getDeclaredConstructor(UDTSession.class).newInstance(this);
+		} catch (Exception e) {
+			logger.log(Level.WARNING, "Can't setup congestion control class <" + clazzP + ">, using default.", e);
+			ccObject = new UDTCongestionControl(this);
 		}
-		cc=(CongestionControl)ccObject;
-		logger.info("Using "+cc.getClass().getName());
+		cc = (CongestionControl) ccObject;
+		logger.info("Using " + cc.getClass().getName());
 	}
-	
-	
+
 	public abstract void received(UDTPacket packet, Destination peer);
-	
-	
+
 	public UDTSocket getSocket() {
 		return socket;
 	}
@@ -150,12 +147,12 @@ public abstract class UDTSession {
 	}
 
 	public void setState(int state) {
-		logger.info(toString()+" connection state CHANGED to <"+state+">");
+		logger.info(toString() + " connection state CHANGED to <" + state + ">");
 		this.state = state;
 	}
-	
-	public boolean isReady(){
-		return state==ready;
+
+	public boolean isReady() {
+		return state == ready;
 	}
 
 	public boolean isActive() {
@@ -165,15 +162,15 @@ public abstract class UDTSession {
 	public void setActive(boolean active) {
 		this.active = active;
 	}
-	
-	public boolean isShutdown(){
-		return state==shutdown || state==invalid;
+
+	public boolean isShutdown() {
+		return state == shutdown || state == invalid;
 	}
-	
+
 	public Destination getDestination() {
 		return destination;
 	}
-	
+
 	public int getDatagramSize() {
 		return datagramSize;
 	}
@@ -181,7 +178,7 @@ public abstract class UDTSession {
 	public void setDatagramSize(int datagramSize) {
 		this.datagramSize = datagramSize;
 	}
-	
+
 	public int getReceiveBufferSize() {
 		return receiveBufferSize;
 	}
@@ -198,37 +195,36 @@ public abstract class UDTSession {
 		this.flowWindowSize = flowWindowSize;
 	}
 
-	public UDTStatistics getStatistics(){
+	public UDTStatistics getStatistics() {
 		return statistics;
 	}
 
-	public long getSocketID(){
+	public long getSocketID() {
 		return mySocketID;
 	}
 
-	
-	public synchronized long getInitialSequenceNumber(){
-		if(initialSequenceNumber==null){
-			initialSequenceNumber=1l; //TODO must be random?
+	public synchronized long getInitialSequenceNumber() {
+		if (initialSequenceNumber == null) {
+			initialSequenceNumber = 1l; // TODO must be random?
 		}
 		return initialSequenceNumber;
 	}
-	
-	public synchronized void setInitialSequenceNumber(long initialSequenceNumber){
-		this.initialSequenceNumber=initialSequenceNumber;
+
+	public synchronized void setInitialSequenceNumber(long initialSequenceNumber) {
+		this.initialSequenceNumber = initialSequenceNumber;
 	}
 
-	public DatagramPacket getDatagram(){
+	public DatagramPacket getDatagram() {
 		return dgPacket;
 	}
-	
-	public String toString(){
-		StringBuilder sb=new StringBuilder();
+
+	@Override
+	public String toString() {
+		StringBuilder sb = new StringBuilder();
 		sb.append(super.toString());
 		sb.append(" [");
 		sb.append("socketID=").append(this.mySocketID);
 		sb.append(" ]");
 		return sb.toString();
 	}
-	
 }

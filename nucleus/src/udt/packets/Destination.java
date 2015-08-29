@@ -39,23 +39,23 @@ public class Destination {
 	private final int port;
 
 	private final InetAddress address;
-	
-	//UDT socket ID of the peer
+
+	// UDT socket ID of the peer
 	private long socketID;
-	
-	public Destination(InetAddress address, int port){
-		this.address=address;
-		this.port=port;
+
+	public Destination(InetAddress address, int port) {
+		this.address = address;
+		this.port = port;
 	}
-	
-	public InetAddress getAddress(){
+
+	public InetAddress getAddress() {
 		return address;
 	}
-	
-	public int getPort(){
+
+	public int getPort() {
 		return port;
 	}
-	
+
 	public long getSocketID() {
 		return socketID;
 	}
@@ -64,9 +64,10 @@ public class Destination {
 		this.socketID = socketID;
 	}
 
-	public String toString(){
-		return("Destination ["+address.getHostName()+" port="+port+" socketID="+socketID)+"]";
-	} 
+	@Override
+	public String toString() {
+		return ("Destination [" + address.getHostName() + " port=" + port + " socketID=" + socketID) + "]";
+	}
 
 	@Override
 	public int hashCode() {
@@ -98,6 +99,4 @@ public class Destination {
 			return false;
 		return true;
 	}
-	
-	
 }
