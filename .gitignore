@@ -169,3 +169,5 @@ cell.log
 cell.out
 cell/bin/
 nucleus/bin/
+
+cell/logs/cell.*
