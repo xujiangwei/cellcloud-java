@@ -38,7 +38,7 @@ public final class LogManager {
 
 	private final static LogManager instance = new LogManager();
 
-	public final static SimpleDateFormat timeFormat = new SimpleDateFormat("HH:mm:ss.SSS");
+	public final static SimpleDateFormat TIME_FORMAT = new SimpleDateFormat("HH:mm:ss.SSS");
 
 	private ArrayList<LogHandle> handles;
 	private byte level;
@@ -97,6 +97,24 @@ public final class LogManager {
 		}
 	}
 
+	/**
+	 * 返回指定名称的处理器。
+	 * 
+	 * @param name
+	 * @return
+	 */
+	public LogHandle getHandle(String name) {
+		synchronized (this) {
+			for (LogHandle handle : this.handles) {
+				if (handle.getName().equals(name)) {
+					return handle;
+				}
+			}
+		}
+
+		return null;
+	}
+
 	/** 添加日志内容处理器。
 	 */
 	public void addHandle(LogHandle handle) {
@@ -147,7 +165,7 @@ public final class LogManager {
 			@Override
 			public void logDebug(String tag, String log) {
 				synchronized (buf) {
-					buf.append(timeFormat.format(new Date()));
+					buf.append(TIME_FORMAT.format(new Date()));
 					buf.append(" [DEBUG] ");
 					buf.append(tag);
 					buf.append(" ");
@@ -162,7 +180,7 @@ public final class LogManager {
 			@Override
 			public void logInfo(String tag, String log) {
 				synchronized (buf) {
-					buf.append(timeFormat.format(new Date()));
+					buf.append(TIME_FORMAT.format(new Date()));
 					buf.append(" [INFO]  ");
 					buf.append(tag);
 					buf.append(" ");
@@ -177,7 +195,7 @@ public final class LogManager {
 			@Override
 			public void logWarning(String tag, String log) {
 				synchronized (buf) {
-					buf.append(timeFormat.format(new Date()));
+					buf.append(TIME_FORMAT.format(new Date()));
 					buf.append(" [WARN]  ");
 					buf.append(tag);
 					buf.append(" ");
@@ -192,7 +210,7 @@ public final class LogManager {
 			@Override
 			public void logError(String tag, String log) {
 				synchronized (buf) {
-					buf.append(timeFormat.format(new Date()));
+					buf.append(TIME_FORMAT.format(new Date()));
 					buf.append(" [ERROR] ");
 					buf.append(tag);
 					buf.append(" ");

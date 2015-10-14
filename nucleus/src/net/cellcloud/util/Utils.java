@@ -30,7 +30,6 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.nio.charset.Charset;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -180,21 +179,34 @@ public final class Utils {
 
 	/** 拷贝文件。
 	 */
-	public static void copyFile(File srcFile, String destFileName) throws IOException {
-//		int bytesum = 0;
+	public static long copyFile(File srcFile, String destFileName) throws IOException {
+		long bytesum = 0;
 		int byteread = 0;
-		if (srcFile.exists()) {
-			InputStream is = new FileInputStream(srcFile);
-			FileOutputStream fs = new FileOutputStream(destFileName);
-			byte[] buffer = new byte[2048];
-			while ((byteread = is.read(buffer)) != -1) {
-//				bytesum += byteread;
-				fs.write(buffer, 0, byteread);
-			}
 
-			is.close();
-			fs.flush();
-			fs.close();
+		if (srcFile.exists()) {
+			FileInputStream fis = null;
+			FileOutputStream fos = null;
+			try {
+				fis = new FileInputStream(srcFile);
+				fos = new FileOutputStream(destFileName);
+				byte[] buffer = new byte[2048];
+				while ((byteread = fis.read(buffer)) > 0) {
+					bytesum += byteread;
+					fos.write(buffer, 0, byteread);
+				}
+				fos.flush();
+			} catch (IOException e) {
+				throw e;
+			} finally {
+				if (null != fis) {
+					try { fis.close(); } catch (IOException e) { }
+				}
+				if (null != fos) {
+					try { fos.close(); } catch (IOException e) { }
+				}
+			}
 		}
+
+		return bytesum;
 	}
 }

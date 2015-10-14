@@ -32,6 +32,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
+import net.cellcloud.util.Clock;
+
 import org.eclipse.jetty.http.HttpHeader;
 
 /**
@@ -114,7 +116,7 @@ public class CookieSessionManager implements SessionManager {
 
 		// 是否需要进行 Session 维护
 		if (this.sessions.size() > this.maxSessionNum) {
-			long time = System.currentTimeMillis();
+			long time = Clock.currentTimeMillis();
 			// 维护最小间隔时间：30 分钟
 			if (time - this.maintainTime > 1800000) {
 				this.maintainTime = time;

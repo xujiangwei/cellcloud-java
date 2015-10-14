@@ -294,6 +294,11 @@ public class ChunkDialectFactory extends DialectFactory {
 			Vector<ChunkDialect> list = this.data.get(dialect.sign);
 			if (null != list) {
 				synchronized (list) {
+					// 如果发现当前清单数量和 chunkNum 一致，说明 sign 重复，清理之前的
+					if (list.size() == dialect.chunkNum) {
+						list.clear();
+					}
+
 					list.add(dialect);
 					// 更新数据大小
 					this.dataSize += dialect.length;

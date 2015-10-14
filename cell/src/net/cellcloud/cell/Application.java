@@ -44,7 +44,7 @@ import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 
 import net.cellcloud.Version;
-import net.cellcloud.cell.log.FileLogger;
+import net.cellcloud.cell.log.RollFileLogger;
 import net.cellcloud.common.LogLevel;
 import net.cellcloud.common.LogManager;
 import net.cellcloud.common.Logger;
@@ -73,22 +73,12 @@ public final class Application {
 
 	public Application(Arguments args) {
 		StringBuilder buf = new StringBuilder();
-		buf.append("Cell Application Server version: ");
-		buf.append(VersionInfo.MAJOR);
-		buf.append(".");
-		buf.append(VersionInfo.MINOR);
-		buf.append(".");
-		buf.append(VersionInfo.REVISION);
+		buf.append("Cell Container Server version: ");
+		buf.append(VersionInfo.MAJOR).append(".").append(VersionInfo.MINOR).append(".").append(VersionInfo.REVISION);
 		buf.append("\n");
 		buf.append("Cell Cloud ");
-		buf.append(Version.MAJOR);
-		buf.append(".");
-		buf.append(Version.MINOR);
-		buf.append(".");
-		buf.append(Version.REVISION);
-		buf.append(" (Build Java - ");
-		buf.append(Version.NAME);
-		buf.append(")\n");
+		buf.append(Version.MAJOR).append(".").append(Version.MINOR).append(".").append(Version.REVISION);
+		buf.append(" (Build Java - ").append(Version.NAME).append(")\n");
 
 		buf.append("-----------------------------------------------------------------------\n");
 		buf.append(" ___ ___ __  __     ___ __  ___ _ _ ___\n");
@@ -96,7 +86,7 @@ public final class Application {
 		buf.append("| |_| _|| |_| |_   | |_| |_| | | | | | |\n");
 		buf.append("|___|___|___|___|  |___|___|___|___|___/\n\n");
 
-		buf.append("Copyright (c) 2009,2015 Cell Cloud Team, www.cellcloud.net\n");
+		buf.append("Copyright (c) 2009,2016 Cell Cloud Team, www.cellcloud.net\n");
 		buf.append("-----------------------------------------------------------------------");
 
 		System.out.println(buf.toString());
@@ -113,7 +103,11 @@ public final class Application {
 
 		// 使用文件日志
 		if (null != args.logFile) {
-			FileLogger.getInstance().open("logs" + File.separator + args.logFile);
+			RollFileLogger fileLogger = new RollFileLogger("CellFileLogger");
+			fileLogger.open("logs" + File.separator + args.logFile);
+
+			// 设置日志操作器
+			LogManager.getInstance().addHandle(fileLogger);
 		}
 
 		// 记录版本日志
@@ -182,7 +176,12 @@ public final class Application {
 			Nucleus.getInstance().shutdown();
 		}
 
-		FileLogger.getInstance().close();
+		RollFileLogger handle = (RollFileLogger) LogManager.getInstance().getHandle("CellFileLogger");
+		if (null != handle) {
+			// 移除并关闭
+			LogManager.getInstance().removeHandle(handle);
+			handle.close();
+		}
 	}
 
 	/** 运行（阻塞线程）。

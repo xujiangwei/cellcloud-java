@@ -2,7 +2,7 @@
 -----------------------------------------------------------------------------
 This source file is part of Cell Cloud.
 
-Copyright (c) 2009-2014 Cell Cloud Team (www.cellcloud.net)
+Copyright (c) 2009-2016 Cell Cloud Team (www.cellcloud.net)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -35,37 +35,37 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 
 import net.cellcloud.common.LogHandle;
+import net.cellcloud.common.LogLevel;
 import net.cellcloud.common.LogManager;
+import net.cellcloud.util.Clock;
 import net.cellcloud.util.Utils;
 
 /** 文件日志。
  * 
  * @author Jiangwei Xu
  */
-public final class FileLogger implements LogHandle {
-
-	private static final FileLogger instance = new FileLogger();
+public class FileLogger implements LogHandle {
 
 	private String name;
-	private StringBuilder stringBuf = new StringBuilder();
+	protected StringBuilder stringBuf = new StringBuilder();
 
-	private FileOutputStream outputStream = null;
-	private BufferedOutputStream buffer = null;
+	protected String filename = null;
+	protected FileOutputStream outputStream = null;
+	protected BufferedOutputStream buffer = null;
 
 	private String lineBreak;
 
 	private int bufSize = 256;
 
-	private FileLogger() {
-		this.name = "CellFileLogger";
+	// 累积记录日志大小
+	protected long byteSum = 0;
+	// 日志记录的起始时间
+	protected long created = -1;
+
+	public FileLogger(String name) {
+		this.name = name;
 		this.outputStream = null;
 		this.lineBreak = System.lineSeparator();
-	}
-
-	/** 返回单例。
-	 */
-	public synchronized static FileLogger getInstance() {
-		return instance;
 	}
 
 	/** 设置日志 Flush 门限。
@@ -80,7 +80,7 @@ public final class FileLogger implements LogHandle {
 
 	/** 打开日志文件。
 	 */
-	public void open(String filename) {
+	public void open(final String filename) {
 		if (null != this.outputStream) {
 			return;
 		}
@@ -118,6 +118,7 @@ public final class FileLogger implements LogHandle {
 
 		File file = new File(filename);
 		if (file.exists()) {
+			// 复制当前日志文件
 			SimpleDateFormat sdf = new SimpleDateFormat("yyyyMMddHHmmss");
 			Date date = new Date(file.lastModified());
 			try {
@@ -131,15 +132,16 @@ public final class FileLogger implements LogHandle {
 		}
 
 		try {
+			this.filename = filename.toString();
+
 			this.outputStream = new FileOutputStream(file);
 			this.buffer = new BufferedOutputStream(this.outputStream, this.bufSize);
+
+			this.created = Clock.currentTimeMillis();
+			this.byteSum = 0;
 		} catch (FileNotFoundException e) {
 			e.printStackTrace(System.out);
-			return;
 		}
-
-		// 设置日志操作器
-		LogManager.getInstance().addHandle(this);
 	}
 
 	/** 关闭日志文件。
@@ -148,8 +150,6 @@ public final class FileLogger implements LogHandle {
 		if (null == this.outputStream) {
 			return;
 		}
-
-		LogManager.getInstance().removeHandle(this);
 
 		synchronized (this.stringBuf) {
 			try {
@@ -174,91 +174,60 @@ public final class FileLogger implements LogHandle {
 
 	@Override
 	public void logDebug(String tag, String log) {
-		if (null == this.buffer)
-			return;
-
-		synchronized (this.stringBuf) {
-			this.stringBuf.append(LogManager.timeFormat.format(new Date()));
-			this.stringBuf.append(" [DEBUG] ");
-			this.stringBuf.append(tag);
-			this.stringBuf.append(" ");
-			this.stringBuf.append(log);
-			this.stringBuf.append(lineBreak);
-
-			try {
-				this.buffer.write(Utils.string2Bytes(this.stringBuf.toString()));
-			} catch (IOException e) {
-				// Nothing
-			}
-
-			this.stringBuf.delete(0, this.stringBuf.length());
-		}
+		this.writeLog(tag, log, LogLevel.DEBUG);
 	}
 
 	@Override
 	public void logInfo(String tag, String log) {
-		if (null == this.buffer)
-			return;
-
-		synchronized (this.stringBuf) {
-			this.stringBuf.append(LogManager.timeFormat.format(new Date()));
-			this.stringBuf.append(" [INFO]  ");
-			this.stringBuf.append(tag);
-			this.stringBuf.append(" ");
-			this.stringBuf.append(log);
-			this.stringBuf.append(lineBreak);
-
-			try {
-				this.buffer.write(Utils.string2Bytes(this.stringBuf.toString()));
-			} catch (IOException e) {
-				// Nothing
-			}
-
-			this.stringBuf.delete(0, this.stringBuf.length());
-		}
+		this.writeLog(tag, log, LogLevel.INFO);
 	}
 
 	@Override
 	public void logWarning(String tag, String log) {
-		if (null == this.buffer)
-			return;
-
-		synchronized (this.stringBuf) {
-			this.stringBuf.append(LogManager.timeFormat.format(new Date()));
-			this.stringBuf.append(" [WARN]  ");
-			this.stringBuf.append(tag);
-			this.stringBuf.append(" ");
-			this.stringBuf.append(log);
-			this.stringBuf.append(lineBreak);
-
-			try {
-				this.buffer.write(Utils.string2Bytes(this.stringBuf.toString()));
-			} catch (IOException e) {
-				// Nothing
-			}
-
-			this.stringBuf.delete(0, this.stringBuf.length());
-		}
+		this.writeLog(tag, log, LogLevel.WARNING);
 	}
 
 	@Override
 	public void logError(String tag, String log) {
+		this.writeLog(tag, log, LogLevel.ERROR);
+	}
+
+	private void writeLog(String tag, String log, int level) {
 		if (null == this.buffer)
 			return;
 
 		synchronized (this.stringBuf) {
-			this.stringBuf.append(LogManager.timeFormat.format(new Date()));
-			this.stringBuf.append(" [ERROR] ");
+			this.stringBuf.append(LogManager.TIME_FORMAT.format(new Date()));
+			switch (level) {
+			case LogLevel.DEBUG:
+				this.stringBuf.append(" [DEBUG] ");
+				break;
+			case LogLevel.INFO:
+				this.stringBuf.append(" [INFO]  ");
+				break;
+			case LogLevel.WARNING:
+				this.stringBuf.append(" [WARN]  ");
+				break;
+			case LogLevel.ERROR:
+				this.stringBuf.append(" [ERROR] ");
+				break;
+			default:
+				this.stringBuf.append(" [VERBOSE] ");
+				break;
+			}
 			this.stringBuf.append(tag);
 			this.stringBuf.append(" ");
 			this.stringBuf.append(log);
-			this.stringBuf.append(lineBreak);
+			this.stringBuf.append(this.lineBreak);
 
 			try {
 				this.buffer.write(Utils.string2Bytes(this.stringBuf.toString()));
 			} catch (IOException e) {
 				// Nothing
 			}
+
+			// 累积大小
+			this.byteSum += this.stringBuf.length();
 
 			this.stringBuf.delete(0, this.stringBuf.length());
 		}
