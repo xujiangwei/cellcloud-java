@@ -96,13 +96,16 @@ public final class TalkServiceDaemon extends Thread {
 				service.checkAndDeleteSuspendedTalk();
 			}
 
-			// 2 分钟周期处理
-			if (heartbeatCount % 120 == 0) {
-				// 120 秒一次心跳
+			// 3 分钟周期处理
+			if (heartbeatCount % 180 == 0) {
+				// 180 秒一次心跳
 				if (null != service.speakers) {
 					synchronized (service.speakers) {
 						for (Speaker speaker : service.speakers) {
-							speaker.heartbeat();
+							if (speaker.heartbeat()) {
+								Logger.i(TalkServiceDaemon.class, "Speaker heartbeat to " + speaker.getAddress().getHostString()
+										+ ":" + speaker.getAddress().getPort());
+							}
 						}
 					}
 				}

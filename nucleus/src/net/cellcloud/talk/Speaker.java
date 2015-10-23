@@ -286,12 +286,16 @@ public class Speaker implements Speakable {
 	}
 
 	/** 发送心跳。 */
-	protected void heartbeat() {
-		if (this.authenticated && !this.lost) {
+	protected boolean heartbeat() {
+		if (this.authenticated && !this.lost && this.connector.isConnected()) {
 			Packet packet = new Packet(TalkDefinition.TPT_HEARTBEAT, 9, 1, 0);
 			byte[] data = Packet.pack(packet);
 			Message message = new Message(data);
 			this.connector.write(message);
+			return true;
+		}
+		else {
+			return false;
 		}
 	}
 
