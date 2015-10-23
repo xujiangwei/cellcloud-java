@@ -149,11 +149,11 @@ public final class TalkService implements Service, SpeakerDelegate {
 			this.httpPort = 7070;
 			this.httpQueueSize = 1000;
 
-			// 2 分钟
-			this.sessionTimeout = 2 * 60 * 1000;
+			// 15 分钟
+			this.sessionTimeout = 15 * 60 * 1000;
 
-			// 5 分钟
-			this.httpSessionTimeout = 5 * 60 * 1000;
+			// 30 分钟
+			this.httpSessionTimeout = 30 * 60 * 1000;
 
 			// 创建执行器
 			this.executor = CachedQueueExecutor.newCachedQueueThreadPool(8);
