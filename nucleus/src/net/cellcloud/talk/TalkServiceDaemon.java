@@ -151,7 +151,7 @@ public final class TalkServiceDaemon extends Thread {
 							if (speaker.call(null)) {
 								StringBuilder buf = new StringBuilder();
 								buf.append("Retry call cellet '");
-								buf.append(speaker.getRemoteTag());
+								buf.append(speaker.getIdentifiers().get(0));
 								buf.append("' at ");
 								buf.append(speaker.getAddress().getAddress().getHostAddress());
 								buf.append(":");
@@ -162,7 +162,7 @@ public final class TalkServiceDaemon extends Thread {
 							else {
 								StringBuilder buf = new StringBuilder();
 								buf.append("Failed retry call cellet '");
-								buf.append(speaker.getRemoteTag());
+								buf.append(speaker.getIdentifiers().get(0));
 								buf.append("' at ");
 								buf.append(speaker.getAddress().getAddress().getHostAddress());
 								buf.append(":");

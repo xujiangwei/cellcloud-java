@@ -247,6 +247,11 @@ public final class Nucleus {
 			// 启动 Cellet
 			this.activateCellets();
 
+			// 尝试启动扩展模块
+			if (this.config.talk.enabled) {
+				this.talkService.startExtendHolder();
+			}
+
 			// 启动 HTTP Service
 			if (null != this.httpService) {
 				if (this.httpService.startup()) {

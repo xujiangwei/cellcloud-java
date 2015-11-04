@@ -222,6 +222,21 @@ public final class HttpService implements Service {
 	}
 
 	/**
+	 * 根据端口号返回服务器节点。
+	 * @param port
+	 * @return
+	 */
+	public HttpCapsule getCapsule(int port) {
+		for (HttpCapsule capsule : this.httpCapsules) {
+			if (capsule.getPort() == port) {
+				return capsule;
+			}
+		}
+
+		return null;
+	}
+
+	/**
 	 * 是否包含指定端口的 HTTP 服务节点。
 	 * @param port
 	 * @return

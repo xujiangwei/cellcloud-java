@@ -178,4 +178,8 @@ public class HttpResponse {
 	public PrintWriter getWriter() throws IOException {
 		return this.response.getWriter();
 	}
+
+	public HttpServletResponse getServletResponse() {
+		return this.response;
+	}
 }

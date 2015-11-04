@@ -122,6 +122,14 @@ public class HttpRequest {
 	}
 
 	/**
+	 * 返回原始 Servlet Request 。
+	 * @return
+	 */
+	public HttpServletRequest getServletRequest() {
+		return this.request;
+	}
+
+	/**
 	 * 读取请求数据。
 	 * @return
 	 * @throws IOException

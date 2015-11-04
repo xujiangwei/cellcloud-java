@@ -55,6 +55,7 @@ import net.cellcloud.core.Nucleus;
 import net.cellcloud.core.NucleusContext;
 import net.cellcloud.exception.InvalidException;
 import net.cellcloud.exception.SingletonException;
+import net.cellcloud.http.CapsuleHolder;
 import net.cellcloud.http.CookieSessionManager;
 import net.cellcloud.http.HttpCapsule;
 import net.cellcloud.http.HttpService;
@@ -127,6 +128,8 @@ public final class TalkService implements Service, SpeakerDelegate {
 	private ArrayList<TalkListener> listeners;
 
 	private CelletCallbackListener callbackListener;
+
+	private LinkedList<CapsuleHolder> extendHttpHolders;
 
 	// 用于兼容 Flash Socket 安全策略的适配器
 	private FlashSocketSecurity fss;
@@ -530,6 +533,30 @@ public final class TalkService implements Service, SpeakerDelegate {
 	 * 
 	 * @note Client
 	 */
+	public boolean call(String[] identifiers, InetSocketAddress address) {
+		ArrayList<String> list = new ArrayList<String>(identifiers.length);
+		for (String ider : identifiers) {
+			list.add(ider);
+		}
+		return this.call(list, address);
+	}
+
+	/** 申请调用 Cellet 服务。
+	 * 
+	 * @note Client
+	 */
+	public boolean call(String[] identifiers, InetSocketAddress address, TalkCapacity capacity) {
+		ArrayList<String> list = new ArrayList<String>(identifiers.length);
+		for (String ider : identifiers) {
+			list.add(ider);
+		}
+		return this.call(list, address, capacity);
+	}
+
+	/** 申请调用 Cellet 服务。
+	 * 
+	 * @note Client
+	 */
 	public boolean call(List<String> identifiers, InetSocketAddress address) {
 		return this.call(identifiers, address, null, false);
 	}
@@ -775,6 +802,35 @@ public final class TalkService implements Service, SpeakerDelegate {
 
 	public ExecutorService getExecutor() {
 		return this.executor;
+	}
+
+	public synchronized void addExtendHolder(CapsuleHolder holder) {
+		if (null == this.extendHttpHolders) {
+			this.extendHttpHolders = new LinkedList<CapsuleHolder>();
+		}
+
+		if (this.extendHttpHolders.contains(holder)) {
+			return;
+		}
+
+		this.extendHttpHolders.add(holder);
+	}
+
+	public synchronized void removeExtendHolder(CapsuleHolder holder) {
+		if (null == this.extendHttpHolders) {
+			return;
+		}
+
+		this.extendHttpHolders.remove(holder);
+	}
+
+	public void startExtendHolder() {
+		HttpCapsule capsule = HttpService.getInstance().getCapsule(this.httpPort);
+		if (null != capsule && null != this.extendHttpHolders) {
+			for (CapsuleHolder holder : this.extendHttpHolders) {
+				capsule.addHolder(holder);
+			}
+		}
 	}
 
 	/** 启动 HTTP 服务。
