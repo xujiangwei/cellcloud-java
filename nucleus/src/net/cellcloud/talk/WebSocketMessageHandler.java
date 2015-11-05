@@ -27,6 +27,7 @@ THE SOFTWARE.
 package net.cellcloud.talk;
 
 import java.util.LinkedList;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import net.cellcloud.common.LogLevel;
 import net.cellcloud.common.Logger;
@@ -57,10 +58,22 @@ public class WebSocketMessageHandler implements MessageHandler {
 
 	private TalkService service;
 	private LinkedList<Task> taskList;
+	private AtomicInteger taskCounts;
 
 	public WebSocketMessageHandler(TalkService service) {
 		this.service = service;
 		this.taskList = new LinkedList<Task>();
+		this.taskCounts = new AtomicInteger(0);
+	}
+
+	public int numIdleTasks() {
+		synchronized (this.taskList) {
+			return this.taskList.size();
+		}
+	}
+
+	public int numActiveTasks() {
+		return this.taskCounts.get();
 	}
 
 	@Override
@@ -228,9 +241,11 @@ public class WebSocketMessageHandler implements MessageHandler {
 				task = new Task();
 			}
 			else {
-				task = this.taskList.pop();
+				task = this.taskList.poll();
 			}
 		}
+
+		this.taskCounts.incrementAndGet();
 
 		task.data = data;
 		task.session = session;
@@ -240,6 +255,8 @@ public class WebSocketMessageHandler implements MessageHandler {
 	private void returnTask(Task task) {
 		task.data = null;
 		task.session = null;
+
+		this.taskCounts.decrementAndGet();
 
 		synchronized (this.taskList) {
 			this.taskList.push(task);

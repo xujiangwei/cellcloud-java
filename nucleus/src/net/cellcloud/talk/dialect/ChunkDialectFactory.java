@@ -28,8 +28,9 @@ package net.cellcloud.talk.dialect;
 
 import java.util.LinkedList;
 import java.util.Map;
-import java.util.Vector;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicLong;
 
 import net.cellcloud.common.Logger;
 import net.cellcloud.core.Cellet;
@@ -48,10 +49,10 @@ public class ChunkDialectFactory extends DialectFactory {
 
 	private ConcurrentHashMap<String, Queue> queueMap;
 
-	private long cacheMemorySize = 0;
-	private final long clearThreshold = 100 * 1024 * 1024;
+	private AtomicLong cacheMemorySize = new AtomicLong(0);
+	private final long clearThreshold = 500 * 1024 * 1024;
 	private Object mutex = new Object();
-	private boolean clearRunning = false;
+	private AtomicBoolean clearRunning = new AtomicBoolean(false);
 
 	private int logCounts = 0;
 
@@ -74,7 +75,24 @@ public class ChunkDialectFactory extends DialectFactory {
 	@Override
 	public void shutdown() {
 		this.cacheMap.clear();
-		this.cacheMemorySize = 0;
+		this.queueMap.clear();
+		this.cacheMemorySize.set(0);
+	}
+
+	public long getCacheMemorySize() {
+		return this.cacheMemorySize.get();
+	}
+
+	public long getMaxCacheMemorySize() {
+		return this.clearThreshold;
+	}
+
+	public int getCacheNum() {
+		return this.cacheMap.size();
+	}
+
+	public int getQueueSize() {
+		return this.queueMap.size();
 	}
 
 	@Override
@@ -163,7 +181,7 @@ public class ChunkDialectFactory extends DialectFactory {
 		}
 	}
 
-	protected synchronized void write(ChunkDialect chunk) {
+	protected void write(ChunkDialect chunk) {
 		String tag = chunk.getOwnerTag();
 		if (this.cacheMap.containsKey(tag)) {
 			Cache cache = this.cacheMap.get(tag);
@@ -176,14 +194,18 @@ public class ChunkDialectFactory extends DialectFactory {
 		}
 
 		// 更新内存大小
-		this.cacheMemorySize += chunk.length;
+		this.cacheMemorySize.set(this.cacheMemorySize.get() + chunk.length);
 
 		if ((this.logCounts % 100) == 0) {
-			if (this.cacheMemorySize > 1024) {
-				Logger.i(ChunkDialectFactory.class, "Cache memory size: " + (long)(this.cacheMemorySize / 1024) + " KB");
+			long mem = this.cacheMemorySize.get();
+			if (mem > 1024 && mem <= 1048576) {
+				Logger.i(ChunkDialectFactory.class, "Cache memory size: " + (long)(mem / 1024) + " KB");
+			}
+			else if (mem > 1048576) {
+				Logger.i(ChunkDialectFactory.class, "Cache memory size: " + (long)(mem / 1048576) + " MB");
 			}
 			else {
-				Logger.i(ChunkDialectFactory.class, "Cache memory size: " + this.cacheMemorySize + " Bytes");
+				Logger.i(ChunkDialectFactory.class, "Cache memory size: " + mem + " Bytes");
 			}
 		}
 		++this.logCounts;
@@ -191,10 +213,10 @@ public class ChunkDialectFactory extends DialectFactory {
 			this.logCounts = 0;
 		}
 
-		if (this.cacheMemorySize > this.clearThreshold) {
+		if (this.cacheMemorySize.get() > this.clearThreshold) {
 			synchronized (this.mutex) {
-				if (!this.clearRunning) {
-					this.clearRunning = true;
+				if (!this.clearRunning.get()) {
+					this.clearRunning.set(true);
 					(new Thread(new ClearTask())).start();
 				}
 			}
@@ -238,8 +260,12 @@ public class ChunkDialectFactory extends DialectFactory {
 			long size = cache.dataSize;
 			// 进行缓存清理
 			cache.clear(sign);
+
+			// 差值
 			long ds = size - cache.dataSize;
-			this.cacheMemorySize -= ds;
+
+			// 更新内存大小
+			this.cacheMemorySize.set(this.cacheMemorySize.get() - ds);
 
 			// 移除空缓存
 			if (cache.isEmpty()) {
@@ -277,35 +303,52 @@ public class ChunkDialectFactory extends DialectFactory {
 	 */
 	private class Cache {
 		protected String tag;
-		private ConcurrentHashMap<String, Vector<ChunkDialect>> data;
-		private Vector<String> signQueue;
-		private Vector<Long> signTimeQueue;
+		private ConcurrentHashMap<String, LinkedList<ChunkDialect>> data;
+		private LinkedList<String> signQueue;
+		private LinkedList<Long> signTimeQueue;
 		protected long dataSize;
 
 		private Cache(String tag) {
 			this.tag = tag;
-			this.data = new ConcurrentHashMap<String, Vector<ChunkDialect>>();
-			this.signQueue = new Vector<String>();
-			this.signTimeQueue = new Vector<Long>();
+			this.data = new ConcurrentHashMap<String, LinkedList<ChunkDialect>>();
+			this.signQueue = new LinkedList<String>();
+			this.signTimeQueue = new LinkedList<Long>();
 			this.dataSize = 0;
 		}
 
 		public void offer(ChunkDialect dialect) {
-			Vector<ChunkDialect> list = this.data.get(dialect.sign);
+			LinkedList<ChunkDialect> list = this.data.get(dialect.sign);
 			if (null != list) {
+				boolean rebuildTime = false;
 				synchronized (list) {
 					// 如果发现当前清单数量和 chunkNum 一致，说明 sign 重复，清理之前的
 					if (list.size() == dialect.chunkNum) {
 						list.clear();
+
+						// 重建时间戳
+						rebuildTime = true;
 					}
 
 					list.add(dialect);
 					// 更新数据大小
 					this.dataSize += dialect.length;
 				}
+
+				if (rebuildTime) {
+					synchronized (this.signQueue) {
+						int index = this.signQueue.indexOf(dialect.sign);
+						if (index >= 0) {
+							this.signQueue.remove(index);
+							this.signTimeQueue.remove(index);
+						}
+
+						this.signQueue.add(dialect.sign);
+						this.signTimeQueue.add(System.currentTimeMillis());
+					}
+				}
 			}
 			else {
-				list = new Vector<ChunkDialect>();
+				list = new LinkedList<ChunkDialect>();
 				list.add(dialect);
 				// 更新数据大小
 				this.dataSize += dialect.length;
@@ -320,18 +363,20 @@ public class ChunkDialectFactory extends DialectFactory {
 		}
 
 		public ChunkDialect get(String sign, int index) {
-			Vector<ChunkDialect> list = this.data.get(sign);
+			LinkedList<ChunkDialect> list = this.data.get(sign);
 			synchronized (list) {
 				return list.get(index);
 			}
 		}
 
 		public boolean checkCompleted(String sign) {
-			Vector<ChunkDialect> list = this.data.get(sign);
+			LinkedList<ChunkDialect> list = this.data.get(sign);
 			if (null != list) {
-				ChunkDialect cd = list.get(0);
-				if (cd.chunkNum == list.size()) {
-					return true;
+				synchronized (list) {
+					ChunkDialect cd = list.get(0);
+					if (cd.chunkNum == list.size()) {
+						return true;
+					}
 				}
 			}
 
@@ -340,7 +385,7 @@ public class ChunkDialectFactory extends DialectFactory {
 
 		public long clear(String sign) {
 			long size = 0;
-			Vector<ChunkDialect> list = this.data.remove(sign);
+			LinkedList<ChunkDialect> list = this.data.remove(sign);
 			if (null != list) {
 				synchronized (list) {
 					for (ChunkDialect chunk : list) {
@@ -382,7 +427,7 @@ public class ChunkDialectFactory extends DialectFactory {
 
 	private class Queue {
 		private String target;
-		private Vector<ChunkDialect> queue;
+		private LinkedList<ChunkDialect> queue;
 
 		protected int ackIndex = -1;
 
@@ -391,7 +436,7 @@ public class ChunkDialectFactory extends DialectFactory {
 		private Queue(String target, int chunkNum) {
 			this.target = target;
 			this.chunkNum = chunkNum;
-			this.queue = new Vector<ChunkDialect>();
+			this.queue = new LinkedList<ChunkDialect>();
 		}
 
 		protected void enqueue(ChunkDialect chunk) {
@@ -409,11 +454,7 @@ public class ChunkDialectFactory extends DialectFactory {
 					return null;
 				}
 
-				ChunkDialect first = this.queue.get(0);
-				if (null != first) {
-					this.queue.remove(0);
-				}
-				return first;
+				return this.queue.removeFirst();
 			}
 		}
 	}
@@ -437,6 +478,7 @@ public class ChunkDialectFactory extends DialectFactory {
 					continue;
 				}
 
+				// 找到最旧的 cache
 				long ft = cache.getFirstTime();
 				if (ft < time) {
 					time = ft;
@@ -446,9 +488,9 @@ public class ChunkDialectFactory extends DialectFactory {
 
 			if (null != selected) {
 				long size = selected.clearFirst();
-				cacheMemorySize -= size;
 
-				Logger.i(ChunkDialectFactory.class, "Cache memory size: " + (long)(cacheMemorySize / 1024) + " KB");
+				// 更新内存大小记录
+				cacheMemorySize.set(cacheMemorySize.get() - size);
 			}
 
 			if (!emptyList.isEmpty()) {
@@ -457,7 +499,7 @@ public class ChunkDialectFactory extends DialectFactory {
 				}
 			}
 
-			clearRunning = false;
+			clearRunning.set(false);
 		}
 	}
 }

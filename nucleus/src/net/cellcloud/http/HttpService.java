@@ -54,6 +54,8 @@ public final class HttpService implements Service {
 
 	private Server server = null;
 
+	private HttpCrossDomainHandler crossDomainHandler = null;
+
 	protected LinkedList<HttpCapsule> httpCapsules = null;
 
 	// HTTP URI 上下文 Holder
@@ -125,9 +127,9 @@ public final class HttpService implements Service {
 		}
 
 		// 添加跨域支持
-		HttpCrossDomainHandler cdh = new HttpCrossDomainHandler(this);
-		ContextHandler context = new ContextHandler(cdh.getPathSpec());
-		context.setHandler(cdh);
+		this.crossDomainHandler = new HttpCrossDomainHandler(this);
+		ContextHandler context = new ContextHandler(this.crossDomainHandler.getPathSpec());
+		context.setHandler(this.crossDomainHandler);
 		contextList.add(context);
 
 		// 连接器
@@ -281,5 +283,41 @@ public final class HttpService implements Service {
 			this.wsServer = null;
 			this.webSocket = null;
 		}
+	}
+
+	public int getWebSocketPort() {
+		return this.webSocketPort;
+	}
+
+	public int getWebSocketSessionNum() {
+		if (null != this.webSocket) {
+			return this.webSocket.numSessions();
+		}
+
+		return 0;
+	}
+
+	public long getTotalRx() {
+		if (null != this.webSocket) {
+			return this.webSocket.getTotalRx();
+		}
+
+		return 0;
+	}
+
+	public long getTotalTx() {
+		if (null != this.webSocket) {
+			return this.webSocket.getTotalTx();
+		}
+
+		return 0;
+	}
+
+	public int getConcurrentCounts() {
+		if (null != this.crossDomainHandler) {
+			return this.crossDomainHandler.getConcurrentCounts();
+		}
+
+		return 0;
 	}
 }

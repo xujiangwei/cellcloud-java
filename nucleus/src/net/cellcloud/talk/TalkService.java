@@ -62,7 +62,9 @@ import net.cellcloud.http.HttpService;
 import net.cellcloud.http.HttpSession;
 import net.cellcloud.http.WebSocketManager;
 import net.cellcloud.http.WebSocketSession;
+import net.cellcloud.talk.dialect.ActionDialect;
 import net.cellcloud.talk.dialect.ActionDialectFactory;
+import net.cellcloud.talk.dialect.ChunkDialect;
 import net.cellcloud.talk.dialect.ChunkDialectFactory;
 import net.cellcloud.talk.dialect.Dialect;
 import net.cellcloud.talk.dialect.DialectEnumerator;
@@ -91,6 +93,7 @@ public final class TalkService implements Service, SpeakerDelegate {
 	private boolean httpEnabled;
 	private int httpPort;
 	private int httpQueueSize;
+	private WebSocketMessageHandler wsHandler;
 
 	private CookieSessionManager httpSessionManager;
 	private HttpSessionListener httpSessionListener;
@@ -133,6 +136,11 @@ public final class TalkService implements Service, SpeakerDelegate {
 
 	// 用于兼容 Flash Socket 安全策略的适配器
 	private FlashSocketSecurity fss;
+
+	// 已处理合法连接数量
+	private long numValidSessions = 0;
+	// 已处理非法连接数量
+	private long numInvalidSessions = 0;
 
 	/** 构造函数。
 	 * @throws SingletonException 
@@ -177,6 +185,52 @@ public final class TalkService implements Service, SpeakerDelegate {
 	 */
 	public static TalkService getInstance() {
 		return TalkService.instance;
+	}
+
+	/**
+	 * 生成系统瞬时快照。
+	 * @return
+	 */
+	public TalkSnapshoot snapshot() {
+		TalkSnapshoot ts = new TalkSnapshoot();
+		ts.numValidSessions = this.numValidSessions;
+		ts.numInvalidSessions = this.numInvalidSessions;
+
+		if (null != this.acceptor) {
+			ts.port = this.getPort();
+			ts.connections = this.acceptor.numSessions();
+			ts.maxConnections = this.acceptor.getMaxConnectNum();
+			ts.numWorkers = this.acceptor.getWorkerNum();
+			ts.networkRx = this.acceptor.getWorkersRx();
+			ts.networkTx = this.acceptor.getWorkersTx();
+		}
+
+		if (null != HttpService.getInstance() && null != this.wsHandler) {
+			ts.webSocketPort = this.getHttpPort() + 1;
+			ts.webSocketConnections = HttpService.getInstance().getWebSocketSessionNum();
+			ts.webSocketIdleTasks = this.wsHandler.numIdleTasks();
+			ts.webSocketActiveTasks = this.wsHandler.numActiveTasks();
+			ts.webSocketRx = HttpService.getInstance().getTotalRx();
+			ts.webSocketTx = HttpService.getInstance().getTotalTx();
+
+			ts.httpConcurrentCounts = HttpService.getInstance().getConcurrentCounts();
+			ts.httpSessionNum = this.httpSessionManager.getSessionNum();
+			ts.httpSessionMaxNum = this.httpSessionManager.getMaxSessionNum();
+			ts.httpSessionExpires = this.httpSessionManager.getSessionExpires();
+		}
+
+		ActionDialectFactory adf = (ActionDialectFactory) DialectEnumerator.getInstance().getFactory(ActionDialect.DIALECT_NAME);
+		ts.actionDialectThreadNum = adf.getThreadCounts();
+		ts.actionDialectMaxThreadNum = adf.getMaxThreadCounts();
+		ts.actionDialectPendingNum = adf.getPendingNum();
+
+		ChunkDialectFactory cdf = (ChunkDialectFactory) DialectEnumerator.getInstance().getFactory(ChunkDialect.DIALECT_NAME);
+		ts.chunkDialectCacheNum = cdf.getCacheNum();
+		ts.chunkDialectCacheMemSize = cdf.getCacheMemorySize();
+		ts.chunkDialectMaxCacheMemSize = cdf.getMaxCacheMemorySize();
+		ts.chunkDialectQueueSize = cdf.getQueueSize();
+
+		return ts;
 	}
 
 	/**
@@ -841,8 +895,9 @@ public final class TalkService implements Service, SpeakerDelegate {
 			return;
 		}
 
+		this.wsHandler = new WebSocketMessageHandler(this);
 		this.webSocketManager = HttpService.getInstance().activeWebSocket(this.httpPort + 1
-				, this.httpQueueSize, new WebSocketMessageHandler(this));
+				, this.httpQueueSize, this.wsHandler);
 
 		// 创建 Session 管理器
 		this.httpSessionManager = new CookieSessionManager();
@@ -1088,6 +1143,9 @@ public final class TalkService implements Service, SpeakerDelegate {
 		if (!this.tagList.contains(tag)) {
 			this.tagList.add(tag);
 		}
+
+		// 计数
+		++this.numValidSessions;
 	}
 
 	/** 拒绝指定 Session 连接。
@@ -1123,6 +1181,9 @@ public final class TalkService implements Service, SpeakerDelegate {
 		else if (session instanceof WebSocketSession) {
 			this.webSocketManager.close((WebSocketSession)session);
 		}
+
+		// 计数
+		++this.numInvalidSessions;
 	}
 
 	/** 请求 Cellet 。
@@ -1339,6 +1400,9 @@ public final class TalkService implements Service, SpeakerDelegate {
 				log.append(session.getAddress().getPort());
 				Logger.i(TalkService.class, log.toString());
 				log = null;
+
+				// 计数
+				++this.numInvalidSessions;
 
 				// 从记录中删除
 				this.unidentifiedSessions.remove(session.getId());

@@ -64,6 +64,14 @@ public class CookieSessionManager implements SessionManager {
 		this.listeners = new ArrayList<SessionListener>(1);
 	}
 
+	public long getSessionExpires() {
+		return this.sessionExpires;
+	}
+
+	public int getMaxSessionNum() {
+		return this.maxSessionNum;
+	}
+
 	@Override
 	public void manage(HttpRequest request, HttpResponse response) {
 		// 获取 Cookie
@@ -155,6 +163,11 @@ public class CookieSessionManager implements SessionManager {
 			// 分发事件
 			this.dispatchDestroy(session);
 		}
+	}
+
+	@Override
+	public int getSessionNum() {
+		return this.sessions.size();
 	}
 
 	@Override

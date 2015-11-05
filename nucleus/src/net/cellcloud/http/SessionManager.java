@@ -55,6 +55,12 @@ public interface SessionManager {
 	public void unmanage(HttpSession session);
 
 	/**
+	 * 返回当前被管理的 Session 总数量。
+	 * @return
+	 */
+	public int getSessionNum();
+
+	/**
 	 * 返回所有 Session 列表。
 	 * @return
 	 */

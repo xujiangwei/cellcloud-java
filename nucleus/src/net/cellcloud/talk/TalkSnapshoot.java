@@ -2,7 +2,7 @@
 -----------------------------------------------------------------------------
 This source file is part of Cell Cloud.
 
-Copyright (c) 2009-2013 Cell Cloud Team (www.cellcloud.net)
+Copyright (c) 2009-2012 Cell Cloud Team (www.cellcloud.net)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -24,29 +24,45 @@ THE SOFTWARE.
 -----------------------------------------------------------------------------
 */
 
-package net.cellcloud.http;
+package net.cellcloud.talk;
 
-import org.eclipse.jetty.websocket.server.WebSocketHandler;
-import org.eclipse.jetty.websocket.servlet.WebSocketServletFactory;
-
-/**
+/** Talk service 快照。
  * 
  * @author Jiangwei Xu
  */
-public final class JettyWebSocketHandler extends WebSocketHandler {
+public final class TalkSnapshoot {
 
-	private JettyWebSocket webSocket;
+	public long numValidSessions = 0;
+	public long numInvalidSessions = 0;
 
-	public JettyWebSocketHandler(JettyWebSocket webSocket) {
-		super();
-		this.webSocket = webSocket;
-	}
+	public int port = 0;
+	public int connections = 0;
+	public int maxConnections = 0;
+	public int numWorkers = 0;
+	public long[] networkRx = null;
+	public long[] networkTx = null;
 
-	@Override
-	public void configure(WebSocketServletFactory factory) {
-		// 超期时间 10 分钟
-		factory.getPolicy().setIdleTimeout(10 * 60 * 1000);
-		factory.getPolicy().setAsyncWriteTimeout(10 * 1000);
-		factory.setCreator(new JettyWebSocketCreator(this.webSocket));
+	public int webSocketPort = 0;
+	public int webSocketConnections = 0;
+	public int webSocketIdleTasks = 0;
+	public int webSocketActiveTasks = 0;
+	public long webSocketRx = 0;
+	public long webSocketTx = 0;
+
+	public int httpConcurrentCounts = 0;
+	public int httpSessionNum = 0;
+	public int httpSessionMaxNum = 0;
+	public long httpSessionExpires = 0;
+
+	public int actionDialectThreadNum = 0;
+	public int actionDialectMaxThreadNum = 0;
+	public int actionDialectPendingNum = 0;
+
+	public int chunkDialectCacheNum = 0;
+	public long chunkDialectCacheMemSize = 0;
+	public long chunkDialectMaxCacheMemSize = 0;
+	public int chunkDialectQueueSize = 0;
+
+	protected TalkSnapshoot() {
 	}
 }

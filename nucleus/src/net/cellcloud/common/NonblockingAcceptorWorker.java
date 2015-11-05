@@ -2,7 +2,7 @@
 -----------------------------------------------------------------------------
 This source file is part of Cell Cloud.
 
-Copyright (c) 2009-2014 Cell Cloud Team (www.cellcloud.net)
+Copyright (c) 2009-2016 Cell Cloud Team (www.cellcloud.net)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -53,6 +53,11 @@ public final class NonblockingAcceptorWorker extends Thread {
 	// 需要执行发送数据任务的 Session 列表
 	private Vector<NonblockingAcceptorSession> sendSessions = new Vector<NonblockingAcceptorSession>();
 
+	// 发送数据流量统计
+	private long tx = 0;
+	// 接收数据流量统计
+	private long rx = 0;
+
 	public NonblockingAcceptorWorker(NonblockingAcceptor acceptor) {
 		this.acceptor = acceptor;
 		this.setName("NonblockingAcceptorWorker@" + this.toString());
@@ -62,6 +67,8 @@ public final class NonblockingAcceptorWorker extends Thread {
 	public void run() {
 		this.working = true;
 		this.spinning = true;
+		this.tx = 0;
+		this.rx = 0;
 		NonblockingAcceptorSession session = null;
 
 		while (this.spinning) {
@@ -107,6 +114,14 @@ public final class NonblockingAcceptorWorker extends Thread {
 		}
 
 		this.working = false;
+	}
+
+	protected long getTX() {
+		return this.tx;
+	}
+
+	protected long getRX() {
+		return this.rx;
 	}
 
 	/** 停止自旋
@@ -265,6 +280,12 @@ public final class NonblockingAcceptorWorker extends Thread {
 					return;
 				}
 
+				// 统计流量
+				if (this.rx > Long.MAX_VALUE - read) {
+					this.rx = 0;
+				}
+				this.rx += read;
+
 				buf.flip();
 
 				byte[] array = new byte[read];
@@ -319,7 +340,16 @@ public final class NonblockingAcceptorWorker extends Thread {
 					buf.flip();
 
 					try {
-						channel.write(buf);
+						int size = channel.write(buf);
+
+						// 统计流量
+						if (size > 0) {
+							if (this.tx > Long.MAX_VALUE - size) {
+								this.tx = 0;
+							}
+
+							this.tx += size;
+						}
 					} catch (IOException e) {
 						Logger.log(NonblockingAcceptorWorker.class, e, LogLevel.WARNING);
 					}

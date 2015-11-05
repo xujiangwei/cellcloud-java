@@ -55,6 +55,20 @@ public final class ActionDialectFactory extends DialectFactory {
 		this.delegates = new LinkedList<ActionDelegate>();
 	}
 
+	public int getThreadCounts() {
+		return this.threadCount.get();
+	}
+
+	public int getMaxThreadCounts() {
+		return this.maxThreadCount;
+	}
+
+	public int getPendingNum() {
+		synchronized (this.metaData) {
+			return this.dialects.size();
+		}
+	}
+
 	@Override
 	public DialectMetaData getMetaData() {
 		return this.metaData;

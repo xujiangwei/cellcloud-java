@@ -52,10 +52,29 @@ public final class JettyWebSocket implements WebSocketManager {
 	private LinkedList<Session> sessions;
 	private LinkedList<WebSocketSession> wsSessions;
 
+	// 接收的数据流量
+	private long rx = 0;
+	// 发送的数据流量
+	private long tx = 0;
+
 	public JettyWebSocket(MessageHandler handler) {
 		this.handler = handler;
 		this.sessions = new LinkedList<Session>();
 		this.wsSessions = new LinkedList<WebSocketSession>();
+	}
+
+	public int numSessions() {
+		synchronized (this.sessions) {
+			return this.sessions.size();
+		}
+	}
+
+	public long getTotalRx() {
+		return this.rx;
+	}
+
+	public long getTotalTx() {
+		return this.tx;
 	}
 
 	@OnWebSocketMessage
@@ -94,6 +113,9 @@ public final class JettyWebSocket implements WebSocketManager {
 			int index = this.sessions.indexOf(session);
 			wsSession = this.wsSessions.get(index);
 		}
+
+		// 接收流量计数
+		this.rx += text.length();
 
 		if (null != this.handler) {
 			Message message = new Message(text);
@@ -196,6 +218,9 @@ public final class JettyWebSocket implements WebSocketManager {
 	@Override
 	public void write(WebSocketSession session, Message message) {
 		session.write(message);
+
+		// 发送流量计数
+		this.tx += message.length();
 	}
 
 	@Override

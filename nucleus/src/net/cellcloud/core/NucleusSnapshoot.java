@@ -2,7 +2,7 @@
 -----------------------------------------------------------------------------
 This source file is part of Cell Cloud.
 
-Copyright (c) 2009-2012 Cell Cloud Team (www.cellcloud.net)
+Copyright (c) 2009-2016 Cell Cloud Team (www.cellcloud.net)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -24,14 +24,42 @@ THE SOFTWARE.
 -----------------------------------------------------------------------------
 */
 
-package net.cellcloud.talk;
+package net.cellcloud.core;
 
-/** Talk service 快照。
+import java.util.List;
+
+import net.cellcloud.talk.TalkSnapshoot;
+
+/**
+ * 内核快照。
  * 
  * @author Jiangwei Xu
  */
-public final class TalkServiceSnapshot {
+public final class NucleusSnapshoot {
 
-	public TalkServiceSnapshot() {
+	public String tag;
+
+	// 快照时间戳
+	public long timestamp;
+
+	public long maxMemory;
+
+	public long totalMemory;
+
+	public long freeMemory;
+
+	public long systemStartTime;
+
+	public long systemDuration;
+
+	public List<String> celletList;
+
+	public TalkSnapshoot talk;
+
+	protected NucleusSnapshoot() {
+		this.timestamp = System.currentTimeMillis();
+		this.maxMemory = Runtime.getRuntime().maxMemory();
+		this.totalMemory = Runtime.getRuntime().totalMemory();
+		this.freeMemory = Runtime.getRuntime().freeMemory();
 	}
 }

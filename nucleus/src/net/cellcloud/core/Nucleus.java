@@ -353,6 +353,14 @@ public final class Nucleus {
 		return null;
 	}
 
+	public Cellet getCellet(String identifier) {
+		if (null == this.cellets) {
+			return null;
+		}
+
+		return this.cellets.get(identifier);
+	}
+
 	/** 载入 Cellet JAR 包信息。
 	 */
 	public void prepareCelletJar(String jarFile, ArrayList<String> classes) {
@@ -455,6 +463,24 @@ public final class Nucleus {
 		if (this.working.get()) {
 			adapter.teardown();
 		}
+	}
+
+	public NucleusSnapshoot snapshoot() {
+		NucleusSnapshoot snapshoot = new NucleusSnapshoot();
+		snapshoot.tag = this.tag.asString().toString();
+		snapshoot.systemStartTime = Clock.startTime();
+		snapshoot.systemDuration = Clock.currentTimeMillis() - Clock.startTime();
+
+		if (null != this.cellets) {
+			snapshoot.celletList = new ArrayList<String>(this.cellets.size());
+			for (Cellet cellet : this.cellets.values()) {
+				snapshoot.celletList.add(cellet.getFeature().getIdentifier());
+			}
+		}
+
+		snapshoot.talk = this.talkService.snapshot();
+
+		return snapshoot;
 	}
 
 	protected synchronized void prepareCellet(Cellet cellet, CelletSandbox sandbox) {

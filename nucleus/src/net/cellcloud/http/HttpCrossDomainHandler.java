@@ -28,6 +28,7 @@ package net.cellcloud.http;
 
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
@@ -56,9 +57,16 @@ public final class HttpCrossDomainHandler extends HttpHandler implements Capsule
 
 	private HttpService service;
 
+	private AtomicInteger concurrentCounts;
+
 	public HttpCrossDomainHandler(HttpService service) {
 		super();
 		this.service = service;
+		this.concurrentCounts = new AtomicInteger(0);
+	}
+
+	public int getConcurrentCounts() {
+		return this.concurrentCounts.get();
 	}
 
 	@Override
@@ -74,12 +82,17 @@ public final class HttpCrossDomainHandler extends HttpHandler implements Capsule
 	@Override
 	public void handle(String target, Request baseRequest, HttpServletRequest request, HttpServletResponse response)
 			throws IOException, ServletException {
+		// 计数
+		this.concurrentCounts.incrementAndGet();
+
 		// 实际 URI
 		String uri = request.getParameter(URI);
 		CapsuleHolder holder = this.service.holders.get(uri);
 		if (null == holder) {
 			baseRequest.setHandled(true);
 			this.respond(response, HttpResponse.SC_BAD_REQUEST);
+
+			this.concurrentCounts.decrementAndGet();
 			return;
 		}
 
@@ -129,6 +142,8 @@ public final class HttpCrossDomainHandler extends HttpHandler implements Capsule
 		}
 		else {
 			this.respond(httpResponse, HttpResponse.SC_NOT_IMPLEMENTED);
+
+			this.concurrentCounts.decrementAndGet();
 			return;
 		}
 
@@ -143,6 +158,8 @@ public final class HttpCrossDomainHandler extends HttpHandler implements Capsule
 			httpRequest.destroy();
 			httpRequest = null;
 		}
+
+		this.concurrentCounts.decrementAndGet();
 	}
 
 	@Override
