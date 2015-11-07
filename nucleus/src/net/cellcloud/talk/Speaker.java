@@ -217,6 +217,8 @@ public class Speaker implements Speakable {
 	 */
 	@Override
 	public synchronized void hangUp() {
+		this.state = SpeakerState.HANGUP;
+
 		if (null != this.connector) {
 			this.connector.disconnect();
 			this.connector = null;
@@ -224,7 +226,6 @@ public class Speaker implements Speakable {
 
 		this.lost = false;
 		this.authenticated = false;
-		this.state = SpeakerState.HANGUP;
 		this.identifierList.clear();
 	}
 
