@@ -59,6 +59,8 @@ public class NonblockingConnector extends MessageService implements MessageConne
 	private boolean spinning = false;
 	private boolean running = false;
 
+	private long sleepInterval = 100;
+
 	private ByteBuffer readBuffer;
 	private ByteBuffer writeBuffer;
 	// 待发送消息列表
@@ -264,6 +266,10 @@ public class NonblockingConnector extends MessageService implements MessageConne
 		return this.connectTimeout;
 	}
 
+	public void resetSleepInterval(long sleepInterval) {
+		this.sleepInterval = sleepInterval;
+	}
+
 	@Override
 	public void setBlockSize(int size) {
 		if (this.block == size) {
@@ -391,7 +397,7 @@ public class NonblockingConnector extends MessageService implements MessageConne
 				Thread.yield();
 
 				try {
-					Thread.sleep(100);
+					Thread.sleep(sleepInterval);
 				} catch (InterruptedException e) {
 				}
 			}

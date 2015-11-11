@@ -271,6 +271,14 @@ public class Speaker implements Speakable {
 	}
 
 	/**
+	 * 重置睡眠间隔。
+	 * @param sleepInterval
+	 */
+	public void resetSleepInterval(long sleepInterval) {
+		this.connector.resetSleepInterval(sleepInterval);
+	}
+
+	/**
 	 * 重置状态数据。
 	 */
 	protected void reset() {

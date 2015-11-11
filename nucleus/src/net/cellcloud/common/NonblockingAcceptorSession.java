@@ -32,6 +32,8 @@ import java.nio.ByteBuffer;
 import java.nio.channels.SelectionKey;
 import java.util.LinkedList;
 
+import net.cellcloud.util.Clock;
+
 /** 非阻塞网络接收器会话。
  * 
  * @author Jiangwei Xu
@@ -40,6 +42,9 @@ public class NonblockingAcceptorSession extends Session {
 
 	private ByteBuffer readBuffer;
 	private ByteBuffer writeBuffer;
+
+	protected long readTime = 0;
+	protected long writeTime = 0;
 
 	// 待发送消息列表
 	private LinkedList<Message> messages = new LinkedList<Message>();
@@ -57,6 +62,8 @@ public class NonblockingAcceptorSession extends Session {
 		super(service, address);
 		this.readBuffer = ByteBuffer.allocate(block);
 		this.writeBuffer = ByteBuffer.allocate(block);
+		this.readTime = Clock.currentTimeMillis();
+		this.writeTime = Clock.currentTimeMillis();
 	}
 
 	/** 返回读缓存。 */

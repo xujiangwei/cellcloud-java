@@ -58,9 +58,20 @@ public final class NonblockingAcceptorWorker extends Thread {
 	// 接收数据流量统计
 	private long rx = 0;
 
+	private long eachSessionReadInterval = -1;
+	private long eachSessionWriteInterval = -1;
+
 	public NonblockingAcceptorWorker(NonblockingAcceptor acceptor) {
 		this.acceptor = acceptor;
 		this.setName("NonblockingAcceptorWorker@" + this.toString());
+	}
+
+	protected void setEachSessionReadInterval(long intervalMs) {
+		this.eachSessionReadInterval = intervalMs;
+	}
+
+	protected void setEachSessionWriteInterval(long intervalMs) {
+		this.eachSessionWriteInterval = intervalMs;
 	}
 
 	@Override
@@ -70,6 +81,9 @@ public final class NonblockingAcceptorWorker extends Thread {
 		this.tx = 0;
 		this.rx = 0;
 		NonblockingAcceptorSession session = null;
+
+		long time = System.currentTimeMillis();
+		int timeCounts = 0;
 
 		while (this.spinning) {
 			// 如果没有任务，则线程 wait
@@ -82,23 +96,40 @@ public final class NonblockingAcceptorWorker extends Thread {
 					} catch (InterruptedException e) {
 						Logger.log(NonblockingAcceptorWorker.class, e, LogLevel.DEBUG);
 					}
+
+					time = System.currentTimeMillis();
+					timeCounts = 0;
 				}
 			}
+
+			long ctime = time + timeCounts;
 
 			try {
 				if (!this.receiveSessions.isEmpty()) {
 					// 执行接收数据任务，并移除已执行的 Session
 					session = this.receiveSessions.remove(0);
-					if (null != session.socket) {
-						processReceive(session);
+					if (ctime - session.readTime > this.eachSessionReadInterval) {
+						if (null != session.socket) {
+							processReceive(session);
+							session.readTime = ctime - 1;
+						}
+					}
+					else {
+						this.receiveSessions.add(session);
 					}
 				}
 
 				if (!this.sendSessions.isEmpty()) {
 					// 执行发送数据任务，并移除已执行的 Session
 					session = this.sendSessions.remove(0);
-					if (null != session.socket) {
-						processSend(session);
+					if (ctime - session.writeTime > this.eachSessionWriteInterval) {
+						if (null != session.socket) {
+							processSend(session);
+							session.writeTime = ctime - 1;
+						}
+					}
+					else {
+						this.sendSessions.add(session);
 					}
 				}
 			} catch (Exception e) {
@@ -110,6 +141,14 @@ public final class NonblockingAcceptorWorker extends Thread {
 			try {
 				Thread.sleep(1);
 			} catch (InterruptedException e) {
+				// Nothing
+			}
+
+			// 时间计数
+			++timeCounts;
+			if (timeCounts >= 200) {
+				time = System.currentTimeMillis();
+				timeCounts = 0;
 			}
 		}
 

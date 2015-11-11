@@ -176,6 +176,7 @@ public class ChunkDialect extends Dialect {
 			this.totalLength = list.get(5).getValueAsLong();
 
 			if (null != this.data) {
+				// 数据直接写入
 				ChunkDialectFactory fact = (ChunkDialectFactory) DialectEnumerator.getInstance().getFactory(ChunkDialect.DIALECT_NAME);
 				fact.write(this);
 			}

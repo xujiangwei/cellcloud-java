@@ -173,6 +173,22 @@ public class ActionDialect extends Dialect {
 	}
 	/** 添加动作参数键值对。
 	 */
+	public void appendParam(final String name, final float value) {
+		synchronized (this) {
+			this.nameList.add(name);
+			this.valueList.add(new ObjectiveStuff(value));
+		}
+	}
+	/** 添加动作参数键值对。
+	 */
+	public void appendParam(final String name, final double value) {
+		synchronized (this) {
+			this.nameList.add(name);
+			this.valueList.add(new ObjectiveStuff(value));
+		}
+	}
+	/** 添加动作参数键值对。
+	 */
 	public void appendParam(final String name, final boolean value) {
 		synchronized (this) {
 			this.nameList.add(name);
@@ -217,6 +233,28 @@ public class ActionDialect extends Dialect {
 			int index = this.nameList.indexOf(name);
 			if (index >= 0)
 				return this.valueList.get(index).getValueAsLong();
+		}
+
+		return 0;
+	}
+	/** 返回指定名称的参数值。
+	 */
+	public float getParamAsFloat(final String name) {
+		synchronized (this) {
+			int index = this.nameList.indexOf(name);
+			if (index >= 0)
+				return this.valueList.get(index).getValueAsFloat();
+		}
+
+		return 0;
+	}
+	/** 返回指定名称的参数值。
+	 */
+	public double getParamAsDouble(final String name) {
+		synchronized (this) {
+			int index = this.nameList.indexOf(name);
+			if (index >= 0)
+				return this.valueList.get(index).getValueAsDouble();
 		}
 
 		return 0;

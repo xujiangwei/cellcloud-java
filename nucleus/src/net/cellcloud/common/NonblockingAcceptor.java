@@ -350,6 +350,18 @@ public class NonblockingAcceptor extends MessageService implements MessageAccept
 		return this.socketSessionMap.size();
 	}
 
+	public void setEachSessionReadInterval(long intervalMs) {
+		for (NonblockingAcceptorWorker worker : this.workers) {
+			worker.setEachSessionReadInterval(intervalMs);
+		}
+	}
+
+	public void setEachSessionWriteInterval(long intervalMs) {
+		for (NonblockingAcceptorWorker worker : this.workers) {
+			worker.setEachSessionWriteInterval(intervalMs);
+		}
+	}
+
 	/**
 	 * 返回发送数据总流量。
 	 * @return
@@ -549,7 +561,7 @@ public class NonblockingAcceptor extends MessageService implements MessageAccept
 			session.socket = clientChannel.socket();
 
 			// 为 Session 选择工作线程
-			int index = (int)(session.getId() % this.workerNum);
+			int index = (int)(session.getId().longValue() % this.workerNum);
 			session.worker = this.workers[index];
 
 			// 记录

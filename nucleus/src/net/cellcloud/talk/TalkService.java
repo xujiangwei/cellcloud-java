@@ -394,6 +394,14 @@ public final class TalkService implements Service, SpeakerDelegate {
 		this.maxConnections = num;
 	}
 
+	public void setEachSessionReadInterval(long intervalMs) {
+		this.acceptor.setEachSessionReadInterval(intervalMs);
+	}
+
+	public void setEachSessionWriteInterval(long intervalMs) {
+		this.acceptor.setEachSessionWriteInterval(intervalMs);
+	}
+
 	/** 设置是否激活 HTTP 服务。
 	 */
 	public void httpEnabled(boolean enabled) {

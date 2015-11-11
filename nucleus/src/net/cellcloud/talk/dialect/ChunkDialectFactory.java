@@ -35,6 +35,7 @@ import java.util.concurrent.atomic.AtomicLong;
 import net.cellcloud.common.Logger;
 import net.cellcloud.core.Cellet;
 import net.cellcloud.talk.TalkService;
+import net.cellcloud.util.Clock;
 
 /** 块数据传输方言工厂。
  * 
@@ -53,6 +54,8 @@ public class ChunkDialectFactory extends DialectFactory {
 	private final long clearThreshold = 500 * 1024 * 1024;
 	private Object mutex = new Object();
 	private AtomicBoolean clearRunning = new AtomicBoolean(false);
+
+	private long queueTimeout = 5 * 60 * 1000;
 
 	private int logCounts = 0;
 
@@ -275,12 +278,17 @@ public class ChunkDialectFactory extends DialectFactory {
 	}
 
 	private void checkAndClearQueue() {
+		long time = Clock.currentTimeMillis();
 		LinkedList<String> deleteList = new LinkedList<String>();
 
 		for (Map.Entry<String, Queue> entry : this.queueMap.entrySet()) {
 			Queue queue = entry.getValue();
 			if (queue.ackIndex >= 0 && queue.chunkNum - 1 == queue.ackIndex) {
 				// 删除
+				deleteList.add(entry.getKey());
+			}
+			else if (time - queue.timestamp > this.queueTimeout) {
+				// 超时
 				deleteList.add(entry.getKey());
 			}
 		}
@@ -426,6 +434,7 @@ public class ChunkDialectFactory extends DialectFactory {
 	}
 
 	private class Queue {
+		private long timestamp;
 		private String target;
 		private LinkedList<ChunkDialect> queue;
 
@@ -434,6 +443,7 @@ public class ChunkDialectFactory extends DialectFactory {
 		protected int chunkNum = 0;
 
 		private Queue(String target, int chunkNum) {
+			this.timestamp = Clock.currentTimeMillis();
 			this.target = target;
 			this.chunkNum = chunkNum;
 			this.queue = new LinkedList<ChunkDialect>();
