@@ -77,7 +77,7 @@ public final class Application {
 		buf.append(VersionInfo.MAJOR).append(".").append(VersionInfo.MINOR).append(".").append(VersionInfo.REVISION);
 		buf.append("\n");
 		buf.append("Cell Cloud ");
-		buf.append(Version.MAJOR).append(".").append(Version.MINOR).append(".").append(Version.REVISION);
+		buf.append(Version.getNumbers());
 		buf.append(" (Build Java - ").append(Version.NAME).append(")\n");
 
 		buf.append("-----------------------------------------------------------------------\n");

@@ -193,14 +193,6 @@ public class HttpSpeaker implements Speakable {
 	}
 
 	@Override
-	public void suspend(long duration) {
-	}
-
-	@Override
-	public void resume(long startTime) {
-	}
-
-	@Override
 	public void hangUp() {
 		this.stopClient();
 
@@ -285,11 +277,6 @@ public class HttpSpeaker implements Speakable {
 	@Override
 	public boolean isCalled() {
 		return (this.state == SpeakerState.CALLED);
-	}
-
-	@Override
-	public boolean isSuspended() {
-		return (this.state == SpeakerState.SUSPENDED);
 	}
 
 	/**

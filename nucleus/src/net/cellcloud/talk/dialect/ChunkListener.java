@@ -26,15 +26,16 @@ THE SOFTWARE.
 
 package net.cellcloud.talk.dialect;
 
-//! 区块方言监听器。
-/*!
- * \author Jiangwei Xu
+/** 区块方言监听器。
+ * 
+ * @author Jiangwei Xu
  */
 public interface ChunkListener {
 
-	/*!
-	 * \param target
-	 * \param chunkDialect
+	/**
+	 * 
+	 * @param target
+	 * @param chunkDialect
 	 */
 	public void onProgress(String target, ChunkDialect chunkDialect);
 }

@@ -93,7 +93,7 @@ public final class TalkServiceDaemon extends Thread {
 				service.checkSessionHeartbeat();
 
 				// 1 分钟检查一次挂起状态下的会话器是否失效
-				service.checkAndDeleteSuspendedTalk();
+//				service.checkAndDeleteSuspendedTalk();
 			}
 
 			// 3 分钟周期处理

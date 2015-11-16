@@ -62,16 +62,4 @@ public abstract class AbstractCellet {
 	 * @param tag 对端的内核标签。
 	 */
 	public abstract void quitted(final String tag);
-
-	/** 当消费者被挂起时回调此方法。
-	 * 
-	 * @param tag 对端的内核标签。
-	 */
-	public abstract void suspended(final String tag);
-
-	/** 当消费者从挂起状态恢复时回调此方法。
-	 * 
-	 * @param tag 对端的内核标签。
-	 */
-	public abstract void resumed(final String tag);
 }

@@ -54,11 +54,16 @@ public final class ServerConsultCommand extends ServerCommand {
 		TalkCapacity capacity = TalkCapacity.deserialize(this.packet.getSubsegment(1));
 
 		if (null == capacity) {
-			Logger.w(ServerConsultCommand.class, "Error talk capacity data format");
+			Logger.w(ServerConsultCommand.class, "Error talk capacity data format: tag=" + tag);
 			return;
 		}
 
 		TalkCapacity ret = this.service.processConsult(this.session, tag, capacity);
+
+		if (null == ret) {
+			Logger.w(ServerConsultCommand.class, "Can not match talk capacity: tag=" + tag);
+			return;
+		}
 
 		// 应答		
 		// 包格式：源标签|能力描述序列化数据

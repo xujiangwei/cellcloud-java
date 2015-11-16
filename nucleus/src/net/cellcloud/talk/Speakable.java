@@ -43,18 +43,6 @@ public interface Speakable {
 	public boolean call(List<String> identifiers);
 
 	/**
-	 * 挂起服务。
-	 * @param duration 指定挂起的有效时长。
-	 */
-	public void suspend(long duration);
-
-	/**
-	 * 恢复服务。
-	 * @param startTime
-	 */
-	public void resume(long startTime);
-
-	/**
 	 * 挂断与 Cellet 的服务。
 	 */
 	public void hangUp();
@@ -72,12 +60,6 @@ public interface Speakable {
 	 * @return
 	 */
 	public boolean isCalled();
-
-	/**
-	 * Cellet 服务器是否已经被挂起。
-	 * @return
-	 */
-	public boolean isSuspended();
 
 	/**
 	 * 返回会话器请求的所有 Cellet 标识符列表。

@@ -34,24 +34,15 @@ import java.nio.charset.Charset;
  */
 public final class TalkCapacity {
 
-	/// 是否自动挂起已经被关闭的连接
-	public boolean autoSuspend = false;
-	/// 自动挂起时，连接挂起的有效时长，单位：毫秒
-	public long suspendDuration = 0;
-	
+	/// 是否为加密会话
+	public boolean secure = false;
+
 	/// 重复尝试连接的次数
 	public int retryAttempts = 0;
 	/// 两次连接中间隔时间，单位毫秒
 	public long retryDelay = 5000;
 
-	/**
-	 * 构造函数。
-	 * @param autoSuspend
-	 * @param suspendDuration
-	 */
-	public TalkCapacity(boolean autoSuspend, long suspendDuration) {
-		this.autoSuspend = autoSuspend;
-		this.suspendDuration = suspendDuration;
+	public TalkCapacity() {
 	}
 
 	/**
@@ -70,9 +61,13 @@ public final class TalkCapacity {
 
 	public final static byte[] serialize(TalkCapacity capacity) {
 		StringBuilder buf = new StringBuilder();
-		buf.append(capacity.autoSuspend ? "Y" : "N");
+		buf.append(1);
 		buf.append("|");
-		buf.append(capacity.suspendDuration);
+		buf.append(capacity.secure ? "Y" : "N");
+		buf.append("|");
+		buf.append(capacity.retryAttempts);
+		buf.append("|");
+		buf.append(capacity.retryDelay);
 
 		byte[] bytes = buf.toString().getBytes();
 		buf = null;
@@ -83,12 +78,17 @@ public final class TalkCapacity {
 	public final static TalkCapacity deserialize(byte[] bytes) {
 		String str = new String(bytes, Charset.forName("UTF-8"));
 		String[] array = str.split("\\|");
-		if (array.length < 2) {
+		if (array.length < 4) {
 			return null;
 		}
 
-		boolean autoSuspend = array[0].equals("Y") ? true : false;
-		long suspendDuration = Long.parseLong(array[1]);
-		return new TalkCapacity(autoSuspend, suspendDuration);
+		TalkCapacity cap = new TalkCapacity();
+		int version = Integer.parseInt(array[0]);
+		if (version == 1) {
+			cap.secure = array[1].equalsIgnoreCase("Y") ? true : false;
+			cap.retryAttempts = Integer.parseInt(array[2]);
+			cap.retryDelay = Integer.parseInt(array[3]);
+		}
+		return cap;
 	}
 }

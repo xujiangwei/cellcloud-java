@@ -28,7 +28,6 @@ package net.cellcloud.talk;
 
 import net.cellcloud.common.Packet;
 import net.cellcloud.common.Session;
-import net.cellcloud.util.Utils;
 
 /** Resume Command
  * 
@@ -36,8 +35,7 @@ import net.cellcloud.util.Utils;
  */
 public final class ServerResumeCommand extends ServerCommand {
 
-	public ServerResumeCommand(TalkService service, Session session,
-			Packet packet) {
+	public ServerResumeCommand(TalkService service, Session session, Packet packet) {
 		super(service, session, packet);
 	}
 
@@ -45,9 +43,9 @@ public final class ServerResumeCommand extends ServerCommand {
 	public void execute() {
 		// 包格式：内核标签|需要回复的原语起始时间戳
 
-		String tag = Utils.bytes2String(this.packet.getSubsegment(0));
-		long startTime = Long.parseLong(Utils.bytes2String(this.packet.getSubsegment(1)));
+//		String tag = Utils.bytes2String(this.packet.getSubsegment(0));
+//		long startTime = Long.parseLong(Utils.bytes2String(this.packet.getSubsegment(1)));
 
-		this.service.processResume(this.session, tag, startTime);
+//		this.service.processResume(this.session, tag, startTime);
 	}
 }

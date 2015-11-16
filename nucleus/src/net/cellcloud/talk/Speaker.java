@@ -168,50 +168,50 @@ public class Speaker implements Speakable {
 
 	/** 挂起服务。
 	 */
-	@Override
-	public void suspend(long duration) {
-		if (this.state == SpeakerState.CALLED) {
-			// 包格式：内核标签|有效时长
-
-			Packet packet = new Packet(TalkDefinition.TPT_SUSPEND, 5, 1, 0);
-			packet.appendSubsegment(this.nucleusTag);
-			packet.appendSubsegment(Utils.string2Bytes(Long.toString(duration)));
-
-			byte[] data = Packet.pack(packet);
-			if (null != data) {
-				// 发送数据
-				Message message = new Message(data);
-				this.connector.write(message);
-
-				// 更新状态
-				this.state = SpeakerState.SUSPENDED;
-			}
-		}
-	}
+//	@Override
+//	public void suspend(long duration) {
+//		if (this.state == SpeakerState.CALLED) {
+//			// 包格式：内核标签|有效时长
+//
+//			Packet packet = new Packet(TalkDefinition.TPT_SUSPEND, 5, 1, 0);
+//			packet.appendSubsegment(this.nucleusTag);
+//			packet.appendSubsegment(Utils.string2Bytes(Long.toString(duration)));
+//
+//			byte[] data = Packet.pack(packet);
+//			if (null != data) {
+//				// 发送数据
+//				Message message = new Message(data);
+//				this.connector.write(message);
+//
+//				// 更新状态
+//				this.state = SpeakerState.SUSPENDED;
+//			}
+//		}
+//	}
 
 	/** 恢复服务。
 	 */
-	@Override
-	public void resume(long startTime) {
-		if (this.state == SpeakerState.SUSPENDED
-			|| this.state == SpeakerState.CALLED) {
-			// 包格式：内核标签|需要恢复的原语起始时间戳
-
-			Packet packet = new Packet(TalkDefinition.TPT_RESUME, 6, 1, 0);
-			packet.appendSubsegment(this.nucleusTag);
-			packet.appendSubsegment(Utils.string2Bytes(Long.toString(startTime)));
-
-			byte[] data = Packet.pack(packet);
-			if (null != data) {
-				// 发送数据
-				Message message = new Message(data);
-				this.connector.write(message);
-
-				// 恢复状态
-				this.state = SpeakerState.CALLED;
-			}
-		}
-	}
+//	@Override
+//	public void resume(long startTime) {
+//		if (this.state == SpeakerState.SUSPENDED
+//			|| this.state == SpeakerState.CALLED) {
+//			// 包格式：内核标签|需要恢复的原语起始时间戳
+//
+//			Packet packet = new Packet(TalkDefinition.TPT_RESUME, 6, 1, 0);
+//			packet.appendSubsegment(this.nucleusTag);
+//			packet.appendSubsegment(Utils.string2Bytes(Long.toString(startTime)));
+//
+//			byte[] data = Packet.pack(packet);
+//			if (null != data) {
+//				// 发送数据
+//				Message message = new Message(data);
+//				this.connector.write(message);
+//
+//				// 恢复状态
+//				this.state = SpeakerState.CALLED;
+//			}
+//		}
+//	}
 
 	/** 挂断与 Cellet 的服务。
 	 */
@@ -263,13 +263,6 @@ public class Speaker implements Speakable {
 		return this.state == SpeakerState.CALLED;
 	}
 
-	/** Cellet 服务器是否已经被挂起。
-	 */
-	@Override
-	public boolean isSuspended() {
-		return this.state == SpeakerState.SUSPENDED;
-	}
-
 	/**
 	 * 重置睡眠间隔。
 	 * @param sleepInterval
@@ -310,15 +303,15 @@ public class Speaker implements Speakable {
 
 	protected void notifySessionClosed() {
 		// 判断是否要通知被挂起
-		if (null != this.capacity && SpeakerState.CALLED == this.state) {
-			if (this.capacity.autoSuspend) {
-				this.state = SpeakerState.SUSPENDED;
-				this.fireSuspended(System.currentTimeMillis(), SuspendMode.PASSIVE);
-
-				// 标记为丢失
-				this.lost = true;
-			}
-		}
+//		if (null != this.capacity && SpeakerState.CALLED == this.state) {
+//			if (this.capacity.autoSuspend) {
+//				this.state = SpeakerState.SUSPENDED;
+//				this.fireSuspended(System.currentTimeMillis(), SuspendMode.PASSIVE);
+//
+//				// 标记为丢失
+//				this.lost = true;
+//			}
+//		}
 
 		// 判断是否为异常网络中断
 		if (SpeakerState.CALLING == this.state) {
@@ -363,13 +356,13 @@ public class Speaker implements Speakable {
 		this.delegate.onQuitted(this, celletIdentifier);
 	}
 
-	private void fireSuspended(long timestamp, int mode) {
-		this.delegate.onSuspended(this, timestamp, mode);
-	}
+//	private void fireSuspended(long timestamp, int mode) {
+//		this.delegate.onSuspended(this, timestamp, mode);
+//	}
 
-	protected void fireResumed(long timestamp, Primitive primitive) {
-		this.delegate.onResumed(this, timestamp, primitive);
-	}
+//	protected void fireResumed(long timestamp, Primitive primitive) {
+//		this.delegate.onResumed(this, timestamp, primitive);
+//	}
 
 	protected void fireFailed(TalkServiceFailure failure) {
 		if (failure.getCode() == TalkFailureCode.CALL_FAILED) {
@@ -433,20 +426,20 @@ public class Speaker implements Speakable {
 		}
 
 		// 进行对比
-		if (null != this.capacity) {
-			if (newCapacity.autoSuspend != this.capacity.autoSuspend
-				|| newCapacity.suspendDuration != this.capacity.suspendDuration) {
-				StringBuilder buf = new StringBuilder();
-				buf.append("Talk capacity has changed from '");
-				buf.append(this.remoteTag);
-				buf.append("' : AutoSuspend=");
-				buf.append(newCapacity.autoSuspend);
-				buf.append(" SuspendDuration=");
-				buf.append(newCapacity.suspendDuration);
-				Logger.w(Speaker.class, buf.toString());
-				buf = null;
-			}
-		}
+//		if (null != this.capacity) {
+//			if (newCapacity.autoSuspend != this.capacity.autoSuspend
+//				|| newCapacity.suspendDuration != this.capacity.suspendDuration) {
+//				StringBuilder buf = new StringBuilder();
+//				buf.append("Talk capacity has changed from '");
+//				buf.append(this.remoteTag);
+//				buf.append("' : AutoSuspend=");
+//				buf.append(newCapacity.autoSuspend);
+//				buf.append(" SuspendDuration=");
+//				buf.append(newCapacity.suspendDuration);
+//				Logger.w(Speaker.class, buf.toString());
+//				buf = null;
+//			}
+//		}
 
 		// 设置新值
 		this.capacity = newCapacity;
@@ -455,10 +448,12 @@ public class Speaker implements Speakable {
 			StringBuilder buf = new StringBuilder();
 			buf.append("Update talk capacity from '");
 			buf.append(this.remoteTag);
-			buf.append("' : AutoSuspend=");
-			buf.append(this.capacity.autoSuspend);
-			buf.append(" SuspendDuration=");
-			buf.append(this.capacity.suspendDuration);
+			buf.append("' : secure=");
+			buf.append(this.capacity.secure);
+			buf.append(" attempts=");
+			buf.append(this.capacity.retryAttempts);
+			buf.append(" delay=");
+			buf.append(this.capacity.retryDelay);
 
 			Logger.d(Speaker.class, buf.toString());
 
@@ -528,38 +523,38 @@ public class Speaker implements Speakable {
 		this.fireDialogue(celletIdentifier, primitive);
 	}
 
-	protected void doSuspend(Packet packet, Session session) {
-		// 包格式：请求方标签|成功码|时间戳
+//	protected void doSuspend(Packet packet, Session session) {
+//		// 包格式：请求方标签|成功码|时间戳
+//
+//		byte[] code = packet.getSubsegment(1);
+//		if (TalkDefinition.SC_SUCCESS[0] == code[0] && TalkDefinition.SC_SUCCESS[1] == code[1]
+//			&& TalkDefinition.SC_SUCCESS[2] == code[2] && TalkDefinition.SC_SUCCESS[3] == code[3]) {
+//			// 更新状态
+//			this.state = SpeakerState.SUSPENDED;
+//
+//			long timestamp = Long.parseLong(Utils.bytes2String(packet.getSubsegment(2)));
+//			this.fireSuspended(timestamp, SuspendMode.INITATIVE);
+//		}
+//		else {
+//			this.state = SpeakerState.CALLED;
+//		}
+//	}
 
-		byte[] code = packet.getSubsegment(1);
-		if (TalkDefinition.SC_SUCCESS[0] == code[0] && TalkDefinition.SC_SUCCESS[1] == code[1]
-			&& TalkDefinition.SC_SUCCESS[2] == code[2] && TalkDefinition.SC_SUCCESS[3] == code[3]) {
-			// 更新状态
-			this.state = SpeakerState.SUSPENDED;
-
-			long timestamp = Long.parseLong(Utils.bytes2String(packet.getSubsegment(2)));
-			this.fireSuspended(timestamp, SuspendMode.INITATIVE);
-		}
-		else {
-			this.state = SpeakerState.CALLED;
-		}
-	}
-
-	protected void doResume(Packet packet, Session session) {
-		// 包格式：目的标签|时间戳|原语序列|Cellet
-
-		long timestamp = Long.parseLong(Utils.bytes2String(packet.getSubsegment(1)));
-		byte[] pridata = packet.getSubsegment(2);
-		ByteArrayInputStream stream = new ByteArrayInputStream(pridata);
-		String celletIdentifier = Utils.bytes2String(packet.getSubsegment(3));
-
-		// 反序列化原语
-		Primitive primitive = new Primitive(this.remoteTag);
-		primitive.setCelletIdentifier(celletIdentifier);
-		primitive.read(stream);
-
-		this.fireResumed(timestamp, primitive);
-	}
+//	protected void doResume(Packet packet, Session session) {
+//		// 包格式：目的标签|时间戳|原语序列|Cellet
+//
+//		long timestamp = Long.parseLong(Utils.bytes2String(packet.getSubsegment(1)));
+//		byte[] pridata = packet.getSubsegment(2);
+//		ByteArrayInputStream stream = new ByteArrayInputStream(pridata);
+//		String celletIdentifier = Utils.bytes2String(packet.getSubsegment(3));
+//
+//		// 反序列化原语
+//		Primitive primitive = new Primitive(this.remoteTag);
+//		primitive.setCelletIdentifier(celletIdentifier);
+//		primitive.read(stream);
+//
+//		this.fireResumed(timestamp, primitive);
+//	}
 
 	/** 向 Cellet 协商能力
 	 */

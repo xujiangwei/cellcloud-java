@@ -62,10 +62,6 @@ public class ChunkDialect extends Dialect {
 
 	private int readIndex = 0;
 
-	public ChunkDialect() {
-		super(ChunkDialect.DIALECT_NAME);
-	}
-
 	public ChunkDialect(String tracker) {
 		super(ChunkDialect.DIALECT_NAME, tracker);
 	}

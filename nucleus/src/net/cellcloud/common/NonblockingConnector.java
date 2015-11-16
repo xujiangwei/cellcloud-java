@@ -46,7 +46,7 @@ import java.util.Vector;
 public class NonblockingConnector extends MessageService implements MessageConnector {
 
 	// 缓冲块大小
-	private int block = 16384;
+	private int block = 65535;//16384;
 
 	private InetSocketAddress address;
 	private long connectTimeout;
@@ -59,7 +59,7 @@ public class NonblockingConnector extends MessageService implements MessageConne
 	private boolean spinning = false;
 	private boolean running = false;
 
-	private long sleepInterval = 100;
+	private long sleepInterval = 20;
 
 	private ByteBuffer readBuffer;
 	private ByteBuffer writeBuffer;

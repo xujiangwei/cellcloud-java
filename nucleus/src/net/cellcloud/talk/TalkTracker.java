@@ -37,42 +37,20 @@ import net.cellcloud.core.Cellet;
  * @author Jiangwei Xu
  */
 public final class TalkTracker {
-	private boolean autoSuspend = false;
-	private long suspendDuration = 5000;
 
+	private TalkCapacity capacity = null;
 	private LinkedList<Cellet> cellets = null;
 
 	protected TalkTracker() {
 		this.cellets = new LinkedList<Cellet>();
 	}
 
-	/** 返回是否进行自动挂起。
-	 */
-	public boolean isAutoSuspend() {
-		return this.autoSuspend;
+	public void setCapacity(TalkCapacity capacity) {
+		this.capacity = capacity;
 	}
 
-	/** 设置是否支持自动挂起。
-	 */
-	protected void setAutoSuspend(boolean value) {
-		this.autoSuspend = value;
-	}
-
-	/** 返回挂起时长。
-	 */
-	public long getSuspendDuration() {
-		return this.suspendDuration;
-	}
-
-	/** 设置挂起时长。
-	 */
-	protected long setSuspendDuration(long duration) {
-		if (duration < 5000)
-			this.suspendDuration = 5000;
-		else
-			this.suspendDuration = duration;
-
-		return this.suspendDuration;
+	public TalkCapacity getTalkCapacity() {
+		return this.capacity;
 	}
 
 	protected void addCellet(Cellet cellet) {

@@ -56,10 +56,10 @@ public final class TalkDefinition {
 	public static final byte[] TPT_HEARTBEAT = {'C', 'T', 'H', 'B'};
 
 	// 挂起指定的 Cellet 服务
-	public static final byte[] TPT_SUSPEND = {'C', 'T', 'S', 'U'};
+//	public static final byte[] TPT_SUSPEND = {'C', 'T', 'S', 'U'};
 
 	// 恢复指定的 Cellet 服务
-	public static final byte[] TPT_RESUME = {'C', 'T', 'R', 'E'};
+//	public static final byte[] TPT_RESUME = {'C', 'T', 'R', 'E'};
 
 
 	// 状态码
@@ -114,25 +114,25 @@ public final class TalkDefinition {
 
 	/** 判断是否是 SUSPEND 包。
 	 */
-	public static boolean isSuspend(final byte[] ptg) {
-		if (ptg[2] == TPT_SUSPEND[2] && ptg[3] == TPT_SUSPEND[3]) {
-			return true;
-		}
-		else {
-			return false;
-		}
-	}
+//	public static boolean isSuspend(final byte[] ptg) {
+//		if (ptg[2] == TPT_SUSPEND[2] && ptg[3] == TPT_SUSPEND[3]) {
+//			return true;
+//		}
+//		else {
+//			return false;
+//		}
+//	}
 
 	/** 判断是否是 RESUME 包。
 	 */
-	public static boolean isResume(final byte[] ptg) {
-		if (ptg[2] == TPT_RESUME[2] && ptg[3] == TPT_RESUME[3]) {
-			return true;
-		}
-		else {
-			return false;
-		}
-	}
+//	public static boolean isResume(final byte[] ptg) {
+//		if (ptg[2] == TPT_RESUME[2] && ptg[3] == TPT_RESUME[3]) {
+//			return true;
+//		}
+//		else {
+//			return false;
+//		}
+//	}
 
 	/** 判断是否是 DIALOGUE 包。
 	 */

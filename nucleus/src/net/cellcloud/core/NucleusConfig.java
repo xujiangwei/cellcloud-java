@@ -106,7 +106,7 @@ public final class NucleusConfig {
 		public int port = 7000;
 
 		/// Block 设置
-		public int block = 16384;
+		public int block = 65535;
 
 		/// 最大连接数
 		public int maxConnections = 2000;

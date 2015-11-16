@@ -55,22 +55,6 @@ public interface SpeakerDelegate {
 	/**
 	 * 
 	 * @param speaker
-	 * @param timestamp
-	 * @param mode
-	 */
-	public void onSuspended(Speakable speaker, long timestamp, int mode);
-
-	/**
-	 * 
-	 * @param speaker
-	 * @param timestamp
-	 * @param primitive
-	 */
-	public void onResumed(Speakable speaker, long timestamp, Primitive primitive);
-
-	/**
-	 * 
-	 * @param speaker
 	 * @param failure
 	 */
 	public void onFailed(Speakable speaker, TalkServiceFailure failure);

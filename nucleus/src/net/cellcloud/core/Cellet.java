@@ -134,20 +134,4 @@ public abstract class Cellet extends AbstractCellet {
 	public void quitted(final String tag) {
 		// Nothing
 	}
-
-	/**
-	 * @copydoc AbstractCellet::suspended(String)
-	 */
-	@Override
-	public void suspended(final String tag) {
-		// Nothing
-	}
-
-	/**
-	 * @copydoc AbstractCellet::resumed(String)
-	 */
-	@Override
-	public void resumed(final String tag) {
-		// Nothing
-	}
 }

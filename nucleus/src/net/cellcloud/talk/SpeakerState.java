@@ -42,5 +42,5 @@ public final class SpeakerState {
 	public final static int CALLED = 3;
 
 	/** 挂起状态。 */
-	public final static int SUSPENDED = 4;
+//	public final static int SUSPENDED = 4;
 }

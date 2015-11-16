@@ -39,11 +39,19 @@ public final class Version {
 	public static final int MINOR = 3;
 
 	/// 修订号
-	public static final int REVISION = 17;
+	public static final int REVISION = 19;
 
 	/// 版本名
 	public static final String NAME = "Journey";
 
 	/// 是否调试模式
 	public static boolean DEBUG = true;
+
+	public static String getNumbers() {
+		StringBuilder buf = new StringBuilder();
+		buf.append(MAJOR).append(".");
+		buf.append(MINOR).append(".");
+		buf.append(REVISION);
+		return buf.toString();
+	}
 }

@@ -116,7 +116,7 @@ public final class SuspendedTracker {
 			executor.execute(new Runnable() {
 				@Override
 				public void run() {
-					TalkService.getInstance().noticeResume(r.cellet, tag, r.timestamps, r.primitives, startTime);
+//					TalkService.getInstance().noticeResume(r.cellet, tag, r.timestamps, r.primitives, startTime);
 				}
 			});
 

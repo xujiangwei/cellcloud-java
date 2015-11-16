@@ -2,7 +2,7 @@
 -----------------------------------------------------------------------------
 This source file is part of Cell Cloud.
 
-Copyright (c) 2009-2012 Cell Cloud Team (www.cellcloud.net)
+Copyright (c) 2009-2015 Cell Cloud Team (www.cellcloud.net)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -28,51 +28,51 @@ package net.cellcloud.talk.dialect;
 
 import net.cellcloud.core.Cellet;
 
-/*! 方言工厂。
+/** 方言工厂。
  * 
- * \author Jiangwei Xu
+ * @author Jiangwei Xu
  */
 public abstract class DialectFactory {
 
-	/*! 返回元数据。
+	/** 返回元数据。
 	 */
 	abstract public DialectMetaData getMetaData();
 
-	/*! 创建方言。
+	/** 创建方言。
 	 */
 	abstract public Dialect create(final String tracker);
 
-	/*! 关闭。
+	/** 关闭。
 	 */
 	abstract public void shutdown();
 
-	/*! 发送回调。
-	 * \param identifier
-	 * \param dialect
-	 * \return
+	/** 发送回调。
+	 * @param identifier
+	 * @param dialect
+	 * @return
 	 */
 	abstract protected boolean onTalk(String identifier, Dialect dialect);
 
-	/*! 接收回调。
-	 * \param identifier
-	 * \param dialect
-	 * \return
+	/** 接收回调。
+	 * @param identifier
+	 * @param dialect
+	 * @return
 	 */
 	abstract protected boolean onDialogue(String identifier, Dialect dialect);
 
-	/*!
-	 * \param cellet
-	 * \param targetTag
-	 * \param dialect
-	 * \return
+	/**
+	 * @param cellet
+	 * @param targetTag
+	 * @param dialect
+	 * @return
 	 */
 	abstract protected boolean onTalk(Cellet cellet, String targetTag, Dialect dialect);
 
-	/*!
-	 * \param cellet
-	 * \param sourceTag
-	 * \param dialect
-	 * \return
+	/**
+	 * @param cellet
+	 * @param sourceTag
+	 * @param dialect
+	 * @return
 	 */
 	abstract protected boolean onDialogue(Cellet cellet, String sourceTag, Dialect dialect);
 }
