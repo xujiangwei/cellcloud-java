@@ -184,6 +184,10 @@ public class ChunkDialect extends Dialect {
 		return fact.checkCompleted(this.getOwnerTag(), this.sign);
 	}
 
+	public boolean isLast() {
+		return (this.chunkIndex + 1 == this.chunkNum) && !this.ack;
+	}
+
 	public int read(int index, byte[] buffer) {
 		ChunkDialectFactory fact = (ChunkDialectFactory) DialectEnumerator.getInstance().getFactory(ChunkDialect.DIALECT_NAME);
 		return fact.read(this.getOwnerTag(), this.sign, index, buffer);
