@@ -382,10 +382,10 @@ public class NonblockingConnector extends MessageService implements MessageConne
 							fireSessionOpened();
 						}
 					}
-					if (key.isReadable()) {
+					if (key.isValid() && key.isReadable()) {
 						receive(key);
 					}
-					if (key.isWritable()) {
+					if (key.isValid() && key.isWritable()) {
 						send(key);
 					}
 				} //# while

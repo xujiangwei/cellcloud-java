@@ -509,10 +509,37 @@ public class NonblockingAcceptor extends MessageService implements MessageAccept
 						if (key.isAcceptable()) {
 							accept(key);
 						}
-						if (key.isReadable()) {
+					}
+					catch (Exception e) {
+						// 取消
+						key.cancel();
+
+						if (this.spinning) {
+							// 没有被主动终止循环
+							continue;
+						}
+						else {
+							throw e;
+						}
+					}
+
+					try {
+						if (key.isValid() && key.isReadable()) {
 							receive(key);
 						}
-						if (key.isWritable()) {
+					}
+					catch (Exception e) {
+						if (this.spinning) {
+							// 没有被主动终止循环
+							continue;
+						}
+						else {
+							throw e;
+						}
+					}
+
+					try {
+						if (key.isValid() && key.isWritable()) {
 							send(key);
 						}
 					}
