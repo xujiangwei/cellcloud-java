@@ -31,6 +31,8 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import net.cellcloud.common.LogLevel;
+import net.cellcloud.common.Logger;
 import net.cellcloud.core.Cellet;
 
 /** 动作方言工厂。
@@ -53,7 +55,7 @@ public final class ActionDialectFactory extends DialectFactory {
 		this.threadCount = new AtomicInteger(0);
 		this.dialects = new LinkedList<ActionDialect>();
 		this.delegates = new LinkedList<ActionDelegate>();
-		this.executor = Executors.newFixedThreadPool(this.maxThreadCount / 2);
+		this.executor = Executors.newFixedThreadPool(this.maxThreadCount);
 	}
 
 	public int getThreadCounts() {
@@ -142,7 +144,19 @@ public final class ActionDialectFactory extends DialectFactory {
 
 						// Do action
 						if (null != adg) {
-							adg.doAction(adl);
+							if (null != adl.getCustomContext() && Logger.isDebugLevel()) {
+								Logger.d(this.getClass(), "Before do action: " + adl.getAction() + " -> " + adl.getCustomContext().toString());
+							}
+
+							try {
+								adg.doAction(adl);
+							} catch (Exception e) {
+								Logger.log(this.getClass(), e, LogLevel.ERROR);
+							}
+
+							if (null != adl.getCustomContext() && Logger.isDebugLevel()) {
+								Logger.d(this.getClass(), "After do action: " + adl.getAction() + " -> " + adl.getCustomContext().toString());
+							}
 						}
 					}
 
