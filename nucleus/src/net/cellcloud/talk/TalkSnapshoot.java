@@ -49,6 +49,13 @@ public final class TalkSnapshoot {
 	public long webSocketRx = 0;
 	public long webSocketTx = 0;
 
+	public int webSocketSecurePort = 0;
+	public int webSocketSecureConnections = 0;
+	public int webSocketSecureIdleTasks = 0;
+	public int webSocketSecureActiveTasks = 0;
+	public long webSocketSecureRx = 0;
+	public long webSocketSecureTx = 0;
+
 	public int httpConcurrentCounts = 0;
 	public int httpSessionNum = 0;
 	public int httpSessionMaxNum = 0;

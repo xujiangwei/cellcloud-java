@@ -38,8 +38,7 @@ import net.cellcloud.util.Utils;
  */
 public final class ServerConsultCommand extends ServerCommand {
 
-	public ServerConsultCommand(TalkService service, Session session,
-			Packet packet) {
+	public ServerConsultCommand(TalkService service, Session session, Packet packet) {
 		super(service, session, packet);
 	}
 
@@ -55,15 +54,14 @@ public final class ServerConsultCommand extends ServerCommand {
 
 		if (null == capacity) {
 			Logger.w(ServerConsultCommand.class, "Error talk capacity data format: tag=" + tag);
-			return;
+			capacity = new TalkCapacity();
 		}
 
 		TalkCapacity ret = this.service.processConsult(this.session, tag, capacity);
 
-		if (null == ret) {
-			Logger.w(ServerConsultCommand.class, "Can not match talk capacity: tag=" + tag);
-			return;
-		}
+//		if (null == ret) {
+//			Logger.w(ServerConsultCommand.class, "Can not match talk capacity: tag=" + tag);
+//		}
 
 		// 应答		
 		// 包格式：源标签|能力描述序列化数据

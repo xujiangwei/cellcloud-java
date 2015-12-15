@@ -137,18 +137,18 @@ public final class TalkAcceptorHandler implements MessageHandler {
 //				Logger.log(TalkAcceptorHandler.class, e, LogLevel.ERROR);
 //			}
 //		}
-		else if (TalkDefinition.isConsult(tag)) {
+		else if (TalkDefinition.isRequest(tag)) {
 			try {
-				ServerConsultCommand cmd = new ServerConsultCommand(this.talkService, session, packet);
+				ServerRequestCommand cmd = new ServerRequestCommand(this.talkService, session, packet);
 				cmd.execute();
 				cmd = null;
 			} catch (Exception e) {
 				Logger.log(TalkAcceptorHandler.class, e, LogLevel.ERROR);
 			}
 		}
-		else if (TalkDefinition.isRequest(tag)) {
+		else if (TalkDefinition.isConsult(tag)) {
 			try {
-				ServerRequestCommand cmd = new ServerRequestCommand(this.talkService, session, packet);
+				ServerConsultCommand cmd = new ServerConsultCommand(this.talkService, session, packet);
 				cmd.execute();
 				cmd = null;
 			} catch (Exception e) {

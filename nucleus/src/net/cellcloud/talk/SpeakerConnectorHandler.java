@@ -2,7 +2,7 @@
 -----------------------------------------------------------------------------
 This source file is part of Cell Cloud.
 
-Copyright (c) 2009-2014 Cell Cloud Team (www.cellcloud.net)
+Copyright (c) 2009-2016 Cell Cloud Team (www.cellcloud.net)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -139,21 +139,18 @@ public final class SpeakerConnectorHandler implements MessageHandler {
 			&& TalkDefinition.TPT_DIALOGUE[3] == tag[3]) {
 			this.speaker.doDialogue(packet, session);
 		}
-//		else if (TalkDefinition.TPT_RESUME[2] == tag[2]
-//			&& TalkDefinition.TPT_RESUME[3] == tag[3]) {
-//			this.speaker.doResume(packet, session);
-//		}
-//		else if (TalkDefinition.TPT_SUSPEND[2] == tag[2]
-//				&& TalkDefinition.TPT_SUSPEND[3] == tag[3]) {
-//			this.speaker.doSuspend(packet, session);
-//		}
-		else if (TalkDefinition.TPT_CONSULT[2] == tag[2]
-			&& TalkDefinition.TPT_CONSULT[3] == tag[3]) {
-			this.speaker.doConsult(packet, session);
-		}
 		else if (TalkDefinition.TPT_REQUEST[2] == tag[2]
 			&& TalkDefinition.TPT_REQUEST[3] == tag[3]) {
-			this.speaker.doReply(packet, session);
+			// 完成 Cellet 请求
+			this.speaker.doRequest(packet, session);
+		}
+		else if (TalkDefinition.TPT_CONSULT[2] == tag[2]
+			&& TalkDefinition.TPT_CONSULT[3] == tag[3]) {
+			// 执行协商
+			this.speaker.doConsult(packet, session);
+
+			// 请求 Cellet
+			this.speaker.requestCellets(session);
 		}
 		else if (TalkDefinition.TPT_CHECK[2] == tag[2]
 			&& TalkDefinition.TPT_CHECK[3] == tag[3]) {
@@ -162,11 +159,13 @@ public final class SpeakerConnectorHandler implements MessageHandler {
 			byte[] rtag = packet.getSubsegment(1);
 			this.speaker.recordTag(Utils.bytes2String(rtag));
 
-			// 请求 Cellet
-			this.speaker.requestCellets(session);
+			// 请求进行协商
+			this.speaker.requestConsult();
 		}
 		else if (TalkDefinition.TPT_INTERROGATE[2] == tag[2]
 			&& TalkDefinition.TPT_INTERROGATE[3] == tag[3]) {
+
+			// 请求进行校验会话
 			this.speaker.requestCheck(packet, session);
 
 			// 重置重试参数

@@ -35,12 +35,12 @@ import java.nio.charset.Charset;
 public final class TalkCapacity {
 
 	/// 是否为加密会话
-	public boolean secure = false;
+	protected boolean secure = false;
 
 	/// 重复尝试连接的次数
-	public int retryAttempts = 0;
+	protected int retryAttempts = 0;
 	/// 两次连接中间隔时间，单位毫秒
-	public long retryDelay = 5000;
+	protected long retryDelay = 5000;
 
 	public TalkCapacity() {
 	}
@@ -51,6 +51,17 @@ public final class TalkCapacity {
 	 * @param retryDelay
 	 */
 	public TalkCapacity(int retryAttempts, long retryDelay) {
+		this(false, retryAttempts, retryDelay);
+	}
+
+	/**
+	 * 构造函数。
+	 * @param secure
+	 * @param retryAttempts
+	 * @param retryDelay
+	 */
+	public TalkCapacity(boolean secure, int retryAttempts, long retryDelay) {
+		this.secure = secure;
 		this.retryAttempts = retryAttempts;
 		this.retryDelay = retryDelay;
 

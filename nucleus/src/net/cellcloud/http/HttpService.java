@@ -26,6 +26,9 @@ THE SOFTWARE.
 
 package net.cellcloud.http;
 
+import java.io.IOException;
+import java.net.URISyntaxException;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
@@ -38,11 +41,17 @@ import net.cellcloud.common.Service;
 import net.cellcloud.core.NucleusContext;
 import net.cellcloud.exception.SingletonException;
 
+import org.eclipse.jetty.http.HttpVersion;
+import org.eclipse.jetty.server.HttpConfiguration;
+import org.eclipse.jetty.server.HttpConnectionFactory;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.ServerConnector;
+import org.eclipse.jetty.server.SslConnectionFactory;
 import org.eclipse.jetty.server.handler.ContextHandler;
 import org.eclipse.jetty.server.handler.ContextHandlerCollection;
 import org.eclipse.jetty.server.handler.ResourceHandler;
+import org.eclipse.jetty.util.resource.FileResource;
+import org.eclipse.jetty.util.ssl.SslContextFactory;
 
 /** HTTP 服务。
  * 
@@ -61,10 +70,17 @@ public final class HttpService implements Service {
 	// HTTP URI 上下文 Holder
 	protected ConcurrentHashMap<String, CapsuleHolder> holders;
 
+	// WebSocket
 	private Server wsServer = null;
-	private int webSocketPort = 7777;
-	private int webSocketQueueSize = 1000;
+	private int wsPort = 7777;
+	private int wsQueueSize = 1000;
 	private JettyWebSocket webSocket;
+
+	// WebSocket Secure
+	private Server wssServer = null;
+	private int wssPort = 7778;
+	private int wssQueueSize = 1000;
+	private JettyWebSocket webSocketSecure;
 
 	/**
 	 * 构造函数。
@@ -157,22 +173,17 @@ public final class HttpService implements Service {
 
 		// WebSocket 支持
 		if (null != this.wsServer) {
-			ServerConnector connector = new ServerConnector(this.wsServer);
-			connector.setPort(this.webSocketPort);
-			connector.setAcceptQueueSize(this.webSocketQueueSize);
-
-			this.wsServer.addConnector(connector);
-
-			JettyWebSocketHandler wsh = new JettyWebSocketHandler(this.webSocket);
-			this.wsServer.setHandler(wsh);
-
-			ResourceHandler rHandler = new ResourceHandler();
-			rHandler.setDirectoriesListed(true);
-			rHandler.setResourceBase("cell");
-			wsh.setHandler(rHandler);
-
 			try {
 				this.wsServer.start();
+			} catch (Exception e) {
+				Logger.log(HttpService.class, e, LogLevel.ERROR);
+			}
+		}
+
+		// WebSocket Secure 支持
+		if (null != this.wssServer) {
+			try {
+				this.wssServer.start();
 			} catch (Exception e) {
 				Logger.log(HttpService.class, e, LogLevel.ERROR);
 			}
@@ -195,6 +206,18 @@ public final class HttpService implements Service {
 			} catch (Exception e) {
 				Logger.log(HttpService.class, e, LogLevel.WARNING);
 			}
+
+			this.wsServer = null;
+		}
+
+		if (null != this.wssServer) {
+			try {
+				this.wssServer.stop();
+			} catch (Exception e) {
+				Logger.log(HttpService.class, e, LogLevel.WARNING);
+			}
+
+			this.wssServer = null;
 		}
 	}
 
@@ -253,6 +276,80 @@ public final class HttpService implements Service {
 		return false;
 	}
 
+	public WebSocketManager activeWebSocketSecure(int port, int queueSize, MessageHandler handler
+			, String keyStorePassword, String keyManagerPassword) {
+		if (null == keyStorePassword || null == keyManagerPassword || port <= 80) {
+			Logger.w(this.getClass(), "No key store password, can NOT start Web Socket Secure service");
+			return null;
+		}
+
+		if (null != this.wssServer) {
+			return this.webSocketSecure;
+		}
+
+		this.wssPort = port;
+		this.wssQueueSize = queueSize;
+		this.webSocketSecure = new JettyWebSocket(handler);
+
+		this.wssServer = new Server();
+
+		SslContextFactory sslContextFactory = new SslContextFactory();
+		try {
+			URL url = this.getClass().getResource("/nucleus.jks");
+
+			Logger.i(this.getClass(), "WSS key store file: " + url.toString());
+
+			sslContextFactory.setKeyStoreResource(new FileResource(url));
+		} catch (IOException e) {
+			Logger.log(this.getClass(), e, LogLevel.ERROR);
+			this.wssServer = null;
+			this.webSocketSecure = null;
+			return null;
+		} catch (URISyntaxException e) {
+			Logger.log(this.getClass(), e, LogLevel.ERROR);
+			this.wssServer = null;
+			this.webSocketSecure = null;
+			return null;
+		} catch (Exception e) {
+			Logger.log(this.getClass(), e, LogLevel.ERROR);
+			this.wssServer = null;
+			this.webSocketSecure = null;
+			return null;
+		}
+		sslContextFactory.setKeyStorePassword(keyStorePassword/*"cellcloud"*/);
+		sslContextFactory.setKeyManagerPassword(keyManagerPassword/*"cellcloud"*/);
+		SslConnectionFactory sslConnectionFactory = new SslConnectionFactory(sslContextFactory, HttpVersion.HTTP_1_1.asString());
+		HttpConnectionFactory httpConnectionFactory = new HttpConnectionFactory(new HttpConfiguration());
+		ServerConnector sslConnector = new ServerConnector(this.wssServer, sslConnectionFactory, httpConnectionFactory);
+		sslConnector.setPort(this.wssPort);
+		sslConnector.setAcceptQueueSize(this.wssQueueSize);
+
+		this.wssServer.addConnector(sslConnector);
+
+		JettyWebSocketHandler wsh = new JettyWebSocketHandler(this.webSocketSecure);
+		this.wssServer.setHandler(wsh);
+
+		ResourceHandler rHandler = new ResourceHandler();
+		rHandler.setDirectoriesListed(true);
+		rHandler.setResourceBase("cell");
+		wsh.setHandler(rHandler);
+
+		return this.webSocketSecure;
+	}
+
+	public void deactiveWebSocketSecure() {
+		if (this.wssServer != null) {
+			try {
+				this.wssServer.stop();
+			} catch (Exception e) {
+				Logger.log(HttpService.class, e, LogLevel.WARNING);
+			}
+
+			this.wssServer = null;
+			this.webSocketSecure = null;
+		}
+	}
+
 	/**
 	 * 激活 WebSocket 服务。
 	 * @param port 指定 WebSocket 接口。
@@ -262,10 +359,30 @@ public final class HttpService implements Service {
 			return null;
 		}
 
-		this.wsServer = new Server();
-		this.webSocketPort = port;
-		this.webSocketQueueSize = queueSize;
+		if (null != this.wsServer) {
+			return this.webSocket;
+		}
+
+		this.wsPort = port;
+		this.wsQueueSize = queueSize;
 		this.webSocket = new JettyWebSocket(handler);
+
+		this.wsServer = new Server();
+
+		ServerConnector connector = new ServerConnector(this.wsServer);
+		connector.setPort(this.wsPort);
+		connector.setAcceptQueueSize(this.wsQueueSize);
+
+		this.wsServer.addConnector(connector);
+
+		JettyWebSocketHandler wsh = new JettyWebSocketHandler(this.webSocket);
+		this.wsServer.setHandler(wsh);
+
+		ResourceHandler rHandler = new ResourceHandler();
+		rHandler.setDirectoriesListed(true);
+		rHandler.setResourceBase("cell");
+		wsh.setHandler(rHandler);
+
 		return this.webSocket;
 	}
 
@@ -286,7 +403,11 @@ public final class HttpService implements Service {
 	}
 
 	public int getWebSocketPort() {
-		return this.webSocketPort;
+		return this.wsPort;
+	}
+
+	public int getWebSocketSecurePort() {
+		return this.wssPort;
 	}
 
 	public int getWebSocketSessionNum() {
@@ -297,7 +418,15 @@ public final class HttpService implements Service {
 		return 0;
 	}
 
-	public long getTotalRx() {
+	public int getWebSocketSecureSessionNum() {
+		if (null != this.webSocketSecure) {
+			return this.webSocketSecure.numSessions();
+		}
+
+		return 0;
+	}
+
+	public long getTotalWSRx() {
 		if (null != this.webSocket) {
 			return this.webSocket.getTotalRx();
 		}
@@ -305,9 +434,25 @@ public final class HttpService implements Service {
 		return 0;
 	}
 
-	public long getTotalTx() {
+	public long getTotalWSSRx() {
+		if (null != this.webSocketSecure) {
+			return this.webSocketSecure.getTotalRx();
+		}
+
+		return 0;
+	}
+
+	public long getTotalWSTx() {
 		if (null != this.webSocket) {
 			return this.webSocket.getTotalTx();
+		}
+
+		return 0;
+	}
+
+	public long getTotalWSSTx() {
+		if (null != this.webSocketSecure) {
+			return this.webSocketSecure.getTotalTx();
 		}
 
 		return 0;

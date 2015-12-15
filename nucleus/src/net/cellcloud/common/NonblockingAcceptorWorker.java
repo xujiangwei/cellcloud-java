@@ -30,6 +30,7 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.SocketChannel;
 import java.util.ArrayList;
+import java.util.LinkedList;
 import java.util.Vector;
 
 
@@ -60,6 +61,9 @@ public final class NonblockingAcceptorWorker extends Thread {
 
 	private long eachSessionReadInterval = -1;
 	private long eachSessionWriteInterval = -1;
+
+	// 接收消息时的数组缓存池
+	private LinkedList<ArrayList<byte[]>> tenantablePool = new LinkedList<ArrayList<byte[]>>();
 
 	public NonblockingAcceptorWorker(NonblockingAcceptor acceptor) {
 		this.acceptor = acceptor;
@@ -153,6 +157,7 @@ public final class NonblockingAcceptorWorker extends Thread {
 		}
 
 		this.working = false;
+		this.tenantablePool.clear();
 	}
 
 	protected long getTX() {
@@ -361,6 +366,12 @@ public final class NonblockingAcceptorWorker extends Thread {
 						break;
 					}
 
+					// 是否进行消息加密
+					byte[] key = session.getSecretKey();
+					if (null != key) {
+						this.encryptMessage(message, key);
+					}
+
 					// 根据是否有数据掩码组装数据包
 					if (this.acceptor.existDataMark()) {
 						byte[] data = message.get();
@@ -410,23 +421,53 @@ public final class NonblockingAcceptorWorker extends Thread {
 
 		// 根据数据标志获取数据
 		if (this.acceptor.existDataMark()) {
-			ArrayList<byte[]> out = new ArrayList<byte[]>(2);
+			ArrayList<byte[]> out = this.borrowList();
 			// 进行递归提取
 			this.extract(out, session, data);
 
 			if (!out.isEmpty()) {
 				for (byte[] bytes : out) {
 					Message message = new Message(bytes);
+
+					// 是否是加密会话，如果是则进行解密
+					byte[] key = session.getSecretKey();
+					if (null != key) {
+						this.decryptMessage(message, key);
+					}
+
 					this.acceptor.fireMessageReceived(session, message);
 				}
 
 				out.clear();
 			}
-			out = null;
+			this.returnList(out);
 		}
 		else {
 			Message message = new Message(data);
+
+			// 是否是加密会话，如果是则进行解密
+			byte[] key = session.getSecretKey();
+			if (null != key) {
+				this.decryptMessage(message, key);
+			}
+
 			this.acceptor.fireMessageReceived(session, message);
+		}
+	}
+
+	private ArrayList<byte[]> borrowList() {
+		synchronized (this.tenantablePool) {
+			if (this.tenantablePool.isEmpty()) {
+				return new ArrayList<byte[]>(2);
+			}
+
+			return this.tenantablePool.removeFirst();
+		}
+	}
+
+	private void returnList(ArrayList<byte[]> list) {
+		synchronized (this.tenantablePool) {
+			this.tenantablePool.add(list);
 		}
 	}
 
@@ -607,5 +648,17 @@ public final class NonblockingAcceptorWorker extends Thread {
 			}
 		}
 		return true;
+	}
+
+	private void encryptMessage(Message message, byte[] key) {
+		byte[] plaintext = message.get();
+		byte[] ciphertext = Cryptology.getInstance().simpleEncrypt(plaintext, key);
+		message.set(ciphertext);
+	}
+
+	private void decryptMessage(Message message, byte[] key) {
+		byte[] ciphertext = message.get();
+		byte[] plaintext = Cryptology.getInstance().simpleDecrypt(ciphertext, key);
+		message.set(plaintext);
 	}
 }

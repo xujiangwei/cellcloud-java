@@ -2,7 +2,7 @@
 -----------------------------------------------------------------------------
 This source file is part of Cell Cloud.
 
-Copyright (c) 2009-2012 Cell Cloud Team (www.cellcloud.net)
+Copyright (c) 2009-2016 Cell Cloud Team (www.cellcloud.net)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -27,6 +27,7 @@ THE SOFTWARE.
 package net.cellcloud.common;
 
 import java.net.InetSocketAddress;
+import java.util.concurrent.ConcurrentHashMap;
 
 import net.cellcloud.util.Utils;
 
@@ -41,15 +42,20 @@ public class Session {
 	private MessageService service;
 	private InetSocketAddress address;
 
+	private byte[] secretKey;
+
 	protected byte[] cache;
 	protected int cacheSize;
 	protected int cacheCursor;
+
+	private ConcurrentHashMap<String, Object> attributes;
 
 	public Session(MessageService service, InetSocketAddress address) {
 		this.id = Math.abs(Utils.randomLong());
 		this.timestamp = System.currentTimeMillis();
 		this.service = service;
 		this.address = address;
+		this.secretKey = null;
 
 		this.cacheSize = 2048;
 		this.cache = new byte[this.cacheSize];
@@ -61,6 +67,7 @@ public class Session {
 		this.timestamp = System.currentTimeMillis();
 		this.service = service;
 		this.address = address;
+		this.secretKey = null;
 
 		this.cacheSize = 2048;
 		this.cache = new byte[this.cacheSize];
@@ -90,6 +97,95 @@ public class Session {
 	 */
 	public InetSocketAddress getAddress() {
 		return this.address;
+	}
+
+	/**
+	 * 添加属性。
+	 * @param name
+	 * @param value
+	 */
+	public void addAttribute(String name, Object value) {
+		if (null == this.attributes) {
+			this.attributes = new ConcurrentHashMap<String, Object>();
+		}
+
+		this.attributes.put(name, value);
+	}
+
+	/**
+	 * 移除属性。
+	 * @param name
+	 */
+	public Object removeAttribute(String name) {
+		if (null == this.attributes) {
+			return null;
+		}
+
+		return this.attributes.remove(name);
+	}
+
+	/**
+	 * 获取指定的属性值。
+	 * @param name
+	 * @return
+	 */
+	public Object getAttribute(String name) {
+		if (null == this.attributes) {
+			return null;
+		}
+
+		return this.attributes.get(name);
+	}
+
+	public boolean hasAttribute(String name) {
+		if (null == this.attributes) {
+			return false;
+		}
+
+		return this.attributes.containsKey(name);
+	}
+
+	/**
+	 * 返回是否是安全连接。
+	 * @return
+	 */
+	public boolean isSecure() {
+		return (null != this.secretKey);
+	}
+
+	/**
+	 * 激活密钥。
+	 * @param key
+	 * @return
+	 */
+	public boolean activeSecretKey(byte[] key) {
+		if (null == key) {
+			this.secretKey = null;
+			return false;
+		}
+
+		if (key.length < 8) {
+			return false;
+		}
+
+		this.secretKey = new byte[8];
+		System.arraycopy(key, 0, this.secretKey, 0, 8);
+		return true;
+	}
+
+	/**
+	 * 吊销密钥。
+	 */
+	public void deactiveSecretKey() {
+		this.secretKey = null;
+	}
+
+	/**
+	 * 返回安全密钥。
+	 * @return
+	 */
+	public byte[] getSecretKey() {
+		return this.secretKey;
 	}
 
 	/** 向该会话写消息。

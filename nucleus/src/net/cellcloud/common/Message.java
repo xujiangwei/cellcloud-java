@@ -48,6 +48,10 @@ public class Message {
 		this.data = data.getBytes(Charset.forName("UTF-8"));
 	}
 
+	protected void set(byte[] newData) {
+		this.data = newData;
+	}
+
 	/** 返回消息数据。
 	 */
 	public byte[] get() {

@@ -216,6 +216,13 @@ public final class JettyWebSocket implements WebSocketManager {
 	}
 
 	@Override
+	public boolean hasSession(WebSocketSession session) {
+		synchronized (this.sessions) {
+			return this.wsSessions.contains(session);
+		}
+	}
+
+	@Override
 	public void write(WebSocketSession session, Message message) {
 		session.write(message);
 

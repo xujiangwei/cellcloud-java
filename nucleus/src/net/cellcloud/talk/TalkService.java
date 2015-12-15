@@ -34,6 +34,8 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.Timer;
+import java.util.TimerTask;
 import java.util.Vector;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentSkipListSet;
@@ -69,6 +71,7 @@ import net.cellcloud.talk.dialect.Dialect;
 import net.cellcloud.talk.dialect.DialectEnumerator;
 import net.cellcloud.talk.stuff.PrimitiveSerializer;
 import net.cellcloud.util.CachedQueueExecutor;
+import net.cellcloud.util.Clock;
 import net.cellcloud.util.Utils;
 
 import org.json.JSONException;
@@ -92,13 +95,16 @@ public final class TalkService implements Service, SpeakerDelegate {
 	private boolean httpEnabled;
 	private int httpPort;
 	private int httpQueueSize;
-	private WebSocketMessageHandler wsHandler;
 
 	private CookieSessionManager httpSessionManager;
 	private HttpSessionListener httpSessionListener;
 	private long httpSessionTimeout;
 
-	private WebSocketManager webSocketManager;
+	private WebSocketMessageHandler wsHandler;
+	private WebSocketManager wsManager;
+
+	private WebSocketMessageHandler wssHandler;
+	private WebSocketManager wssManager;
 
 	private NonblockingAcceptor acceptor;
 	private NucleusContext nucleusContext;
@@ -207,13 +213,24 @@ public final class TalkService implements Service, SpeakerDelegate {
 			ts.networkTx = this.acceptor.getWorkersTx();
 		}
 
-		if (null != HttpService.getInstance() && null != this.wsHandler) {
-			ts.webSocketPort = this.getHttpPort() + 1;
-			ts.webSocketConnections = HttpService.getInstance().getWebSocketSessionNum();
-			ts.webSocketIdleTasks = this.wsHandler.numIdleTasks();
-			ts.webSocketActiveTasks = this.wsHandler.numActiveTasks();
-			ts.webSocketRx = HttpService.getInstance().getTotalRx();
-			ts.webSocketTx = HttpService.getInstance().getTotalTx();
+		if (null != HttpService.getInstance()) {
+			if (null != this.wsHandler) {
+				ts.webSocketPort = HttpService.getInstance().getWebSocketPort();
+				ts.webSocketConnections = HttpService.getInstance().getWebSocketSessionNum();
+				ts.webSocketIdleTasks = this.wsHandler.numIdleTasks();
+				ts.webSocketActiveTasks = this.wsHandler.numActiveTasks();
+				ts.webSocketRx = HttpService.getInstance().getTotalWSRx();
+				ts.webSocketTx = HttpService.getInstance().getTotalWSTx();
+			}
+
+			if (null != this.wssHandler) {
+				ts.webSocketSecurePort = HttpService.getInstance().getWebSocketSecurePort();
+				ts.webSocketSecureConnections = HttpService.getInstance().getWebSocketSecureSessionNum();
+				ts.webSocketSecureIdleTasks = this.wssHandler.numIdleTasks();
+				ts.webSocketSecureActiveTasks = this.wssHandler.numActiveTasks();
+				ts.webSocketSecureRx = HttpService.getInstance().getTotalWSSRx();
+				ts.webSocketSecureTx = HttpService.getInstance().getTotalWSSTx();
+			}
 
 			ts.httpConcurrentCounts = HttpService.getInstance().getConcurrentCounts();
 			ts.httpSessionNum = this.httpSessionManager.getSessionNum();
@@ -250,9 +267,6 @@ public final class TalkService implements Service, SpeakerDelegate {
 		if (null == this.tagContexts) {
 			this.tagContexts = new ConcurrentHashMap<String, TalkSessionContext>();
 		}
-//		if (null == this.suspendedTrackers) {
-//			this.suspendedTrackers = new ConcurrentHashMap<String, SuspendedTracker>();
-//		}
 		if (null == this.tagList) {
 			this.tagList = new ConcurrentSkipListSet<String>();
 		}
@@ -556,7 +570,8 @@ public final class TalkService implements Service, SpeakerDelegate {
 		Message message = null;
 
 		synchronized (context) {
-			if (context.getTracker().hasCellet(cellet)) {
+			TalkTracker tracker = context.getTracker();
+			if (tracker.hasCellet(cellet)) {
 				// 对方言进行是否劫持处理
 				if (null != this.callbackListener && primitive.isDialectal()) {
 					boolean ret = this.callbackListener.doTalk(cellet, targetTag, primitive.getDialect());
@@ -568,7 +583,14 @@ public final class TalkService implements Service, SpeakerDelegate {
 
 				Session session = context.getLastSession();
 				if (null != session) {
+					// 检查是否加密连接
+					TalkCapacity cap = tracker.getCapacity();
+					if (null != cap && cap.secure && !session.isSecure()) {
+						session.activeSecretKey((byte[]) session.getAttribute("key"));
+					}
+
 					message = this.packetDialogue(cellet, primitive, (session instanceof WebSocketSession));
+
 					if (null != message) {
 						session.write(message);
 					}
@@ -590,6 +612,7 @@ public final class TalkService implements Service, SpeakerDelegate {
 		if (null != primitive) {
 			return this.notice(targetTag, primitive, cellet, sandbox);
 		}
+
 		return false;
 	}
 
@@ -933,8 +956,17 @@ public final class TalkService implements Service, SpeakerDelegate {
 		}
 
 		this.wsHandler = new WebSocketMessageHandler(this);
-		this.webSocketManager = HttpService.getInstance().activeWebSocket(this.httpPort + 1
+		this.wsManager = HttpService.getInstance().activeWebSocket(this.httpPort + 1
 				, this.httpQueueSize, this.wsHandler);
+
+		this.wssHandler = new WebSocketMessageHandler(this);
+		this.wssManager = HttpService.getInstance().activeWebSocketSecure(this.httpPort + 7
+				, this.httpQueueSize, this.wssHandler
+				, Nucleus.getInstance().getConfig().talk.keyStorePassword
+				, Nucleus.getInstance().getConfig().talk.keyManagerPassword);
+		if (null == this.wssManager) {
+			this.wssHandler = null;
+		}
 
 		// 创建 Session 管理器
 		this.httpSessionManager = new CookieSessionManager();
@@ -1092,9 +1124,15 @@ public final class TalkService implements Service, SpeakerDelegate {
 			return this.unidentifiedSessions.get(sid);
 		}
 
+		// 生成随机 Key
+		String key = Utils.randomString(8);
+
+		// 将密钥记录到会话属性里
+		session.addAttribute("key", Utils.string2Bytes(key));
+
 		Certificate cert = new Certificate();
 		cert.session = session;
-		cert.key = Utils.randomString(8);
+		cert.key = key;
 		cert.plaintext = Utils.randomString(16);
 		this.unidentifiedSessions.put(sid, cert);
 
@@ -1229,7 +1267,13 @@ public final class TalkService implements Service, SpeakerDelegate {
 			this.acceptor.close(session);
 		}
 		else if (session instanceof WebSocketSession) {
-			this.webSocketManager.close((WebSocketSession)session);
+			WebSocketSession ws = (WebSocketSession) session;
+			if (null != this.wssManager && this.wssManager.hasSession(ws)) {
+				this.wssManager.close(ws);
+			}
+			else {
+				this.wsManager.close(ws);
+			}
 		}
 
 		// 计数
@@ -1238,7 +1282,7 @@ public final class TalkService implements Service, SpeakerDelegate {
 
 	/** 请求 Cellet 。
 	 */
-	protected TalkTracker processRequest(Session session, String tag, String identifier) {
+	protected TalkTracker processRequest(final Session session, final String tag, final String identifier) {
 		TalkSessionContext ctx = this.tagContexts.get(tag);
 		if (null == ctx) {
 			return null;
@@ -1254,17 +1298,41 @@ public final class TalkService implements Service, SpeakerDelegate {
 				tracker.addCellet(cellet);
 			}
 
-			// 尝试恢复被动挂起的 Talk
-//			if (this.tryResumeTalk(tag, cellet, SuspendMode.PASSIVE, 0)) {
-//				// 回调 resumed
-//				cellet.resumed(tag);
-//			}
-//			else {
+			// 使用定时器延迟处理
+			Timer timer = null;
+			if (session.hasAttribute("timer")) {
+				timer = (Timer) session.getAttribute("timer");
+				timer.cancel();
+				timer.purge();
+				session.removeAttribute("timer");
+			}
+
+			timer = new Timer();
+			timer.schedule(new TimerTask() {
+				@Override
+				public void run() {
+					TalkSessionContext ctx = tagContexts.get(tag);
+					if (null != ctx) {
+						TalkCapacity capacity = ctx.getTracker().getCapacity();
+						if (null != capacity) {
+							if (capacity.secure && !session.isSecure()) {
+								boolean ret = session.activeSecretKey((byte[]) session.getAttribute("key"));
+								if (ret) {
+									Endpoint ep = ctx.getEndpoint();
+									Logger.i(Speaker.class, "Active secret key for client: " + ep.getCoordinate().getAddress().getHostString());
+								}
+							}
+						}
+					}
+
+					session.removeAttribute("timer");
+				}
+			}, 100);
+
+			session.addAttribute("timer", timer);
 
 			// 回调 contacted
 			cellet.contacted(tag);
-
-//			}
 		}
 
 		return tracker;
@@ -1275,10 +1343,10 @@ public final class TalkService implements Service, SpeakerDelegate {
 	protected TalkCapacity processConsult(Session session, String tag, TalkCapacity capacity) {
 		TalkSessionContext ctx = this.tagContexts.get(tag);
 		if (null == ctx) {
-			return null;
+			return capacity;
 		}
 
-		// TODO 能力记录
+		// 协商终端能力
 		TalkTracker tracker = ctx.getTracker();
 		tracker.setCapacity(capacity);
 
@@ -1462,7 +1530,13 @@ public final class TalkService implements Service, SpeakerDelegate {
 				}
 				else if (session instanceof WebSocketSession) {
 					// 删除 WebSocket 的 Session
-					this.webSocketManager.close((WebSocketSession)session);
+					WebSocketSession ws = (WebSocketSession) session;
+					if (null != this.wssManager && this.wssManager.hasSession(ws)) {
+						this.wssManager.close(ws);
+					}
+					else {
+						this.wsManager.close(ws);
+					}
 				}
 				else {
 					// 关闭私有协议的 Session
@@ -1647,6 +1721,8 @@ public final class TalkService implements Service, SpeakerDelegate {
 
 		// 是否是 WebSocket 的 Session
 		if (session instanceof WebSocketSession) {
+			WebSocketSession ws = (WebSocketSession) session;
+
 			byte[] ciphertext = Cryptology.getInstance().simpleEncrypt(text.getBytes(), key.getBytes());
 			JSONObject data = new JSONObject();
 			try {
@@ -1662,7 +1738,12 @@ public final class TalkService implements Service, SpeakerDelegate {
 			}
 
 			Message message = new Message(data.toString());
-			this.webSocketManager.write((WebSocketSession)session, message);
+			if (null != this.wssManager && this.wssManager.hasSession(ws)) {
+				this.wssManager.write(ws, message);
+			}
+			else {
+				this.wsManager.write(ws, message);
+			}
 			message = null;
 			return;
 		}
@@ -1747,14 +1828,14 @@ public final class TalkService implements Service, SpeakerDelegate {
 	}
 
 	/** 会话身份证书。
-	*/
+	 */
 	protected class Certificate {
 		/** 构造函数。 */
 		protected Certificate() {
 			this.session = null;
 			this.key = null;
 			this.plaintext = null;
-			this.time = System.currentTimeMillis();
+			this.time = Clock.currentTimeMillis();
 			this.checked = false;
 		}
 

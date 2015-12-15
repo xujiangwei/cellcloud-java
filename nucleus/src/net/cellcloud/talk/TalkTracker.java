@@ -49,7 +49,7 @@ public final class TalkTracker {
 		this.capacity = capacity;
 	}
 
-	public TalkCapacity getTalkCapacity() {
+	public TalkCapacity getCapacity() {
 		return this.capacity;
 	}
 

@@ -56,6 +56,11 @@
 				encoding="UTF-8" debug="on" deprecation="on" optimize="off" includes="**">
 			<classpath refid="classpath" />
 		</javac>
+		<copy todir="${bin.dir}/debug/">
+			<fileset dir="${src.dir}/">
+				<include name="nucleus.jks" />
+			</fileset>
+		</copy>
 		<echo message="Packing the class files..." />
 		<jar jarfile="${dist.dir}/nucleus-${version.brand}-build${touch.time}-d.jar">
 			<fileset dir="${bin.dir}/debug">
@@ -73,6 +78,11 @@
 				encoding="UTF-8" debug="off" deprecation="on" optimize="on" includes="**">
 			<classpath refid="classpath" />
 		</javac>
+		<copy todir="${bin.dir}/release/">
+			<fileset dir="${src.dir}/">
+				<include name="nucleus.jks" />
+			</fileset>
+		</copy>
 		<echo message="Packing the class files..." />
 		<jar jarfile="${dist.dir}/nucleus-${version.brand}-build${touch.time}.jar">
 			<fileset dir="${bin.dir}/release">

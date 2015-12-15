@@ -38,6 +38,13 @@ public interface WebSocketManager {
 	/**
 	 * 
 	 * @param session
+	 * @return
+	 */
+	public boolean hasSession(WebSocketSession session);
+
+	/**
+	 * 
+	 * @param session
 	 * @param message
 	 */
 	public void write(WebSocketSession session, Message message);
