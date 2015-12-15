@@ -123,6 +123,9 @@ public final class NucleusConfig {
 		/// HTTP 服务会话超时时间，默认 5 分钟
 		public long httpSessionTimeout = 5 * 60 * 1000;
 
+		/// JKS
+		public String keystore = "/nucleus.jks";
+
 		/// SSL Password
 		public String keyStorePassword = null;
 		public String keyManagerPassword = null;

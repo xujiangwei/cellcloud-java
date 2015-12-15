@@ -277,8 +277,8 @@ public final class HttpService implements Service {
 	}
 
 	public WebSocketManager activeWebSocketSecure(int port, int queueSize, MessageHandler handler
-			, String keyStorePassword, String keyManagerPassword) {
-		if (null == keyStorePassword || null == keyManagerPassword || port <= 80) {
+			, String jksResource, String keyStorePassword, String keyManagerPassword) {
+		if (null == jksResource || null == keyStorePassword || null == keyManagerPassword || port <= 80) {
 			Logger.w(this.getClass(), "No key store password, can NOT start Web Socket Secure service");
 			return null;
 		}
@@ -295,7 +295,7 @@ public final class HttpService implements Service {
 
 		SslContextFactory sslContextFactory = new SslContextFactory();
 		try {
-			URL url = this.getClass().getResource("/nucleus.jks");
+			URL url = this.getClass().getResource(jksResource);
 
 			Logger.i(this.getClass(), "WSS key store file: " + url.toString());
 
@@ -316,8 +316,8 @@ public final class HttpService implements Service {
 			this.webSocketSecure = null;
 			return null;
 		}
-		sslContextFactory.setKeyStorePassword(keyStorePassword/*"cellcloud"*/);
-		sslContextFactory.setKeyManagerPassword(keyManagerPassword/*"cellcloud"*/);
+		sslContextFactory.setKeyStorePassword(keyStorePassword);
+		sslContextFactory.setKeyManagerPassword(keyManagerPassword);
 		SslConnectionFactory sslConnectionFactory = new SslConnectionFactory(sslContextFactory, HttpVersion.HTTP_1_1.asString());
 		HttpConnectionFactory httpConnectionFactory = new HttpConnectionFactory(new HttpConfiguration());
 		ServerConnector sslConnector = new ServerConnector(this.wssServer, sslConnectionFactory, httpConnectionFactory);

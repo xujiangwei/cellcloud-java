@@ -2,7 +2,7 @@
 -----------------------------------------------------------------------------
 This source file is part of Cell Cloud.
 
-Copyright (c) 2009-2012 Cell Cloud Team (cellcloudproject@gmail.com)
+Copyright (c) 2009-2016 Cell Cloud Team (cellcloudproject@gmail.com)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -36,7 +36,7 @@ public final class VersionInfo {
 
 	public final static int MAJOR = 1;
 	public final static int MINOR = 3;
-	public final static int REVISION = 2;
+	public final static int REVISION = 3;
 
 	public static void main(String[] args) {
 		StringBuilder buf = new StringBuilder();
@@ -49,7 +49,7 @@ public final class VersionInfo {
 		buf.append(VersionInfo.REVISION);
 		buf.append("\n");
 
-		buf.append("Cell Cloud ");
+		buf.append("Nucleus version ");
 		buf.append(Version.MAJOR);
 		buf.append(".");
 		buf.append(Version.MINOR);
@@ -64,7 +64,7 @@ public final class VersionInfo {
 		buf.append("| |_| _|| |_| |_   | |_| |_| | | | | | |\n");
 		buf.append("|___|___|___|___|  |___|___|___|___|___/\n\n");
 
-		buf.append("Copyright (c) 2009,2015 Cell Cloud Team, www.cellcloud.net\n");
+		buf.append("Copyright (c) 2009,2016 Cell Cloud Team, www.cellcloud.net\n");
 		buf.append("-----------------------------------------------------------------------");
 
 		System.out.println(buf);

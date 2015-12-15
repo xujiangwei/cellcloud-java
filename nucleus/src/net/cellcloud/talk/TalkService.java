@@ -962,6 +962,7 @@ public final class TalkService implements Service, SpeakerDelegate {
 		this.wssHandler = new WebSocketMessageHandler(this);
 		this.wssManager = HttpService.getInstance().activeWebSocketSecure(this.httpPort + 7
 				, this.httpQueueSize, this.wssHandler
+				, Nucleus.getInstance().getConfig().talk.keystore
 				, Nucleus.getInstance().getConfig().talk.keyStorePassword
 				, Nucleus.getInstance().getConfig().talk.keyManagerPassword);
 		if (null == this.wssManager) {

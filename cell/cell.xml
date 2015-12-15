@@ -4,13 +4,17 @@
 		<httpd>true</httpd>
 		<talk>
 			<port>7000</port>
-			<block>20480</block>
+			<block>65535</block>
 			<connections>5000</connections>
 			<http>
 				<enabled>true</enabled>
 				<port>7070</port>
 				<queue>5000</queue>
 			</http>
+			<ssl>
+			    <keystore>/nucleus.jks</keystore>
+			    <password>cellcloud</password>
+			</ssl>
 		</talk>
 	</nucleus>
 	<cellets>

@@ -73,10 +73,10 @@ public final class Application {
 
 	public Application(Arguments args) {
 		StringBuilder buf = new StringBuilder();
-		buf.append("Cell Container Server version: ");
+		buf.append("Cell Server version: ");
 		buf.append(VersionInfo.MAJOR).append(".").append(VersionInfo.MINOR).append(".").append(VersionInfo.REVISION);
 		buf.append("\n");
-		buf.append("Cell Cloud ");
+		buf.append("Nucleus version: ");
 		buf.append(Version.getNumbers());
 		buf.append(" (Build Java - ").append(Version.NAME).append(")\n");
 
@@ -319,6 +319,25 @@ public final class Application {
 							if (nl.getLength() > 0) {
 								config.talk.httpQueueSize = Integer.parseInt(nl.item(0).getTextContent());
 								Logger.i(this.getClass(), "nucleus.talk.http.queue = " + config.talk.httpQueueSize);
+							}
+						}
+						// ssl
+						nl = elTalk.getElementsByTagName("ssl");
+						if (nl.getLength() > 0) {
+							Element elSsl = (Element) nl.item(0);
+
+							// keystore
+							nl = elSsl.getElementsByTagName("keystore");
+							if (nl.getLength() > 0) {
+								config.talk.keystore = nl.item(0).getTextContent().toString();
+								Logger.i(this.getClass(), "nucleus.talk.ssl.keystore = " + config.talk.keystore);
+							}
+							// password
+							nl = elSsl.getElementsByTagName("password");
+							if (nl.getLength() > 0) {
+								config.talk.keyStorePassword = nl.item(0).getTextContent().toString();
+								config.talk.keyManagerPassword = config.talk.keyStorePassword;
+								Logger.i(this.getClass(), "nucleus.talk.ssl.password = " + config.talk.keyStorePassword);
 							}
 						}
 					}
