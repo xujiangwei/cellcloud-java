@@ -391,7 +391,7 @@ public class Speaker implements Speakable {
 				}
 				contactedTimer = null;
 			}
-		}, 100);
+		}, 300);
 	}
 
 	private void fireQuitted(String celletIdentifier) {
