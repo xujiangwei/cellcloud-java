@@ -419,39 +419,43 @@ public final class NonblockingAcceptorWorker extends Thread {
 			return;
 		}
 
-		// 根据数据标志获取数据
-		if (this.acceptor.existDataMark()) {
-			ArrayList<byte[]> out = this.borrowList();
-			// 进行递归提取
-			this.extract(out, session, data);
+		try {
+			// 根据数据标志获取数据
+			if (this.acceptor.existDataMark()) {
+				ArrayList<byte[]> out = this.borrowList();
+				// 进行递归提取
+				this.extract(out, session, data);
 
-			if (!out.isEmpty()) {
-				for (byte[] bytes : out) {
-					Message message = new Message(bytes);
+				if (!out.isEmpty()) {
+					for (byte[] bytes : out) {
+						Message message = new Message(bytes);
 
-					// 是否是加密会话，如果是则进行解密
-					byte[] key = session.getSecretKey();
-					if (null != key) {
-						this.decryptMessage(message, key);
+						// 是否是加密会话，如果是则进行解密
+						byte[] key = session.getSecretKey();
+						if (null != key) {
+							this.decryptMessage(message, key);
+						}
+
+						this.acceptor.fireMessageReceived(session, message);
 					}
 
-					this.acceptor.fireMessageReceived(session, message);
+					out.clear();
+				}
+				this.returnList(out);
+			}
+			else {
+				Message message = new Message(data);
+
+				// 是否是加密会话，如果是则进行解密
+				byte[] key = session.getSecretKey();
+				if (null != key) {
+					this.decryptMessage(message, key);
 				}
 
-				out.clear();
+				this.acceptor.fireMessageReceived(session, message);
 			}
-			this.returnList(out);
-		}
-		else {
-			Message message = new Message(data);
-
-			// 是否是加密会话，如果是则进行解密
-			byte[] key = session.getSecretKey();
-			if (null != key) {
-				this.decryptMessage(message, key);
-			}
-
-			this.acceptor.fireMessageReceived(session, message);
+		} catch (Exception e) {
+			Logger.log(this.getClass(), e, LogLevel.ERROR);
 		}
 	}
 

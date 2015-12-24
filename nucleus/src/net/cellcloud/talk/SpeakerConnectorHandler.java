@@ -26,6 +26,7 @@ THE SOFTWARE.
 
 package net.cellcloud.talk;
 
+import net.cellcloud.common.LogLevel;
 import net.cellcloud.common.Logger;
 import net.cellcloud.common.Message;
 import net.cellcloud.common.MessageErrorCode;
@@ -86,10 +87,14 @@ public final class SpeakerConnectorHandler implements MessageHandler {
 	@Override
 	public void messageReceived(Session session, Message message) {
 		// 解包
-		Packet packet = Packet.unpack(message.get());
-		if (null != packet) {
-			// 解析数据包
-			interpret(session, packet);
+		try {
+			Packet packet = Packet.unpack(message.get());
+			if (null != packet) {
+				// 解析数据包
+				interpret(session, packet);
+			}
+		} catch (NumberFormatException e) {
+			Logger.log(this.getClass(), e, LogLevel.WARNING);
 		}
 	}
 
