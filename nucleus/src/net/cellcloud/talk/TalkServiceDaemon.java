@@ -198,6 +198,8 @@ public final class TalkServiceDaemon extends Thread {
 				Logger.log(TalkServiceDaemon.class, e, LogLevel.ERROR);
 			}
 
+			Thread.yield();
+
 		} while (this.spinning);
 
 		// 关闭所有 Speaker

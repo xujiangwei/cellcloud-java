@@ -480,6 +480,7 @@ public final class TalkService implements Service, SpeakerDelegate {
 			while (this.daemon.running) {
 				try {
 					Thread.sleep(10);
+					Thread.yield();
 				} catch (InterruptedException e) {
 					Logger.log(TalkService.class, e, LogLevel.DEBUG);
 				}
