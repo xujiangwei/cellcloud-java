@@ -28,7 +28,6 @@ package net.cellcloud.talk.dialect;
 
 import java.util.LinkedList;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import net.cellcloud.common.LogLevel;
@@ -44,18 +43,18 @@ public final class ActionDialectFactory extends DialectFactory {
 	private DialectMetaData metaData;
 
 	private ExecutorService executor;
-	private int maxThreadCount;
+	private int maxThreadNum;
 	private AtomicInteger threadCount;
 	private LinkedList<ActionDialect> dialects;
 	private LinkedList<ActionDelegate> delegates;
 
-	public ActionDialectFactory() {
+	public ActionDialectFactory(ExecutorService executor) {
 		this.metaData = new DialectMetaData(ActionDialect.DIALECT_NAME, "Action Dialect");
-		this.maxThreadCount = 32;
+		this.executor = executor;
+		this.maxThreadNum = 32;
 		this.threadCount = new AtomicInteger(0);
 		this.dialects = new LinkedList<ActionDialect>();
 		this.delegates = new LinkedList<ActionDelegate>();
-		this.executor = Executors.newFixedThreadPool(this.maxThreadCount);
 	}
 
 	public int getThreadCounts() {
@@ -63,7 +62,7 @@ public final class ActionDialectFactory extends DialectFactory {
 	}
 
 	public int getMaxThreadCounts() {
-		return this.maxThreadCount;
+		return this.maxThreadNum;
 	}
 
 	public int getPendingNum() {
@@ -123,7 +122,7 @@ public final class ActionDialectFactory extends DialectFactory {
 			this.delegates.add(delegate);
 		}
 
-		if (this.threadCount.get() < this.maxThreadCount) {
+		if (this.threadCount.get() < this.maxThreadNum) {
 			// 线程数量未达到最大线程数，启动新线程
 
 			this.executor.execute(new Runnable() {

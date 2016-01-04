@@ -126,8 +126,8 @@ public class NonblockingConnector extends MessageService implements MessageConne
 			// 配置
 			// 以下为 JDK7 的代码
 			this.channel.setOption(StandardSocketOptions.SO_KEEPALIVE, true);
-			this.channel.setOption(StandardSocketOptions.SO_RCVBUF, this.block + 64);
-			this.channel.setOption(StandardSocketOptions.SO_SNDBUF, this.block + 64);
+			this.channel.setOption(StandardSocketOptions.SO_RCVBUF, this.block);
+			this.channel.setOption(StandardSocketOptions.SO_SNDBUF, this.block);
 			// 以下为 JDK6 的代码
 			/*
 			this.channel.socket().setKeepAlive(true);

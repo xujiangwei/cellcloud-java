@@ -177,8 +177,8 @@ public final class TalkService implements Service, SpeakerDelegate {
 			this.executor = CachedQueueExecutor.newCachedQueueThreadPool(8);
 
 			// 添加默认方言工厂
-			DialectEnumerator.getInstance().addFactory(new ActionDialectFactory());
-			DialectEnumerator.getInstance().addFactory(new ChunkDialectFactory());
+			DialectEnumerator.getInstance().addFactory(new ActionDialectFactory(this.executor));
+			DialectEnumerator.getInstance().addFactory(new ChunkDialectFactory(this.executor));
 
 			this.callbackListener = DialectEnumerator.getInstance();
 			this.delegate = DialectEnumerator.getInstance();
@@ -247,7 +247,7 @@ public final class TalkService implements Service, SpeakerDelegate {
 		ts.chunkDialectCacheNum = cdf.getCacheNum();
 		ts.chunkDialectCacheMemSize = cdf.getCacheMemorySize();
 		ts.chunkDialectMaxCacheMemSize = cdf.getMaxCacheMemorySize();
-		ts.chunkDialectQueueSize = cdf.getQueueSize();
+		ts.chunkDialectQueueSize = cdf.getSListSize();
 
 		return ts;
 	}
@@ -291,7 +291,7 @@ public final class TalkService implements Service, SpeakerDelegate {
 
 		boolean succeeded = this.acceptor.bind(this.port);
 		if (succeeded) {
-			startDaemon();
+			this.startDaemon();
 		}
 
 		if (succeeded && this.httpEnabled) {
@@ -914,10 +914,6 @@ public final class TalkService implements Service, SpeakerDelegate {
 //
 //		return false;
 //	}
-
-	public ExecutorService getExecutor() {
-		return this.executor;
-	}
 
 	public synchronized void addExtendHolder(CapsuleHolder holder) {
 		if (null == this.extendHttpHolders) {

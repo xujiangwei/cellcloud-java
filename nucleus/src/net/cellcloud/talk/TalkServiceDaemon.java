@@ -32,6 +32,7 @@ import java.util.LinkedList;
 import net.cellcloud.common.LogLevel;
 import net.cellcloud.common.Logger;
 import net.cellcloud.talk.dialect.DialectEnumerator;
+import net.cellcloud.util.Clock;
 
 /** Talk Service 守护线程。
  * 
@@ -66,7 +67,7 @@ public final class TalkServiceDaemon extends Thread {
 
 		do {
 			// 当前时间
-			this.tickTime = System.currentTimeMillis();
+			this.tickTime = Clock.currentTimeMillis();
 
 			// 心跳计数
 			++heartbeatCount;

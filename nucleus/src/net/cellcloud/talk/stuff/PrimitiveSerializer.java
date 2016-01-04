@@ -113,7 +113,7 @@ public final class PrimitiveSerializer {
 	private static final String JSONKEY_NAME = "name";
 	private static final String JSONKEY_TRACKER = "tracker";
 
-	private static final int BLOCK = 65536;
+	private static final int BLOCK = 131072;
 
 	private PrimitiveSerializer() {
 	}

@@ -29,6 +29,7 @@ package net.cellcloud.talk.dialect;
 import java.util.LinkedList;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -46,28 +47,32 @@ public class ChunkDialectFactory extends DialectFactory {
 
 	private DialectMetaData metaData;
 
+	private ExecutorService executor;
+
 	private ConcurrentHashMap<String, Cache> cacheMap;
 
 	// 用于服务器模式下的队列
-	private ConcurrentHashMap<String, Queue> queueMap;
+	private ConcurrentHashMap<String, ChunkList> sListMap;
 
 	// 用于客户端模式下的队列
-	private ConcurrentHashMap<String, Queue> cQueueMap;
+	private ConcurrentHashMap<String, ChunkList> cListMap;
 
 	private AtomicLong cacheMemorySize = new AtomicLong(0);
 	private final long clearThreshold = 500 * 1024 * 1024;
-	private Object mutex = new Object();
 	private AtomicBoolean clearRunning = new AtomicBoolean(false);
+	private Object mutex = new Object();
 
-	private long queueTimeout = 5 * 60 * 1000;
+	// 数据在缓存里的超时时间，仅客户端使用
+	private long clientTimeout = 10 * 60 * 1000;
 
 	private int logCounts = 0;
 
-	public ChunkDialectFactory() {
+	public ChunkDialectFactory(ExecutorService executor) {
 		this.metaData = new DialectMetaData(ChunkDialect.DIALECT_NAME, "Chunk Dialect");
+		this.executor = executor;
 		this.cacheMap = new ConcurrentHashMap<String, Cache>();
-		this.queueMap = new ConcurrentHashMap<String, Queue>();
-		this.cQueueMap = new ConcurrentHashMap<String, Queue>();
+		this.sListMap = new ConcurrentHashMap<String, ChunkList>();
+		this.cListMap = new ConcurrentHashMap<String, ChunkList>();
 	}
 
 	@Override
@@ -83,8 +88,8 @@ public class ChunkDialectFactory extends DialectFactory {
 	@Override
 	public void shutdown() {
 		this.cacheMap.clear();
-		this.queueMap.clear();
-		this.cQueueMap.clear();
+		this.sListMap.clear();
+		this.cListMap.clear();
 		this.cacheMemorySize.set(0);
 	}
 
@@ -100,17 +105,34 @@ public class ChunkDialectFactory extends DialectFactory {
 		return this.cacheMap.size();
 	}
 
-	public int getQueueSize() {
-		return this.queueMap.size();
+	public int getSListSize() {
+		return this.sListMap.size();
 	}
 
-	public int getCQueueSize() {
-		return this.cQueueMap.size();
+	public int getCListSize() {
+		return this.cListMap.size();
 	}
 
 	@Override
 	protected boolean onTalk(String identifier, Dialect dialect) {
 		ChunkDialect chunk = (ChunkDialect) dialect;
+
+		if (!chunk.ack && !chunk.infectant) {
+			ChunkList list = this.cListMap.get(chunk.getSign());
+			if (null != list) {
+				if (chunk.getChunkIndex() == 0) {
+					list.clear();
+				}
+
+				// 写入列表
+				list.append(chunk);
+			}
+			else {
+				list = new ChunkList(identifier.toString(), chunk.getChunkNum());
+				list.append(chunk);
+				this.cListMap.put(chunk.getSign().toString(), list);
+			}
+		}
 
 		if (chunk.getChunkIndex() == 0 || chunk.infectant || chunk.ack) {
 			// 直接发送
@@ -121,17 +143,6 @@ public class ChunkDialectFactory extends DialectFactory {
 			return true;
 		}
 		else {
-			Queue queue = this.cQueueMap.get(chunk.getSign());
-			if (null != queue) {
-				// 写入队列
-				queue.enqueue(chunk);
-			}
-			else {
-				queue = new Queue(identifier.toString(), chunk.getChunkNum());
-				queue.enqueue(chunk);
-				this.cQueueMap.put(chunk.getSign(), queue);
-			}
-
 			// 劫持，由队列发送
 			return false;
 		}
@@ -144,19 +155,19 @@ public class ChunkDialectFactory extends DialectFactory {
 		if (chunk.ack) {
 			// 收到 ACK ，发送下一个
 			String sign = chunk.getSign();
-			Queue queue = this.cQueueMap.get(sign);
-			if (null != queue) {
+			ChunkList list = this.cListMap.get(sign);
+			if (null != list) {
 				// 更新应答索引
-				queue.ackIndex = chunk.getChunkIndex();
+				list.ackIndex = chunk.getChunkIndex();
 				// 发送下一条数据
-				ChunkDialect response = queue.dequeue();
+				ChunkDialect response = list.get(list.ackIndex + 1);
 				if (null != response) {
-					TalkService.getInstance().talk(queue.target, response);
+					TalkService.getInstance().talk(list.target, response);
 				}
 
 				// 检查
-				if (queue.ackIndex == chunk.getChunkNum() - 1) {
-					this.checkAndClearQueue(this.cQueueMap);
+				if (list.ackIndex == chunk.getChunkNum() - 1) {
+					this.checkAndClearList(this.cListMap, this.clientTimeout);
 				}
 			}
 			else {
@@ -173,7 +184,7 @@ public class ChunkDialectFactory extends DialectFactory {
 			final ChunkDialect ack = new ChunkDialect(chunk.getTracker().toString());
 			ack.setAck(sign, chunk.getChunkIndex(), chunk.getChunkNum());
 
-			TalkService.getInstance().getExecutor().execute(new Runnable() {
+			this.executor.execute(new Runnable() {
 				@Override
 				public void run() {
 					// 回送 ACK
@@ -190,6 +201,23 @@ public class ChunkDialectFactory extends DialectFactory {
 	protected boolean onTalk(Cellet cellet, String targetTag, Dialect dialect) {
 		ChunkDialect chunk = (ChunkDialect) dialect;
 
+		if (!chunk.ack && !chunk.infectant) {
+			ChunkList list = this.sListMap.get(chunk.getSign());
+			if (null != list) {
+				if (chunk.getChunkIndex() == 0) {
+					list.clear();
+				}
+
+				// 写入列表
+				list.append(chunk);
+			}
+			else {
+				list = new ChunkList(targetTag.toString(), chunk.getChunkNum());
+				list.append(chunk);
+				this.sListMap.put(chunk.getSign(), list);
+			}
+		}
+
 		if (chunk.getChunkIndex() == 0 || chunk.infectant || chunk.ack) {
 			// 直接发送
 
@@ -199,17 +227,6 @@ public class ChunkDialectFactory extends DialectFactory {
 			return true;
 		}
 		else {
-			Queue queue = this.queueMap.get(chunk.getSign());
-			if (null != queue) {
-				// 写入队列
-				queue.enqueue(chunk);
-			}
-			else {
-				queue = new Queue(targetTag.toString(), chunk.getChunkNum());
-				queue.enqueue(chunk);
-				this.queueMap.put(chunk.getSign(), queue);
-			}
-
 			// 劫持，由队列发送
 			return false;
 		}
@@ -226,7 +243,7 @@ public class ChunkDialectFactory extends DialectFactory {
 			final ChunkDialect ack = new ChunkDialect(chunk.getTracker().toString());
 			ack.setAck(sign, chunk.getChunkIndex(), chunk.getChunkNum());
 
-			TalkService.getInstance().getExecutor().execute(new Runnable() {
+			this.executor.execute(new Runnable() {
 				@Override
 				public void run() {
 					// 回送 ACK
@@ -240,19 +257,19 @@ public class ChunkDialectFactory extends DialectFactory {
 		else {
 			// 收到 ACK ，发送下一个
 			String sign = chunk.getSign();
-			Queue queue = this.queueMap.get(sign);
-			if (null != queue) {
+			ChunkList list = this.sListMap.get(sign);
+			if (null != list) {
 				// 更新应答索引
-				queue.ackIndex = chunk.getChunkIndex();
+				list.ackIndex = chunk.getChunkIndex();
 				// 发送下一条数据
-				ChunkDialect response = queue.dequeue();
+				ChunkDialect response = list.get(list.ackIndex + 1);
 				if (null != response) {
-					cellet.talk(queue.target, response);
+					cellet.talk(list.target, response);
 				}
 
 				// 检查
-				if (queue.ackIndex == chunk.getChunkNum() - 1) {
-					this.checkAndClearQueue(this.queueMap);
+				if (list.ackIndex == chunk.getChunkNum() - 1) {
+					this.checkAndClearList(this.sListMap, 0);
 				}
 			}
 
@@ -354,17 +371,17 @@ public class ChunkDialectFactory extends DialectFactory {
 		}
 	}
 
-	private void checkAndClearQueue(ConcurrentHashMap<String, Queue> queueMap) {
+	private synchronized void checkAndClearList(ConcurrentHashMap<String, ChunkList> listMap, long timeout) {
 		long time = Clock.currentTimeMillis();
 		LinkedList<String> deleteList = new LinkedList<String>();
 
-		for (Map.Entry<String, Queue> entry : queueMap.entrySet()) {
-			Queue queue = entry.getValue();
-			if (queue.ackIndex >= 0 && queue.chunkNum - 1 == queue.ackIndex) {
+		for (Map.Entry<String, ChunkList> entry : listMap.entrySet()) {
+			ChunkList list = entry.getValue();
+			if (list.ackIndex >= 0 && list.chunkNum - 1 == list.ackIndex) {
 				// 删除
 				deleteList.add(entry.getKey());
 			}
-			else if (time - queue.timestamp > this.queueTimeout) {
+			else if (timeout > 0 && time - list.timestamp > timeout) {
 				// 超时
 				deleteList.add(entry.getKey());
 			}
@@ -372,9 +389,9 @@ public class ChunkDialectFactory extends DialectFactory {
 
 		if (!deleteList.isEmpty()) {
 			for (String sign : deleteList) {
-				queueMap.remove(sign);
+				listMap.remove(sign);
 
-				Logger.i(this.getClass(), "Clear chunk factory queue: " + sign);
+				Logger.i(this.getClass(), "Clear chunk list - sign: " + sign);
 			}
 
 			deleteList.clear();
@@ -510,38 +527,40 @@ public class ChunkDialectFactory extends DialectFactory {
 		}
 	}
 
-	private class Queue {
+	private class ChunkList {
 		private long timestamp;
 		private String target;
-		private LinkedList<ChunkDialect> queue;
+		private LinkedList<ChunkDialect> list;
 
 		protected int ackIndex = -1;
 
 		protected int chunkNum = 0;
 
-		private Queue(String target, int chunkNum) {
-			this.timestamp = Clock.currentTimeMillis();
+		private ChunkList(String target, int chunkNum) {
+			this.timestamp = System.currentTimeMillis();
 			this.target = target;
 			this.chunkNum = chunkNum;
-			this.queue = new LinkedList<ChunkDialect>();
+			this.list = new LinkedList<ChunkDialect>();
 		}
 
-		protected void enqueue(ChunkDialect chunk) {
+		protected void append(ChunkDialect chunk) {
 			// 标识为已污染
 			chunk.infectant = true;
 
 			synchronized (this) {
-				this.queue.add(chunk);
+				this.list.add(chunk);
 			}
 		}
 
-		protected ChunkDialect dequeue() {
+		protected ChunkDialect get(int index) {
 			synchronized (this) {
-				if (this.queue.isEmpty()) {
-					return null;
-				}
+				return this.list.get(index);
+			}
+		}
 
-				return this.queue.removeFirst();
+		protected void clear() {
+			synchronized (this) {
+				this.list.clear();
 			}
 		}
 	}
