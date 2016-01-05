@@ -265,11 +265,12 @@ public final class NonblockingAcceptorWorker extends Thread {
 			return;
 		}
 
-		// 获取 Session 的读缓存。
-		ByteBuffer buf = session.getReadBuffer();
 		int read = 0;
 		do {
-			synchronized (buf) {
+			// 创建读缓存。
+			ByteBuffer buf = ByteBuffer.allocate(session.getBlock());
+
+			synchronized (session) {
 				try {
 					if (channel.isOpen())
 						read = channel.read(buf);
@@ -297,10 +298,13 @@ public final class NonblockingAcceptorWorker extends Thread {
 
 					session.selectionKey.cancel();
 
+					buf = null;
+
 					return;
 				}
 
 				if (read == 0) {
+					buf = null;
 					break;
 				}
 				else if (read == -1) {
@@ -321,6 +325,8 @@ public final class NonblockingAcceptorWorker extends Thread {
 
 					session.selectionKey.cancel();
 
+					buf = null;
+
 					return;
 				}
 
@@ -338,7 +344,7 @@ public final class NonblockingAcceptorWorker extends Thread {
 				// 解析数据
 				this.parse(session, array);
 
-				buf.clear();
+				buf = null;
 			}
 		} while (read > 0);
 	}
@@ -354,12 +360,10 @@ public final class NonblockingAcceptorWorker extends Thread {
 
 		if (!session.isMessageEmpty()) {
 			// 有消息，进行发送
-
 			Message message = null;
 
-			// 获取 Session 的写缓存
-			ByteBuffer buf = session.getWriteBuffer();
-			synchronized (buf) {
+			synchronized (session) {
+				// 遍历待发信息
 				while (!session.isMessageEmpty()) {
 					message = session.pollMessage();
 					if (null == message) {
@@ -372,6 +376,9 @@ public final class NonblockingAcceptorWorker extends Thread {
 						this.encryptMessage(message, key);
 					}
 
+					// 创建写缓存
+					ByteBuffer buf = null;
+
 					// 根据是否有数据掩码组装数据包
 					if (this.acceptor.existDataMark()) {
 						byte[] data = message.get();
@@ -381,13 +388,11 @@ public final class NonblockingAcceptorWorker extends Thread {
 						System.arraycopy(head, 0, pd, 0, head.length);
 						System.arraycopy(data, 0, pd, head.length, data.length);
 						System.arraycopy(tail, 0, pd, head.length + data.length, tail.length);
-						buf.put(pd);
+						buf = ByteBuffer.wrap(pd);
 					}
 					else {
-						buf.put(message.get());
+						buf = ByteBuffer.wrap(message.get());
 					}
-
-					buf.flip();
 
 					try {
 						int size = channel.write(buf);
@@ -404,7 +409,7 @@ public final class NonblockingAcceptorWorker extends Thread {
 						Logger.log(NonblockingAcceptorWorker.class, e, LogLevel.WARNING);
 					}
 
-					buf.clear();
+					buf = null;
 
 					// 回调事件
 					this.acceptor.fireMessageSent(session, message);

@@ -61,8 +61,6 @@ public class NonblockingConnector extends MessageService implements MessageConne
 
 	private long sleepInterval = 20;
 
-	private ByteBuffer readBuffer;
-	private ByteBuffer writeBuffer;
 	// 待发送消息列表
 	private Vector<Message> messages;
 
@@ -70,8 +68,6 @@ public class NonblockingConnector extends MessageService implements MessageConne
 
 	public NonblockingConnector() {
 		this.connectTimeout = 10000;
-		this.readBuffer = ByteBuffer.allocate(this.block);
-		this.writeBuffer = ByteBuffer.allocate(this.block);
 		this.messages = new Vector<Message>();
 	}
 
@@ -114,8 +110,6 @@ public class NonblockingConnector extends MessageService implements MessageConne
 		}
 
 		// 状态初始化
-		this.readBuffer.clear();
-		this.writeBuffer.clear();
 		this.messages.clear();
 		this.address = address;
 
@@ -277,13 +271,11 @@ public class NonblockingConnector extends MessageService implements MessageConne
 		}
 
 		this.block = size;
-		this.readBuffer = ByteBuffer.allocate(this.block);
-		this.writeBuffer = ByteBuffer.allocate(this.block);
 
 		if (null != this.channel) {
 			try {
-				this.channel.socket().setReceiveBufferSize(this.block + 512);
-				this.channel.socket().setSendBufferSize(this.block + 512);
+				this.channel.socket().setReceiveBufferSize(this.block);
+				this.channel.socket().setSendBufferSize(this.block);
 			} catch (Exception e) {
 				// ignore
 			}
@@ -449,8 +441,9 @@ public class NonblockingConnector extends MessageService implements MessageConne
 
 		int read = 0;
 		do {
+			ByteBuffer readBuffer = ByteBuffer.allocate(this.block);
 			try {
-				read = channel.read(this.readBuffer);
+				read = channel.read(readBuffer);
 			} catch (IOException e) {
 //				Logger.log(NonblockingConnector.class, e, LogLevel.DEBUG);
 
@@ -468,10 +461,13 @@ public class NonblockingConnector extends MessageService implements MessageConne
 				// 不能继续进行数据接收
 				this.spinning = false;
 
+				readBuffer = null;
+
 				return;
 			}
 
 			if (read == 0) {
+				readBuffer = null;
 				break;
 			}
 			else if (read == -1) {
@@ -487,13 +483,15 @@ public class NonblockingConnector extends MessageService implements MessageConne
 				// 不能继续进行数据接收
 				this.spinning = false;
 
+				readBuffer = null;
+
 				return;
 			}
 
-			this.readBuffer.flip();
+			readBuffer.flip();
 
 			byte[] array = new byte[read];
-			this.readBuffer.get(array);
+			readBuffer.get(array);
 
 			try {
 				this.process(array);
@@ -502,7 +500,7 @@ public class NonblockingConnector extends MessageService implements MessageConne
 				Logger.log(NonblockingConnector.class, e, LogLevel.WARNING);
 			}
 
-			this.readBuffer.clear();
+			readBuffer = null;
 		} while (read > 0);
 
 		if (key.isValid()) {
@@ -524,13 +522,18 @@ public class NonblockingConnector extends MessageService implements MessageConne
 
 				Message message = null;
 				for (int i = 0, len = this.messages.size(); i < len; ++i) {
-					message = this.messages.remove(0);
+					try {
+						message = this.messages.remove(0);
+					} catch (IndexOutOfBoundsException e) {
+						break;
+					}
 
 					byte[] skey = this.session.getSecretKey();
 					if (null != skey) {
 						this.encryptMessage(message, skey);
 					}
 
+					ByteBuffer writeBuffer = null;
 					if (this.existDataMark()) {
 						byte[] data = message.get();
 						byte[] head = this.getHeadMark();
@@ -539,17 +542,15 @@ public class NonblockingConnector extends MessageService implements MessageConne
 						System.arraycopy(head, 0, pd, 0, head.length);
 						System.arraycopy(data, 0, pd, head.length, data.length);
 						System.arraycopy(tail, 0, pd, head.length + data.length, tail.length);
-						this.writeBuffer.put(pd);
+						writeBuffer = ByteBuffer.wrap(pd);
 					}
 					else {
-						this.writeBuffer.put(message.get());
+						writeBuffer = ByteBuffer.wrap(message.get());
 					}
 
-					this.writeBuffer.flip();
+					channel.write(writeBuffer);
 
-					channel.write(this.writeBuffer);
-
-					this.writeBuffer.clear();
+					writeBuffer = null;
 
 					if (null != this.handler) {
 						this.handler.messageSent(this.session, message);

@@ -28,7 +28,6 @@ package net.cellcloud.common;
 
 import java.net.InetSocketAddress;
 import java.net.Socket;
-import java.nio.ByteBuffer;
 import java.nio.channels.SelectionKey;
 import java.util.LinkedList;
 
@@ -40,8 +39,7 @@ import net.cellcloud.util.Clock;
  */
 public class NonblockingAcceptorSession extends Session {
 
-	private ByteBuffer readBuffer;
-	private ByteBuffer writeBuffer;
+	private int block;
 
 	protected long readTime = 0;
 	protected long writeTime = 0;
@@ -60,20 +58,14 @@ public class NonblockingAcceptorSession extends Session {
 	public NonblockingAcceptorSession(MessageService service,
 			InetSocketAddress address, int block) {
 		super(service, address);
-		this.readBuffer = ByteBuffer.allocate(block);
-		this.writeBuffer = ByteBuffer.allocate(block);
+		this.block = block;
 		this.readTime = Clock.currentTimeMillis();
 		this.writeTime = Clock.currentTimeMillis();
 	}
 
-	/** 返回读缓存。 */
-	public ByteBuffer getReadBuffer() {
-		return this.readBuffer;
-	}
-
-	/** 返回写缓存。 */
-	public ByteBuffer getWriteBuffer() {
-		return this.writeBuffer;
+	/** 返回缓存大小。 */
+	public int getBlock() {
+		return this.block;
 	}
 
 	protected void addMessage(Message message) {
