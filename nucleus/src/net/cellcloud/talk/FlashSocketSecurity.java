@@ -57,6 +57,7 @@ public final class FlashSocketSecurity implements Service {
 	public boolean startup() {
 		try {
 			this.socket = new ServerSocket(8430);
+			this.socket.setSoTimeout(5000);
 		} catch (IOException e) {
 			Logger.log(this.getClass(), e, LogLevel.ERROR);
 			return false;
@@ -68,6 +69,10 @@ public final class FlashSocketSecurity implements Service {
 				while (!stopped) {
 					try {
 						Socket client = socket.accept();
+
+						if (null == client || client.isClosed()) {
+							continue;
+						}
 
 						InputStreamReader input = new InputStreamReader(client.getInputStream(), "UTF-8");
 						BufferedReader reader = new BufferedReader(input);
@@ -101,6 +106,8 @@ public final class FlashSocketSecurity implements Service {
 
 						client.close();
 						data = null;
+					} catch (java.net.SocketTimeoutException e) {
+						// Nothing
 					} catch (IOException e) {
 						Logger.log(FlashSocketSecurity.class, e, LogLevel.INFO);
 					}
@@ -115,6 +122,14 @@ public final class FlashSocketSecurity implements Service {
 	@Override
 	public void shutdown() {
 		this.stopped = true;
+
+		try {
+			Thread.sleep(5000);
+		} catch (InterruptedException e) {
+			// Nothing
+		}
+
+		Thread.yield();
 
 		if (null != this.socket) {
 			try {
