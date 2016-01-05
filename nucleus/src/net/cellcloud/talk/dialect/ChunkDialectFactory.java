@@ -93,6 +93,7 @@ public class ChunkDialectFactory extends DialectFactory {
 	@Override
 	public void shutdown() {
 		this.cacheMap.clear();
+
 		if (null != this.sListMap) {
 			this.sListMap.clear();
 		}
@@ -130,10 +131,18 @@ public class ChunkDialectFactory extends DialectFactory {
 	}
 
 	public int getSListSize() {
+		if (null == this.sListMap) {
+			return 0;
+		}
+
 		return this.sListMap.size();
 	}
 
 	public int getCListSize() {
+		if (null == this.cListMap) {
+			return 0;
+		}
+
 		return this.cListMap.size();
 	}
 
