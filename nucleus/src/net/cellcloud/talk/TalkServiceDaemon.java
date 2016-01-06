@@ -75,9 +75,9 @@ public final class TalkServiceDaemon extends Thread {
 				heartbeatCount = 0;
 			}
 
-			// 30 秒周期处理
-			if (heartbeatCount % 30 == 0) {
-				// HTTP 客户端管理，每 30 秒一次计数
+			// 60 秒周期处理
+			if (heartbeatCount % 60 == 0) {
+				// HTTP 客户端管理，每 60 秒一次计数
 				if (null != service.httpSpeakers) {
 					for (HttpSpeaker speaker : service.httpSpeakers) {
 						speaker.tick();
@@ -92,14 +92,11 @@ public final class TalkServiceDaemon extends Thread {
 
 				// 检查 Session
 				service.checkSessionHeartbeat();
-
-				// 1 分钟检查一次挂起状态下的会话器是否失效
-//				service.checkAndDeleteSuspendedTalk();
 			}
 
-			// 3 分钟周期处理
-			if (heartbeatCount % 180 == 0) {
-				// 180 秒一次心跳
+			// 5 分钟周期处理
+			if (heartbeatCount % 300 == 0) {
+				// 300 秒一次心跳
 				if (null != service.speakers) {
 					synchronized (service.speakers) {
 						for (Speaker speaker : service.speakers) {
@@ -186,7 +183,7 @@ public final class TalkServiceDaemon extends Thread {
 
 			// 休眠 1 秒
 			try {
-				long dt = System.currentTimeMillis() - this.tickTime;
+				long dt = Clock.currentTimeMillis() - this.tickTime;
 				if (dt <= 1000) {
 					dt = 1000 - dt;
 				}

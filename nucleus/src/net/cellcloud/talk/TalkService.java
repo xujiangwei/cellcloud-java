@@ -89,7 +89,7 @@ public final class TalkService implements Service, SpeakerDelegate {
 	private int block;
 	private int maxConnections;
 
-	private long sessionTimeout;
+	private final long sessionTimeout;
 
 	// 服务器端是否启用 HTTP 服务
 	private boolean httpEnabled;

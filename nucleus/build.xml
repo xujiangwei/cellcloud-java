@@ -120,7 +120,7 @@
 	<!-- =================================================================== -->
 	<target name="build-debug" depends="debug,dist-debug">
 		<echo>Debug the project.</echo>
-		<echo>Copyright (C) 2009,2015 Cell Cloud Team. All rights reserved.</echo>
+		<echo>Copyright (C) 2009,2016 Cell Cloud Team. All rights reserved.</echo>
 	</target>
 
 	<!-- =================================================================== -->
@@ -128,7 +128,7 @@
 	<!-- =================================================================== -->
 	<target name="build-release" depends="release,dist-release">
 		<echo>Release the project.</echo>
-		<echo>Copyright (C) 2009,2015 Cell Cloud Team. All rights reserved.</echo>
+		<echo>Copyright (C) 2009,2016 Cell Cloud Team. All rights reserved.</echo>
 	</target>
 
 </project>
