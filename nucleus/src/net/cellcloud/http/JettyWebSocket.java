@@ -171,10 +171,10 @@ public final class JettyWebSocket implements WebSocketManager {
 		Logger.d(this.getClass(), "onWebSocketClose");
 
 		// 如果 session 是 open 状态，则不删除
-		if (session.isOpen()) {
-			Logger.d(this.getClass(), "onWebSocketClose # Session is open");
-			return;
-		}
+//		if (session.isOpen()) {
+//			Logger.d(this.getClass(), "onWebSocketClose # Session is open");
+//			return;
+//		}
 
 		WebSocketSession wsSession = null;
 

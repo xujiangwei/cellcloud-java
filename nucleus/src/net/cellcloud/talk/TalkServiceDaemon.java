@@ -77,35 +77,47 @@ public final class TalkServiceDaemon extends Thread {
 
 			// 60 秒周期处理
 			if (heartbeatCount % 60 == 0) {
-				// HTTP 客户端管理，每 60 秒一次计数
-				if (null != service.httpSpeakers) {
-					for (HttpSpeaker speaker : service.httpSpeakers) {
-						speaker.tick();
+				try {
+					// HTTP 客户端管理，每 60 秒一次计数
+					if (null != service.httpSpeakers) {
+						for (HttpSpeaker speaker : service.httpSpeakers) {
+							speaker.tick();
+						}
 					}
+				} catch (Exception e) {
+					Logger.log(this.getClass(), e, LogLevel.ERROR);
 				}
 			}
 
 			// 1 分钟周期处理
 			if (heartbeatCount % 60 == 0) {
-				// 检查 HTTP Session
-				service.checkHttpSessionHeartbeat();
+				try {
+					// 检查 HTTP Session
+					service.checkHttpSessionHeartbeat();
 
-				// 检查 Session
-				service.checkSessionHeartbeat();
+					// 检查 Session
+					service.checkSessionHeartbeat();
+				} catch (Exception e) {
+					Logger.log(this.getClass(), e, LogLevel.ERROR);
+				}
 			}
 
 			// 5 分钟周期处理
 			if (heartbeatCount % 300 == 0) {
-				// 300 秒一次心跳
-				if (null != service.speakers) {
-					synchronized (service.speakers) {
-						for (Speaker speaker : service.speakers) {
-							if (speaker.heartbeat()) {
-								Logger.i(TalkServiceDaemon.class, "Speaker heartbeat to " + speaker.getAddress().getHostString()
-										+ ":" + speaker.getAddress().getPort());
+				try {
+					// 300 秒一次心跳
+					if (null != service.speakers) {
+						synchronized (service.speakers) {
+							for (Speaker speaker : service.speakers) {
+								if (speaker.heartbeat()) {
+									Logger.i(TalkServiceDaemon.class, "Speaker heartbeat to " + speaker.getAddress().getHostString()
+											+ ":" + speaker.getAddress().getPort());
+								}
 							}
 						}
 					}
+				} catch (Exception e) {
+					Logger.log(this.getClass(), e, LogLevel.ERROR);
 				}
 			}
 
@@ -178,8 +190,12 @@ public final class TalkServiceDaemon extends Thread {
 				}
 			}
 
-			// 处理未识别 Session
-			service.processUnidentifiedSessions(this.tickTime);
+			try {
+				// 处理未识别 Session
+				service.processUnidentifiedSessions(this.tickTime);
+			} catch (Exception e) {
+				Logger.log(this.getClass(), e, LogLevel.ERROR);
+			}
 
 			// 休眠 1 秒
 			try {

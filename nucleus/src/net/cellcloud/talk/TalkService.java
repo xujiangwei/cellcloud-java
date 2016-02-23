@@ -1283,6 +1283,7 @@ public final class TalkService implements Service, SpeakerDelegate {
 	protected TalkTracker processRequest(final Session session, final String tag, final String identifier) {
 		TalkSessionContext ctx = this.tagContexts.get(tag);
 		if (null == ctx) {
+			Logger.w(TalkService.class, "Can NOT find tag: " + tag);
 			return null;
 		}
 
@@ -1291,43 +1292,45 @@ public final class TalkService implements Service, SpeakerDelegate {
 		TalkTracker tracker = null;
 
 		if (null != cellet) {
-			tracker = ctx.getTracker();
-			if (!tracker.hasCellet(cellet)) {
-				tracker.addCellet(cellet);
-			}
+			synchronized (ctx) {
+				tracker = ctx.getTracker();
+				if (!tracker.hasCellet(cellet)) {
+					tracker.addCellet(cellet);
+				}
 
-			// 使用定时器延迟处理
-			Timer timer = null;
-			if (session.hasAttribute("timer")) {
-				timer = (Timer) session.getAttribute("timer");
-				timer.cancel();
-				timer.purge();
-				session.removeAttribute("timer");
-			}
+				// 使用定时器延迟处理
+				Timer timer = null;
+				if (session.hasAttribute("timer")) {
+					timer = (Timer) session.getAttribute("timer");
+					timer.cancel();
+					timer.purge();
+					session.removeAttribute("timer");
+				}
 
-			timer = new Timer();
-			timer.schedule(new TimerTask() {
-				@Override
-				public void run() {
-					TalkSessionContext ctx = tagContexts.get(tag);
-					if (null != ctx) {
-						TalkCapacity capacity = ctx.getTracker().getCapacity();
-						if (null != capacity) {
-							if (capacity.secure && !session.isSecure()) {
-								boolean ret = session.activeSecretKey((byte[]) session.getAttribute("key"));
-								if (ret) {
-									Endpoint ep = ctx.getEndpoint();
-									Logger.i(Speaker.class, "Active secret key for client: " + ep.getCoordinate().getAddress().getHostString());
+				timer = new Timer();
+				timer.schedule(new TimerTask() {
+					@Override
+					public void run() {
+						TalkSessionContext ctx = tagContexts.get(tag);
+						if (null != ctx) {
+							TalkCapacity capacity = ctx.getTracker().getCapacity();
+							if (null != capacity) {
+								if (capacity.secure && !session.isSecure()) {
+									boolean ret = session.activeSecretKey((byte[]) session.getAttribute("key"));
+									if (ret) {
+										Endpoint ep = ctx.getEndpoint();
+										Logger.i(Speaker.class, "Active secret key for client: " + ep.getCoordinate().getAddress().getHostString());
+									}
 								}
 							}
 						}
+
+						session.removeAttribute("timer");
 					}
+				}, 100);
 
-					session.removeAttribute("timer");
-				}
-			}, 100);
-
-			session.addAttribute("timer", timer);
+				session.addAttribute("timer", timer);
+			}
 
 			// 回调 contacted
 			cellet.contacted(tag);
@@ -1375,6 +1378,10 @@ public final class TalkService implements Service, SpeakerDelegate {
 				// 回调 Cellet
 				cellet.dialogue(speakerTag, primitive);
 			}
+		}
+		else {
+			Logger.e(TalkService.class, "Can NOT find speaker tag in 'tagContexts': " + speakerTag +
+					" from " + session.getAddress().getHostString());
 		}
 	}
 

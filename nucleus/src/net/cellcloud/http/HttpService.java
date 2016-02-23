@@ -49,7 +49,6 @@ import org.eclipse.jetty.server.ServerConnector;
 import org.eclipse.jetty.server.SslConnectionFactory;
 import org.eclipse.jetty.server.handler.ContextHandler;
 import org.eclipse.jetty.server.handler.ContextHandlerCollection;
-import org.eclipse.jetty.server.handler.ResourceHandler;
 import org.eclipse.jetty.util.resource.FileResource;
 import org.eclipse.jetty.util.ssl.SslContextFactory;
 
@@ -217,6 +216,7 @@ public final class HttpService implements Service {
 		if (null != this.wsServer) {
 			try {
 				this.wsServer.start();
+				Logger.i(this.getClass(), "Started WS server at " + this.wsPort);
 			} catch (Exception e) {
 				Logger.log(HttpService.class, e, LogLevel.ERROR);
 			}
@@ -226,6 +226,7 @@ public final class HttpService implements Service {
 		if (null != this.wssServer) {
 			try {
 				this.wssServer.start();
+				Logger.i(this.getClass(), "Started WSS server at " + this.wssPort);
 			} catch (Exception e) {
 				Logger.log(HttpService.class, e, LogLevel.ERROR);
 			}
@@ -367,7 +368,7 @@ public final class HttpService implements Service {
 		sslContextFactory.setKeyManagerPassword(keyManagerPassword);
 
 		ServerConnector httpsConnector = new ServerConnector(this.httpsServer,
-				new SslConnectionFactory(sslContextFactory, "http/1.1"),  httpConnectionFactory);
+				new SslConnectionFactory(sslContextFactory, HttpVersion.HTTP_1_1.asString()),  httpConnectionFactory);
 		httpsConnector.setPort(port);
 		httpsConnector.setIdleTimeout(500000);
 		this.httpsServer.addConnector(httpsConnector);
@@ -426,12 +427,17 @@ public final class HttpService implements Service {
 		this.wssServer.addConnector(sslConnector);
 
 		JettyWebSocketHandler wsh = new JettyWebSocketHandler(this.webSocketSecure);
-		this.wssServer.setHandler(wsh);
 
-		ResourceHandler rHandler = new ResourceHandler();
-		rHandler.setDirectoriesListed(true);
-		rHandler.setResourceBase("cell");
-		wsh.setHandler(rHandler);
+		ContextHandler wsContextHandler = new ContextHandler();
+		wsContextHandler.setHandler(wsh);
+		wsContextHandler.setContextPath("/wss");
+
+//		ResourceHandler rHandler = new ResourceHandler();
+//		rHandler.setDirectoriesListed(true);
+//		rHandler.setResourceBase("wss");
+//		wsh.setHandler(rHandler);
+
+		this.wssServer.setHandler(wsh);
 
 		return this.webSocketSecure;
 	}
@@ -475,12 +481,17 @@ public final class HttpService implements Service {
 		this.wsServer.addConnector(connector);
 
 		JettyWebSocketHandler wsh = new JettyWebSocketHandler(this.webSocket);
-		this.wsServer.setHandler(wsh);
 
-		ResourceHandler rHandler = new ResourceHandler();
-		rHandler.setDirectoriesListed(true);
-		rHandler.setResourceBase("cell");
-		wsh.setHandler(rHandler);
+		ContextHandler wsContextHandler = new ContextHandler();
+		wsContextHandler.setHandler(wsh);
+		wsContextHandler.setContextPath("/ws");
+
+//		ResourceHandler rHandler = new ResourceHandler();
+//		rHandler.setDirectoriesListed(true);
+//		rHandler.setResourceBase("ws");
+//		wsh.setHandler(rHandler);
+
+		this.wsServer.setHandler(wsh);
 
 		return this.webSocket;
 	}
