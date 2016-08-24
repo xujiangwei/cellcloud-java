@@ -117,6 +117,9 @@ public final class NucleusConfig {
 		/// HTTP 服务端口号
 		public int httpPort = 7070;
 
+		/// HTTPS 服务端口号
+		public int httpsPort = 7080;
+
 		/// HTTP 连接队列长度
 		public int httpQueueSize = 2000;
 

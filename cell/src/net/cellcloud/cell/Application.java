@@ -313,6 +313,10 @@ public final class Application {
 							if (nl.getLength() > 0) {
 								config.talk.httpPort = Integer.parseInt(nl.item(0).getTextContent());
 								Logger.i(this.getClass(), "nucleus.talk.http.port = " + config.talk.httpPort);
+
+								// 自动推演 https port
+								config.talk.httpsPort = config.talk.httpPort + 10;
+								Logger.i(this.getClass(), "nucleus.talk.https.port = " + config.talk.httpsPort);
 							}
 							// http queue size
 							nl = elHttp.getElementsByTagName("queue");

@@ -115,61 +115,44 @@ public final class HttpService implements Service {
 	 */
 	@Override
 	public boolean startup() {
-		ArrayList<ServerConnector> connectorList = new ArrayList<ServerConnector>(this.capsules.size());
-		ArrayList<ContextHandler> contextList = new ArrayList<ContextHandler>();
+		// 启动 HTTP 服务器
+		if (null != this.httpServer) {
+			ArrayList<ContextHandler> contextList = new ArrayList<ContextHandler>();
 
-		// 创建 HTTP 服务器
-		this.httpServer = new Server();
-		// 设置错误处理句柄
-		this.httpServer.addBean(new DefaultErrorHandler());
+			for (HttpCapsule hc : this.capsules) {
+				// 添加上下文处理器
+				List<CapsuleHolder> holders = hc.getHolders();
+				for (CapsuleHolder holder : holders) {
+					ContextHandler context = new ContextHandler(holder.getPathSpec());
+					context.setHandler(holder.getHttpHandler());
+					contextList.add(context);
 
-		for (HttpCapsule hc : this.capsules) {
-			ServerConnector sc = new ServerConnector(this.httpServer);
-			sc.setPort(hc.getPort());
-			sc.setAcceptQueueSize(hc.getQueueSize());
-			// 添加连接器
-			connectorList.add(sc);
-
-			// 添加上下文处理器
-			List<CapsuleHolder> holders = hc.getHolders();
-			for (CapsuleHolder holder : holders) {
-				ContextHandler context = new ContextHandler(holder.getPathSpec());
-				context.setHandler(holder.getHttpHandler());
-				contextList.add(context);
-
-				// 记录 Holder
-				this.holders.put(holder.getPathSpec(), holder);
+					// 记录 Holder
+					this.holders.put(holder.getPathSpec(), holder);
+				}
 			}
-		}
 
-		// 连接器
-		ServerConnector[] connectors = new ServerConnector[connectorList.size()];
-		connectorList.toArray(connectors);
-		this.httpServer.setConnectors(connectors);
+			// 添加跨域支持
+			this.httpCrossDomainHandler = new HttpCrossDomainHandler(this);
+			ContextHandler cdContext = new ContextHandler(this.httpCrossDomainHandler.getPathSpec());
+			cdContext.setHandler(this.httpCrossDomainHandler);
+			contextList.add(cdContext);
 
-		// 添加跨域支持
-		this.httpCrossDomainHandler = new HttpCrossDomainHandler(this);
-		ContextHandler cdContext = new ContextHandler(this.httpCrossDomainHandler.getPathSpec());
-		cdContext.setHandler(this.httpCrossDomainHandler);
-		contextList.add(cdContext);
+			// 处理器
+			ContextHandler[] handlers = new ContextHandler[contextList.size()];
+			contextList.toArray(handlers);
+			ContextHandlerCollection contexts = new ContextHandlerCollection();
+			contexts.setHandlers(handlers);
+			this.httpServer.setHandler(contexts);
 
-		// 处理器
-		ContextHandler[] handlers = new ContextHandler[contextList.size()];
-		contextList.toArray(handlers);
-		ContextHandlerCollection contexts = new ContextHandlerCollection();
-		contexts.setHandlers(handlers);
-		this.httpServer.setHandler(contexts);
-
-		this.httpServer.setStopTimeout(1000);
-		this.httpServer.setStopAtShutdown(true);
-
-		try {
-			this.httpServer.start();
-			Logger.i(this.getClass(), "Started HTTP server at " + connectors[0].getPort());
-		} catch (InterruptedException e) {
-			Logger.log(HttpService.class, e, LogLevel.ERROR);
-		} catch (Exception e) {
-			Logger.log(HttpService.class, e, LogLevel.ERROR);
+			try {
+				this.httpServer.start();
+				Logger.i(this.getClass(), "Started HTTP server at " + ((ServerConnector)this.httpServer.getConnectors()[0]).getPort());
+			} catch (InterruptedException e) {
+				Logger.log(HttpService.class, e, LogLevel.ERROR);
+			} catch (Exception e) {
+				Logger.log(HttpService.class, e, LogLevel.ERROR);
+			}
 		}
 
 		// 启动 HTTPS 服务器
@@ -198,9 +181,6 @@ public final class HttpService implements Service {
 			ContextHandlerCollection httpsContexts = new ContextHandlerCollection();
 			httpsContexts.setHandlers(httpsHandlers);
 			this.httpsServer.setHandler(httpsContexts);
-
-			this.httpsServer.setStopTimeout(1000);
-			this.httpsServer.setStopAtShutdown(true);
 
 			try {
 				this.httpsServer.start();
@@ -291,30 +271,22 @@ public final class HttpService implements Service {
 	/** 删除服务节点。
 	 */
 	public void removeCapsule(HttpCapsule capsule) {
+		if (null == capsule) {
+			return;
+		}
+
 		this.capsules.remove(capsule);
 	}
 
-	/**
-	 * 删除指定端口的服务节点。
-	 * @param port
-	 */
-	public void removeCapsule(int port) {
-		for (HttpCapsule capsule : this.capsules) {
-			if (capsule.getPort() == port) {
-				this.removeCapsule(capsule);
-				return;
-			}
-		}
+	public List<HttpCapsule> getCapsules() {
+		ArrayList<HttpCapsule> list = new ArrayList<HttpCapsule>(this.capsules.size());
+		list.addAll(this.capsules);
+		return list;
 	}
 
-	/**
-	 * 根据端口号返回服务器节点。
-	 * @param port
-	 * @return
-	 */
-	public HttpCapsule getCapsule(int port) {
+	public HttpCapsule getCapsule(String name) {
 		for (HttpCapsule capsule : this.capsules) {
-			if (capsule.getPort() == port) {
+			if (capsule.getName().equals(name)) {
 				return capsule;
 			}
 		}
@@ -322,14 +294,9 @@ public final class HttpService implements Service {
 		return null;
 	}
 
-	/**
-	 * 是否包含指定端口的 HTTP 服务节点。
-	 * @param port
-	 * @return
-	 */
-	public boolean hasCapsule(int port) {
+	public boolean hasCapsule(String name) {
 		for (HttpCapsule capsule : this.capsules) {
-			if (capsule.getPort() == port) {
+			if (capsule.getName().equals(name)) {
 				return true;
 			}
 		}
@@ -337,7 +304,34 @@ public final class HttpService implements Service {
 		return false;
 	}
 
-	public boolean activateHttps(int port, String jksResource, String keyStorePassword, String keyManagerPassword) {
+	public boolean activateHttp(int[] ports, long idleTimeout) {
+		if (ports.length == 0) {
+			return false;
+		}
+
+		// 创建 HTTP 服务器
+		this.httpServer = new Server();
+		// 设置错误处理句柄
+		this.httpServer.addBean(new DefaultErrorHandler());
+
+		// 连接器
+		ServerConnector[] connectors = new ServerConnector[ports.length];
+		for (int i = 0; i < ports.length; ++i) {
+			@SuppressWarnings("resource")
+			ServerConnector connector = new ServerConnector(this.httpServer);
+			connector.setPort(ports[i]);
+			connector.setIdleTimeout(idleTimeout);
+			connectors[i] = connector;
+		}
+		this.httpServer.setConnectors(connectors);
+
+		this.httpServer.setStopTimeout(1000);
+		this.httpServer.setStopAtShutdown(true);
+
+		return true;
+	}
+
+	public boolean activateHttpSecure(int port, long idleTimeout, String jksResource, String keyStorePassword, String keyManagerPassword) {
 		if (null == jksResource || null == keyStorePassword || null == keyManagerPassword) {
 			Logger.w(this.getClass(), "No key store password, can NOT start HTTP Secure service");
 			return false;
@@ -356,7 +350,6 @@ public final class HttpService implements Service {
 		Logger.i(this.getClass(), "HTTPS key store file: " + url.toString());
 
 		try {
-//			sslContextFactory.setKeyStorePath("keystore");
 			sslContextFactory.setKeyStoreResource(new FileResource(url));
 		} catch (IOException | URISyntaxException exception) {
 			Logger.log(this.getClass(), exception, LogLevel.ERROR);
@@ -370,8 +363,11 @@ public final class HttpService implements Service {
 		ServerConnector httpsConnector = new ServerConnector(this.httpsServer,
 				new SslConnectionFactory(sslContextFactory, HttpVersion.HTTP_1_1.asString()),  httpConnectionFactory);
 		httpsConnector.setPort(port);
-		httpsConnector.setIdleTimeout(500000);
+		httpsConnector.setIdleTimeout(idleTimeout);
 		this.httpsServer.addConnector(httpsConnector);
+
+		this.httpsServer.setStopTimeout(1000);
+		this.httpsServer.setStopAtShutdown(true);
 
 		return true;
 	}

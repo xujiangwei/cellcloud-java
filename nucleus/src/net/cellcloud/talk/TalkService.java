@@ -93,8 +93,10 @@ public final class TalkService implements Service, SpeakerDelegate {
 
 	// 服务器端是否启用 HTTP 服务
 	private boolean httpEnabled;
-	private int httpPort;
 	private int httpQueueSize;
+
+	private int httpPort;
+	private int httpsPort;
 
 	private CookieSessionManager httpSessionManager;
 	private HttpSessionListener httpSessionListener;
@@ -164,8 +166,10 @@ public final class TalkService implements Service, SpeakerDelegate {
 			this.maxConnections = 1000;
 
 			this.httpEnabled = true;
-			this.httpPort = 7070;
 			this.httpQueueSize = 1000;
+
+			this.httpPort = 7070;
+			this.httpsPort = 7080;
 
 			// 15 分钟
 			this.sessionTimeout = 15 * 60 * 1000;
@@ -325,7 +329,8 @@ public final class TalkService implements Service, SpeakerDelegate {
 		}
 
 		if (this.httpEnabled && null != HttpService.getInstance()) {
-			HttpService.getInstance().removeCapsule(this.httpPort);
+			HttpCapsule hc = HttpService.getInstance().getCapsule("ts");
+			HttpService.getInstance().removeCapsule(hc);
 		}
 
 		if (null != this.tagContexts) {
@@ -402,7 +407,7 @@ public final class TalkService implements Service, SpeakerDelegate {
 	 * 设置最大连接数。
 	 * @param num 指定最大连接数。
 	 */
-	public void setMaxConnections(int num) {
+	public void setMaxConnections(int num) throws InvalidException {
 		if (null != this.acceptor && this.acceptor.isRunning()) {
 			throw new InvalidException("Can't set the max number of connections in talk service after the start");
 		}
@@ -420,15 +425,18 @@ public final class TalkService implements Service, SpeakerDelegate {
 
 	/** 设置是否激活 HTTP 服务。
 	 */
-	public void httpEnabled(boolean enabled) {
-		if (null != HttpService.getInstance() && HttpService.getInstance().hasCapsule(this.httpPort)) {
+	public void httpEnabled(boolean enabled) throws InvalidException {
+		if (null != HttpService.getInstance() && HttpService.getInstance().hasCapsule("ts")) {
 			throw new InvalidException("Can't set the http enabled in talk service after the start");
 		}
 
 		this.httpEnabled = enabled;
 	}
 
-	/** 设置 HTTP 服务端口。
+	/**
+	 * 设置 HTTP 服务端口。
+	 * 
+	 * @param port
 	 * @note 在 startup 之前设置才能生效。
 	 */
 	public void setHttpPort(int port) {
@@ -439,11 +447,33 @@ public final class TalkService implements Service, SpeakerDelegate {
 		this.httpPort = port;
 	}
 
-	/** 返回 HTTP 服务端口。
+	/**
+	 * 设置 HTTPS 服务端口。
+	 * 
+	 * @param port
+	 */
+	public void setHttpsPort(int port) {
+		if (null != this.acceptor && this.acceptor.isRunning()) {
+			throw new InvalidException("Can't set the http port in talk service after the start");
+		}
+
+		this.httpsPort = port;
+	}
+
+	/**
+	 * 返回 HTTP 服务端口。
 	 * @return
 	 */
 	public int getHttpPort() {
 		return this.httpPort;
+	}
+
+	/**
+	 * 返回 HTTPS 服务端口。
+	 * @return
+	 */
+	public int getHttpsPort() {
+		return this.httpsPort;
 	}
 
 	/** 设置 HTTP 服务的允许接收连接的队列长度。
@@ -936,7 +966,7 @@ public final class TalkService implements Service, SpeakerDelegate {
 	}
 
 	public void startExtendHolder() {
-		HttpCapsule capsule = HttpService.getInstance().getCapsule(this.httpPort);
+		HttpCapsule capsule = HttpService.getInstance().getCapsule("ts");
 		if (null != capsule && null != this.extendHttpHolders) {
 			for (CapsuleHolder holder : this.extendHttpHolders) {
 				capsule.addHolder(holder);
@@ -952,12 +982,25 @@ public final class TalkService implements Service, SpeakerDelegate {
 			return;
 		}
 
+		long idleTimeout = 30 * 60 * 1000;
+
+		// 激活 HTTP 服务
+		HttpService.getInstance().activateHttp(new int[]{this.httpPort}, idleTimeout);
+
+		// 激活 HTTPS 服务
+		HttpService.getInstance().activateHttpSecure(this.httpsPort, idleTimeout,
+				Nucleus.getInstance().getConfig().talk.keystore,
+				Nucleus.getInstance().getConfig().talk.keyStorePassword,
+				Nucleus.getInstance().getConfig().talk.keyManagerPassword);
+
+		// 激活 WS 服务
 		this.wsHandler = new WebSocketMessageHandler(this);
 		this.wsManager = HttpService.getInstance().activeWebSocket(this.httpPort + 1
 				, this.httpQueueSize, this.wsHandler);
 
+		// 激活 WSS 服务
 		this.wssHandler = new WebSocketMessageHandler(this);
-		this.wssManager = HttpService.getInstance().activeWebSocketSecure(this.httpPort + 7
+		this.wssManager = HttpService.getInstance().activeWebSocketSecure(this.httpsPort + 1
 				, this.httpQueueSize, this.wssHandler
 				, Nucleus.getInstance().getConfig().talk.keystore
 				, Nucleus.getInstance().getConfig().talk.keyStorePassword
@@ -974,7 +1017,7 @@ public final class TalkService implements Service, SpeakerDelegate {
 		this.httpSessionManager.addSessionListener(this.httpSessionListener);
 
 		// 创建服务节点
-		HttpCapsule capsule = new HttpCapsule(this.httpPort, this.httpQueueSize);
+		HttpCapsule capsule = new HttpCapsule("ts", this.httpQueueSize);
 		// 设置 Session 管理器
 		capsule.setSessionManager(this.httpSessionManager);
 		// 依次添加 Holder 点
@@ -1004,8 +1047,8 @@ public final class TalkService implements Service, SpeakerDelegate {
 
 		if (null != this.listeners) {
 			synchronized (this.listeners) {
-				for (TalkListener listener : this.listeners) {
-					listener.dialogue(identifier, primitive);
+				for (int i = 0; i < this.listeners.size(); ++i) {
+					this.listeners.get(i).dialogue(identifier, primitive);
 				}
 			}
 		}
@@ -1026,8 +1069,8 @@ public final class TalkService implements Service, SpeakerDelegate {
 
 		String tag = speaker.getRemoteTag();
 		synchronized (this.listeners) {
-			for (TalkListener listener : this.listeners) {
-				listener.contacted(identifier, tag);
+			for (int i = 0; i < this.listeners.size(); ++i) {
+				this.listeners.get(i).contacted(identifier, tag);
 			}
 		}
 	}
@@ -1043,8 +1086,8 @@ public final class TalkService implements Service, SpeakerDelegate {
 
 		String tag = speaker.getRemoteTag();
 		synchronized (this.listeners) {
-			for (TalkListener listener : this.listeners) {
-				listener.quitted(identifier, tag);
+			for (int i = 0; i < this.listeners.size(); ++i) {
+				this.listeners.get(i).quitted(identifier, tag);
 			}
 		}
 	}
@@ -1094,8 +1137,8 @@ public final class TalkService implements Service, SpeakerDelegate {
 
 		String tag = speaker.getRemoteTag();
 		synchronized (this.listeners) {
-			for (TalkListener listener : this.listeners) {
-				listener.failed(tag, failure);
+			for (int i = 0; i < this.listeners.size(); ++i) {
+				this.listeners.get(i).failed(tag, failure);
 			}
 		}
 	}
@@ -1196,7 +1239,7 @@ public final class TalkService implements Service, SpeakerDelegate {
 		}
 		else {
 			//
-			Logger.i(this.getClass(), "Can NOT find tag with session: " + session.getAddress().getHostString());
+			Logger.d(this.getClass(), "Can NOT find tag with session: " + session.getAddress().getHostString());
 		}
 
 		// 清理未授权表

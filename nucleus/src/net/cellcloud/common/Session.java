@@ -51,7 +51,7 @@ public class Session {
 	private ConcurrentHashMap<String, Object> attributes;
 
 	public Session(MessageService service, InetSocketAddress address) {
-		this.id = Math.abs(Utils.randomLong());
+		this.id = Utils.generateSerialNumber();
 		this.timestamp = System.currentTimeMillis();
 		this.service = service;
 		this.address = address;
@@ -210,5 +210,15 @@ public class Session {
 		else {
 			this.cache = new byte[newSize];
 		}
+	}
+
+	@Override
+	public boolean equals(Object obj) {
+		if (null != obj && obj instanceof Session) {
+			Session other = (Session) obj;
+			return this.id.longValue() == other.id.longValue();
+		}
+
+		return false;
 	}
 }

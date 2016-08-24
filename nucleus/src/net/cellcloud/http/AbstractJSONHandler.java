@@ -59,6 +59,12 @@ public abstract class AbstractJSONHandler extends HttpHandler {
 	}
 
 	@Override
+	protected void doOptions(HttpRequest request, HttpResponse response)
+			throws IOException {
+		this.respond(response, HttpResponse.SC_METHOD_NOT_ALLOWED);
+	}
+
+	@Override
 	protected void doPut(HttpRequest request, HttpResponse response)
 		throws IOException {
 		this.respond(response, HttpResponse.SC_METHOD_NOT_ALLOWED);

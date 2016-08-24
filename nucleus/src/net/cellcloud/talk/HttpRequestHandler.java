@@ -115,4 +115,16 @@ public final class HttpRequestHandler extends AbstractJSONHandler implements Cap
 			this.respond(response, HttpResponse.SC_INTERNAL_SERVER_ERROR);
 		}
 	}
+
+	@Override
+	protected void doGet(HttpRequest request, HttpResponse response)
+			throws IOException {
+		this.doPost(request, response);
+	}
+
+	@Override
+	protected void doOptions(HttpRequest request, HttpResponse response)
+			throws IOException {
+		this.doPost(request, response);
+	}
 }

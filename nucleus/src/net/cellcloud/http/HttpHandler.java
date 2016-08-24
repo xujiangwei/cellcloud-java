@@ -97,6 +97,9 @@ public abstract class HttpHandler implements Handler {
 		else if (method.equalsIgnoreCase(HttpMethod.POST.asString())) {
 			doPost(httpRequest, httpResponse);
 		}
+		else if (method.equalsIgnoreCase(HttpMethod.OPTIONS.asString())) {
+			doOptions(httpRequest, httpResponse);
+		}
 		else if (method.equalsIgnoreCase(HttpMethod.PUT.asString())) {
 			doPut(httpRequest, httpResponse);
 		}
@@ -128,6 +131,14 @@ public abstract class HttpHandler implements Handler {
 	 * @throws IOException
 	 */
 	protected abstract void doPost(HttpRequest request, HttpResponse response) throws IOException;
+
+	/**
+	 * OPTIONS Method
+	 * @param request
+	 * @param response
+	 * @throws IOException
+	 */
+	protected abstract void doOptions(HttpRequest request, HttpResponse response) throws IOException;
 
 	/**
 	 * PUT Method

@@ -255,10 +255,15 @@ public class NonblockingAcceptor extends MessageService implements MessageAccept
 		NonblockingAcceptorSession nas = this.idSessionMap.get(session.getId());
 		if (null != nas) {
 			try {
-				nas.socket.close();
+				if (null != nas.socket) {
+					nas.socket.close();
+				}
 			} catch (IOException e) {
 				Logger.log(NonblockingAcceptor.class, e, LogLevel.DEBUG);
 			}
+
+			// Erase session
+			this.eraseSession(nas);
 		}
 
 //		Iterator<NonblockingAcceptorSession> iter = this.sessions.values().iterator();
@@ -416,18 +421,6 @@ public class NonblockingAcceptor extends MessageService implements MessageAccept
 		}
 
 		this.socketSessionMap.remove(session.socket.hashCode());
-
-//		Iterator<Map.Entry<Long, NonblockingAcceptorSession>> iter = this.sessions.entrySet().iterator();
-//		while (iter.hasNext()) {
-//			Map.Entry<Long, NonblockingAcceptorSession> entry = iter.next();
-//			Long hashCode = entry.getKey();
-//			NonblockingAcceptorSession nas = entry.getValue();
-//			if (nas.getId().longValue() == session.getId().longValue()) {
-//				this.sessions.remove(hashCode);
-//				exist = true;
-//				break;
-//			}
-//		}
 
 		if (exist) {
 			this.fireSessionDestroyed(session);

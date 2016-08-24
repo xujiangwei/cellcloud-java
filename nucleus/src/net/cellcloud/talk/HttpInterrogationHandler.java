@@ -98,4 +98,16 @@ public final class HttpInterrogationHandler extends AbstractJSONHandler implemen
 			this.respond(response, HttpResponse.SC_INTERNAL_SERVER_ERROR);
 		}
 	}
+
+	@Override
+	protected void doPost(HttpRequest request, HttpResponse response)
+			throws IOException {
+		this.doGet(request, response);
+	}
+
+	@Override
+	protected void doOptions(HttpRequest request, HttpResponse response)
+			throws IOException {
+		this.doGet(request, response);
+	}
 }

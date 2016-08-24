@@ -61,7 +61,7 @@ public final class TalkAcceptorHandler implements MessageHandler {
 
 	@Override
 	public void sessionDestroyed(Session session) {
-		// Nothing
+		this.talkService.closeSession(session);
 	}
 
 	@Override

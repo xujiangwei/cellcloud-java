@@ -140,6 +140,13 @@ public final class HttpCrossDomainHandler extends HttpHandler implements Capsule
 				Logger.log(getClass(), e, LogLevel.WARNING);
 			}
 		}
+		else if (method.equalsIgnoreCase(HttpMethod.OPTIONS.asString())) {
+			try {
+				holder.getHttpHandler().doOptions(httpRequest, httpResponse);
+			} catch (IOException e) {
+				Logger.log(getClass(), e, LogLevel.WARNING);
+			}
+		}
 		else {
 			this.respond(httpResponse, HttpResponse.SC_NOT_IMPLEMENTED);
 
@@ -170,6 +177,12 @@ public final class HttpCrossDomainHandler extends HttpHandler implements Capsule
 
 	@Override
 	protected void doPost(HttpRequest request, HttpResponse response)
+			throws IOException {
+		this.respond(response, HttpResponse.SC_NOT_IMPLEMENTED);
+	}
+
+	@Override
+	protected void doOptions(HttpRequest request, HttpResponse response)
 			throws IOException {
 		this.respond(response, HttpResponse.SC_NOT_IMPLEMENTED);
 	}

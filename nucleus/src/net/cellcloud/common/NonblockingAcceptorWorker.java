@@ -150,7 +150,7 @@ public final class NonblockingAcceptorWorker extends Thread {
 
 			// 时间计数
 			++timeCounts;
-			if (timeCounts >= 200) {
+			if (timeCounts >= 1000) {
 				time = System.currentTimeMillis();
 				timeCounts = 0;
 			}
@@ -407,6 +407,28 @@ public final class NonblockingAcceptorWorker extends Thread {
 						}
 					} catch (IOException e) {
 						Logger.log(NonblockingAcceptorWorker.class, e, LogLevel.WARNING);
+
+						if (null != session.socket) {
+							this.acceptor.fireSessionClosed(session);
+						}
+
+						try {
+							if (channel.isOpen()) {
+								channel.close();
+							}
+						} catch (IOException ioe) {
+							Logger.log(NonblockingAcceptorWorker.class, ioe, LogLevel.DEBUG);
+						}
+
+						// 移除 Session
+						this.acceptor.eraseSession(session);
+						this.removeSession(session);
+
+						session.selectionKey.cancel();
+
+						buf = null;
+
+						return;
 					}
 
 					buf = null;

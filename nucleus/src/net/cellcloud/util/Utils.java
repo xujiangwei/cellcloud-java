@@ -49,6 +49,9 @@ public final class Utils {
 	// 常用日期格式
 	public final static SimpleDateFormat sDateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 
+	// 序列号头格式
+	private final static SimpleDateFormat sFormatter = new SimpleDateFormat("yyMMdd");
+
 	private final static Random sRandom = new Random(System.currentTimeMillis());
 
 	// 字母表
@@ -94,6 +97,50 @@ public final class Utils {
 			buf[i] = ALPHABET[index];
 		}
 		return new String(buf);
+	}
+
+	/**
+	 * 生成唯一序列码。
+	 */
+	public static Long generateSerialNumber() {
+		StringBuilder buf = new StringBuilder();
+		buf.append(sFormatter.format(new Date()));
+
+		String rnd = Integer.toString(Math.abs(Utils.randomInt()));
+		switch (rnd.length()) {
+		case 1:
+			buf.append("000000000");
+			break;
+		case 2:
+			buf.append("00000000");
+			break;
+		case 3:
+			buf.append("0000000");
+			break;
+		case 4:
+			buf.append("000000");
+			break;
+		case 5:
+			buf.append("00000");
+			break;
+		case 6:
+			buf.append("0000");
+			break;
+		case 7:
+			buf.append("000");
+			break;
+		case 8:
+			buf.append("00");
+			break;
+		case 9:
+			buf.append("0");
+			break;
+		default:
+			break;
+		}
+
+		buf.append(rnd);
+		return Long.valueOf(buf.toString());
 	}
 
 	/** 转换日期为字符串形式。

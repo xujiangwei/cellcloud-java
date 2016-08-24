@@ -151,6 +151,12 @@ public final class HttpDialogueHandler extends AbstractJSONHandler implements Ca
 		}
 	}
 
+	@Override
+	protected void doOptions(HttpRequest request, HttpResponse response)
+			throws IOException {
+		this.doPost(request, response);
+	}
+
 	/**
 	 * 将原语队列转为 JSON 数组。
 	 * @param queue

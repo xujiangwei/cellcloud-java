@@ -226,6 +226,8 @@ public final class Nucleus {
 				this.talkService.httpEnabled(this.config.talk.httpEnabled);
 				// 设置 HTTP 端口号
 				this.talkService.setHttpPort(this.config.talk.httpPort);
+				// 设置 HTTPS 端口号
+				this.talkService.setHttpsPort(this.config.talk.httpsPort);
 				// 设置 HTTP 队列长度
 				this.talkService.setHttpQueueSize(this.config.talk.httpQueueSize);
 				// 设置 HTTP 会话超时时间

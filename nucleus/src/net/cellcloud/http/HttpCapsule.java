@@ -36,24 +36,22 @@ import java.util.List;
  */
 public class HttpCapsule {
 
-	private int port;
+	private String name;
+
 	private int queueSize;
 
 	private ArrayList<CapsuleHolder> holders;
 
 	private SessionManager sessionManager;
 
-	public HttpCapsule(int port, int queueSize) {
-		this.port = port;
+	public HttpCapsule(String name, int queueSize) {
+		this.name = name;
 		this.queueSize = queueSize;
 		this.holders = new ArrayList<CapsuleHolder>();
 	}
 
-	/** 返回监听端口。
-	 * @return
-	 */
-	public int getPort() {
-		return this.port;
+	public String getName() {
+		return this.name;
 	}
 
 	/** 返回连接器队列长度。

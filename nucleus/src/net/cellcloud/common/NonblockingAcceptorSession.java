@@ -55,8 +55,7 @@ public class NonblockingAcceptorSession extends Session {
 
 	/** 构造函数。
 	 */
-	public NonblockingAcceptorSession(MessageService service,
-			InetSocketAddress address, int block) {
+	public NonblockingAcceptorSession(MessageService service, InetSocketAddress address, int block) {
 		super(service, address);
 		this.block = block;
 		this.readTime = Clock.currentTimeMillis();

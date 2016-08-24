@@ -113,4 +113,10 @@ public final class HttpCheckHandler extends AbstractJSONHandler implements Capsu
 			this.respond(response, HttpResponse.SC_INTERNAL_SERVER_ERROR);
 		}
 	}
+
+	@Override
+	protected void doOptions(HttpRequest request, HttpResponse response)
+			throws IOException {
+		this.doPost(request, response);
+	}
 }

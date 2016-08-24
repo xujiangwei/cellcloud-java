@@ -133,6 +133,18 @@ public final class HttpHeartbeatHandler extends AbstractJSONHandler implements C
 		}
 	}
 
+	@Override
+	protected void doPost(HttpRequest request, HttpResponse response)
+			throws IOException {
+		this.doGet(request, response);
+	}
+
+	@Override
+	protected void doOptions(HttpRequest request, HttpResponse response)
+			throws IOException {
+		this.doGet(request, response);
+	}
+
 	/**
 	 * 将原语队列转为 JSON 数组。
 	 * @param queue
