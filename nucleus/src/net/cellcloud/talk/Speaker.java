@@ -160,13 +160,14 @@ public class Speaker implements Speakable {
 		this.state = SpeakerState.HANGUP;
 		this.authenticated = false;
 
+		this.retryTimestamp = 0;
+
 		// 进行连接
 		boolean ret = this.connector.connect(this.address);
 		if (ret) {
 			// 开始进行调用
 			this.state = SpeakerState.CALLING;
 			this.lost = false;
-			this.retryTimestamp = 0;
 		}
 
 		return ret;

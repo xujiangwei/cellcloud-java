@@ -71,7 +71,7 @@ public final class TalkServiceDaemon extends Thread {
 
 			// 心跳计数
 			++heartbeatCount;
-			if (heartbeatCount > 6000) {
+			if (heartbeatCount >= 6000) {
 				heartbeatCount = 0;
 			}
 
@@ -154,11 +154,15 @@ public final class TalkServiceDaemon extends Thread {
 
 					if (!speakerList.isEmpty()) {
 						for (Speaker speaker : speakerList) {
-							// 重连
-							speaker.retryTimestamp = this.tickTime;
-							speaker.retryCounts++;
+							// 重置 identifiers
+							LinkedList<String> identifiers = new LinkedList<String>();
+							identifiers.addAll(speaker.getIdentifiers());
+
+							// 挂断
+							speaker.hangUp();
+
 							// 执行 call
-							if (speaker.call(null)) {
+							if (speaker.call(identifiers)) {
 								StringBuilder buf = new StringBuilder();
 								buf.append("Retry call cellet '");
 								buf.append(speaker.getIdentifiers().get(0));
@@ -180,6 +184,9 @@ public final class TalkServiceDaemon extends Thread {
 								Logger.w(TalkServiceDaemon.class, buf.toString());
 								buf = null;
 							}
+
+							// 重连计数
+							speaker.retryCounts++;
 						}
 
 						// 清空列表
