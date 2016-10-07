@@ -76,13 +76,13 @@ public abstract class Cellet extends AbstractCellet {
 
 	/** 发送原语到消费端进行会话。
 	 */
-	public void talk(final String targetTag, final Primitive primitive) {
-		TalkService.getInstance().notice(targetTag, primitive, this, this.sandbox);
+	public boolean talk(final String targetTag, final Primitive primitive) {
+		return TalkService.getInstance().notice(targetTag, primitive, this, this.sandbox);
 	}
 	/** 发送方言到消费端进行会话。
 	 */
-	public void talk(final String targetTag, final Dialect dialect) {
-		TalkService.getInstance().notice(targetTag, dialect, this, this.sandbox);
+	public boolean talk(final String targetTag, final Dialect dialect) {
+		return TalkService.getInstance().notice(targetTag, dialect, this, this.sandbox);
 	}
 
 	/**

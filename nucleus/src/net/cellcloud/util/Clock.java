@@ -50,7 +50,7 @@ public final class Clock {
 	}
 
 	private void startTimer() {
-		this.timer = new Timer();
+		this.timer = new Timer("ClockTimer");
 		this.timer.scheduleAtFixedRate(new ClockTask(), 1000, 200);
 	}
 

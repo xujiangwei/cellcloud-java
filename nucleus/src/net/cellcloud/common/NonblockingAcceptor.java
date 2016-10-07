@@ -33,8 +33,10 @@ import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
+import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 
@@ -131,8 +133,9 @@ public class NonblockingAcceptor extends MessageService implements MessageAccept
 
 				// 启动工作线程
 				for (int i = 0; i < workerNum; ++i) {
-					if (!workers[i].isWorking())
+					if (!workers[i].isWorking()) {
 						workers[i].start();
+					}
 				}
 
 				// 进入事件分发循环
@@ -147,6 +150,7 @@ public class NonblockingAcceptor extends MessageService implements MessageAccept
 						Logger.log(NonblockingAcceptor.class, e, LogLevel.DEBUG);
 				} catch (Exception e) {
 					Logger.log(NonblockingAcceptor.class, e, LogLevel.ERROR);
+					fireErrorOccurred(null, MessageErrorCode.ACCEPT_FAILED);
 				}
 
 				running = false;
@@ -165,9 +169,9 @@ public class NonblockingAcceptor extends MessageService implements MessageAccept
 		// 退出事件循环
 		this.spinning = false;
 
-		Iterator<NonblockingAcceptorSession> iter = this.socketSessionMap.values().iterator();
-		while (iter.hasNext()) {
-			NonblockingAcceptorSession session = iter.next();
+		ArrayList<NonblockingAcceptorSession> sessionList = new ArrayList<NonblockingAcceptorSession>(this.socketSessionMap.size());
+		sessionList.addAll(this.socketSessionMap.values());
+		for (NonblockingAcceptorSession session : sessionList) {
 			this.close(session);
 		}
 
@@ -265,19 +269,6 @@ public class NonblockingAcceptor extends MessageService implements MessageAccept
 			// Erase session
 			this.eraseSession(nas);
 		}
-
-//		Iterator<NonblockingAcceptorSession> iter = this.sessions.values().iterator();
-//		while (iter.hasNext()) {
-//			NonblockingAcceptorSession nas = iter.next();
-//			if (nas.getId().longValue() == session.getId().longValue()) {
-//				try {
-//					nas.socket.close();
-//				} catch (IOException e) {
-//					Logger.log(NonblockingAcceptor.class, e, LogLevel.DEBUG);
-//				}
-//				break;
-//			}
-//		}
 	}
 
 	@Override
@@ -286,15 +277,6 @@ public class NonblockingAcceptor extends MessageService implements MessageAccept
 		if (null != nas) {
 			nas.addMessage(message);
 		}
-
-//		Iterator<NonblockingAcceptorSession> iter = this.sessions.values().iterator();
-//		while (iter.hasNext()) {
-//			NonblockingAcceptorSession nas = iter.next();
-//			if (nas.getId().longValue() == session.getId().longValue()) {
-//				nas.addMessage(message);
-//				break;
-//			}
-//		}
 	}
 
 	@Override
@@ -407,24 +389,32 @@ public class NonblockingAcceptor extends MessageService implements MessageAccept
 		return ret;
 	}
 
-	/** 从接收器里删除指定的 Session 。
+	/**
+	 * 从接收器里删除指定的 Session 。
 	 */
-	protected synchronized void eraseSession(NonblockingAcceptorSession session) {
-		if (null == session.socket) {
-			return;
-		}
-
+	protected void eraseSession(NonblockingAcceptorSession session) {
 		boolean exist = false;
 
 		if (null != this.idSessionMap.remove(session.getId())) {
 			exist = true;
 		}
 
-		this.socketSessionMap.remove(session.socket.hashCode());
+		if (null != session.socket) {
+			this.socketSessionMap.remove(session.socket.hashCode());
+		}
 
 		if (exist) {
 			this.fireSessionDestroyed(session);
 			session.socket = null;
+
+			Iterator<Map.Entry<Integer, NonblockingAcceptorSession>> iter = this.socketSessionMap.entrySet().iterator();
+			while (iter.hasNext()) {
+				Map.Entry<Integer, NonblockingAcceptorSession> e = iter.next();
+				if (e.getValue().getId().equals(session.getId())) {
+					iter.remove();
+					break;
+				}
+			}
 		}
 	}
 
@@ -558,7 +548,11 @@ public class NonblockingAcceptor extends MessageService implements MessageAccept
 
 	/** 处理 Accept */
 	private void accept(SelectionKey key) {
-		ServerSocketChannel channel = (ServerSocketChannel)key.channel();
+		ServerSocketChannel channel = (ServerSocketChannel) key.channel();
+
+		Long sessionId = null;
+		Integer socket = null;
+		boolean error = false;
 
 		try {
 			// accept
@@ -584,9 +578,14 @@ public class NonblockingAcceptor extends MessageService implements MessageAccept
 			int index = (int)(session.getId().longValue() % this.workerNum);
 			session.worker = this.workers[index];
 
+			// session id
+			sessionId = session.getId();
+			// socket
+			socket = session.socket.hashCode();
+
 			// 记录
-			this.socketSessionMap.put(session.socket.hashCode(), session);
-			this.idSessionMap.put(session.getId(), session);
+			this.socketSessionMap.put(socket, session);
+			this.idSessionMap.put(sessionId, session);
 
 			// 回调事件
 			this.fireSessionCreated(session);
@@ -594,9 +593,20 @@ public class NonblockingAcceptor extends MessageService implements MessageAccept
 			// 回调事件
 			this.fireSessionOpened(session);
 		} catch (IOException e) {
-			// Nothing
+			error = true;
+			Logger.log(this.getClass(), e, LogLevel.ERROR);
 		} catch (Exception e) {
-			// Nothing
+			error = true;
+			Logger.log(this.getClass(), e, LogLevel.ERROR);
+		}
+
+		if (error) {
+			if (null != socket) {
+				this.socketSessionMap.remove(socket);
+			}
+			if (null != sessionId) {
+				this.idSessionMap.remove(sessionId);
+			}
 		}
 	}
 
@@ -610,8 +620,10 @@ public class NonblockingAcceptor extends MessageService implements MessageAccept
 
 		NonblockingAcceptorSession session = this.socketSessionMap.get(channel.socket().hashCode());
 		if (null == session) {
-			if (Logger.isDebugLevel()) {
-				Logger.d(NonblockingAcceptor.class, "Not found session");
+			try {
+				Logger.w(NonblockingAcceptor.class, "Not found session: " + channel.socket().getInetAddress().getHostAddress());
+			} catch (Exception e) {
+				// Nothing
 			}
 			return;
 		}
@@ -620,8 +632,9 @@ public class NonblockingAcceptor extends MessageService implements MessageAccept
 		session.selectionKey = key;
 		session.worker.pushReceiveSession(session);
 
-		if (key.isValid())
+		if (key.isValid()) {
 			key.interestOps(key.interestOps() | SelectionKey.OP_READ);
+		}
 	}
 
 	/** 处理 Write */
@@ -634,8 +647,10 @@ public class NonblockingAcceptor extends MessageService implements MessageAccept
 
 		NonblockingAcceptorSession session = this.socketSessionMap.get(channel.socket().hashCode());
 		if (null == session) {
-			if (Logger.isDebugLevel()) {
-				Logger.d(NonblockingAcceptor.class, "Not found session");
+			try {
+				Logger.w(NonblockingAcceptor.class, "Not found session: " + channel.socket().getInetAddress().getHostAddress());
+			} catch (Exception e) {
+				// Nothing
 			}
 			return;
 		}
@@ -644,7 +659,8 @@ public class NonblockingAcceptor extends MessageService implements MessageAccept
 		session.selectionKey = key;
 		session.worker.pushSendSession(session);
 
-		if (key.isValid())
+		if (key.isValid()) {
 			key.interestOps(key.interestOps() | SelectionKey.OP_WRITE);
+		}
 	}
 }

@@ -26,6 +26,7 @@ THE SOFTWARE.
 
 package net.cellcloud.cluster;
 
+import net.cellcloud.cluster.protocol.ClusterProtocol;
 
 /** 协议执行监视器。
  * 

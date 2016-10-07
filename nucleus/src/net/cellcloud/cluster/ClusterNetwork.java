@@ -45,6 +45,8 @@ import java.util.Queue;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 
+import net.cellcloud.cluster.protocol.ClusterProtocol;
+import net.cellcloud.cluster.protocol.ClusterProtocolFactory;
 import net.cellcloud.common.LogLevel;
 import net.cellcloud.common.Logger;
 import net.cellcloud.common.Message;

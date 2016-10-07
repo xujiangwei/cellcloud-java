@@ -128,6 +128,7 @@ public final class CachedQueueExecutor implements ExecutorService {
 
 	@Override
 	public void shutdown() {
+		this.queue.clear();
 		this.executor.shutdown();
 	}
 

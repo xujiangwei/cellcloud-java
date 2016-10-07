@@ -1350,7 +1350,7 @@ public final class TalkService implements Service, SpeakerDelegate {
 					session.removeAttribute("timer");
 				}
 
-				timer = new Timer();
+				timer = new Timer("SessionTimer");
 				timer.schedule(new TimerTask() {
 					@Override
 					public void run() {

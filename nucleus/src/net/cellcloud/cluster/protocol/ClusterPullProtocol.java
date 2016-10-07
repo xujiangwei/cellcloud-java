@@ -24,10 +24,15 @@ THE SOFTWARE.
 -----------------------------------------------------------------------------
 */
 
-package net.cellcloud.cluster;
+package net.cellcloud.cluster.protocol;
 
 import java.util.Map;
 
+import org.json.JSONException;
+import org.json.JSONObject;
+
+import net.cellcloud.cluster.Chunk;
+import net.cellcloud.cluster.ClusterNode;
 import net.cellcloud.common.Cryptology;
 import net.cellcloud.common.LogLevel;
 import net.cellcloud.common.Logger;
@@ -35,16 +40,13 @@ import net.cellcloud.common.Session;
 import net.cellcloud.core.Nucleus;
 import net.cellcloud.util.Utils;
 
-import org.json.JSONException;
-import org.json.JSONObject;
-
-/** 集群内数据块推送协议。
+/** 集群内数据块拉回协议。
  * 
  * @author Jiangwei Xu
  */
-public class ClusterPushProtocol extends ClusterProtocol {
+public class ClusterPullProtocol extends ClusterProtocol {
 
-	public final static String NAME = "Push";
+	public final static String NAME = "Pull";
 
 	/// 块标签
 	public final static String KEY_LABEL = "Label";
@@ -54,16 +56,17 @@ public class ClusterPushProtocol extends ClusterProtocol {
 	public final static String KEY_TARGET_HASH = "Target-Hash";
 
 	private long targetHash = 0;
+	private String chunkLabel = null;
 	private Chunk chunk = null;
 
-	public ClusterPushProtocol(long targetHash, Chunk chunk) {
-		super(ClusterPushProtocol.NAME);
+	public ClusterPullProtocol(long targetHash, String chunkLabel) {
+		super(ClusterPullProtocol.NAME);
 		this.targetHash = targetHash;
-		this.chunk = chunk;
+		this.chunkLabel = chunkLabel;
 	}
 
-	public ClusterPushProtocol(Map<String, String> prop) {
-		super(ClusterPushProtocol.NAME, prop);
+	public ClusterPullProtocol(Map<String, String> prop) {
+		super(ClusterPullProtocol.NAME, prop);
 	}
 
 	/** 返回目标节点 Hash 。
@@ -79,6 +82,22 @@ public class ClusterPushProtocol extends ClusterProtocol {
 		return this.targetHash;
 	}
 
+	/** 返回 Chunk 标签。
+	 */
+	public String getChunkLabel() {
+		if (null == this.chunkLabel) {
+			this.chunkLabel = this.getProp(KEY_LABEL);
+		}
+
+		return this.chunkLabel;
+	}
+
+	/** 返回数据块。
+	 */
+	public void setChunk(Chunk chunk) {
+		this.chunk = chunk;
+	}
+
 	/** 返回数据块。
 	 */
 	public Chunk getChunk() {
@@ -92,7 +111,7 @@ public class ClusterPushProtocol extends ClusterProtocol {
 				try {
 					json = new JSONObject(jsChunk);
 				} catch (JSONException e) {
-					Logger.log(ClusterPushProtocol.class, e, LogLevel.ERROR);
+					Logger.log(ClusterPullProtocol.class, e, LogLevel.ERROR);
 				}
 				if (null != json) {
 					this.chunk = new Chunk(label, json);
@@ -111,8 +130,7 @@ public class ClusterPushProtocol extends ClusterProtocol {
 		buf.append(KEY_DATE).append(": ").append(super.getStandardDate()).append("\n");
 
 		buf.append(KEY_TARGET_HASH).append(": ").append(this.targetHash).append("\n");
-		buf.append(KEY_LABEL).append(": ").append(Cryptology.getInstance().encodeBase64(Utils.string2Bytes(this.chunk.getLabel()))).append("\n");
-		buf.append(KEY_CHUNK).append(": ").append(Cryptology.getInstance().encodeBase64(Utils.string2Bytes(this.chunk.getData().toString()))).append("\n");
+		buf.append(KEY_LABEL).append(": ").append(Cryptology.getInstance().encodeBase64(Utils.string2Bytes(this.chunkLabel))).append("\n");
 
 		this.touch(session, buf);
 		buf = null;
@@ -125,6 +143,14 @@ public class ClusterPushProtocol extends ClusterProtocol {
 		buf.append(KEY_TAG).append(": ").append(Nucleus.getInstance().getTagAsString()).append("\n");
 		buf.append(KEY_DATE).append(": ").append(super.getStandardDate()).append("\n");
 		buf.append(KEY_STATE).append(": ").append(state.getCode()).append("\n");
+
+		if (null != this.chunk) {
+			buf.append(KEY_LABEL).append(": ").append(Cryptology.getInstance().encodeBase64(Utils.string2Bytes(this.chunk.getLabel()))).append("\n");
+			buf.append(KEY_CHUNK).append(": ").append(Cryptology.getInstance().encodeBase64(Utils.string2Bytes(this.chunk.getData().toString()))).append("\n");
+		}
+		else {
+			buf.append(KEY_LABEL).append(": ").append(Cryptology.getInstance().encodeBase64(Utils.string2Bytes(this.chunkLabel))).append("\n");
+		}
 
 		this.touch(this.contextSession, buf);
 		buf = null;

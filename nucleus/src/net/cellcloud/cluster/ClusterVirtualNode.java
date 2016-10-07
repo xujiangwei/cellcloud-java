@@ -27,7 +27,7 @@ THE SOFTWARE.
 package net.cellcloud.cluster;
 
 import java.net.InetSocketAddress;
-import java.util.HashMap;
+import java.util.concurrent.ConcurrentHashMap;
 
 /** 集群虚拟节点。
  * 
@@ -37,12 +37,12 @@ public class ClusterVirtualNode extends ClusterNode {
 
 	protected ClusterNode master = null;
 
-	private HashMap<String, Chunk> memoryChunks;
+	private ConcurrentHashMap<String, Chunk> memoryChunks;
 
 	public ClusterVirtualNode(ClusterNode master, long hashCode, InetSocketAddress address) {
 		super(hashCode, address, -1);
 		this.master = master;
-		this.memoryChunks = new HashMap<String, Chunk>();
+		this.memoryChunks = new ConcurrentHashMap<String, Chunk>();
 	}
 
 	/** 返回数据块数量。

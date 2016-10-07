@@ -24,30 +24,34 @@ THE SOFTWARE.
 -----------------------------------------------------------------------------
 */
 
-package net.cellcloud.cluster;
+package net.cellcloud.cluster.protocol;
 
-import net.cellcloud.common.Session;
+import java.util.Map;
 
-/** 集群模块错误状态协议。
+/** 协议工厂。
  * 
  * @author Jiangwei Xu
  */
-public class ClusterFailureProtocol extends ClusterProtocol {
+public final class ClusterProtocolFactory {
 
-	protected ClusterFailure failure;
-	protected ClusterProtocol protocol;
-
-	protected ClusterFailureProtocol(ClusterFailure failure, ClusterProtocol protocol) {
-		super("Failure");
-		this.failure = failure;
-		this.protocol = protocol;
+	private ClusterProtocolFactory() {
 	}
 
-	@Override
-	public void launch(Session session) {
-	}
-
-	@Override
-	public void respond(ClusterNode node, StateCode state) {
+	/** 根据属性键值对创建协议。
+	 */
+	public static ClusterProtocol create(Map<String, String> prop) {
+		String protocol = prop.get(ClusterProtocol.KEY_PROTOCOL);
+		if (protocol.equalsIgnoreCase(ClusterPullProtocol.NAME)) {
+			return new ClusterPullProtocol(prop);
+		}
+		else if (protocol.equalsIgnoreCase(ClusterPushProtocol.NAME)) {
+			return new ClusterPushProtocol(prop);
+		}
+		else if (protocol.equalsIgnoreCase(ClusterDiscoveringProtocol.NAME)) {
+			return new ClusterDiscoveringProtocol(prop);
+		}
+		else {
+			return null;
+		}
 	}
 }

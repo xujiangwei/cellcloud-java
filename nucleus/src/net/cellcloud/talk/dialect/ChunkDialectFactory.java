@@ -26,23 +26,29 @@ THE SOFTWARE.
 
 package net.cellcloud.talk.dialect;
 
-import java.util.LinkedList;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
+import net.cellcloud.common.Base64;
+import net.cellcloud.common.LogLevel;
 import net.cellcloud.common.Logger;
 import net.cellcloud.core.Cellet;
 import net.cellcloud.talk.TalkService;
+import net.cellcloud.util.Clock;
 
 /** 块数据传输方言工厂。
  * 
  * @author Jiangwei Xu
- *
  */
 public class ChunkDialectFactory extends DialectFactory {
 
@@ -50,27 +56,26 @@ public class ChunkDialectFactory extends DialectFactory {
 
 	private ExecutorService executor;
 
+	// 配额定时器
+	private Timer quotaTimer;
+	private long defaultQuotaPerList = 4 * 1024;
+
+	// 数据接收缓存，Key: Sign
 	private ConcurrentHashMap<String, Cache> cacheMap;
 
 	// 用于服务器模式下的队列
 	private ConcurrentHashMap<String, ChunkList> sListMap;
-	// 删除清单
-	private LinkedList<String> sDeleteList;
-	private Timer sDeleteTimer;
 
 	// 用于客户端模式下的队列
 	private ConcurrentHashMap<String, ChunkList> cListMap;
-	// 删除清单
-	private LinkedList<String> cDeleteList;
-	private Timer cDeleteTimer;
+
+	// 数据在发送缓存里的超时时间
+	private long listTimeout = 10 * 60 * 1000;
 
 	private AtomicLong cacheMemorySize = new AtomicLong(0);
-	private final long clearThreshold = 500 * 1024 * 1024;
+	private final long clearThreshold = 100 * 1024 * 1024;
 	private AtomicBoolean clearRunning = new AtomicBoolean(false);
 	private Object mutex = new Object();
-
-	// 数据在缓存里的超时时间，仅客户端使用
-	private long clientTimeout = 10 * 60 * 1000;
 
 	private int logCounts = 0;
 
@@ -78,6 +83,9 @@ public class ChunkDialectFactory extends DialectFactory {
 		this.metaData = new DialectMetaData(ChunkDialect.DIALECT_NAME, "Chunk Dialect");
 		this.executor = executor;
 		this.cacheMap = new ConcurrentHashMap<String, Cache>();
+		this.quotaTimer = new Timer("ChunkQuotaTimer");
+		// 每 100ms 一次任务
+		this.quotaTimer.schedule(new QuotaTask(), 3000, 100);
 	}
 
 	@Override
@@ -94,25 +102,18 @@ public class ChunkDialectFactory extends DialectFactory {
 	public void shutdown() {
 		this.cacheMap.clear();
 
+		if (null != this.quotaTimer) {
+			this.quotaTimer.cancel();
+			this.quotaTimer.purge();
+			this.quotaTimer = null;
+		}
+
 		if (null != this.sListMap) {
 			this.sListMap.clear();
 		}
-		if (null != this.sDeleteList) {
-			this.sDeleteList.clear();
-		}
-		if (null != this.sDeleteTimer) {
-			this.sDeleteTimer.cancel();
-			this.sDeleteTimer = null;
-		}
+
 		if (null != this.cListMap) {
 			this.cListMap.clear();
-		}
-		if (null != this.cDeleteList) {
-			this.cDeleteList.clear();
-		}
-		if (null != this.cDeleteTimer) {
-			this.cDeleteTimer.cancel();
-			this.cDeleteTimer = null;
 		}
 
 		this.cacheMemorySize.set(0);
@@ -150,210 +151,79 @@ public class ChunkDialectFactory extends DialectFactory {
 	protected boolean onTalk(String identifier, Dialect dialect) {
 		ChunkDialect chunk = (ChunkDialect) dialect;
 
-		if (chunk.getChunkIndex() == 0 && !chunk.ack && !chunk.infectant) {
-			synchronized (this) {
-				if (null == this.cListMap) {
-					this.cListMap = new ConcurrentHashMap<String, ChunkList>();
-				}
-			}
-
-			this.updateListMap(this.cListMap, identifier.toString(), chunk);
-		}
-
-		if (chunk.getChunkIndex() == 0 || chunk.infectant || chunk.ack) {
-			// 直接发送
-
+		if (chunk.infectant) {
 			// 回调已处理
 			chunk.fireProgress(identifier);
 
+			// 直接发送
 			return true;
 		}
-		else {
+
+		synchronized (this) {
 			if (null == this.cListMap) {
 				this.cListMap = new ConcurrentHashMap<String, ChunkList>();
 			}
 
-			this.updateListMap(this.cListMap, identifier.toString(), chunk);
-
-			// 劫持，由队列发送
-			return false;
+			this.updateListMap(this.cListMap, identifier, chunk, null);
 		}
+
+		return false;
 	}
 
 	@Override
 	protected boolean onDialogue(final String identifier, Dialect dialect) {
 		ChunkDialect chunk = (ChunkDialect) dialect;
 
-		if (chunk.ack) {
-			// 收到 ACK ，发送下一个
-			String sign = chunk.getSign();
-			synchronized (this) {
-				if (null == this.cListMap) {
-					this.cListMap = new ConcurrentHashMap<String, ChunkList>();
-				}
-			}
-			ChunkList list = this.cListMap.get(sign);
-			if (null != list) {
-				// 更新应答索引
-				list.ackIndex = chunk.getChunkIndex();
-				// 发送下一条数据
-				ChunkDialect response = list.get(list.ackIndex + 1);
-				if (null != response) {
-					TalkService.getInstance().talk(list.target, response);
-				}
+		this.write(chunk);
 
-				// 检查
-				if (list.ackIndex == chunk.getChunkNum() - 1) {
-					if (null == this.cDeleteList) {
-						this.cDeleteList = new LinkedList<String>();
-					}
-					if (null != this.cDeleteTimer) {
-						this.cDeleteTimer.cancel();
-						this.cDeleteTimer.purge();
-						this.cDeleteTimer = null;
-					}
-					this.cDeleteTimer = new Timer();
-					this.checkAndClearList(this.cListMap, this.cDeleteList, this.cDeleteTimer, this.clientTimeout);
-				}
-			}
-			else {
-				Logger.w(this.getClass(), "Can NOT find chunk: " + sign);
-			}
-
-			// 应答包，劫持
-			return false;
-		}
-		else {
-			// 回送确认
-			String sign = chunk.getSign();
-
-			final ChunkDialect ack = new ChunkDialect(chunk.getTracker().toString());
-			ack.setAck(sign, chunk.getChunkIndex(), chunk.getChunkNum());
-
-			this.executor.execute(new Runnable() {
-				@Override
-				public void run() {
-					// 回送 ACK
-					TalkService.getInstance().talk(identifier, ack);
-				}
-			});
-
-			// 不劫持
-			return true;
-		}
+		return true;
 	}
 
 	@Override
 	protected boolean onTalk(Cellet cellet, String targetTag, Dialect dialect) {
 		ChunkDialect chunk = (ChunkDialect) dialect;
 
-		if (chunk.getChunkIndex() == 0 && !chunk.ack && !chunk.infectant) {
-			synchronized (this) {
-				if (null == this.sListMap) {
-					this.sListMap = new ConcurrentHashMap<String, ChunkList>();
-				}
-			}
-
-			this.updateListMap(this.sListMap, targetTag.toString(), chunk);
-		}
-
-		if (chunk.getChunkIndex() == 0 || chunk.infectant || chunk.ack) {
-			// 直接发送
-
+		if (chunk.infectant) {
 			// 回调已处理
 			chunk.fireProgress(targetTag);
 
+			// 直接发送
 			return true;
 		}
-		else {
-			synchronized (this) {
-				if (null == this.sListMap) {
-					this.sListMap = new ConcurrentHashMap<String, ChunkList>();
-				}
+
+		synchronized (this) {
+			if (null == this.sListMap) {
+				this.sListMap = new ConcurrentHashMap<String, ChunkList>();
 			}
 
-			this.updateListMap(this.sListMap, targetTag.toString(), chunk);
-
-			// 劫持，由队列发送
-			return false;
+			this.updateListMap(this.sListMap, targetTag, chunk, cellet);
 		}
+
+		return false;
 	}
 
 	@Override
 	protected boolean onDialogue(final Cellet cellet, final String sourceTag, Dialect dialect) {
 		ChunkDialect chunk = (ChunkDialect) dialect;
 
-		if (!chunk.ack) {
-			// 回送确认
-			String sign = chunk.getSign();
+		this.write(chunk);
 
-			final ChunkDialect ack = new ChunkDialect(chunk.getTracker().toString());
-			ack.setAck(sign, chunk.getChunkIndex(), chunk.getChunkNum());
-
-			// 执行
-			this.executor.execute(new Runnable() {
-				@Override
-				public void run() {
-					// 回送 ACK
-					cellet.talk(sourceTag, ack);
-				}
-			});
-
-			// 不劫持
-			return true;
-		}
-		else {
-			// 收到 ACK ，发送下一个
-			String sign = chunk.getSign();
-			synchronized (this) {
-				if (null == this.sListMap) {
-					this.sListMap = new ConcurrentHashMap<String, ChunkList>();
-				}
-			}
-			ChunkList list = this.sListMap.get(sign);
-			if (null != list) {
-				// 更新应答索引
-				list.ackIndex = chunk.getChunkIndex();
-				// 发送下一条数据
-				ChunkDialect response = list.get(list.ackIndex + 1);
-				if (null != response) {
-					cellet.talk(list.target, response);
-				}
-
-				// 检查
-				if (list.ackIndex == chunk.getChunkNum() - 1) {
-					if (null == this.sDeleteList) {
-						this.sDeleteList = new LinkedList<String>();
-					}
-					if (null != this.sDeleteTimer) {
-						this.sDeleteTimer.cancel();
-						this.sDeleteTimer.purge();
-						this.sDeleteTimer = null;
-					}
-					this.sDeleteTimer = new Timer();
-					this.checkAndClearList(this.sListMap, this.sDeleteList, this.sDeleteTimer, 0);
-				}
-			}
-
-			// 应答包，劫持
-			return false;
-		}
+		return true;
 	}
 
-	protected void write(ChunkDialect chunk) {
-		String tag = chunk.getOwnerTag();
-		if (this.cacheMap.containsKey(tag)) {
-			Cache cache = this.cacheMap.get(tag);
+	private synchronized boolean write(ChunkDialect chunk) {
+		if (this.cacheMap.containsKey(chunk.getSign())) {
+			Cache cache = this.cacheMap.get(chunk.getSign());
 			cache.offer(chunk);
 		}
 		else {
-			Cache cache = new Cache(tag);
+			Cache cache = new Cache(chunk.getSign(), chunk.chunkNum);
 			cache.offer(chunk);
-			this.cacheMap.put(tag, cache);
+			this.cacheMap.put(chunk.getSign(), cache);
 		}
 
 		// 更新内存大小
-		this.cacheMemorySize.set(this.cacheMemorySize.get() + chunk.length);
+		this.cacheMemorySize.addAndGet(chunk.getDataSize());
 
 		if ((this.logCounts % 100) == 0) {
 			long mem = this.cacheMemorySize.get();
@@ -376,22 +246,40 @@ public class ChunkDialectFactory extends DialectFactory {
 			synchronized (this.mutex) {
 				if (!this.clearRunning.get()) {
 					this.clearRunning.set(true);
-					(new Thread(new ClearTask())).start();
+					(new Thread(new ClearCacheTask())).start();
 				}
 			}
 		}
+
+		if (chunk.isLast()) {
+			// 最后一个
+			return true;
+		}
+		else {
+			return false;
+		}
 	}
 
-	protected int read(String tag, String sign, int index, byte[] out) {
+	protected int read(String sign, int index, byte[] out) {
 		if (index < 0) {
 			return -1;
 		}
 
-		Cache cache = this.cacheMap.get(tag);
+		Cache cache = this.cacheMap.get(sign);
 		if (null != cache) {
-			ChunkDialect cd = cache.get(sign, index);
-			byte[] buf = cd.data;
+			ChunkDialect cd = cache.get(index);
+			byte[] buf = null;
+			try {
+				buf = Base64.decode(cd.data);
+			} catch (IOException e) {
+				Logger.log(this.getClass(), e, LogLevel.WARNING);
+			}
 			int len = cd.length;
+
+			if (null == buf) {
+				return -1;
+			}
+
 			System.arraycopy(buf, 0, out, 0, len);
 			return len;
 		}
@@ -399,243 +287,172 @@ public class ChunkDialectFactory extends DialectFactory {
 		return -1;
 	}
 
-	protected boolean checkCompleted(String tag, String sign) {
-		if (null == tag || null == sign) {
+	protected boolean checkCompleted(String sign) {
+		if (null == sign) {
 			return false;
 		}
 
-		Cache cache = this.cacheMap.get(tag);
+		Cache cache = this.cacheMap.get(sign);
 		if (null != cache) {
-			return cache.checkCompleted(sign);
+			return cache.checkCompleted();
 		}
 
 		return false;
 	}
 
-	protected void clear(String tag, String sign) {
-		Cache cache = this.cacheMap.get(tag);
+	protected void clear(String sign) {
+		Cache cache = this.cacheMap.remove(sign);
 		if (null != cache) {
-			// 计算缓存大小变化差值
-			long size = cache.dataSize;
-			// 进行缓存清理
-			cache.clear(sign);
-
-			// 差值
-			long ds = size - cache.dataSize;
+			// 计算缓存大小变化差值，进行缓存清理
+			long size = cache.clear();
 
 			// 更新内存大小
-			this.cacheMemorySize.set(this.cacheMemorySize.get() - ds);
-
-			// 移除空缓存
-			if (cache.isEmpty()) {
-				this.cacheMap.remove(tag);
-			}
+			this.cacheMemorySize.set(this.cacheMemorySize.get() - size);
 		}
 	}
 
-	private void updateListMap(ConcurrentHashMap<String, ChunkList> listMap, String target, ChunkDialect chunk) {
+	private void updateListMap(ConcurrentHashMap<String, ChunkList> listMap, String target, ChunkDialect chunk, Cellet cellet) {
 		ChunkList list = listMap.get(chunk.getSign());
 		if (null != list) {
 			if (chunk.getChunkIndex() == 0) {
-				list.clear();
+				list.reset(chunk.chunkNum);
 			}
 
 			// 写入列表
 			list.append(chunk);
 		}
 		else {
-			list = new ChunkList(target, chunk.getChunkNum());
+			list = new ChunkList(target.toString(), chunk.getChunkNum(), this.defaultQuotaPerList, cellet);
 			list.append(chunk);
 			listMap.put(chunk.getSign().toString(), list);
 		}
+
+		if (!list.running.get()) {
+			list.running.set(true);
+			this.executor.execute(list);
+		}
 	}
 
-	private void checkAndClearList(final ConcurrentHashMap<String, ChunkList> listMap, final LinkedList<String> deleteList, Timer timer, long timeout) {
-		long time = System.currentTimeMillis();
+	private void checkAndClearList(final ConcurrentHashMap<String, ChunkList> listMap, final List<String> deleteList, long timeout) {
+		long time = Clock.currentTimeMillis();
 
-		synchronized (deleteList) {
-			for (Map.Entry<String, ChunkList> entry : listMap.entrySet()) {
-				ChunkList list = entry.getValue();
-				if (list.ackIndex >= 0 && list.chunkNum - 1 == list.ackIndex) {
-					// 删除
-					if (!deleteList.contains(entry.getKey())) {
-						deleteList.add(entry.getKey());
-					}
-				}
-				else if (timeout > 0 && time - list.timestamp > timeout) {
-					// 超时
-					if (!deleteList.contains(entry.getKey())) {
-						deleteList.add(entry.getKey());
-					}
-				}
+		Iterator<Map.Entry<String, ChunkList>> iter = listMap.entrySet().iterator();
+		while (iter.hasNext()) {
+			Map.Entry<String, ChunkList> entry = iter.next();
+			ChunkList list = entry.getValue();
+			if (time - list.timestamp > timeout) {
+				// 超时
+				deleteList.add(entry.getKey());
 			}
 		}
 
-		timer.schedule(new TimerTask() {
-			@Override
-			public void run() {
-				if (!deleteList.isEmpty()) {
-					for (String sign : deleteList) {
-						listMap.remove(sign);
+		if (!deleteList.isEmpty()) {
+			for (String sign : deleteList) {
+				listMap.remove(sign);
 
-						Logger.i(ChunkDialectFactory.class, "Clear chunk list - sign: " + sign);
-					}
-
-					deleteList.clear();
-				}
+				Logger.i(ChunkDialectFactory.class, "Clear chunk list - sign: " + sign);
 			}
-		}, 5000);
+
+			deleteList.clear();
+		}
 	}
 
 	/**
 	 * 内部缓存。
 	 */
 	private class Cache {
-		protected String tag;
-		private ConcurrentHashMap<String, LinkedList<ChunkDialect>> data;
-		private LinkedList<String> signQueue;
-		private LinkedList<Long> signTimeQueue;
-		protected long dataSize;
+		private String sign;
+		private ArrayList<ChunkDialect> dataQueue;
+		private long timestamp;
+		private long dataSize;
 
-		private Cache(String tag) {
-			this.tag = tag;
-			this.data = new ConcurrentHashMap<String, LinkedList<ChunkDialect>>();
-			this.signQueue = new LinkedList<String>();
-			this.signTimeQueue = new LinkedList<Long>();
+		private Cache(String sign, int capacity) {
+			this.sign = sign;
+			this.dataQueue = new ArrayList<ChunkDialect>(capacity);
+			for (int i = 0; i < capacity; ++i) {
+				this.dataQueue.add(new ChunkDialect());
+			}
 			this.dataSize = 0;
 		}
 
 		public void offer(ChunkDialect dialect) {
-			LinkedList<ChunkDialect> list = this.data.get(dialect.sign);
-			if (null != list) {
-				boolean rebuildTime = false;
-				synchronized (list) {
-					// 如果发现当前清单数量和 chunkNum 一致，说明 sign 重复，清理之前的
-					if (list.size() == dialect.chunkNum) {
-						list.clear();
-
-						// 重建时间戳
-						rebuildTime = true;
-					}
-
-					list.add(dialect);
-					// 更新数据大小
-					this.dataSize += dialect.length;
+			synchronized (this.dataQueue) {
+				if (this.dataQueue.contains(dialect)) {
+					int index = this.dataQueue.indexOf(dialect);
+					this.dataQueue.set(index, dialect);
 				}
-
-				if (rebuildTime) {
-					synchronized (this.signQueue) {
-						int index = this.signQueue.indexOf(dialect.sign);
-						if (index >= 0) {
-							this.signQueue.remove(index);
-							this.signTimeQueue.remove(index);
-						}
-
-						this.signQueue.add(dialect.sign);
-						this.signTimeQueue.add(System.currentTimeMillis());
-					}
+				else {
+					this.dataQueue.set(dialect.getChunkIndex(), dialect);
+					this.dataSize += dialect.getDataSize();
 				}
 			}
-			else {
-				list = new LinkedList<ChunkDialect>();
-				list.add(dialect);
-				// 更新数据大小
-				this.dataSize += dialect.length;
 
-				this.data.put(dialect.sign, list);
-
-				synchronized (this.signQueue) {
-					this.signQueue.add(dialect.sign);
-					this.signTimeQueue.add(System.currentTimeMillis());
-				}
-			}
+			this.timestamp = Clock.currentTimeMillis();
 		}
 
-		public ChunkDialect get(String sign, int index) {
-			LinkedList<ChunkDialect> list = this.data.get(sign);
-			synchronized (list) {
-				if (index >= list.size()) {
+		public ChunkDialect get(int index) {
+			synchronized (this.dataQueue) {
+				if (index >= this.dataQueue.size()) {
 					return null;
 				}
 
-				return list.get(index);
+				return this.dataQueue.get(index);
 			}
 		}
 
-		public boolean checkCompleted(String sign) {
-			LinkedList<ChunkDialect> list = this.data.get(sign);
-			if (null != list) {
-				synchronized (list) {
-					if (list.isEmpty()) {
+		public boolean checkCompleted() {
+			synchronized (this.dataQueue) {
+				if (this.dataQueue.isEmpty()) {
+					return false;
+				}
+
+				for (ChunkDialect cd : this.dataQueue) {
+					if (cd.getDataSize() < 0) {
 						return false;
 					}
-
-					ChunkDialect cd = list.get(0);
-					if (cd.chunkNum == list.size()) {
-						return true;
-					}
 				}
 			}
 
-			return false;
+			return true;
 		}
 
-		public long clear(String sign) {
-			long size = 0;
-			LinkedList<ChunkDialect> list = this.data.remove(sign);
-			if (null != list) {
-				synchronized (list) {
-					for (ChunkDialect chunk : list) {
-						this.dataSize -= chunk.length;
-						size += chunk.length;
-					}
-				}
+		public long clear() {
+			long size = this.dataSize;
+			synchronized (this.dataQueue) {
+				this.dataQueue.clear();
+				this.dataSize = 0;
 			}
-
-			synchronized (this.signQueue) {
-				int index = this.signQueue.indexOf(sign);
-				if (index >= 0) {
-					this.signQueue.remove(index);
-					this.signTimeQueue.remove(index);
-				}
-			}
-
 			return size;
 		}
 
-		public boolean isEmpty() {
-			return this.data.isEmpty();
-		}
-
-		public long getFirstTime() {
-			synchronized (this.signQueue) {
-				return this.signTimeQueue.get(0).longValue();
-			}
-		}
-
-		public long clearFirst() {
-			String sign = null;
-			synchronized (this.signQueue) {
-				sign = this.signQueue.get(0);
-			}
-			return this.clear(sign);
+		public long getTimestamp() {
+			return this.timestamp;
 		}
 	}
 
-	private class ChunkList {
+	private class ChunkList implements Runnable {
+		private Cellet cellet = null;
 		private long timestamp;
 		private String target;
-		private LinkedList<ChunkDialect> list;
+		private int chunkNum = 0;
+		private ArrayList<ChunkDialect> list;
+		private AtomicInteger index;
 
-		protected int ackIndex = -1;
+		private AtomicBoolean running;
 
-		protected int chunkNum = 0;
+		private long quota;
+		private AtomicLong remaining;
 
-		private ChunkList(String target, int chunkNum) {
-			this.timestamp = System.currentTimeMillis();
+		private ChunkList(String target, int chunkNum, long quota, Cellet cellet) {
+			this.timestamp = Clock.currentTimeMillis();
 			this.target = target;
 			this.chunkNum = chunkNum;
-			this.list = new LinkedList<ChunkDialect>();
+			this.quota = quota;
+			this.cellet = cellet;
+			this.list = new ArrayList<ChunkDialect>();
+			this.index = new AtomicInteger(-1);
+			this.running = new AtomicBoolean(false);
+			this.remaining = new AtomicLong(this.quota);
 		}
 
 		protected void append(ChunkDialect chunk) {
@@ -643,31 +460,163 @@ public class ChunkDialectFactory extends DialectFactory {
 			chunk.infectant = true;
 
 			synchronized (this) {
-				this.list.add(chunk);
+				if (!this.list.contains(chunk)) {
+					this.list.add(chunk);
+				}
 			}
 		}
 
-		protected ChunkDialect get(int index) {
-			if (index < 0) {
-				return null;
-			}
-
-			synchronized (this) {
-				if (this.list.isEmpty()) {
-					return null;
-				}
-
-				if (this.list.size() <= index) {
-					return null;
-				}
-
-				return this.list.get(index);
-			}
+		protected boolean isComplete() {
+			return (this.index.get() + 1 == this.chunkNum);
 		}
 
-		protected void clear() {
+		protected void reset(int chunkNum) {
+			this.timestamp = Clock.currentTimeMillis();
+			this.chunkNum = chunkNum;
+			this.index.set(-1);
+			this.remaining.set(this.quota);
+
 			synchronized (this) {
 				this.list.clear();
+			}
+		}
+
+		@Override
+		public void run() {
+			// 判断剩余配额
+			long qr = this.remaining.get();
+			if (qr > 0) {
+				// 有配额
+				ChunkDialect dialect = null;
+				synchronized (this) {
+					// 更新索引
+					this.index.incrementAndGet();
+
+					if (this.index.get() < this.list.size()) {
+						dialect = this.list.get(this.index.get());
+					}
+				}
+
+				if (null != dialect) {
+					// 更新剩余配额
+					qr = qr - dialect.getDataSize();
+					this.remaining.set(qr);
+
+					// 发送
+					boolean ret = false;
+					if (null == this.cellet) {
+						ret = TalkService.getInstance().talk(this.target, dialect);
+					}
+					else {
+						ret = this.cellet.talk(this.target, dialect);
+					}
+
+					if (!ret) {
+						// 错误处理
+						// 修正配额
+						this.remaining.addAndGet(dialect.getDataSize());
+						// 修正索引
+						this.index.decrementAndGet();
+
+						// 进行回调
+						dialect.fireFailed(this.target);
+
+						// 结束发送
+						this.running.set(false);
+						return;
+					}
+
+					if (this.index.get() + 1 == this.chunkNum) {
+						dialect.fireCompleted(this.target);
+						this.running.set(false);
+					}
+					else {
+						try {
+							Thread.sleep(1);
+						} catch (InterruptedException e) {
+							e.printStackTrace();
+						}
+
+						this.run();
+					}
+				}
+				else {
+					// 修正索引
+					this.index.decrementAndGet();
+					this.running.set(false);
+				}
+			}
+			else {
+				// 没有配额
+				this.running.set(false);
+			}
+		}
+	}
+
+	private class QuotaTask extends TimerTask {
+
+		private int counts = 0;
+
+		private QuotaTask() {
+			super();
+		}
+
+		@Override
+		public void run() {
+			if (null != cListMap) {
+				Iterator<ChunkList> iter = cListMap.values().iterator();
+				while (iter.hasNext()) {
+					ChunkList list = iter.next();
+					list.remaining.set(list.quota);
+
+					if (!list.isComplete() && !list.running.get()) {
+						// 列表没有发送完成
+						list.running.set(true);
+						executor.execute(list);
+					}
+				}
+			}
+
+			if (null != sListMap) {
+				Iterator<ChunkList> iter = sListMap.values().iterator();
+				while (iter.hasNext()) {
+					ChunkList list = iter.next();
+					list.remaining.set(list.quota);
+
+					if (!list.isComplete() && !list.running.get()) {
+						// 列表没有发送完成
+						list.running.set(true);
+						executor.execute(list);
+					}
+				}
+			}
+
+			++this.counts;
+
+			if (this.counts >= 1000) {
+				this.counts = 0;
+
+				if (null != cListMap) {
+					executor.execute(new Runnable() {
+						@Override
+						public void run() {
+							ArrayList<String> deleteList = new ArrayList<String>();
+							checkAndClearList(cListMap, deleteList, listTimeout);
+							deleteList = null;
+						}
+					});
+				}
+
+				if (null != sListMap) {
+					executor.execute(new Runnable() {
+						@Override
+						public void run() {
+							ArrayList<String> deleteList = new ArrayList<String>();
+							checkAndClearList(sListMap, deleteList, listTimeout);
+							deleteList = null;
+						}
+					});
+				}
 			}
 		}
 	}
@@ -675,24 +624,18 @@ public class ChunkDialectFactory extends DialectFactory {
 	/**
 	 *
 	 */
-	private class ClearTask implements Runnable {
-		private ClearTask() {
+	private class ClearCacheTask implements Runnable {
+		private ClearCacheTask() {
 		}
 
 		@Override
 		public void run() {
 			long time = Long.MAX_VALUE;
 			Cache selected = null;
-			LinkedList<Cache> emptyList = new LinkedList<Cache>();
 
 			for (Cache cache : cacheMap.values()) {
-				if (cache.isEmpty()) {
-					emptyList.add(cache);
-					continue;
-				}
-
 				// 找到最旧的 cache
-				long ft = cache.getFirstTime();
+				long ft = cache.getTimestamp();
 				if (ft < time) {
 					time = ft;
 					selected = cache;
@@ -700,16 +643,12 @@ public class ChunkDialectFactory extends DialectFactory {
 			}
 
 			if (null != selected) {
-				long size = selected.clearFirst();
+				long size = selected.clear();
 
 				// 更新内存大小记录
 				cacheMemorySize.set(cacheMemorySize.get() - size);
-			}
 
-			if (!emptyList.isEmpty()) {
-				for (Cache cache : emptyList) {
-					cacheMap.remove(cache.tag);
-				}
+				cacheMap.remove(selected.sign);
 			}
 
 			clearRunning.set(false);

@@ -228,6 +228,7 @@ public class Speaker implements Speakable {
 
 		if (null != this.contactedTimer) {
 			this.contactedTimer.cancel();
+			this.contactedTimer.purge();
 			this.contactedTimer = null;
 		}
 
@@ -362,13 +363,13 @@ public class Speaker implements Speakable {
 
 	private synchronized void fireContacted(String celletIdentifier) {
 		if (null == this.contactedTimer) {
-			this.contactedTimer = new Timer();
+			this.contactedTimer = new Timer("SpeakerContactedTimer");
 		}
 		else {
 			this.contactedTimer.cancel();
 			this.contactedTimer.purge();
 			this.contactedTimer = null;
-			this.contactedTimer = new Timer();
+			this.contactedTimer = new Timer("SpeakerContactedTimer");
 		}
 
 		this.contactedTimer.schedule(new TimerTask() {
@@ -390,7 +391,17 @@ public class Speaker implements Speakable {
 				for (String cid : identifierList) {
 					delegate.onContacted(Speaker.this, cid);
 				}
-				contactedTimer = null;
+
+				(new Thread(new Runnable() {
+					@Override
+					public void run() {
+						if (null != contactedTimer) {
+							contactedTimer.cancel();
+							contactedTimer.purge();
+							contactedTimer = null;
+						}
+					}
+				})).start();
 			}
 		}, 300);
 	}
@@ -398,6 +409,7 @@ public class Speaker implements Speakable {
 	private void fireQuitted(String celletIdentifier) {
 		if (null != this.contactedTimer) {
 			this.contactedTimer.cancel();
+			this.contactedTimer.purge();
 			this.contactedTimer = null;
 		}
 

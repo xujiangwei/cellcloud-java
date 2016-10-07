@@ -34,7 +34,8 @@ import java.util.LinkedList;
 import java.util.Vector;
 
 
-/** 非阻塞网络接收器工作线程。
+/**
+ * 非阻塞网络接收器工作线程。
  * 
  * @author Jiangwei Xu
  */
@@ -285,6 +286,9 @@ public final class NonblockingAcceptorWorker extends Thread {
 						this.acceptor.fireSessionClosed(session);
 					}
 
+					// 移除 Session
+					this.acceptor.eraseSession(session);
+
 					try {
 						if (channel.isOpen())
 							channel.close();
@@ -292,8 +296,6 @@ public final class NonblockingAcceptorWorker extends Thread {
 						Logger.log(NonblockingAcceptorWorker.class, ioe, LogLevel.DEBUG);
 					}
 
-					// 移除 Session
-					this.acceptor.eraseSession(session);
 					this.removeSession(session);
 
 					session.selectionKey.cancel();
@@ -312,6 +314,9 @@ public final class NonblockingAcceptorWorker extends Thread {
 						this.acceptor.fireSessionClosed(session);
 					}
 
+					// 移除 Session
+					this.acceptor.eraseSession(session);
+
 					try {
 						if (channel.isOpen())
 							channel.close();
@@ -319,8 +324,6 @@ public final class NonblockingAcceptorWorker extends Thread {
 						Logger.log(NonblockingAcceptorWorker.class, ioe, LogLevel.DEBUG);
 					}
 
-					// 移除 Session
-					this.acceptor.eraseSession(session);
 					this.removeSession(session);
 
 					session.selectionKey.cancel();
@@ -412,6 +415,9 @@ public final class NonblockingAcceptorWorker extends Thread {
 							this.acceptor.fireSessionClosed(session);
 						}
 
+						// 移除 Session
+						this.acceptor.eraseSession(session);
+
 						try {
 							if (channel.isOpen()) {
 								channel.close();
@@ -420,8 +426,6 @@ public final class NonblockingAcceptorWorker extends Thread {
 							Logger.log(NonblockingAcceptorWorker.class, ioe, LogLevel.DEBUG);
 						}
 
-						// 移除 Session
-						this.acceptor.eraseSession(session);
 						this.removeSession(session);
 
 						session.selectionKey.cancel();

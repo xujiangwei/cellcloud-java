@@ -24,11 +24,12 @@ THE SOFTWARE.
 -----------------------------------------------------------------------------
 */
 
-package net.cellcloud.cluster;
+package net.cellcloud.cluster.protocol;
 
 import java.util.Date;
 import java.util.Map;
 
+import net.cellcloud.cluster.ClusterNode;
 import net.cellcloud.common.Message;
 import net.cellcloud.common.Session;
 import net.cellcloud.util.Utils;
@@ -53,7 +54,7 @@ public abstract class ClusterProtocol {
 	private String name;
 
 	// 上下文会话
-	protected Session contextSession;
+	public Session contextSession;
 
 	// 属性
 	protected Map<String, String> prop;

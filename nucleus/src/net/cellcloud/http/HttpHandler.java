@@ -89,7 +89,7 @@ public abstract class HttpHandler implements Handler {
 
 		// 服务器类型
 		response.setHeader("Server", "Cell Cloud");
-		httpResponse.setHeader("Access-Control-Allow-Origin", "*");
+		response.setHeader("Access-Control-Allow-Origin", "*");
 
 		if (method.equalsIgnoreCase(HttpMethod.GET.asString())) {
 			doGet(httpRequest, httpResponse);
@@ -158,10 +158,12 @@ public abstract class HttpHandler implements Handler {
 
 	@Override
 	public void addLifeCycleListener(Listener listener) {
+		// Nothing
 	}
 
 	@Override
 	public void removeLifeCycleListener(Listener listener) {
+		// Nothing
 	}
 
 	@Override
@@ -209,6 +211,7 @@ public abstract class HttpHandler implements Handler {
 	@Override
 	@ManagedOperation(value = "destroy associated resources", impact = "ACTION")
 	public void destroy() {
+		// Nothing
 	}
 
 	@Override

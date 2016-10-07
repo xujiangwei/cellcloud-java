@@ -36,6 +36,11 @@ import java.util.Timer;
 import java.util.TimerTask;
 import java.util.concurrent.ConcurrentHashMap;
 
+import net.cellcloud.cluster.protocol.ClusterDiscoveringProtocol;
+import net.cellcloud.cluster.protocol.ClusterFailureProtocol;
+import net.cellcloud.cluster.protocol.ClusterProtocol;
+import net.cellcloud.cluster.protocol.ClusterPullProtocol;
+import net.cellcloud.cluster.protocol.ClusterPushProtocol;
 import net.cellcloud.common.Cryptology;
 import net.cellcloud.common.Logger;
 import net.cellcloud.common.Service;
@@ -100,6 +105,7 @@ public final class ClusterController implements Service, Observer {
 	public void shutdown() {
 		if (null != this.timer) {
 			this.timer.cancel();
+			this.timer.purge();
 			this.timer = null;
 		}
 
@@ -130,14 +136,14 @@ public final class ClusterController implements Service, Observer {
 	public void update(Observable observable, Object arg) {
 		if (observable instanceof ClusterConnector) {
 			// 接收来自 ClusterConnector 的通知
-			ClusterConnector connector = (ClusterConnector)observable;
-			ClusterProtocol protocol = (ClusterProtocol)arg;
+			ClusterConnector connector = (ClusterConnector) observable;
+			ClusterProtocol protocol = (ClusterProtocol) arg;
 			this.update(connector, protocol);
 		}
 		else if (observable instanceof ClusterNetwork) {
 			// 接收来自 ClusterNetwork 的通知
-			ClusterNetwork network = (ClusterNetwork)observable;
-			ClusterProtocol protocol = (ClusterProtocol)arg;
+			ClusterNetwork network = (ClusterNetwork) observable;
+			ClusterProtocol protocol = (ClusterProtocol) arg;
 			this.update(network, protocol);
 		}
 	}

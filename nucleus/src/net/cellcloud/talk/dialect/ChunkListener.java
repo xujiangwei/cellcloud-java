@@ -2,7 +2,7 @@
 -----------------------------------------------------------------------------
 This source file is part of Cell Cloud.
 
-Copyright (c) 2009-2015 Cell Cloud Team (www.cellcloud.net)
+Copyright (c) 2009-2016 Cell Cloud Team (www.cellcloud.net)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -38,4 +38,18 @@ public interface ChunkListener {
 	 * @param chunkDialect
 	 */
 	public void onProgress(String target, ChunkDialect chunkDialect);
+
+	/**
+	 * 
+	 * @param target
+	 * @param chunkDialect
+	 */
+	public void onCompleted(String target, ChunkDialect chunkDialect);
+
+	/**
+	 * 
+	 * @param target
+	 * @param chunkDialect
+	 */
+	public void onFailed(String target, ChunkDialect chunkDialect);
 }

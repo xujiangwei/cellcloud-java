@@ -24,7 +24,7 @@ THE SOFTWARE.
 -----------------------------------------------------------------------------
 */
 
-package net.cellcloud.cluster;
+package net.cellcloud.cluster.protocol;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -32,6 +32,8 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
+import net.cellcloud.cluster.ClusterNode;
+import net.cellcloud.cluster.ClusterVirtualNode;
 import net.cellcloud.common.Session;
 import net.cellcloud.core.Nucleus;
 

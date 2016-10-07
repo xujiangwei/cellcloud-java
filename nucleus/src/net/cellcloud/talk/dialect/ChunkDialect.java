@@ -2,7 +2,7 @@
 -----------------------------------------------------------------------------
 This source file is part of Cell Cloud.
 
-Copyright (c) 2009-2015 Cell Cloud Team (www.cellcloud.net)
+Copyright (c) 2009-2016 Cell Cloud Team (www.cellcloud.net)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -26,14 +26,10 @@ THE SOFTWARE.
 
 package net.cellcloud.talk.dialect;
 
-import java.io.IOException;
 import java.util.List;
 
 import net.cellcloud.common.Base64;
-import net.cellcloud.common.LogLevel;
-import net.cellcloud.common.Logger;
 import net.cellcloud.talk.Primitive;
-import net.cellcloud.talk.stuff.PredicateStuff;
 import net.cellcloud.talk.stuff.SubjectStuff;
 
 /*! 块数据方言。
@@ -45,12 +41,10 @@ public class ChunkDialect extends Dialect {
 	public final static String DIALECT_NAME = "ChunkDialect";
 	public static int CHUNK_SIZE = 4096;
 
-	protected boolean ack = false;
-
 	protected String sign;
 	protected int chunkIndex;
 	protected int chunkNum;
-	protected byte[] data;
+	protected String data;
 	protected int length;
 	protected long totalLength;
 
@@ -62,6 +56,10 @@ public class ChunkDialect extends Dialect {
 
 	private int readIndex = 0;
 
+	protected ChunkDialect() {
+		super(ChunkDialect.DIALECT_NAME);
+	}
+
 	public ChunkDialect(String tracker) {
 		super(ChunkDialect.DIALECT_NAME, tracker);
 	}
@@ -72,8 +70,9 @@ public class ChunkDialect extends Dialect {
 		this.totalLength = totalLength;
 		this.chunkIndex = chunkIndex;
 		this.chunkNum = chunkNum;
-		this.data = new byte[length];
-		System.arraycopy(data, 0, this.data, 0, length);
+		byte[] raw = new byte[length];
+		System.arraycopy(data, 0, raw, 0, length);
+		this.data = Base64.encodeBytes(raw);
 		this.length = length;
 	}
 
@@ -83,16 +82,10 @@ public class ChunkDialect extends Dialect {
 		this.totalLength = totalLength;
 		this.chunkIndex = chunkIndex;
 		this.chunkNum = chunkNum;
-		this.data = new byte[length];
-		System.arraycopy(data, 0, this.data, 0, length);
+		byte[] raw = new byte[length];
+		System.arraycopy(data, 0, raw, 0, length);
+		this.data = Base64.encodeBytes(raw);
 		this.length = length;
-	}
-
-	protected void setAck(String sign, int chunkIndex, int chunkNum) {
-		this.sign = sign;
-		this.chunkIndex = chunkIndex;
-		this.chunkNum = chunkNum;
-		this.ack = true;
 	}
 
 	public String getSign() {
@@ -111,8 +104,16 @@ public class ChunkDialect extends Dialect {
 		return this.chunkNum;
 	}
 
-	public int getLength() {
+	public int getRawLength() {
 		return this.length;
+	}
+
+	public int getDataSize() {
+		if (null == this.data) {
+			return -1;
+		}
+
+		return this.data.length();
 	}
 
 	public void setListener(ChunkListener listener) {
@@ -122,75 +123,75 @@ public class ChunkDialect extends Dialect {
 	protected void fireProgress(String target) {
 		if (null != this.listener) {
 			this.listener.onProgress(target, this);
+			if (this.chunkIndex + 1 < this.chunkNum) {
+				this.listener = null;
+			}
+		}
+	}
+
+	protected void fireCompleted(String target) {
+		if (null != this.listener) {
+			this.listener.onCompleted(target, this);
 			this.listener = null;
+		}
+	}
+
+	protected void fireFailed(String target) {
+		if (null != this.listener) {
+			this.listener.onFailed(target, this);
 		}
 	}
 
 	@Override
 	public Primitive translate() {
 		Primitive primitive = new Primitive(this);
-		primitive.commit(new PredicateStuff(this.ack));
 
-		if (this.ack) {
-			primitive.commit(new SubjectStuff(this.sign));
-			primitive.commit(new SubjectStuff(this.chunkIndex));
-			primitive.commit(new SubjectStuff(this.chunkNum));
-		}
-		else {
-			primitive.commit(new SubjectStuff(this.sign));
-			primitive.commit(new SubjectStuff(this.chunkIndex));
-			primitive.commit(new SubjectStuff(this.chunkNum));
-			primitive.commit(new SubjectStuff(Base64.encodeBytes(this.data)));
-			primitive.commit(new SubjectStuff(this.length));
-			primitive.commit(new SubjectStuff(this.totalLength));
-		}
+		primitive.commit(new SubjectStuff(this.sign));
+		primitive.commit(new SubjectStuff(this.chunkIndex));
+		primitive.commit(new SubjectStuff(this.chunkNum));
+		primitive.commit(new SubjectStuff(this.data));
+		primitive.commit(new SubjectStuff(this.length));
+		primitive.commit(new SubjectStuff(this.totalLength));
 
 		return primitive;
 	}
 
 	@Override
 	public void build(Primitive primitive) {
-		this.ack = primitive.predicates().get(0).getValueAsBool();
+		List<SubjectStuff> list = primitive.subjects();
+		this.sign = list.get(0).getValueAsString();
+		this.chunkIndex = list.get(1).getValueAsInt();
+		this.chunkNum = list.get(2).getValueAsInt();
+		this.data = list.get(3).getValueAsString();
+		this.length = list.get(4).getValueAsInt();
+		this.totalLength = list.get(5).getValueAsLong();
+	}
 
-		if (this.ack) {
-			List<SubjectStuff> list = primitive.subjects();
-			this.sign = list.get(0).getValueAsString();
-			this.chunkIndex = list.get(1).getValueAsInt();
-			this.chunkNum = list.get(2).getValueAsInt();
-		}
-		else {
-			List<SubjectStuff> list = primitive.subjects();
-			this.sign = list.get(0).getValueAsString();
-			this.chunkIndex = list.get(1).getValueAsInt();
-			this.chunkNum = list.get(2).getValueAsInt();
-			try {
-				this.data = Base64.decode(list.get(3).getValueAsString());
-			} catch (IOException e) {
-				Logger.log(ChunkDialect.class, e, LogLevel.ERROR);
-			}
-			this.length = list.get(4).getValueAsInt();
-			this.totalLength = list.get(5).getValueAsLong();
-
-			if (null != this.data) {
-				// 数据直接写入
-				ChunkDialectFactory fact = (ChunkDialectFactory) DialectEnumerator.getInstance().getFactory(ChunkDialect.DIALECT_NAME);
-				fact.write(this);
+	@Override
+	public boolean equals(Object obj) {
+		if (null != obj && obj instanceof ChunkDialect) {
+			ChunkDialect cd = (ChunkDialect) obj;
+			if (null != this.sign && null != cd.sign && cd.sign.equals(this.sign)
+				&& cd.chunkIndex == this.chunkIndex) {
+				return true;
 			}
 		}
+
+		return false;
 	}
 
 	public boolean hasCompleted() {
 		ChunkDialectFactory fact = (ChunkDialectFactory) DialectEnumerator.getInstance().getFactory(ChunkDialect.DIALECT_NAME);
-		return fact.checkCompleted(this.getOwnerTag(), this.sign);
+		return fact.checkCompleted(this.sign);
 	}
 
-	public boolean isLast() {
-		return (this.chunkIndex + 1 == this.chunkNum) && !this.ack;
+	protected boolean isLast() {
+		return (this.chunkIndex + 1 == this.chunkNum);
 	}
 
 	public int read(int index, byte[] buffer) {
 		ChunkDialectFactory fact = (ChunkDialectFactory) DialectEnumerator.getInstance().getFactory(ChunkDialect.DIALECT_NAME);
-		return fact.read(this.getOwnerTag(), this.sign, index, buffer);
+		return fact.read(this.sign, index, buffer);
 	}
 
 	public int read(byte[] buffer) {
@@ -199,7 +200,7 @@ public class ChunkDialect extends Dialect {
 		}
 
 		ChunkDialectFactory fact = (ChunkDialectFactory) DialectEnumerator.getInstance().getFactory(ChunkDialect.DIALECT_NAME);
-		int length = fact.read(this.getOwnerTag(), this.sign, this.readIndex, buffer);
+		int length = fact.read(this.sign, this.readIndex, buffer);
 		++this.readIndex;
 		return length;
 	}
@@ -210,6 +211,6 @@ public class ChunkDialect extends Dialect {
 
 	public void clearAll() {
 		ChunkDialectFactory fact = (ChunkDialectFactory) DialectEnumerator.getInstance().getFactory(ChunkDialect.DIALECT_NAME);
-		fact.clear(this.getOwnerTag(), this.sign);
+		fact.clear(this.sign);
 	}
 }
