@@ -266,17 +266,23 @@ public final class NonblockingAcceptorWorker extends Thread {
 			return;
 		}
 
+		int totalReaded = 0;
+		ByteBuffer buffer = ByteBuffer.allocate(session.getBlock() + session.getBlock());
+
 		int read = 0;
 		do {
-			// 创建读缓存。
-			ByteBuffer buf = ByteBuffer.allocate(session.getBlock());
+			read = 0;
+			// 创建读缓存
+			ByteBuffer buf = ByteBuffer.allocate(16384);
 
 			synchronized (session) {
 				try {
-					if (channel.isOpen())
+					if (channel.isOpen()) {
 						read = channel.read(buf);
-					else
+					}
+					else {
 						read = -1;
+					}
 				} catch (IOException e) {
 					if (Logger.isDebugLevel()) {
 						Logger.d(this.getClass(), "Remote host has closed the connection.");
@@ -332,24 +338,39 @@ public final class NonblockingAcceptorWorker extends Thread {
 
 					return;
 				}
+			} // #synchronized
 
-				// 统计流量
-				if (this.rx > Long.MAX_VALUE - read) {
-					this.rx = 0;
-				}
-				this.rx += read;
+			// 计算长度
+			totalReaded += read;
 
+			if (buf.position() != 0) {
 				buf.flip();
-
-				byte[] array = new byte[read];
-				buf.get(array);
-
-				// 解析数据
-				this.parse(session, array);
-
-				buf = null;
 			}
+			// 合并
+			buffer.put(buf);
 		} while (read > 0);
+
+		if (0 == totalReaded) {
+			// 没有读取到数据
+			return;
+		}
+
+		// 统计流量
+		if (this.rx > Long.MAX_VALUE - totalReaded) {
+			this.rx = 0;
+		}
+		this.rx += totalReaded;
+
+		buffer.flip();
+
+		byte[] array = new byte[totalReaded];
+		buffer.get(array);
+
+		// 解析数据
+		this.parse(session, array);
+
+		buffer.clear();
+		buffer = null;
 	}
 
 	/** 处理发送。
@@ -440,7 +461,7 @@ public final class NonblockingAcceptorWorker extends Thread {
 					// 回调事件
 					this.acceptor.fireMessageSent(session, message);
 				}
-			} //# synchronized
+			} // #synchronized
 		}
 	}
 

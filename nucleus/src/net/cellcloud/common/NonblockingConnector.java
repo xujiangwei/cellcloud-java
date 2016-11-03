@@ -46,7 +46,7 @@ import java.util.Vector;
 public class NonblockingConnector extends MessageService implements MessageConnector {
 
 	// 缓冲块大小
-	private int block = 65535;//16384;
+	private int block = 65536;
 
 	private InetSocketAddress address;
 	private long connectTimeout;
@@ -59,7 +59,7 @@ public class NonblockingConnector extends MessageService implements MessageConne
 	private boolean spinning = false;
 	private boolean running = false;
 
-	private long sleepInterval = 20;
+	private long sleepInterval = 20L;
 
 	// 待发送消息列表
 	private Vector<Message> messages;
@@ -67,7 +67,7 @@ public class NonblockingConnector extends MessageService implements MessageConne
 	private boolean closed = false;
 
 	public NonblockingConnector() {
-		this.connectTimeout = 10000;
+		this.connectTimeout = 10000L;
 		this.messages = new Vector<Message>();
 	}
 
@@ -440,12 +440,18 @@ public class NonblockingConnector extends MessageService implements MessageConne
 		}
 
 		int read = 0;
+
+		ByteBuffer readBuffer = ByteBuffer.allocate(this.block + this.block);
+		int totalRead = 0;
+
 		do {
-			ByteBuffer readBuffer = ByteBuffer.allocate(this.block);
+			read = 0;
+			ByteBuffer buf = ByteBuffer.allocate(16384);
+
 			try {
-				read = channel.read(readBuffer);
+				read = channel.read(buf);
 			} catch (IOException e) {
-//				Logger.log(NonblockingConnector.class, e, LogLevel.DEBUG);
+	//			Logger.log(NonblockingConnector.class, e, LogLevel.DEBUG);
 
 				fireSessionClosed();
 
@@ -461,13 +467,14 @@ public class NonblockingConnector extends MessageService implements MessageConne
 				// 不能继续进行数据接收
 				this.spinning = false;
 
+				buf = null;
 				readBuffer = null;
 
 				return;
 			}
 
 			if (read == 0) {
-				readBuffer = null;
+				buf = null;
 				break;
 			}
 			else if (read == -1) {
@@ -483,25 +490,37 @@ public class NonblockingConnector extends MessageService implements MessageConne
 				// 不能继续进行数据接收
 				this.spinning = false;
 
-				readBuffer = null;
+				buf = null;
 
 				return;
 			}
+			else {
+				// 长度计算
+				totalRead += read;
 
-			readBuffer.flip();
-
-			byte[] array = new byte[read];
-			readBuffer.get(array);
-
-			try {
-				this.process(array);
-			} catch (ArrayIndexOutOfBoundsException e) {
-				this.session.cacheCursor = 0;
-				Logger.log(NonblockingConnector.class, e, LogLevel.WARNING);
+				// 合并
+				if (buf.position() != 0) {
+					buf.flip();
+				}
+				readBuffer.put(buf);
 			}
-
-			readBuffer = null;
 		} while (read > 0);
+
+		// 就绪
+		readBuffer.flip();
+
+		byte[] array = new byte[totalRead];
+		readBuffer.get(array);
+
+		try {
+			this.process(array);
+		} catch (ArrayIndexOutOfBoundsException e) {
+			this.session.cacheCursor = 0;
+			Logger.log(NonblockingConnector.class, e, LogLevel.WARNING);
+		}
+
+		readBuffer.clear();
+		readBuffer = null;
 
 		if (key.isValid()) {
 			key.interestOps(key.interestOps() | SelectionKey.OP_READ);
