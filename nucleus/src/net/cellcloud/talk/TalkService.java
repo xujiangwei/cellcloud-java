@@ -88,6 +88,7 @@ public final class TalkService implements Service, SpeakerDelegate {
 	private int port;
 	private int block;
 	private int maxConnections;
+	private int numWorkerThreads;
 
 	private final long sessionTimeout;
 
@@ -162,8 +163,9 @@ public final class TalkService implements Service, SpeakerDelegate {
 			this.nucleusContext = nucleusContext;
 
 			this.port = 7000;
-			this.block = 65535;
+			this.block = 65536;
 			this.maxConnections = 1000;
+			this.numWorkerThreads = 8;
 
 			this.httpEnabled = true;
 			this.httpQueueSize = 1000;
@@ -172,10 +174,10 @@ public final class TalkService implements Service, SpeakerDelegate {
 			this.httpsPort = 7080;
 
 			// 15 分钟
-			this.sessionTimeout = 15 * 60 * 1000;
+			this.sessionTimeout = 15L * 60L * 1000L;
 
 			// 30 分钟
-			this.httpSessionTimeout = 30 * 60 * 1000;
+			this.httpSessionTimeout = 30L * 60L * 1000L;
 
 			// 创建执行器
 			this.executor = CachedQueueExecutor.newCachedQueueThreadPool(8);
@@ -236,7 +238,9 @@ public final class TalkService implements Service, SpeakerDelegate {
 				ts.webSocketSecureTx = HttpService.getInstance().getTotalWSSTx();
 			}
 
-			ts.httpConcurrentCounts = HttpService.getInstance().getConcurrentCounts();
+			ts.httpPort = HttpService.getInstance().getHttpPort();
+			ts.httpsPort = HttpService.getInstance().getHttpsPort();
+			ts.httpQueueSize = this.httpQueueSize;
 			ts.httpSessionNum = this.httpSessionManager.getSessionNum();
 			ts.httpSessionMaxNum = this.httpSessionManager.getMaxSessionNum();
 			ts.httpSessionExpires = this.httpSessionManager.getSessionExpires();
@@ -292,7 +296,10 @@ public final class TalkService implements Service, SpeakerDelegate {
 
 		// 最大连接数
 		this.acceptor.setMaxConnectNum(this.maxConnections);
+		// 工作线程数
+		this.acceptor.setWorkerNum(this.numWorkerThreads);
 
+		// 启动 acceptor
 		boolean succeeded = this.acceptor.bind(this.port);
 		if (succeeded) {
 			this.startDaemon();
@@ -413,6 +420,15 @@ public final class TalkService implements Service, SpeakerDelegate {
 		}
 
 		this.maxConnections = num;
+	}
+
+	/**
+	 * 设置工作线程数。
+	 * 
+	 * @param num
+	 */
+	public void setWorkerThreads(int num) {
+		this.numWorkerThreads = num;
 	}
 
 	public void setEachSessionReadInterval(long intervalMs) {
@@ -982,13 +998,13 @@ public final class TalkService implements Service, SpeakerDelegate {
 			return;
 		}
 
-		long idleTimeout = 30 * 60 * 1000;
+		long idleTimeout = 30L * 60L * 1000L;
 
 		// 激活 HTTP 服务
-		HttpService.getInstance().activateHttp(new int[]{this.httpPort}, idleTimeout);
+		HttpService.getInstance().activateHttp(new int[]{this.httpPort}, idleTimeout, this.httpQueueSize);
 
 		// 激活 HTTPS 服务
-		HttpService.getInstance().activateHttpSecure(this.httpsPort, idleTimeout,
+		HttpService.getInstance().activateHttpSecure(this.httpsPort, idleTimeout, this.httpQueueSize,
 				Nucleus.getInstance().getConfig().talk.keystore,
 				Nucleus.getInstance().getConfig().talk.keyStorePassword,
 				Nucleus.getInstance().getConfig().talk.keyManagerPassword);
@@ -1017,7 +1033,7 @@ public final class TalkService implements Service, SpeakerDelegate {
 		this.httpSessionManager.addSessionListener(this.httpSessionListener);
 
 		// 创建服务节点
-		HttpCapsule capsule = new HttpCapsule("ts", this.httpQueueSize);
+		HttpCapsule capsule = new HttpCapsule("ts");
 		// 设置 Session 管理器
 		capsule.setSessionManager(this.httpSessionManager);
 		// 依次添加 Holder 点
@@ -1542,7 +1558,7 @@ public final class TalkService implements Service, SpeakerDelegate {
 			}
 			else {
 				// 20 秒超时检测
-				if (time - cert.time > 20000) {
+				if (time - cert.time > 20000L) {
 					if (null == sessionList) {
 						sessionList = new ArrayList<Session>();
 					}

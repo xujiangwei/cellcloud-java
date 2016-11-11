@@ -58,7 +58,7 @@ public class ChunkDialectFactory extends DialectFactory {
 
 	// 配额定时器
 	private Timer quotaTimer;
-	private long defaultQuotaPerList = 4 * 1024;
+	private long defaultQuotaPerList = 4L * 1024L;
 
 	// 数据接收缓存，Key: Sign
 	private ConcurrentHashMap<String, Cache> cacheMap;
@@ -70,10 +70,10 @@ public class ChunkDialectFactory extends DialectFactory {
 	private ConcurrentHashMap<String, ChunkList> cListMap;
 
 	// 数据在发送缓存里的超时时间
-	private long listTimeout = 10 * 60 * 1000;
+	private long listTimeout = 10L * 60L * 1000L;
 
 	private AtomicLong cacheMemorySize = new AtomicLong(0);
-	private final long clearThreshold = 100 * 1024 * 1024;
+	private final long clearThreshold = 100L * 1024L * 1024L;
 	private AtomicBoolean clearRunning = new AtomicBoolean(false);
 	private Object mutex = new Object();
 
@@ -85,7 +85,7 @@ public class ChunkDialectFactory extends DialectFactory {
 		this.cacheMap = new ConcurrentHashMap<String, Cache>();
 		this.quotaTimer = new Timer("ChunkQuotaTimer");
 		// 每 100ms 一次任务
-		this.quotaTimer.schedule(new QuotaTask(), 3000, 100);
+		this.quotaTimer.schedule(new QuotaTask(), 3000L, 100L);
 	}
 
 	@Override
@@ -227,11 +227,11 @@ public class ChunkDialectFactory extends DialectFactory {
 
 		if ((this.logCounts % 100) == 0) {
 			long mem = this.cacheMemorySize.get();
-			if (mem > 1024 && mem <= 1048576) {
-				Logger.i(ChunkDialectFactory.class, "Cache memory size: " + (long)(mem / 1024) + " KB");
+			if (mem > 1024L && mem <= 1048576L) {
+				Logger.i(ChunkDialectFactory.class, "Cache memory size: " + (long)(mem / 1024L) + " KB");
 			}
-			else if (mem > 1048576) {
-				Logger.i(ChunkDialectFactory.class, "Cache memory size: " + (long)(mem / 1048576) + " MB");
+			else if (mem > 1048576L) {
+				Logger.i(ChunkDialectFactory.class, "Cache memory size: " + (long)(mem / 1048576L) + " MB");
 			}
 			else {
 				Logger.i(ChunkDialectFactory.class, "Cache memory size: " + mem + " Bytes");

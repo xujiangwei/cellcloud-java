@@ -174,7 +174,7 @@ public final class ClusterNetwork extends Observable implements Service, Message
 					}
 
 					Logger.i(ClusterNetwork.class, new StringBuilder("Scan reachable address expended time: ")
-						.append((long)((System.currentTimeMillis() - start) / 1000)).append(" seconds").toString());
+						.append((long)((System.currentTimeMillis() - start) / 1000L)).append(" seconds").toString());
 
 					scanReachable = false; 
 				}

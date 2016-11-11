@@ -57,7 +57,7 @@ public class CookieSessionManager implements SessionManager {
 
 	public CookieSessionManager() {
 		// 默认会话有效期：12 小时
-		this.sessionExpires = 12 * 60 * 60 * 1000;
+		this.sessionExpires = 12L * 60L * 60L * 1000L;
 		this.maxSessionNum = 50000;
 		this.sessions = new ConcurrentHashMap<Long, HttpSession>();
 		this.maintainTime = System.currentTimeMillis();
@@ -126,7 +126,7 @@ public class CookieSessionManager implements SessionManager {
 		if (this.sessions.size() > this.maxSessionNum) {
 			long time = Clock.currentTimeMillis();
 			// 维护最小间隔时间：30 分钟
-			if (time - this.maintainTime > 1800000) {
+			if (time - this.maintainTime > 1800000L) {
 				this.maintainTime = time;
 				SessionMaintainTask task = new SessionMaintainTask();
 				// 启动维护线程

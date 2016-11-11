@@ -38,27 +38,17 @@ public class HttpCapsule {
 
 	private String name;
 
-	private int queueSize;
-
 	private ArrayList<CapsuleHolder> holders;
 
 	private SessionManager sessionManager;
 
-	public HttpCapsule(String name, int queueSize) {
+	public HttpCapsule(String name) {
 		this.name = name;
-		this.queueSize = queueSize;
 		this.holders = new ArrayList<CapsuleHolder>();
 	}
 
 	public String getName() {
 		return this.name;
-	}
-
-	/** 返回连接器队列长度。
-	 * @return
-	 */
-	public int getQueueSize() {
-		return this.queueSize;
 	}
 
 	/** 返回 Holder 列表。

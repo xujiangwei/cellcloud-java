@@ -40,7 +40,7 @@ public final class TalkCapacity {
 	/// 重复尝试连接的次数
 	protected int retryAttempts = 0;
 	/// 两次连接中间隔时间，单位毫秒
-	protected long retryDelay = 5000;
+	protected long retryDelay = 5000L;
 
 	public TalkCapacity() {
 	}

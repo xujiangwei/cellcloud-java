@@ -306,11 +306,6 @@ public class NonblockingConnector extends MessageService implements MessageConne
 		this.messages.add(message);
 	}
 
-	@Override
-	public void read(Message message, Session session) {
-		// Nothing
-	}
-
 	private void fireSessionCreated() {
 		if (null != this.handler) {
 			this.handler.sessionCreated(this.session);

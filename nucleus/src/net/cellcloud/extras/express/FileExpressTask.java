@@ -202,7 +202,7 @@ public final class FileExpressTask implements MessageHandler, Runnable {
 						if (this.retryCount < this.maxRetryCount) {
 							// 5 秒后重试
 							try {
-								Thread.sleep(5000);
+								Thread.sleep(5000L);
 							} catch (InterruptedException e) {
 								e.printStackTrace();
 							}
@@ -256,7 +256,7 @@ public final class FileExpressTask implements MessageHandler, Runnable {
 
 						if (FileExpressContext.EC_NETWORK_FAULT == this.context.errorCode) {
 							try {
-								Thread.sleep(5000);
+								Thread.sleep(5000L);
 							} catch (InterruptedException e) {
 								e.printStackTrace();
 							}
@@ -394,7 +394,7 @@ public final class FileExpressTask implements MessageHandler, Runnable {
 		}
 
 		try {
-			Thread.sleep(1000);
+			Thread.sleep(1000L);
 		} catch (InterruptedException e) {
 			e.printStackTrace();
 		}
@@ -491,7 +491,7 @@ public final class FileExpressTask implements MessageHandler, Runnable {
 						if (this.retryCount < this.maxRetryCount) {
 							// 5 秒后重试
 							try {
-								Thread.sleep(5000);
+								Thread.sleep(5000L);
 							} catch (InterruptedException e) {
 								e.printStackTrace();
 							}
@@ -543,7 +543,7 @@ public final class FileExpressTask implements MessageHandler, Runnable {
 
 						if (FileExpressContext.EC_NETWORK_FAULT == this.context.errorCode) {
 							try {
-								Thread.sleep(5000);
+								Thread.sleep(5000L);
 							} catch (InterruptedException e) {
 								e.printStackTrace();
 							}
@@ -703,7 +703,7 @@ public final class FileExpressTask implements MessageHandler, Runnable {
 		}
 
 		try {
-			Thread.sleep(1000);
+			Thread.sleep(1000L);
 		} catch (InterruptedException e) {
 			e.printStackTrace();
 		}

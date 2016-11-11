@@ -207,8 +207,8 @@ public final class TalkServiceDaemon extends Thread {
 			// 休眠 1 秒
 			try {
 				long dt = Clock.currentTimeMillis() - this.tickTime;
-				if (dt <= 1000) {
-					dt = 1000 - dt;
+				if (dt <= 1000L) {
+					dt = 1000L - dt;
 				}
 				else {
 					dt = dt % 1000;

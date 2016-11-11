@@ -57,7 +57,7 @@ public class Session {
 		this.address = address;
 		this.secretKey = null;
 
-		this.cacheSize = 2048;
+		this.cacheSize = 4096;
 		this.cache = new byte[this.cacheSize];
 		this.cacheCursor = 0;
 	}
@@ -69,7 +69,7 @@ public class Session {
 		this.address = address;
 		this.secretKey = null;
 
-		this.cacheSize = 2048;
+		this.cacheSize = 4096;
 		this.cache = new byte[this.cacheSize];
 		this.cacheCursor = 0;
 	}

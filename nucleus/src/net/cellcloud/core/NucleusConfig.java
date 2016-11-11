@@ -106,10 +106,13 @@ public final class NucleusConfig {
 		public int port = 7000;
 
 		/// Block 设置
-		public int block = 65535;
+		public int block = 65536;
 
 		/// 最大连接数
-		public int maxConnections = 2000;
+		public int maxConnections = 5000;
+
+		/// 工作线程数
+		public int numWorkerThreads = 8;
 
 		/// 是否使用 HTTP 服务
 		public boolean httpEnabled = true;
@@ -124,7 +127,7 @@ public final class NucleusConfig {
 		public int httpQueueSize = 2000;
 
 		/// HTTP 服务会话超时时间，默认 5 分钟
-		public long httpSessionTimeout = 5 * 60 * 1000;
+		public long httpSessionTimeout = 5L * 60L * 1000L;
 
 		/// JKS
 		public String keystore = "/nucleus.jks";

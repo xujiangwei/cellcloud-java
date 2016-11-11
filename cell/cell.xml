@@ -4,8 +4,9 @@
 		<httpd>true</httpd>
 		<talk>
 			<port>7000</port>
-			<block>65535</block>
+			<block>65536</block>
 			<connections>5000</connections>
+			<workers>8</workers>
 			<http>
 				<enabled>true</enabled>
 				<port>7070</port>

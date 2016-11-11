@@ -2,7 +2,7 @@
 -----------------------------------------------------------------------------
 This source file is part of Cell Cloud.
 
-Copyright (c) 2009-2013 Cell Cloud Team (www.cellcloud.net)
+Copyright (c) 2009-2016 Cell Cloud Team (www.cellcloud.net)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -24,29 +24,25 @@ THE SOFTWARE.
 -----------------------------------------------------------------------------
 */
 
-package net.cellcloud.http;
+package net.cellcloud.common;
 
-import org.eclipse.jetty.websocket.server.WebSocketHandler;
-import org.eclipse.jetty.websocket.servlet.WebSocketServletFactory;
+import java.net.InetSocketAddress;
 
 /**
+ * 数据报适配器会话类。
  * 
- * @author Jiangwei Xu
+ * @author Ambrose Xu
  */
-public final class JettyWebSocketHandler extends WebSocketHandler {
+public class DatagramAcceptorSession extends Session {
 
-	private JettyWebSocket webSocket;
+	// 标记 Session 是否被移除
+	protected boolean removed = false;
 
-	public JettyWebSocketHandler(JettyWebSocket webSocket) {
-		super();
-		this.webSocket = webSocket;
+	protected long activeTimestamp;
+
+	public DatagramAcceptorSession(MessageService service, InetSocketAddress address) {
+		super(service, address);
+		this.activeTimestamp = System.currentTimeMillis();
 	}
 
-	@Override
-	public void configure(WebSocketServletFactory factory) {
-		// 超期时间 10 分钟
-		factory.getPolicy().setIdleTimeout(10L * 60L * 1000L);
-		factory.getPolicy().setAsyncWriteTimeout(10L * 1000L);
-		factory.setCreator(new JettyWebSocketCreator(this.webSocket));
-	}
 }

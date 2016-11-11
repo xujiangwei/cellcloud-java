@@ -304,7 +304,7 @@ public final class HttpService implements Service {
 		return false;
 	}
 
-	public boolean activateHttp(int[] ports, long idleTimeout) {
+	public boolean activateHttp(int[] ports, long idleTimeout, int acceptQueueSize) {
 		if (ports.length == 0) {
 			return false;
 		}
@@ -321,6 +321,7 @@ public final class HttpService implements Service {
 			ServerConnector connector = new ServerConnector(this.httpServer);
 			connector.setPort(ports[i]);
 			connector.setIdleTimeout(idleTimeout);
+			connector.setAcceptQueueSize(acceptQueueSize);
 			connectors[i] = connector;
 		}
 		this.httpServer.setConnectors(connectors);
@@ -331,7 +332,7 @@ public final class HttpService implements Service {
 		return true;
 	}
 
-	public boolean activateHttpSecure(int port, long idleTimeout, String jksResource, String keyStorePassword, String keyManagerPassword) {
+	public boolean activateHttpSecure(int port, long idleTimeout, int acceptQueueSize, String jksResource, String keyStorePassword, String keyManagerPassword) {
 		if (null == jksResource || null == keyStorePassword || null == keyManagerPassword) {
 			Logger.w(this.getClass(), "No key store password, can NOT start HTTP Secure service");
 			return false;
@@ -364,6 +365,7 @@ public final class HttpService implements Service {
 				new SslConnectionFactory(sslContextFactory, HttpVersion.HTTP_1_1.asString()),  httpConnectionFactory);
 		httpsConnector.setPort(port);
 		httpsConnector.setIdleTimeout(idleTimeout);
+		httpsConnector.setAcceptQueueSize(acceptQueueSize);
 		this.httpsServer.addConnector(httpsConnector);
 
 		this.httpsServer.setStopTimeout(1000);
@@ -508,6 +510,14 @@ public final class HttpService implements Service {
 		}
 	}
 
+	public int getHttpPort() {
+		return (null != this.httpServer) ? ((ServerConnector)this.httpServer.getConnectors()[0]).getPort() : 0;
+	}
+
+	public int getHttpsPort() {
+		return (null != this.httpsServer) ? ((ServerConnector)(this.httpsServer.getConnectors()[0])).getPort() : 0;
+	}
+
 	public int getWebSocketPort() {
 		return this.wsPort;
 	}
@@ -564,14 +574,4 @@ public final class HttpService implements Service {
 		return 0;
 	}
 
-	public int getConcurrentCounts() {
-		int counts = 0;
-		if (null != this.httpCrossDomainHandler) {
-			counts += this.httpCrossDomainHandler.getConcurrentCounts();
-		}
-		if (null != this.httpsCrossDomainHandler) {
-			counts += this.httpsCrossDomainHandler.getConcurrentCounts();
-		}
-		return counts;
-	}
 }

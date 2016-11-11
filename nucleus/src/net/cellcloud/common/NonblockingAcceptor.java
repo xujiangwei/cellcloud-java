@@ -199,7 +199,7 @@ public class NonblockingAcceptor extends MessageService implements MessageAccept
 			int stoppedCount = 0;
 			while (stoppedCount != this.workerNum) {
 				try {
-					Thread.sleep(100);
+					Thread.sleep(100L);
 				} catch (InterruptedException e) {
 					Logger.log(NonblockingAcceptor.class, e, LogLevel.DEBUG);
 				}
@@ -221,7 +221,7 @@ public class NonblockingAcceptor extends MessageService implements MessageAccept
 			while (this.running) {
 				++count;
 				try {
-					Thread.sleep(10);
+					Thread.sleep(10L);
 				} catch (InterruptedException e) {
 					Logger.log(NonblockingAcceptor.class, e, LogLevel.DEBUG);
 				}
@@ -277,11 +277,6 @@ public class NonblockingAcceptor extends MessageService implements MessageAccept
 		if (null != nas) {
 			nas.addMessage(message);
 		}
-	}
-
-	@Override
-	public void read(Message message, Session session) {
-		// Nothing
 	}
 
 	/**

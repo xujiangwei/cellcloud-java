@@ -47,7 +47,7 @@ import net.cellcloud.core.Cellet;
 public final class SuspendedTracker {
 
 	// 挂起的有效时长，单位：毫秒，默认：5分钟
-	protected long liveDuration = 5 * 60 * 1000;
+	protected long liveDuration = 5L * 60L * 1000L;
 
 	private String tag;
 	private long startTime;

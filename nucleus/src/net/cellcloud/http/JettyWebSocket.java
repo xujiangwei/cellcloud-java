@@ -140,7 +140,7 @@ public final class JettyWebSocket implements WebSocketManager {
 		Logger.d(this.getClass(), "onWebSocketConnect");
 
 		// 设置闲置超时时间
-		session.setIdleTimeout(60 * 60 * 1000);
+		session.setIdleTimeout(60L * 60L * 1000L);
 
 		synchronized (this.sessions) {
 			int index = this.sessions.indexOf(session);

@@ -124,7 +124,7 @@ public final class FlashSocketSecurity implements Service {
 		this.stopped = true;
 
 		try {
-			Thread.sleep(5000);
+			Thread.sleep(5000L);
 		} catch (InterruptedException e) {
 			// Nothing
 		}

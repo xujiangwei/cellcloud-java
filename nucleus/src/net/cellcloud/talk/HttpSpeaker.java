@@ -90,7 +90,7 @@ public class HttpSpeaker implements Speakable {
 		this.address = address;
 		this.delegate = delegate;
 		this.client = new HttpClient();
-		this.client.setConnectTimeout(10000);
+		this.client.setConnectTimeout(10000L);
 		this.hbTick = 0;
 		this.hbPeriod = heartbeatPeriod;
 		this.hbFailedCounts = 0;

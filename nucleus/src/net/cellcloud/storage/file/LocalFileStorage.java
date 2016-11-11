@@ -58,7 +58,7 @@ public final class LocalFileStorage implements FileStorage {
 	protected int chunkSize = 262144;
 
 	// 默认内存门限：1MB
-	private long memoryLimit = 1024 * 1024;
+	private long memoryLimit = 1024L * 1024L;
 
 	// 文件列表
 	private HashMap<String, FileWrapper> files;

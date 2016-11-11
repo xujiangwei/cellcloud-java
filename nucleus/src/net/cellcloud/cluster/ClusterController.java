@@ -96,7 +96,7 @@ public final class ClusterController implements Service, Observer {
 
 		// 执行守护定时任务，间隔 5 分钟
 		this.timer = new Timer();
-		this.timer.scheduleAtFixedRate(new ControllerTimerTask(), 10 * 1000, 5 * 60 * 1000);
+		this.timer.scheduleAtFixedRate(new ControllerTimerTask(), 10L * 1000L, 5L * 60L * 1000L);
 
 		return true;
 	}

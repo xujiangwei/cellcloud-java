@@ -56,7 +56,9 @@ public final class TalkSnapshoot {
 	public long webSocketSecureRx = 0;
 	public long webSocketSecureTx = 0;
 
-	public int httpConcurrentCounts = 0;
+	public int httpPort = 0;
+	public int httpsPort = 0;
+	public int httpQueueSize = 0;
 	public int httpSessionNum = 0;
 	public int httpSessionMaxNum = 0;
 	public long httpSessionExpires = 0;

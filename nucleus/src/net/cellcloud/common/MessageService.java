@@ -2,7 +2,7 @@
 -----------------------------------------------------------------------------
 This source file is part of Cell Cloud.
 
-Copyright (c) 2009-2012 Cell Cloud Team (www.cellcloud.net)
+Copyright (c) 2009-2016 Cell Cloud Team (www.cellcloud.net)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -26,7 +26,8 @@ THE SOFTWARE.
 
 package net.cellcloud.common;
 
-/** 消息服务。
+/**
+ * 消息服务。
  * 
  * @author Jiangwei Xu
  */
@@ -111,6 +112,4 @@ public abstract class MessageService {
 	/** 写入消息数据。 */
 	public abstract void write(Session session, Message message);
 
-	/** 读取消息数据。 */
-	public abstract void read(Message message, Session session);
 }

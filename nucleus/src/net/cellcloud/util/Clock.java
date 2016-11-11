@@ -49,9 +49,11 @@ public final class Clock {
 		this.time = new AtomicLong(this.start);
 	}
 
-	private void startTimer() {
-		this.timer = new Timer("ClockTimer");
-		this.timer.scheduleAtFixedRate(new ClockTask(), 1000, 200);
+	private void startTimer(long precision) {
+		if (null == this.timer) {
+			this.timer = new Timer("ClockTimer");
+			this.timer.scheduleAtFixedRate(new ClockTask(), 1000L, precision);
+		}
 	}
 
 	private void stopTimer() {
@@ -67,11 +69,22 @@ public final class Clock {
 	}
 
 	public static void start() {
-		Clock.instance.startTimer();
+		Clock.instance.startTimer(100L);
 	}
 
 	public static void stop() {
 		Clock.instance.stopTimer();
+	}
+
+	public static boolean resetPrecision(long precision) {
+		if (precision < 5L || precision > 1000L) {
+			return false;
+		}
+
+		Clock.instance.stopTimer();
+		Clock.instance.startTimer(precision);
+
+		return true;
 	}
 
 	public static long currentTimeMillis() {

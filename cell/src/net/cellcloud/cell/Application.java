@@ -2,7 +2,7 @@
 -----------------------------------------------------------------------------
 This source file is part of Cell Cloud.
 
-Copyright (c) 2009-2015 Cell Cloud Team (www.cellcloud.net)
+Copyright (c) 2009-2016 Cell Cloud Team (www.cellcloud.net)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -282,20 +282,42 @@ public final class Application {
 						// port
 						NodeList nl = elTalk.getElementsByTagName("port");
 						if (nl.getLength() > 0) {
-							config.talk.port = Integer.parseInt(nl.item(0).getTextContent());
-							Logger.i(this.getClass(), "nucleus.talk.port = " + config.talk.port);
+							try {
+								config.talk.port = Integer.parseInt(nl.item(0).getTextContent());
+								Logger.i(this.getClass(), "nucleus.talk.port = " + config.talk.port);
+							} catch (NumberFormatException e) {
+								Logger.log(this.getClass(), e, LogLevel.WARNING);
+							}
 						}
 						// block
 						nl = elTalk.getElementsByTagName("block");
 						if (nl.getLength() > 0) {
-							config.talk.block = Integer.parseInt(nl.item(0).getTextContent());
-							Logger.i(this.getClass(), "nucleus.talk.block = " + config.talk.block);
+							try {
+								config.talk.block = Integer.parseInt(nl.item(0).getTextContent());
+								Logger.i(this.getClass(), "nucleus.talk.block = " + config.talk.block);
+							} catch (NumberFormatException e) {
+								Logger.log(this.getClass(), e, LogLevel.WARNING);
+							}
 						}
 						// connections
 						nl = elTalk.getElementsByTagName("connections");
 						if (nl.getLength() > 0) {
-							config.talk.maxConnections = Integer.parseInt(nl.item(0).getTextContent());
-							Logger.i(this.getClass(), "nucleus.talk.connections = " + config.talk.maxConnections);
+							try {
+								config.talk.maxConnections = Integer.parseInt(nl.item(0).getTextContent());
+								Logger.i(this.getClass(), "nucleus.talk.connections = " + config.talk.maxConnections);
+							} catch (NumberFormatException e) {
+								Logger.log(this.getClass(), e, LogLevel.WARNING);
+							}
+						}
+						// workers
+						nl = elTalk.getElementsByTagName("workers");
+						if (nl.getLength() > 0) {
+							try {
+								config.talk.numWorkerThreads = Integer.parseInt(nl.item(0).getTextContent());
+								Logger.i(this.getClass(), "nucleus.talk.numWorkerThreads = " + config.talk.numWorkerThreads);
+							} catch (NumberFormatException e) {
+								Logger.log(this.getClass(), e, LogLevel.WARNING);
+							}
 						}
 						// http
 						nl = elTalk.getElementsByTagName("http");
@@ -311,8 +333,12 @@ public final class Application {
 							// http port
 							nl = elHttp.getElementsByTagName("port");
 							if (nl.getLength() > 0) {
-								config.talk.httpPort = Integer.parseInt(nl.item(0).getTextContent());
-								Logger.i(this.getClass(), "nucleus.talk.http.port = " + config.talk.httpPort);
+								try {
+									config.talk.httpPort = Integer.parseInt(nl.item(0).getTextContent());
+									Logger.i(this.getClass(), "nucleus.talk.http.port = " + config.talk.httpPort);
+								} catch (NumberFormatException e) {
+									Logger.log(this.getClass(), e, LogLevel.WARNING);
+								}
 
 								// 自动推演 https port
 								config.talk.httpsPort = config.talk.httpPort + 10;
@@ -321,8 +347,12 @@ public final class Application {
 							// http queue size
 							nl = elHttp.getElementsByTagName("queue");
 							if (nl.getLength() > 0) {
-								config.talk.httpQueueSize = Integer.parseInt(nl.item(0).getTextContent());
-								Logger.i(this.getClass(), "nucleus.talk.http.queue = " + config.talk.httpQueueSize);
+								try {
+									config.talk.httpQueueSize = Integer.parseInt(nl.item(0).getTextContent());
+									Logger.i(this.getClass(), "nucleus.talk.http.queue = " + config.talk.httpQueueSize);
+								} catch (NumberFormatException e) {
+									Logger.log(this.getClass(), e, LogLevel.WARNING);
+								}
 							}
 						}
 						// ssl
