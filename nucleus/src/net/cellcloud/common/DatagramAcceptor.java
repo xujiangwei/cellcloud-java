@@ -32,6 +32,7 @@ import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.SocketException;
+import java.net.SocketTimeoutException;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.LinkedList;
@@ -377,8 +378,11 @@ public class DatagramAcceptor extends MessageService implements MessageAcceptor 
 					// 处理接收
 					this.receive(packet);
 
-				} catch (SocketException e) {
+				} catch (SocketTimeoutException e) {
 					// Nothing
+					continue;
+				} catch (SocketException e) {
+					Logger.log(this.getClass(), e, LogLevel.INFO);
 					continue;
 				} catch (IOException e) {
 					Logger.log(this.getClass(), e, LogLevel.WARNING);

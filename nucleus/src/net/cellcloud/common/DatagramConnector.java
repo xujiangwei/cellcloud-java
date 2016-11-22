@@ -31,6 +31,7 @@ import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetSocketAddress;
 import java.net.SocketException;
+import java.net.SocketTimeoutException;
 import java.util.LinkedList;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -275,6 +276,10 @@ public class DatagramConnector extends MessageService implements MessageConnecto
 
 			try {
 				this.socket.receive(dp);
+			} catch (SocketTimeoutException e) {
+				buf = null;
+				dp = null;
+				continue;
 			} catch (IOException e) {
 				buf = null;
 				dp = null;

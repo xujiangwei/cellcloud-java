@@ -47,7 +47,8 @@ import java.util.concurrent.ConcurrentHashMap;
 public class NonblockingAcceptor extends MessageService implements MessageAcceptor {
 
 	// 缓存数据块大小
-	protected int block = 65536;//8192;
+	protected int block = 65536;
+	private final int writeLimit = 16384;
 
 	private ServerSocketChannel channel;
 	private Selector selector;
@@ -273,6 +274,11 @@ public class NonblockingAcceptor extends MessageService implements MessageAccept
 
 	@Override
 	public void write(Session session, Message message) {
+		if (message.length() > this.writeLimit) {
+			this.fireErrorOccurred(session, MessageErrorCode.WRITE_OUTOFBOUNDS);
+			return;
+		}
+
 		NonblockingAcceptorSession nas = this.idSessionMap.get(session.getId());
 		if (null != nas) {
 			nas.addMessage(message);
@@ -308,6 +314,10 @@ public class NonblockingAcceptor extends MessageService implements MessageAccept
 	 * @param size
 	 */
 	public void setBlockSize(int size) {
+		if (size < 2048) {
+			return;
+		}
+
 		this.block = size;
 	}
 

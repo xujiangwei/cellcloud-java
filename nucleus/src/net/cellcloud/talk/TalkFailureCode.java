@@ -35,7 +35,7 @@ public enum TalkFailureCode {
 	/** 未找到指定的 Cellet 。
 	 * @note 此错误不触发自动重连。
 	 */
-	NOTFOUND_CELLET(1000),
+	NOT_FOUND(1000),
 
 	/** Call 请求失败。 */
 	CALL_FAILED(1100),
@@ -46,10 +46,15 @@ public enum TalkFailureCode {
 	/** 会话网络断开。*/
 	NETWORK_NOT_AVAILABLE(2100),
 
+	/** 数据异常。
+	 * @note 此错误不触发自动重连。
+	 */
+	INCORRECT_DATA(4000),
+
 	/** 重试次数达到上限，重试结束。
 	 * @note 此错误不触发自动重连。
 	 */
-	RETRY_END(4000);
+	RETRY_END(4100);
 
 	private int code;
 

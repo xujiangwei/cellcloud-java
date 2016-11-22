@@ -77,14 +77,20 @@ public final class TalkAcceptorHandler implements MessageHandler {
 	@Override
 	public void messageReceived(final Session session, final Message message) {
 		byte[] data = message.get();
-		final Packet packet = Packet.unpack(data);
-		if (null != packet) {
-			this.talkService.executor.execute(new Runnable() {
-				@Override
-				public void run() {
-					interpret(session, packet);
-				}
-			});
+		try {
+			final Packet packet = Packet.unpack(data);
+			if (null != packet) {
+				this.talkService.executor.execute(new Runnable() {
+					@Override
+					public void run() {
+						interpret(session, packet);
+					}
+				});
+			}
+		} catch (NumberFormatException e) {
+			Logger.log(this.getClass(), e, LogLevel.WARNING);
+		} catch (ArrayIndexOutOfBoundsException e) {
+			Logger.log(this.getClass(), e, LogLevel.WARNING);
 		}
 	}
 

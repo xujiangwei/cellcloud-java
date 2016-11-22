@@ -43,8 +43,7 @@ public final class ServerDialogueCommand extends ServerCommand {
 		super(service, null, null);
 	}
 
-	public ServerDialogueCommand(TalkService service, Session session,
-			Packet packet) {
+	public ServerDialogueCommand(TalkService service, Session session, Packet packet) {
 		super(service, session, packet);
 	}
 

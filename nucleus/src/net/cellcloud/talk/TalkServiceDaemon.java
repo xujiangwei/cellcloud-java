@@ -71,12 +71,12 @@ public final class TalkServiceDaemon extends Thread {
 
 			// 心跳计数
 			++heartbeatCount;
-			if (heartbeatCount >= 6000) {
+			if (heartbeatCount >= 60000) {
 				heartbeatCount = 0;
 			}
 
 			// 60 秒周期处理
-			if (heartbeatCount % 60 == 0) {
+			if (heartbeatCount % 600 == 0) {
 				try {
 					// HTTP 客户端管理，每 60 秒一次计数
 					if (null != service.httpSpeakers) {
@@ -90,7 +90,7 @@ public final class TalkServiceDaemon extends Thread {
 			}
 
 			// 1 分钟周期处理
-			if (heartbeatCount % 60 == 0) {
+			if (heartbeatCount % 600 == 0) {
 				try {
 					// 检查 HTTP Session
 					service.checkHttpSessionHeartbeat();
@@ -103,9 +103,8 @@ public final class TalkServiceDaemon extends Thread {
 			}
 
 			// 5 分钟周期处理
-			if (heartbeatCount % 300 == 0) {
+			if (heartbeatCount % 3000 == 0) {
 				try {
-					// 300 秒一次心跳
 					if (null != service.speakers) {
 						synchronized (service.speakers) {
 							for (Speaker speaker : service.speakers) {
@@ -122,7 +121,7 @@ public final class TalkServiceDaemon extends Thread {
 			}
 
 			// 检查丢失连接的 Speaker
-			if (null != service.speakers) {
+			if (null != service.speakers && heartbeatCount % 10 == 0) {
 				try {
 					synchronized (service.speakers) {
 						for (Speaker speaker : service.speakers) {
@@ -204,17 +203,9 @@ public final class TalkServiceDaemon extends Thread {
 				Logger.log(this.getClass(), e, LogLevel.ERROR);
 			}
 
-			// 休眠 1 秒
+			// 休眠100毫秒
 			try {
-				long dt = Clock.currentTimeMillis() - this.tickTime;
-				if (dt <= 1000L) {
-					dt = 1000L - dt;
-				}
-				else {
-					dt = dt % 1000;
-				}
-
-				Thread.sleep(dt);
+				Thread.sleep(100L);
 			} catch (InterruptedException e) {
 				Logger.log(TalkServiceDaemon.class, e, LogLevel.ERROR);
 			}

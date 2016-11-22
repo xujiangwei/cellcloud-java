@@ -49,7 +49,7 @@ public final class TalkServiceFailure {
 		this.code = code;
 		this.reason = "Error in " + clazz.getName();
 
-		if (code == TalkFailureCode.NOTFOUND_CELLET)
+		if (code == TalkFailureCode.NOT_FOUND)
 			this.description = "Server can not find specified cellet";
 		else if (code == TalkFailureCode.CALL_FAILED)
 			this.description = "Network connecting timeout";
@@ -57,6 +57,8 @@ public final class TalkServiceFailure {
 			this.description = "Lost talk connection";
 		else if (code == TalkFailureCode.NETWORK_NOT_AVAILABLE)
 			this.description = "Network not available";
+		else if (code == TalkFailureCode.INCORRECT_DATA)
+			this.description = "Incorrect data";
 		else if (code == TalkFailureCode.RETRY_END)
 			this.description = "Auto retry end";
 		else

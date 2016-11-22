@@ -39,13 +39,16 @@ public final class Version {
 	public static final int MINOR = 3;
 
 	/// 修订号
-	public static final int REVISION = 44;
+	public static final int REVISION = 51;
 
 	/// 版本名
 	public static final String NAME = "Journey";
 
 	/// 是否调试模式
 	public static boolean DEBUG = true;
+
+	private Version() {
+	}
 
 	public static String getNumbers() {
 		StringBuilder buf = new StringBuilder();

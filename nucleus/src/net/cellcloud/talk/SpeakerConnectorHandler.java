@@ -95,6 +95,8 @@ public final class SpeakerConnectorHandler implements MessageHandler {
 			}
 		} catch (NumberFormatException e) {
 			Logger.log(this.getClass(), e, LogLevel.WARNING);
+		} catch (ArrayIndexOutOfBoundsException e) {
+			Logger.log(this.getClass(), e, LogLevel.WARNING);
 		}
 	}
 
@@ -117,21 +119,22 @@ public final class SpeakerConnectorHandler implements MessageHandler {
 
 		if (errorCode == MessageErrorCode.CONNECT_TIMEOUT
 			|| errorCode == MessageErrorCode.CONNECT_FAILED) {
+			// 一般性连接错误
 			TalkServiceFailure failure = new TalkServiceFailure(TalkFailureCode.CALL_FAILED, this.getClass());
 			failure.setSourceDescription("Attempt to connect to host timed out");
 			failure.setSourceCelletIdentifiers(this.speaker.getIdentifiers());
 			this.speaker.fireFailed(failure);
-
-			// 标记为丢失
-			this.speaker.lost = true;
+		}
+		else if (errorCode == MessageErrorCode.WRITE_OUTOFBOUNDS) {
+			// 数据错误
+			TalkServiceFailure failure = new TalkServiceFailure(TalkFailureCode.INCORRECT_DATA, this.getClass());
+			failure.setSourceCelletIdentifiers(this.speaker.getIdentifiers());
+			this.speaker.fireFailed(failure);
 		}
 		else {
 			TalkServiceFailure failure = new TalkServiceFailure(TalkFailureCode.NETWORK_NOT_AVAILABLE, this.getClass());
 			failure.setSourceCelletIdentifiers(this.speaker.getIdentifiers());
 			this.speaker.fireFailed(failure);
-
-			// 标记为丢失
-			this.speaker.lost = true;
 		}
 	}
 

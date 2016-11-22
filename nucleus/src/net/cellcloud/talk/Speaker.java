@@ -428,11 +428,16 @@ public class Speaker implements Speakable {
 //	}
 
 	protected void fireFailed(TalkServiceFailure failure) {
-		if (failure.getCode() == TalkFailureCode.CALL_FAILED) {
-			this.state = SpeakerState.HANGUP;
+		if (failure.getCode() == TalkFailureCode.NOT_FOUND
+			|| failure.getCode() == TalkFailureCode.INCORRECT_DATA
+			|| failure.getCode() == TalkFailureCode.RETRY_END) {
+			this.delegate.onFailed(this, failure);
 		}
-
-		this.delegate.onFailed(this, failure);
+		else {
+			this.state = SpeakerState.HANGUP;
+			this.delegate.onFailed(this, failure);
+			this.lost = true;
+		}
 	}
 
 	protected void fireRetryEnd() {
@@ -586,8 +591,7 @@ public class Speaker implements Speakable {
 			this.state = SpeakerState.HANGUP;
 
 			// 回调事件
-			TalkServiceFailure failure = new TalkServiceFailure(TalkFailureCode.NOTFOUND_CELLET
-					, Speaker.class);
+			TalkServiceFailure failure = new TalkServiceFailure(TalkFailureCode.NOT_FOUND, Speaker.class);
 			failure.setSourceCelletIdentifiers(this.identifierList);
 			this.fireFailed(failure);
 
