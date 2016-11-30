@@ -39,6 +39,7 @@ import net.cellcloud.talk.stuff.ComplementStuff;
 import net.cellcloud.talk.stuff.ObjectiveStuff;
 import net.cellcloud.talk.stuff.PredicateStuff;
 import net.cellcloud.talk.stuff.PrimitiveSerializer;
+import net.cellcloud.talk.stuff.StuffVersion;
 import net.cellcloud.talk.stuff.SubjectStuff;
 
 /** 原语描述类。
@@ -49,6 +50,8 @@ public class Primitive {
 
 	private String ownerTag;
 	private String celletIdentifier;
+
+	private StuffVersion version;
 	private ArrayList<SubjectStuff> subjectList;
 	private ArrayList<PredicateStuff> predicateList;
 	private ArrayList<ObjectiveStuff> objectiveList;
@@ -64,6 +67,7 @@ public class Primitive {
 	public Primitive() {
 		this.ownerTag = null;
 		this.celletIdentifier = null;
+		this.version = StuffVersion.V2;
 		this.dialect = null;
 		this.cellet = null;
 	}
@@ -72,6 +76,7 @@ public class Primitive {
 	public Primitive(String ownerTag) {
 		this.ownerTag = ownerTag;
 		this.celletIdentifier = null;
+		this.version = StuffVersion.V2;
 		this.dialect = null;
 		this.cellet = null;
 	}
@@ -80,6 +85,7 @@ public class Primitive {
 	public Primitive(Dialect dialect) {
 		this.ownerTag = null;
 		this.celletIdentifier = null;
+		this.version = StuffVersion.V2;
 		this.dialect = dialect;
 		this.cellet = null;
 	}
@@ -88,6 +94,53 @@ public class Primitive {
 	*/
 	public String getOwnerTag() {
 		return this.ownerTag;
+	}
+
+	/**
+	 * 设置语素版本。
+	 * @param version
+	 */
+	public void setVersion(StuffVersion version) {
+		this.version = version;
+
+		if (null != this.subjectList) {
+			for (SubjectStuff s : this.subjectList) {
+				s.changeVersion(version);
+			}
+		}
+		if (null != this.predicateList) {
+			for (PredicateStuff p : this.predicateList) {
+				p.changeVersion(version);
+			}
+		}
+		if (null != this.objectiveList) {
+			for (ObjectiveStuff o : this.objectiveList) {
+				o.changeVersion(version);
+			}
+		}
+		if (null != this.attributiveList) {
+			for (AttributiveStuff a : this.attributiveList) {
+				a.changeVersion(version);
+			}
+		}
+		if (null != this.adverbialList) {
+			for (AdverbialStuff a : this.adverbialList) {
+				a.changeVersion(version);
+			}
+		}
+		if (null != this.complementList) {
+			for (ComplementStuff c : this.complementList) {
+				c.changeVersion(version);
+			}
+		}
+	}
+
+	/**
+	 * 返回语素版本。
+	 * @return
+	 */
+	public StuffVersion getVersion() {
+		return this.version;
 	}
 
 	/** 设置 Cellet 标识。
@@ -141,6 +194,8 @@ public class Primitive {
 	/** 提交主语。
 	*/
 	public void commit(SubjectStuff subject) {
+		subject.changeVersion(this.version);
+
 		if (null == this.subjectList)
 			this.subjectList = new ArrayList<SubjectStuff>();
 		this.subjectList.add(subject);
@@ -149,6 +204,8 @@ public class Primitive {
 	/** 提交谓语。
 	 */
 	public void commit(PredicateStuff predicate) {
+		predicate.changeVersion(this.version);
+
 		if (null == this.predicateList)
 			this.predicateList = new ArrayList<PredicateStuff>();
 		this.predicateList.add(predicate);
@@ -157,6 +214,8 @@ public class Primitive {
 	/** 提交宾语。
 	 */
 	public void commit(ObjectiveStuff objective) {
+		objective.changeVersion(this.version);
+
 		if (null == this.objectiveList)
 			this.objectiveList = new ArrayList<ObjectiveStuff>();
 		this.objectiveList.add(objective);
@@ -165,6 +224,8 @@ public class Primitive {
 	/** 提交定语。
 	 */
 	public void commit(AttributiveStuff attributive) {
+		attributive.changeVersion(this.version);
+
 		if (null == this.attributiveList)
 			this.attributiveList = new ArrayList<AttributiveStuff>();
 		this.attributiveList.add(attributive);
@@ -173,6 +234,8 @@ public class Primitive {
 	/** 提交状语。
 	 */
 	public void commit(AdverbialStuff adverbial) {
+		adverbial.changeVersion(this.version);
+
 		if (null == this.adverbialList)
 			this.adverbialList = new ArrayList<AdverbialStuff>();
 		this.adverbialList.add(adverbial);
@@ -181,6 +244,8 @@ public class Primitive {
 	/** 提交补语。
 	 */
 	public void commit(ComplementStuff complement) {
+		complement.changeVersion(this.version);
+
 		if (null == this.complementList)
 			this.complementList = new ArrayList<ComplementStuff>();
 		this.complementList.add(complement);

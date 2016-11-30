@@ -44,6 +44,11 @@ public final class ComplementStuff extends Stuff {
 	}
 
 	/** 构造函数。 */
+	public ComplementStuff(byte[] value) {
+		super(StuffType.COMPLEMENT, value);
+	}
+
+	/** 构造函数。 */
 	public ComplementStuff(String value) {
 		super(StuffType.COMPLEMENT, value);
 	}

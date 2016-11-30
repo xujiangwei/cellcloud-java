@@ -27,6 +27,7 @@ THE SOFTWARE.
 package net.cellcloud.http;
 
 import java.net.InetSocketAddress;
+import java.nio.charset.Charset;
 import java.util.LinkedList;
 
 import net.cellcloud.common.Logger;
@@ -118,7 +119,7 @@ public final class JettyWebSocket implements WebSocketManager {
 		this.rx += text.length();
 
 		if (null != this.handler) {
-			Message message = new Message(text);
+			Message message = new Message(text.getBytes(Charset.forName("UTF-8")));
 			this.handler.messageReceived(wsSession, message);
 		}
 

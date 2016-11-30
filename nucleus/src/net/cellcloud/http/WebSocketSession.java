@@ -28,6 +28,7 @@ package net.cellcloud.http;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
+import java.nio.charset.Charset;
 
 import net.cellcloud.common.LogLevel;
 import net.cellcloud.common.Logger;
@@ -63,7 +64,7 @@ public class WebSocketSession extends Session {
 
 		try {
 			RemoteEndpoint remote = this.rawSession.getRemote();
-			remote.sendString(message.getAsString(), null);
+			remote.sendString(new String(message.get(), Charset.forName("UTF-8")), null);
 			if (remote.getBatchMode() == BatchMode.ON) {
 				try {
 					remote.flush();

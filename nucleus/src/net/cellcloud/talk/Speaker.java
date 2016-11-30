@@ -34,6 +34,7 @@ import java.util.List;
 import java.util.Timer;
 import java.util.TimerTask;
 
+import net.cellcloud.Version;
 import net.cellcloud.common.Cryptology;
 import net.cellcloud.common.Logger;
 import net.cellcloud.common.Message;
@@ -41,6 +42,7 @@ import net.cellcloud.common.NonblockingConnector;
 import net.cellcloud.common.Packet;
 import net.cellcloud.common.Session;
 import net.cellcloud.core.Nucleus;
+import net.cellcloud.talk.stuff.StuffVersion;
 import net.cellcloud.util.Utils;
 
 /**
@@ -250,6 +252,12 @@ public class Speaker implements Speakable {
 			|| !this.connector.isConnected()
 			|| this.state != SpeakerState.CALLED) {
 			return false;
+		}
+
+		// 兼容性判断
+		StuffVersion version = CompatibilityHelper.match(Version.VERSION_NUMBER);
+		if (version != primitive.getVersion()) {
+			primitive.setVersion(version);
 		}
 
 		// 序列化原语
@@ -473,6 +481,12 @@ public class Speaker implements Speakable {
 		// 协商能力
 		if (null == this.capacity) {
 			this.capacity = new TalkCapacity();
+		}
+
+		// 兼容性处理
+		StuffVersion version = CompatibilityHelper.match(Version.VERSION_NUMBER);
+		if (version == StuffVersion.V2) {
+			this.capacity.resetVersion(2);
 		}
 
 		// 包格式：源标签|能力描述序列化数据

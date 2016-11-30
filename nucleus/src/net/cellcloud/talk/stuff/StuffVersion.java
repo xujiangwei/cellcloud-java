@@ -2,7 +2,7 @@
 -----------------------------------------------------------------------------
 This source file is part of Cell Cloud.
 
-Copyright (c) 2009-2013 Cell Cloud Team (www.cellcloud.net)
+Copyright (c) 2009-2016 Cell Cloud Team (www.cellcloud.net)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -26,53 +26,19 @@ THE SOFTWARE.
 
 package net.cellcloud.talk.stuff;
 
-/** 变量字面意义。
- * 
- * @author Jiangwei Xu
- */
-public enum LiteralBase {
+public enum StuffVersion {
 
-	/** 字符串型。
-	 */
-	STRING,
+	V1(1),
 
-	/** 整数型。
-	 */
-	INT,
+	V2(2);
 
-	/** 无符号整数型。
-	 */
-	UINT,
+	private int value;
 
-	/** 长整数型。
-	 */
-	LONG,
+	StuffVersion(int value) {
+		this.value = value;
+	}
 
-	/** 无符号长整型。
-	 */
-	ULONG,
-
-	/** 浮点型。
-	 */
-	FLOAT,
-
-	/** 双精浮点型。
-	 */
-	DOUBLE,
-
-	/** 布尔型。
-	 */
-	BOOL,
-
-	/** JSON 类型。
-	 */
-	JSON,
-
-	/** 二进制类型。
-	 */
-	BIN,
-
-	/** XML 类型。
-	 */
-	XML
+	public int getValue() {
+		return this.value;
+	}
 }

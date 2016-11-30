@@ -44,6 +44,11 @@ public final class ObjectiveStuff extends Stuff {
 	}
 
 	/** 构造函数。 */
+	public ObjectiveStuff(byte[] value) {
+		super(StuffType.OBJECTIVE, value);
+	}
+
+	/** 构造函数。 */
 	public ObjectiveStuff(String value) {
 		super(StuffType.OBJECTIVE, value);
 	}

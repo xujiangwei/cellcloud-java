@@ -34,6 +34,9 @@ import java.nio.charset.Charset;
  */
 public final class TalkCapacity {
 
+	/// 版本
+	private int version = 1;
+
 	/// 是否为加密会话
 	protected boolean secure = false;
 
@@ -41,6 +44,9 @@ public final class TalkCapacity {
 	protected int retryAttempts = 0;
 	/// 两次连接中间隔时间，单位毫秒
 	protected long retryDelay = 5000L;
+
+	/// 内核的版本串号
+	private int versionNumber = 130;
 
 	public TalkCapacity() {
 	}
@@ -70,15 +76,43 @@ public final class TalkCapacity {
 		}
 	}
 
+	protected void resetVersion(int version) {
+		this.version = version;
+
+		if (version == 1) {
+			this.versionNumber = 130;
+		}
+		else if (version == 2) {
+			this.versionNumber = 150;
+		}
+	}
+
+	protected int getVersionNumber() {
+		return this.versionNumber;
+	}
+
 	public final static byte[] serialize(TalkCapacity capacity) {
 		StringBuilder buf = new StringBuilder();
-		buf.append(1);
-		buf.append("|");
-		buf.append(capacity.secure ? "Y" : "N");
-		buf.append("|");
-		buf.append(capacity.retryAttempts);
-		buf.append("|");
-		buf.append(capacity.retryDelay);
+		if (capacity.version == 1) {
+			buf.append(1);
+			buf.append("|");
+			buf.append(capacity.secure ? "Y" : "N");
+			buf.append("|");
+			buf.append(capacity.retryAttempts);
+			buf.append("|");
+			buf.append(capacity.retryDelay);
+		}
+		else if (capacity.version == 2) {
+			buf.append(2);
+			buf.append("|");
+			buf.append(capacity.secure ? "Y" : "N");
+			buf.append("|");
+			buf.append(capacity.retryAttempts);
+			buf.append("|");
+			buf.append(capacity.retryDelay);
+			buf.append("|");
+			buf.append(capacity.versionNumber);
+		}
 
 		byte[] bytes = buf.toString().getBytes();
 		buf = null;
@@ -94,11 +128,17 @@ public final class TalkCapacity {
 		}
 
 		TalkCapacity cap = new TalkCapacity();
-		int version = Integer.parseInt(array[0]);
-		if (version == 1) {
+		cap.version = Integer.parseInt(array[0]);
+		if (cap.version == 1) {
 			cap.secure = array[1].equalsIgnoreCase("Y") ? true : false;
 			cap.retryAttempts = Integer.parseInt(array[2]);
 			cap.retryDelay = Integer.parseInt(array[3]);
+		}
+		else if (cap.version == 2) {
+			cap.secure = array[1].equalsIgnoreCase("Y") ? true : false;
+			cap.retryAttempts = Integer.parseInt(array[2]);
+			cap.retryDelay = Integer.parseInt(array[3]);
+			cap.versionNumber = Integer.parseInt(array[4]);
 		}
 		return cap;
 	}

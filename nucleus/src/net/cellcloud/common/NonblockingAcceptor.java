@@ -47,8 +47,8 @@ import java.util.concurrent.ConcurrentHashMap;
 public class NonblockingAcceptor extends MessageService implements MessageAcceptor {
 
 	// 缓存数据块大小
-	protected int block = 65536;
-	private final int writeLimit = 16384;
+	private int block = 65536;
+	private int writeLimit = 32768;
 
 	private ServerSocketChannel channel;
 	private Selector selector;
@@ -318,7 +318,12 @@ public class NonblockingAcceptor extends MessageService implements MessageAccept
 			return;
 		}
 
+		if (this.block == size) {
+			return;
+		}
+
 		this.block = size;
+		this.writeLimit = Math.round(size * 0.5f);
 	}
 
 	/** 返回 Block 数据块大小。
@@ -480,7 +485,7 @@ public class NonblockingAcceptor extends MessageService implements MessageAccept
 		while (this.spinning) {
 			if (!this.selector.isOpen()) {
 				try {
-					Thread.sleep(1);
+					Thread.sleep(1L);
 				} catch (InterruptedException e) {
 					Logger.log(NonblockingAcceptor.class, e, LogLevel.DEBUG);
 				}
@@ -544,10 +549,12 @@ public class NonblockingAcceptor extends MessageService implements MessageAccept
 			} // # if
 
 			try {
-				Thread.sleep(1);
-				Thread.yield();
+				Thread.sleep(1L);
 			} catch (InterruptedException e) {
+				// Nothing
 			}
+
+			Thread.yield();
 		} // # while
 	}
 

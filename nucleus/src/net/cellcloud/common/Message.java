@@ -26,7 +26,6 @@ THE SOFTWARE.
 
 package net.cellcloud.common;
 
-import java.nio.charset.Charset;
 
 /** 消息描述类。
  * 
@@ -44,9 +43,9 @@ public class Message {
 
 	/** 构造函数。
 	 */
-	public Message(String data) {
-		this.data = data.getBytes(Charset.forName("UTF-8"));
-	}
+//	public Message(String data) {
+//		this.data = data.getBytes(Charset.forName("UTF-8"));
+//	}
 
 	protected void set(byte[] newData) {
 		this.data = newData;
@@ -66,13 +65,14 @@ public class Message {
 
 	/** 返回 UTF-8 字符集编码的字符串形式的消息数据。
 	 */
-	public String getAsString() {
-		return new String(this.data, Charset.forName("UTF-8"));
-	}
+//	public String getAsString() {
+//		return new String(this.data, Charset.forName("UTF-8"));
+//	}
 
 	/** 返回指定字符集的消息数据的字符串形式。
 	 */
-	public String getAsString(String charsetName) {
-		return new String(this.data, Charset.forName(charsetName));
-	}
+//	public String getAsString(String charsetName) {
+//		return new String(this.data, Charset.forName(charsetName));
+//	}
+
 }

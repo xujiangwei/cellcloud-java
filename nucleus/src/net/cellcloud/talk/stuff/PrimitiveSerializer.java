@@ -2,7 +2,7 @@
 -----------------------------------------------------------------------------
 This source file is part of Cell Cloud.
 
-Copyright (c) 2009-2012 Cell Cloud Team (www.cellcloud.net)
+Copyright (c) 2009-2016 Cell Cloud Team (www.cellcloud.net)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -34,6 +34,7 @@ import java.nio.charset.Charset;
 import java.util.Iterator;
 import java.util.List;
 
+import net.cellcloud.common.Base64;
 import net.cellcloud.common.LogLevel;
 import net.cellcloud.common.Logger;
 import net.cellcloud.talk.Primitive;
@@ -54,10 +55,10 @@ public final class PrimitiveSerializer {
 	private static final byte TOKEN_CLOSE_BRACKET = ']';
 	private static final byte TOKEN_OPEN_BRACE = '{';
 	private static final byte TOKEN_CLOSE_BRACE = '}';
-	private static final byte TOKEN_POINT = '.';
 	private static final byte TOKEN_OPERATE_ASSIGN = '=';
 	private static final byte TOKEN_OPERATE_DECLARE = ':';
 	private static final byte TOKEN_AT = '@';
+	private static final byte TOKEN_ESCAPE = '\\';
 	private static final String TOKEN_AT_STR = "@";
 
 	private static final byte PARSE_PHASE_UNKNOWN = 0;
@@ -77,6 +78,7 @@ public final class PrimitiveSerializer {
 	private static final String LITERALBASE_DOUBLE = "double";
 	private static final String LITERALBASE_BOOL = "bool";
 	private static final String LITERALBASE_JSON = "json";
+	private static final String LITERALBASE_BIN = "bin";
 	private static final String LITERALBASE_XML = "xml";
 
 	private static final byte[] LITERALBASE_STRING_BYTES = LITERALBASE_STRING.getBytes();
@@ -88,6 +90,7 @@ public final class PrimitiveSerializer {
 	private static final byte[] LITERALBASE_DOUBLE_BYTES = LITERALBASE_DOUBLE.getBytes();
 	private static final byte[] LITERALBASE_BOOL_BYTES = LITERALBASE_BOOL.getBytes();
 	private static final byte[] LITERALBASE_JSON_BYTES = LITERALBASE_JSON.getBytes();
+	private static final byte[] LITERALBASE_BIN_BYTES = LITERALBASE_BIN.getBytes();
 	private static final byte[] LITERALBASE_XML_BYTES = LITERALBASE_XML.getBytes();
 
 	private static final String STUFFTYPE_SUBJECT = "sub";
@@ -113,7 +116,7 @@ public final class PrimitiveSerializer {
 	private static final String JSONKEY_NAME = "name";
 	private static final String JSONKEY_TRACKER = "tracker";
 
-	private static final int BLOCK = 131072;
+	private static final int BLOCK = 65536;
 
 	private PrimitiveSerializer() {
 	}
@@ -125,13 +128,19 @@ public final class PrimitiveSerializer {
 		原语序列化格式：
 		[version]{sutff}...{stuff}[dialect@tracker]
 		示例：
-		[01.00]{sub=cloud:string}{pre=add:string}[Action@Ambrose]
+		[01000]{sub=cloud:string}{pre=add:string}[Action@Ambrose]
 		*/
 
 		try {
 			// 版本
 			stream.write((int)TOKEN_OPEN_BRACKET);
-			byte[] version = {'0', '1', TOKEN_POINT, '0', '0'};
+			byte[] version = null;
+			if (StuffVersion.V2 == primitive.getVersion()) {
+				version = new byte[]{'0', '0', '2', '0', '0'};
+			}
+			else {
+				version = new byte[]{'0', '1', '0', '0', '0'};
+			}
 			stream.write(version);
 			stream.write((int)TOKEN_CLOSE_BRACKET);
 
@@ -148,7 +157,7 @@ public final class PrimitiveSerializer {
 					stream.write(STUFFTYPE_SUBJECT_BYTES);
 					stream.write((int)TOKEN_OPERATE_ASSIGN);
 
-					bufLength = reviseValue(buf, stuff.value.getBytes(Charset.forName("UTF-8")));
+					bufLength = reviseValue(buf, stuff.value);
 					buf.flip();
 					byte[] d = new byte[bufLength];
 					buf.get(d, 0, bufLength);
@@ -169,7 +178,7 @@ public final class PrimitiveSerializer {
 					stream.write(STUFFTYPE_PREDICATE_BYTES);
 					stream.write((int)TOKEN_OPERATE_ASSIGN);
 
-					bufLength = reviseValue(buf, stuff.value.getBytes(Charset.forName("UTF-8")));
+					bufLength = reviseValue(buf, stuff.value);
 					buf.flip();
 					byte[] d = new byte[bufLength];
 					buf.get(d, 0, bufLength);
@@ -190,7 +199,7 @@ public final class PrimitiveSerializer {
 					stream.write(STUFFTYPE_OBJECTIVE_BYTES);
 					stream.write((int)TOKEN_OPERATE_ASSIGN);
 
-					bufLength = reviseValue(buf, stuff.value.getBytes(Charset.forName("UTF-8")));
+					bufLength = reviseValue(buf, stuff.value);
 					buf.flip();
 					byte[] d = new byte[bufLength];
 					buf.get(d, 0, bufLength);
@@ -211,7 +220,7 @@ public final class PrimitiveSerializer {
 					stream.write(STUFFTYPE_ADVERBIAL_BYTES);
 					stream.write((int)TOKEN_OPERATE_ASSIGN);
 
-					bufLength = reviseValue(buf, stuff.value.getBytes(Charset.forName("UTF-8")));
+					bufLength = reviseValue(buf, stuff.value);
 					buf.flip();
 					byte[] d = new byte[bufLength];
 					buf.get(d, 0, bufLength);
@@ -232,7 +241,7 @@ public final class PrimitiveSerializer {
 					stream.write(STUFFTYPE_ATTRIBUTIVE_BYTES);
 					stream.write((int)TOKEN_OPERATE_ASSIGN);
 
-					bufLength = reviseValue(buf, stuff.value.getBytes(Charset.forName("UTF-8")));
+					bufLength = reviseValue(buf, stuff.value);
 					buf.flip();
 					byte[] d = new byte[bufLength];
 					buf.get(d, 0, bufLength);
@@ -253,7 +262,7 @@ public final class PrimitiveSerializer {
 					stream.write(STUFFTYPE_COMPLEMENT_BYTES);
 					stream.write((int)TOKEN_OPERATE_ASSIGN);
 
-					bufLength = reviseValue(buf, stuff.value.getBytes(Charset.forName("UTF-8")));
+					bufLength = reviseValue(buf, stuff.value);
 					buf.flip();
 					byte[] d = new byte[bufLength];
 					buf.get(d, 0, bufLength);
@@ -277,6 +286,7 @@ public final class PrimitiveSerializer {
 			}
 
 			stream.flush();
+			buf = null;
 		} catch (IOException e) {
 			Logger.log(PrimitiveSerializer.class, e, LogLevel.ERROR);
 		}
@@ -289,7 +299,7 @@ public final class PrimitiveSerializer {
 		原语序列化格式：
 		[version]{sutff}...{stuff}[dialect@tracker]
 		示例：
-		[01.00]{sub=cloud:string}{pre=add:string}[Action@Ambrose]
+		[01000]{sub=cloud:string}{pre=add:string}[Action@Ambrose]
 		*/
 
 		try {
@@ -297,6 +307,7 @@ public final class PrimitiveSerializer {
 			int read = 0;
 
 			ByteBuffer buf = ByteBuffer.allocate(BLOCK);
+			byte[] version = new byte[5];
 			byte[] type = new byte[3];
 			byte[] value = null;
 			byte[] literal = null;
@@ -309,13 +320,14 @@ public final class PrimitiveSerializer {
 
 				case PARSE_PHASE_VALUE:
 					// 判断转义
-					if (read == '\\') {
+					if (read == TOKEN_ESCAPE) {
 						// 读取下一个字符
 						int next = stream.read();
 						if (next == TOKEN_OPEN_BRACE
 							|| next == TOKEN_CLOSE_BRACE
 							|| next == TOKEN_OPERATE_ASSIGN
-							|| next == TOKEN_OPERATE_DECLARE) {
+							|| next == TOKEN_OPERATE_DECLARE
+							|| next == TOKEN_ESCAPE) {
 							buf.put((byte)next);
 							++length;
 						}
@@ -390,6 +402,17 @@ public final class PrimitiveSerializer {
 				case PARSE_PHASE_VERSION:
 					if (read == TOKEN_CLOSE_BRACKET) {
 						// 解析版本结束
+						buf.flip();
+						buf.get(version, 0, version.length);
+						buf.clear();
+
+						if (version[2] == '2') {
+							primitive.setVersion(StuffVersion.V2);
+						}
+						else {
+							primitive.setVersion(StuffVersion.V1);
+						}
+
 						phase = PARSE_PHASE_STUFF;
 						continue;
 					}
@@ -407,7 +430,9 @@ public final class PrimitiveSerializer {
 					}
 					else if (read == TOKEN_CLOSE_BRACKET) {
 						// 解析方言结束
+						buf.flip();
 						deserializeDialect(primitive, new String(buf.array(), 0, length, Charset.forName("UTF-8")));
+						buf.clear();
 					}
 					else {
 						// 记录数据
@@ -449,32 +474,32 @@ public final class PrimitiveSerializer {
 		String typeString = new String(type);
 
 		if (typeString.equals(STUFFTYPE_SUBJECT)) {
-			SubjectStuff subject = new SubjectStuff(new String(value, Charset.forName("UTF-8")));
+			SubjectStuff subject = new SubjectStuff(value);
 			subject.literalBase = lb;
 			primitive.commit(subject);
 		}
 		else if (typeString.equals(STUFFTYPE_PREDICATE)) {
-			PredicateStuff predicate = new PredicateStuff(new String(value, Charset.forName("UTF-8")));
+			PredicateStuff predicate = new PredicateStuff(value);
 			predicate.literalBase = lb;
 			primitive.commit(predicate);
 		}
 		else if (typeString.equals(STUFFTYPE_OBJECTIVE)) {
-			ObjectiveStuff objective = new ObjectiveStuff(new String(value, Charset.forName("UTF-8")));
+			ObjectiveStuff objective = new ObjectiveStuff(value);
 			objective.literalBase = lb;
 			primitive.commit(objective);
 		}
 		else if (typeString.equals(STUFFTYPE_ADVERBIAL)) {
-			AdverbialStuff adverbial = new AdverbialStuff(new String(value, Charset.forName("UTF-8")));
+			AdverbialStuff adverbial = new AdverbialStuff(value);
 			adverbial.literalBase = lb;
 			primitive.commit(adverbial);
 		}
 		else if (typeString.equals(STUFFTYPE_ATTRIBUTIVE)) {
-			AttributiveStuff attributive = new AttributiveStuff(new String(value, Charset.forName("UTF-8")));
+			AttributiveStuff attributive = new AttributiveStuff(value);
 			attributive.literalBase = lb;
 			primitive.commit(attributive);
 		}
 		else if (typeString.equals(STUFFTYPE_COMPLEMENT)) {
-			ComplementStuff complement = new ComplementStuff(new String(value, Charset.forName("UTF-8")));
+			ComplementStuff complement = new ComplementStuff(value);
 			complement.literalBase = lb;
 			primitive.commit(complement);
 		}
@@ -491,8 +516,9 @@ public final class PrimitiveSerializer {
 			if (b == TOKEN_OPEN_BRACE
 				|| b == TOKEN_CLOSE_BRACE
 				|| b == TOKEN_OPERATE_ASSIGN
-				|| b == TOKEN_OPERATE_DECLARE) {
-				buf.put((byte) '\\');
+				|| b == TOKEN_OPERATE_DECLARE
+				|| b == TOKEN_ESCAPE) {
+				buf.put(TOKEN_ESCAPE);
 				++length;
 			}
 
@@ -520,6 +546,9 @@ public final class PrimitiveSerializer {
 		}
 		else if (literal == LiteralBase.BOOL) {
 			return LITERALBASE_BOOL_BYTES;
+		}
+		else if (literal == LiteralBase.BIN) {
+			return LITERALBASE_BIN_BYTES;
 		}
 		else if (literal == LiteralBase.FLOAT) {
 			return LITERALBASE_FLOAT_BYTES;
@@ -558,6 +587,9 @@ public final class PrimitiveSerializer {
 		}
 		else if (literal[0] == LITERALBASE_BOOL_BYTES[0] && literal[1] == LITERALBASE_BOOL_BYTES[1]) {
 			return LiteralBase.BOOL;
+		}
+		else if (literal[0] == LITERALBASE_BIN_BYTES[0] && literal[1] == LITERALBASE_BIN_BYTES[1]) {
+			return LiteralBase.BIN;
 		}
 		else if (literal[0] == LITERALBASE_FLOAT_BYTES[0] && literal[1] == LITERALBASE_FLOAT_BYTES[1]) {
 			return LiteralBase.FLOAT;
@@ -792,6 +824,11 @@ public final class PrimitiveSerializer {
 			output.put(JSONKEY_STUFFVALUE, stuff.getValueAsBool());
 			output.put(JSONKEY_LITERALBASE, LITERALBASE_BOOL);
 		}
+		else if (stuff.literalBase == LiteralBase.BIN) {
+			String base64 = Base64.encodeBytes(stuff.getValue());
+			output.put(JSONKEY_STUFFVALUE, base64);
+			output.put(JSONKEY_LITERALBASE, LITERALBASE_BIN);
+		}
 		else if (stuff.literalBase == LiteralBase.FLOAT) {
 			output.put(JSONKEY_STUFFVALUE, stuff.getValueAsFloat());
 			output.put(JSONKEY_LITERALBASE, LITERALBASE_FLOAT);
@@ -840,6 +877,18 @@ public final class PrimitiveSerializer {
 		else if (literal.equals(LITERALBASE_BOOL)) {
 			output.setValue(json.getBoolean(JSONKEY_STUFFVALUE));
 			output.setLiteralBase(LiteralBase.BOOL);
+		}
+		else if (literal.equals(LITERALBASE_BIN)) {
+			byte[] base64 = null;
+			try {
+				base64 = Base64.decode(json.getString(JSONKEY_STUFFVALUE));
+			} catch (IOException e) {
+				// Nothing
+			}
+			if (null != base64) {
+				output.setValue(base64);
+				output.setLiteralBase(LiteralBase.BIN);
+			}
 		}
 		else if (literal.equals(LITERALBASE_FLOAT)) {
 			output.setValue(json.getDouble(JSONKEY_STUFFVALUE));

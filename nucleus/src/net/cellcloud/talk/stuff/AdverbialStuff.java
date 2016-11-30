@@ -44,6 +44,11 @@ public final class AdverbialStuff extends Stuff {
 	}
 
 	/** 构造函数。 */
+	public AdverbialStuff(byte[] value) {
+		super(StuffType.ADVERBIAL, value);
+	}
+
+	/** 构造函数。 */
 	public AdverbialStuff(String value) {
 		super(StuffType.ADVERBIAL, value);
 	}

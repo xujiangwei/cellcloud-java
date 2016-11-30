@@ -47,7 +47,7 @@ public class NonblockingConnector extends MessageService implements MessageConne
 
 	// 缓冲块大小
 	private int block = 65536;
-	private final int writeLimit = 16384;
+	private int writeLimit = 32768;
 
 	private InetSocketAddress address;
 	private long connectTimeout;
@@ -276,6 +276,7 @@ public class NonblockingConnector extends MessageService implements MessageConne
 		}
 
 		this.block = size;
+		this.writeLimit = Math.round(size * 0.5f);
 
 		if (null != this.channel) {
 			try {

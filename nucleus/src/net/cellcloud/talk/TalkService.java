@@ -28,6 +28,7 @@ package net.cellcloud.talk;
 
 import java.io.ByteArrayOutputStream;
 import java.net.InetSocketAddress;
+import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.LinkedList;
@@ -70,6 +71,7 @@ import net.cellcloud.talk.dialect.ChunkDialectFactory;
 import net.cellcloud.talk.dialect.Dialect;
 import net.cellcloud.talk.dialect.DialectEnumerator;
 import net.cellcloud.talk.stuff.PrimitiveSerializer;
+import net.cellcloud.talk.stuff.StuffVersion;
 import net.cellcloud.util.CachedQueueExecutor;
 import net.cellcloud.util.Clock;
 import net.cellcloud.util.Utils;
@@ -601,23 +603,20 @@ public final class TalkService implements Service, SpeakerDelegate {
 				Logger.w(TalkService.class, "Can't find target tag in context list : " + targetTag);
 			}
 
-			// 尝试在已挂起的的追踪器里查找
-//			this.tryOfferPrimitive(targetTag, cellet, primitive);
-
 			// 因为没有直接发送出去原语，所以返回 false
 			return false;
 		}
-
-		// 尝试在已挂起的的追踪器里查找
-//		if (this.tryOfferPrimitive(targetTag, cellet, primitive)) {
-//			// 因为没有直接发送出去原语，所以返回 false
-//			return false;
-//		}
 
 		Message message = null;
 
 		synchronized (context) {
 			TalkTracker tracker = context.getTracker();
+
+			// 兼容性处理
+			StuffVersion sv = CompatibilityHelper.match(tracker.getCapacity().getVersionNumber());
+			// 设置语素版本
+			primitive.setVersion(sv);
+
 			if (tracker.hasCellet(cellet)) {
 				// 对方言进行是否劫持处理
 				if (null != this.callbackListener && primitive.isDialectal()) {
@@ -661,6 +660,39 @@ public final class TalkService implements Service, SpeakerDelegate {
 		}
 
 		return false;
+	}
+
+	public boolean kick(final String targetTag, final Cellet cellet, final CelletSandbox sandbox) {
+		// 检查 Cellet 合法性
+		if (!Nucleus.getInstance().checkSandbox(cellet, sandbox)) {
+			Logger.w(TalkService.class, "Illegal cellet : " + cellet.getFeature().getIdentifier());
+			return false;
+		}
+
+		TalkSessionContext context = this.tagContexts.get(targetTag);
+		if (null == context) {
+			if (Logger.isDebugLevel()) {
+				Logger.w(TalkService.class, "Can't find target tag in context list : " + targetTag);
+			}
+
+			// 因为没有直接发送出去原语，所以返回 false
+			return false;
+		}
+
+		ArrayList<Session> list = new ArrayList<Session>();
+		synchronized (context) {
+			List<Session> slist = context.getSessions();
+			list.addAll(slist);
+		}
+
+		for (Session session : list) {
+			this.acceptor.close(session);
+		}
+
+		list.clear();
+		list = null;
+
+		return true;
 	}
 
 	/** 申请调用 Cellet 服务。
@@ -1801,7 +1833,7 @@ public final class TalkService implements Service, SpeakerDelegate {
 				Logger.log(TalkService.class, e, LogLevel.ERROR);
 			}
 
-			Message message = new Message(data.toString());
+			Message message = new Message(data.toString().getBytes(Charset.forName("UTF-8")));
 			if (null != this.wssManager && this.wssManager.hasSession(ws)) {
 				this.wssManager.write(ws, message);
 			}
@@ -1867,7 +1899,7 @@ public final class TalkService implements Service, SpeakerDelegate {
 				data.put(WebSocketMessageHandler.TALK_PACKET, packet);
 
 				// 创建 message
-				message = new Message(data.toString());
+				message = new Message(data.toString().getBytes(Charset.forName("UTF-8")));
 			} catch (JSONException e) {
 				Logger.log(this.getClass(), e, LogLevel.ERROR);
 			}

@@ -26,6 +26,7 @@ THE SOFTWARE.
 
 package net.cellcloud.talk;
 
+import java.nio.charset.Charset;
 import java.util.LinkedList;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -99,7 +100,7 @@ public class WebSocketMessageHandler implements MessageHandler {
 	@Override
 	public void messageReceived(Session session, Message message) {
 		try {
-			JSONObject data = new JSONObject(message.getAsString());
+			JSONObject data = new JSONObject(new String(message.get(), Charset.forName("UTF-8")));
 			String packetTag = data.getString(TALK_PACKET_TAG);
 			if (null != packetTag) {
 				if (packetTag.equals(TPT_DIALOGUE)) {
@@ -168,7 +169,7 @@ public class WebSocketMessageHandler implements MessageHandler {
 				packet.put(HttpCheckHandler.Tag, Nucleus.getInstance().getTagAsString());
 				ret.put(TALK_PACKET, packet);
 
-				Message message = new Message(ret.toString());
+				Message message = new Message(ret.toString().getBytes(Charset.forName("UTF-8")));
 				session.write(message);
 			}
 			else {
@@ -182,7 +183,7 @@ public class WebSocketMessageHandler implements MessageHandler {
 				packet.put(HttpCheckHandler.Error, "reject");
 				ret.put(TALK_PACKET, packet);
 
-				Message message = new Message(ret.toString());
+				Message message = new Message(ret.toString().getBytes(Charset.forName("UTF-8")));
 				session.write(message);
 
 				// 拒绝 session
@@ -211,7 +212,7 @@ public class WebSocketMessageHandler implements MessageHandler {
 				ret.put(TALK_PACKET_TAG, TPT_REQUEST);
 				ret.put(TALK_PACKET, packet);
 
-				Message message = new Message(ret.toString());
+				Message message = new Message(ret.toString().getBytes(Charset.forName("UTF-8")));
 				session.write(message);
 			}
 			else {
@@ -225,7 +226,7 @@ public class WebSocketMessageHandler implements MessageHandler {
 				ret.put(TALK_PACKET_TAG, TPT_REQUEST);
 				ret.put(TALK_PACKET, packet);
 
-				Message message = new Message(ret.toString());
+				Message message = new Message(ret.toString().getBytes(Charset.forName("UTF-8")));
 				session.write(message);
 			}
 		} catch (JSONException e) {

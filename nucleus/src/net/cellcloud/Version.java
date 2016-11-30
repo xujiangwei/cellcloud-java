@@ -36,13 +36,16 @@ public final class Version {
 	public static final int MAJOR = 1;
 
 	/// 副版本号
-	public static final int MINOR = 3;
+	public static final int MINOR = 5;
 
 	/// 修订号
-	public static final int REVISION = 51;
+	public static final int REVISION = 0;
 
 	/// 版本名
 	public static final String NAME = "Journey";
+
+	/// 版本串号
+	public static final int VERSION_NUMBER = 150;
 
 	/// 是否调试模式
 	public static boolean DEBUG = true;
@@ -57,4 +60,5 @@ public final class Version {
 		buf.append(REVISION);
 		return buf.toString();
 	}
+
 }

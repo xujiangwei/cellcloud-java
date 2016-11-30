@@ -28,25 +28,24 @@ package net.cellcloud.talk.dialect;
 
 import java.util.List;
 
-import net.cellcloud.common.Base64;
 import net.cellcloud.talk.Primitive;
 import net.cellcloud.talk.stuff.SubjectStuff;
 
-/*! 块数据方言。
+/** 块数据方言。
  * 
- * \author Jiangwei Xu
+ * @author Jiangwei Xu
  */
 public class ChunkDialect extends Dialect {
 
 	public final static String DIALECT_NAME = "ChunkDialect";
-	public static int CHUNK_SIZE = 4096;
+	public final static int CHUNK_SIZE = 2048;
 
-	protected String sign;
-	protected int chunkIndex;
-	protected int chunkNum;
-	protected String data;
-	protected int length;
-	protected long totalLength;
+	protected String sign = null;
+	protected int chunkIndex = 0;
+	protected int chunkNum = 0;
+	protected byte[] data = null;
+	protected int length = 0;
+	protected long totalLength = 0;
 
 	// 用于标识该区块是否能写入缓存队列
 	// 如果为 true ，表示已经“污染”，不能进入队列，必须直接发送
@@ -70,9 +69,8 @@ public class ChunkDialect extends Dialect {
 		this.totalLength = totalLength;
 		this.chunkIndex = chunkIndex;
 		this.chunkNum = chunkNum;
-		byte[] raw = new byte[length];
-		System.arraycopy(data, 0, raw, 0, length);
-		this.data = Base64.encodeBytes(raw);
+		this.data = new byte[length];
+		System.arraycopy(data, 0, this.data, 0, length);
 		this.length = length;
 	}
 
@@ -82,9 +80,8 @@ public class ChunkDialect extends Dialect {
 		this.totalLength = totalLength;
 		this.chunkIndex = chunkIndex;
 		this.chunkNum = chunkNum;
-		byte[] raw = new byte[length];
-		System.arraycopy(data, 0, raw, 0, length);
-		this.data = Base64.encodeBytes(raw);
+		this.data = new byte[length];
+		System.arraycopy(data, 0, this.data, 0, length);
 		this.length = length;
 	}
 
@@ -104,16 +101,8 @@ public class ChunkDialect extends Dialect {
 		return this.chunkNum;
 	}
 
-	public int getRawLength() {
+	public int getLength() {
 		return this.length;
-	}
-
-	public int getDataSize() {
-		if (null == this.data) {
-			return -1;
-		}
-
-		return this.data.length();
 	}
 
 	public void setListener(ChunkListener listener) {
@@ -139,6 +128,7 @@ public class ChunkDialect extends Dialect {
 	protected void fireFailed(String target) {
 		if (null != this.listener) {
 			this.listener.onFailed(target, this);
+			this.listener = null;
 		}
 	}
 
@@ -162,7 +152,7 @@ public class ChunkDialect extends Dialect {
 		this.sign = list.get(0).getValueAsString();
 		this.chunkIndex = list.get(1).getValueAsInt();
 		this.chunkNum = list.get(2).getValueAsInt();
-		this.data = list.get(3).getValueAsString();
+		this.data = list.get(3).getValue();
 		this.length = list.get(4).getValueAsInt();
 		this.totalLength = list.get(5).getValueAsLong();
 	}

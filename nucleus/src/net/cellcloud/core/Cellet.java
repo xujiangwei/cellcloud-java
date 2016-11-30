@@ -86,6 +86,16 @@ public abstract class Cellet extends AbstractCellet {
 	}
 
 	/**
+	 * 关闭消费端会话。
+	 * 
+	 * @param targetTag
+	 * @return
+	 */
+	public boolean hangUp(final String targetTag) {
+		return TalkService.getInstance().kick(targetTag, this, this.sandbox);
+	}
+
+	/**
 	 * 返回服务器当前的会话者清单。
 	 * @return
 	 */

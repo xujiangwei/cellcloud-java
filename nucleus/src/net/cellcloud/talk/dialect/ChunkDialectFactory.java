@@ -26,7 +26,6 @@ THE SOFTWARE.
 
 package net.cellcloud.talk.dialect;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -39,8 +38,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
-import net.cellcloud.common.Base64;
-import net.cellcloud.common.LogLevel;
 import net.cellcloud.common.Logger;
 import net.cellcloud.core.Cellet;
 import net.cellcloud.talk.TalkService;
@@ -58,7 +55,7 @@ public class ChunkDialectFactory extends DialectFactory {
 
 	// 配额定时器
 	private Timer quotaTimer;
-	private long defaultQuotaPerList = 4L * 1024L;
+	private long defaultQuotaPerList = 48L * 1024L;
 
 	// 数据接收缓存，Key: Sign
 	private ConcurrentHashMap<String, Cache> cacheMap;
@@ -85,7 +82,7 @@ public class ChunkDialectFactory extends DialectFactory {
 		this.cacheMap = new ConcurrentHashMap<String, Cache>();
 		this.quotaTimer = new Timer("ChunkQuotaTimer");
 		// 每 100ms 一次任务
-		this.quotaTimer.schedule(new QuotaTask(), 3000L, 100L);
+		this.quotaTimer.schedule(new QuotaTask(), 3000L, 500L);
 	}
 
 	@Override
@@ -164,7 +161,7 @@ public class ChunkDialectFactory extends DialectFactory {
 				this.cListMap = new ConcurrentHashMap<String, ChunkList>();
 			}
 
-			this.updateListMap(this.cListMap, identifier, chunk, null);
+			this.updateListMap(this.cListMap, chunk.getSign(), identifier, chunk, null);
 		}
 
 		return false;
@@ -196,7 +193,7 @@ public class ChunkDialectFactory extends DialectFactory {
 				this.sListMap = new ConcurrentHashMap<String, ChunkList>();
 			}
 
-			this.updateListMap(this.sListMap, targetTag, chunk, cellet);
+			this.updateListMap(this.sListMap, targetTag + chunk.getSign(), targetTag, chunk, cellet);
 		}
 
 		return false;
@@ -212,6 +209,10 @@ public class ChunkDialectFactory extends DialectFactory {
 	}
 
 	private synchronized boolean write(ChunkDialect chunk) {
+		if (chunk.getChunkIndex() == 0) {
+			this.clear(chunk.getSign());
+		}
+
 		if (this.cacheMap.containsKey(chunk.getSign())) {
 			Cache cache = this.cacheMap.get(chunk.getSign());
 			cache.offer(chunk);
@@ -223,7 +224,7 @@ public class ChunkDialectFactory extends DialectFactory {
 		}
 
 		// 更新内存大小
-		this.cacheMemorySize.addAndGet(chunk.getDataSize());
+		this.cacheMemorySize.addAndGet(chunk.getLength());
 
 		if ((this.logCounts % 100) == 0) {
 			long mem = this.cacheMemorySize.get();
@@ -268,12 +269,7 @@ public class ChunkDialectFactory extends DialectFactory {
 		Cache cache = this.cacheMap.get(sign);
 		if (null != cache) {
 			ChunkDialect cd = cache.get(index);
-			byte[] buf = null;
-			try {
-				buf = Base64.decode(cd.data);
-			} catch (IOException e) {
-				Logger.log(this.getClass(), e, LogLevel.WARNING);
-			}
+			byte[] buf = cd.data;
 			int len = cd.length;
 
 			if (null == buf) {
@@ -311,11 +307,11 @@ public class ChunkDialectFactory extends DialectFactory {
 		}
 	}
 
-	private void updateListMap(ConcurrentHashMap<String, ChunkList> listMap, String target, ChunkDialect chunk, Cellet cellet) {
-		ChunkList list = listMap.get(chunk.getSign());
+	private void updateListMap(ConcurrentHashMap<String, ChunkList> listMap, String mapKey, String target, ChunkDialect chunk, Cellet cellet) {
+		ChunkList list = listMap.get(mapKey);
 		if (null != list) {
 			if (chunk.getChunkIndex() == 0) {
-				list.reset(chunk.chunkNum);
+				list.reset(target.toString(), chunk.chunkNum);
 			}
 
 			// 写入列表
@@ -324,7 +320,7 @@ public class ChunkDialectFactory extends DialectFactory {
 		else {
 			list = new ChunkList(target.toString(), chunk.getChunkNum(), this.defaultQuotaPerList, cellet);
 			list.append(chunk);
-			listMap.put(chunk.getSign().toString(), list);
+			listMap.put(mapKey, list);
 		}
 
 		if (!list.running.get()) {
@@ -347,10 +343,10 @@ public class ChunkDialectFactory extends DialectFactory {
 		}
 
 		if (!deleteList.isEmpty()) {
-			for (String sign : deleteList) {
-				listMap.remove(sign);
+			for (String key : deleteList) {
+				listMap.remove(key);
 
-				Logger.i(ChunkDialectFactory.class, "Clear chunk list - sign: " + sign);
+				Logger.i(ChunkDialectFactory.class, "Clear chunk list - key: " + key);
 			}
 
 			deleteList.clear();
@@ -379,15 +375,20 @@ public class ChunkDialectFactory extends DialectFactory {
 			synchronized (this.dataQueue) {
 				if (this.dataQueue.contains(dialect)) {
 					int index = this.dataQueue.indexOf(dialect);
+					// 删除旧长度
+					ChunkDialect old = this.dataQueue.get(index);
+					this.dataSize -= old.getLength();
+					// 设置新值
 					this.dataQueue.set(index, dialect);
+					this.dataSize += dialect.getLength();
 				}
 				else {
 					this.dataQueue.set(dialect.getChunkIndex(), dialect);
-					this.dataSize += dialect.getDataSize();
+					this.dataSize += dialect.getLength();
 				}
 			}
 
-			this.timestamp = Clock.currentTimeMillis();
+			this.timestamp = System.currentTimeMillis();
 		}
 
 		public ChunkDialect get(int index) {
@@ -407,7 +408,7 @@ public class ChunkDialectFactory extends DialectFactory {
 				}
 
 				for (ChunkDialect cd : this.dataQueue) {
-					if (cd.getDataSize() < 0) {
+					if (cd.getLength() <= 0) {
 						return false;
 					}
 				}
@@ -470,8 +471,9 @@ public class ChunkDialectFactory extends DialectFactory {
 			return (this.index.get() + 1 == this.chunkNum);
 		}
 
-		protected void reset(int chunkNum) {
+		protected void reset(String target, int chunkNum) {
 			this.timestamp = Clock.currentTimeMillis();
+			this.target = target;
 			this.chunkNum = chunkNum;
 			this.index.set(-1);
 			this.remaining.set(this.quota);
@@ -499,7 +501,7 @@ public class ChunkDialectFactory extends DialectFactory {
 
 				if (null != dialect) {
 					// 更新剩余配额
-					qr = qr - dialect.getDataSize();
+					qr = qr - dialect.getLength();
 					this.remaining.set(qr);
 
 					// 发送
@@ -514,7 +516,7 @@ public class ChunkDialectFactory extends DialectFactory {
 					if (!ret) {
 						// 错误处理
 						// 修正配额
-						this.remaining.addAndGet(dialect.getDataSize());
+						this.remaining.addAndGet(dialect.getLength());
 						// 修正索引
 						this.index.decrementAndGet();
 
@@ -532,12 +534,12 @@ public class ChunkDialectFactory extends DialectFactory {
 					}
 					else {
 						try {
-							Thread.sleep(1);
+							Thread.sleep(50L);
 						} catch (InterruptedException e) {
 							e.printStackTrace();
 						}
-
-						this.run();
+//						this.run();
+						executor.execute(this);
 					}
 				}
 				else {

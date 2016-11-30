@@ -116,7 +116,7 @@ public final class NonblockingAcceptorWorker extends Thread {
 					if (ctime - session.readTime > this.eachSessionReadInterval) {
 						if (null != session.socket) {
 							processReceive(session);
-							session.readTime = ctime - 1;
+							session.readTime = ctime;
 						}
 					}
 					else {
@@ -130,7 +130,7 @@ public final class NonblockingAcceptorWorker extends Thread {
 					if (ctime - session.writeTime > this.eachSessionWriteInterval) {
 						if (null != session.socket) {
 							processSend(session);
-							session.writeTime = ctime - 1;
+							session.writeTime = ctime;
 						}
 					}
 					else {
@@ -142,7 +142,7 @@ public final class NonblockingAcceptorWorker extends Thread {
 			}
 
 			try {
-				Thread.sleep(1);
+				Thread.sleep(1L);
 			} catch (InterruptedException e) {
 				// Nothing
 			}
@@ -545,7 +545,7 @@ public final class NonblockingAcceptorWorker extends Thread {
 			int length = data.length;
 			boolean head = false;
 			boolean tail = false;
-			byte[] buf = new byte[this.acceptor.block];
+			byte[] buf = new byte[this.acceptor.getBlockSize()];
 			int bufIndex = 0;
 
 			while (cursor < length) {

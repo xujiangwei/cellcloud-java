@@ -44,6 +44,11 @@ public final class SubjectStuff extends Stuff {
 	}
 
 	/** 构造函数。 */
+	public SubjectStuff(byte[] value) {
+		super(StuffType.SUBJECT, value);
+	}
+
+	/** 构造函数。 */
 	public SubjectStuff(String value) {
 		super(StuffType.SUBJECT, value);
 	}

@@ -26,6 +26,7 @@ THE SOFTWARE.
 
 package net.cellcloud.cluster.protocol;
 
+import java.nio.charset.Charset;
 import java.util.Date;
 import java.util.Map;
 
@@ -123,7 +124,7 @@ public abstract class ClusterProtocol {
 	 */
 	protected void touch(Session session, StringBuilder buffer) {
 		buffer.append("\r\n\r\n");
-		Message message = new Message(buffer.toString());
+		Message message = new Message(buffer.toString().getBytes(Charset.forName("UTF-8")));
 		session.write(message);
 	}
 

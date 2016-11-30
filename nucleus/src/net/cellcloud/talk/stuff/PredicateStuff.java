@@ -44,6 +44,11 @@ public final class PredicateStuff extends Stuff {
 	}
 
 	/** 构造函数。 */
+	public PredicateStuff(byte[] value) {
+		super(StuffType.PREDICATE, value);
+	}
+
+	/** 构造函数。 */
 	public PredicateStuff(String value) {
 		super(StuffType.PREDICATE, value);
 	}

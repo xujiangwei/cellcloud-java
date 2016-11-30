@@ -44,6 +44,11 @@ public final class AttributiveStuff extends Stuff {
 	}
 
 	/** 构造函数。 */
+	public AttributiveStuff(byte[] value) {
+		super(StuffType.ATTRIBUTIVE, value);
+	}
+
+	/** 构造函数。 */
 	public AttributiveStuff(String value) {
 		super(StuffType.ATTRIBUTIVE, value);
 	}
