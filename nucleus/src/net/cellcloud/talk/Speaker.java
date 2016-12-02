@@ -355,6 +355,15 @@ public class Speaker implements Speakable {
 			// 标记为丢失
 			this.lost = true;
 		}
+		else {
+			TalkServiceFailure failure = new TalkServiceFailure(TalkFailureCode.NETWORK_NOT_AVAILABLE, this.getClass());
+			failure.setSourceDescription("Session has closed");
+			failure.setSourceCelletIdentifiers(this.identifierList);
+			this.fireFailed(failure);
+
+			// 标记为丢失
+			this.lost = true;
+		}
 
 		this.authenticated = false;
 		this.state = SpeakerState.HANGUP;
@@ -424,7 +433,10 @@ public class Speaker implements Speakable {
 		this.delegate.onQuitted(this, celletIdentifier);
 
 		// 吊销密钥
-		this.connector.getSession().deactiveSecretKey();
+		Session session = this.connector.getSession();
+		if (null != session) {
+			session.deactiveSecretKey();
+		}
 	}
 
 //	private void fireSuspended(long timestamp, int mode) {

@@ -43,6 +43,7 @@ public final class TalkTracker {
 
 	protected TalkTracker() {
 		this.cellets = new LinkedList<Cellet>();
+		this.capacity = new TalkCapacity();
 	}
 
 	public void setCapacity(TalkCapacity capacity) {

@@ -133,6 +133,7 @@ public final class SpeakerConnectorHandler implements MessageHandler {
 		}
 		else {
 			TalkServiceFailure failure = new TalkServiceFailure(TalkFailureCode.NETWORK_NOT_AVAILABLE, this.getClass());
+			failure.setSourceDescription("Network is not available, error : " + errorCode);
 			failure.setSourceCelletIdentifiers(this.speaker.getIdentifiers());
 			this.speaker.fireFailed(failure);
 		}

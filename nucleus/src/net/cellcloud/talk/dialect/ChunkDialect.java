@@ -55,6 +55,9 @@ public class ChunkDialect extends Dialect {
 
 	private int readIndex = 0;
 
+	// 数据传输速率
+	protected int speedInKB = 20;
+
 	protected ChunkDialect() {
 		super(ChunkDialect.DIALECT_NAME);
 	}
@@ -85,28 +88,60 @@ public class ChunkDialect extends Dialect {
 		this.length = length;
 	}
 
+	/**
+	 * 返回区块记号。
+	 * 
+	 * @return
+	 */
 	public String getSign() {
 		return this.sign;
 	}
 
+	/**
+	 * 返回总长度。
+	 * @return
+	 */
 	public long getTotalLength() {
 		return this.totalLength;
 	}
 
+	/**
+	 * 返回区块索引。
+	 * @return
+	 */
 	public int getChunkIndex() {
 		return this.chunkIndex;
 	}
 
+	/**
+	 * 返回区块数量。
+	 * @return
+	 */
 	public int getChunkNum() {
 		return this.chunkNum;
 	}
 
+	/**
+	 * 返回当前区块数据长度。
+	 * @return
+	 */
 	public int getLength() {
 		return this.length;
 	}
 
+	/**
+	 * 设置监听器。
+	 * @param listener
+	 */
 	public void setListener(ChunkListener listener) {
 		this.listener = listener;
+	}
+
+	public void setSpeed(int speed) {
+		this.speedInKB = speed;
+	}
+	public int getSpeed() {
+		return this.speedInKB;
 	}
 
 	protected void fireProgress(String target) {

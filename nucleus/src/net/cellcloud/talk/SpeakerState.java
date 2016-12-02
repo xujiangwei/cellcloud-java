@@ -41,6 +41,4 @@ public final class SpeakerState {
 	/** 已经请求服务。 */
 	public final static int CALLED = 3;
 
-	/** 挂起状态。 */
-//	public final static int SUSPENDED = 4;
 }

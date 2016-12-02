@@ -444,13 +444,16 @@ public class ChunkDialectFactory extends DialectFactory {
 		private long quota;
 		private AtomicLong remaining;
 
+		// 执行间隔，用于控制数据传输速率
+		private long interval = 100L;
+
 		private ChunkList(String target, int chunkNum, long quota, Cellet cellet) {
 			this.timestamp = Clock.currentTimeMillis();
 			this.target = target;
 			this.chunkNum = chunkNum;
 			this.quota = quota;
 			this.cellet = cellet;
-			this.list = new ArrayList<ChunkDialect>();
+			this.list = new ArrayList<ChunkDialect>(chunkNum);
 			this.index = new AtomicInteger(-1);
 			this.running = new AtomicBoolean(false);
 			this.remaining = new AtomicLong(this.quota);
@@ -465,6 +468,13 @@ public class ChunkDialectFactory extends DialectFactory {
 					this.list.add(chunk);
 				}
 			}
+
+			if (chunk.getChunkIndex() == 0) {
+				double t = (ChunkDialect.CHUNK_SIZE / 1024.0d) / (chunk.speedInKB + 0.0d) * 1000.0d;
+				if (t >= 10.0d) {
+					this.interval = (long) t;
+				}
+			}
 		}
 
 		protected boolean isComplete() {
@@ -477,6 +487,7 @@ public class ChunkDialectFactory extends DialectFactory {
 			this.chunkNum = chunkNum;
 			this.index.set(-1);
 			this.remaining.set(this.quota);
+			this.interval = 100L;
 
 			synchronized (this) {
 				this.list.clear();
@@ -534,7 +545,7 @@ public class ChunkDialectFactory extends DialectFactory {
 					}
 					else {
 						try {
-							Thread.sleep(50L);
+							Thread.sleep(this.interval);
 						} catch (InterruptedException e) {
 							e.printStackTrace();
 						}

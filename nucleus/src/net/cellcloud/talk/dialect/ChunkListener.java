@@ -33,6 +33,7 @@ package net.cellcloud.talk.dialect;
 public interface ChunkListener {
 
 	/**
+	 * 区块数据正在处理时回调。
 	 * 
 	 * @param target
 	 * @param chunkDialect
@@ -40,6 +41,7 @@ public interface ChunkListener {
 	public void onProgress(String target, ChunkDialect chunkDialect);
 
 	/**
+	 * 区块数据处理完成时回调。
 	 * 
 	 * @param target
 	 * @param chunkDialect
@@ -47,6 +49,7 @@ public interface ChunkListener {
 	public void onCompleted(String target, ChunkDialect chunkDialect);
 
 	/**
+	 * 区块数据处理失败时回调。
 	 * 
 	 * @param target
 	 * @param chunkDialect
