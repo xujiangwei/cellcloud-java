@@ -1235,34 +1235,17 @@ public final class TalkService implements Service, SpeakerDelegate {
 		if (null != tag) {
 			TalkSessionContext ctx = this.tagContexts.get(tag);
 			if (null != ctx) {
-				TalkTracker tracker = ctx.getTracker();
+				// 关闭 Socket
+				this.executor.execute(new Runnable() {
+					@Override
+					public void run() {
+						if (acceptor.existSession(session)) {
+							acceptor.close(session);
+						}
+					}
+				});
 
-				// 判断是否需要进行挂起
-//				if (tracker.isAutoSuspend()) {
-//					// 将消费者挂起，被动挂起
-//					this.suspendTalk(ctx, SuspendMode.PASSIVE);
-//					for (Cellet cellet : tracker.getCelletList()) {
-//						// 通知 Cellet 对端挂起
-//						cellet.suspended(tag);
-//					}
-//				}
-//				else if (this.suspendedTrackers.containsKey(tag)) {
-//					// 已经挂起的对端，判断是否有指定 Cellet 上的挂起记录
-//					for (Cellet cellet : tracker.getCelletList()) {
-//						SuspendedTracker st = this.suspendedTrackers.get(tag);
-//						if (!st.exist(cellet)) {
-//							// 没有记录，对端退出
-//							cellet.quitted(tag);
-//						}
-//						else {
-//							// 有记录，对端挂起
-//							// FIXME 01/01/2013 如果已经挂起说明之前已经是主动挂起了，
-//							// 不需要再回调事件。
-//						}
-//					}
-//				}
-//				else {
-					// 不进行挂起，进行删除
+				TalkTracker tracker = ctx.getTracker();
 
 				ctx.removeSession(session);
 
@@ -1277,16 +1260,12 @@ public final class TalkService implements Service, SpeakerDelegate {
 					this.tagContexts.remove(tag);
 					this.tagList.remove(tag);
 				}
-
-//				}
-
 			}
 
 			// 删除此条会话记录
 			this.sessionTagMap.remove(session.getId());
 		}
 		else {
-			//
 			Logger.d(this.getClass(), "Can NOT find tag with session: " + session.getAddress().getHostString());
 		}
 

@@ -43,8 +43,7 @@ public final class ServerHeartbeatCommand extends ServerCommand {
 
 	/** 构造函数。
 	 */
-	public ServerHeartbeatCommand(TalkService service, Session session,
-			Packet packet) {
+	public ServerHeartbeatCommand(TalkService service, Session session, Packet packet) {
 		super(service, session, packet);
 	}
 

@@ -285,6 +285,10 @@ public class NonblockingAcceptor extends MessageService implements MessageAccept
 		}
 	}
 
+	public boolean existSession(Session session) {
+		return this.idSessionMap.contains(session.getId());
+	}
+
 	/**
 	 * 适配器句柄线程是否正在运行。
 	 * @return
@@ -295,7 +299,7 @@ public class NonblockingAcceptor extends MessageService implements MessageAccept
 
 	/** 返回绑定地址。
 	 */
-	public final InetSocketAddress  getBindAddress() {
+	public final InetSocketAddress getBindAddress() {
 		return this.bindAddress;
 	}
 

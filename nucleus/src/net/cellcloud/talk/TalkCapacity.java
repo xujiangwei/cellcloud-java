@@ -35,7 +35,7 @@ import java.nio.charset.Charset;
 public final class TalkCapacity {
 
 	/// 版本
-	private int version = 1;
+	private int version = 2;
 
 	/// 是否为加密会话
 	protected boolean secure = false;
@@ -46,7 +46,7 @@ public final class TalkCapacity {
 	protected long retryDelay = 5000L;
 
 	/// 内核的版本串号
-	private int versionNumber = 130;
+	private int versionNumber = 150;
 
 	public TalkCapacity() {
 	}
