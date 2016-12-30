@@ -348,8 +348,10 @@ public final class TalkService implements Service, SpeakerDelegate {
 			while (iter.hasNext()) {
 				Map.Entry<String, TalkSessionContext> entry = iter.next();
 				TalkSessionContext ctx = entry.getValue();
-				for (Cellet cellet : ctx.getTracker().getCelletList()) {
-					cellet.quitted(ctx.getTag());
+				for (Session session : ctx.getSessions()) {
+					for (Cellet cellet : ctx.getTracker(session).getCelletList()) {
+						cellet.quitted(ctx.getTag());
+					}
 				}
 			}
 
@@ -610,25 +612,25 @@ public final class TalkService implements Service, SpeakerDelegate {
 		Message message = null;
 
 		synchronized (context) {
-			TalkTracker tracker = context.getTracker();
+			for (Session session : context.getSessions()) {
+				// 返回 tracker
+				TalkTracker tracker = context.getTracker(session);
 
-			// 兼容性处理
-			StuffVersion sv = CompatibilityHelper.match(tracker.getCapacity().getVersionNumber());
-			// 设置语素版本
-			primitive.setVersion(sv);
+				// 兼容性处理
+				StuffVersion sv = CompatibilityHelper.match(tracker.getCapacity().getVersionNumber());
+				// 设置语素版本
+				primitive.setVersion(sv);
 
-			if (tracker.hasCellet(cellet)) {
-				// 对方言进行是否劫持处理
-				if (null != this.callbackListener && primitive.isDialectal()) {
-					boolean ret = this.callbackListener.doTalk(cellet, targetTag, primitive.getDialect());
-					if (!ret) {
-						// 劫持会话
-						return true;
+				if (tracker.hasCellet(cellet)) {
+					// 对方言进行是否劫持处理
+					if (null != this.callbackListener && primitive.isDialectal()) {
+						boolean ret = this.callbackListener.doTalk(cellet, targetTag, primitive.getDialect());
+						if (!ret) {
+							// 劫持会话
+							return true;
+						}
 					}
-				}
 
-				Session session = context.getLastSession();
-				if (null != session) {
 					// 检查是否加密连接
 					TalkCapacity cap = tracker.getCapacity();
 					if (null != cap && cap.secure && !session.isSecure()) {
@@ -640,9 +642,9 @@ public final class TalkService implements Service, SpeakerDelegate {
 					if (null != message) {
 						session.write(message);
 					}
-				}
-				else {
-					Logger.w(this.getClass(), "Can NOT find valid session in context - tag: " + targetTag);
+					else {
+						Logger.e(this.getClass(), "Packet error");
+					}
 				}
 			}
 		}
@@ -1245,7 +1247,7 @@ public final class TalkService implements Service, SpeakerDelegate {
 					}
 				});
 
-				TalkTracker tracker = ctx.getTracker();
+				TalkTracker tracker = ctx.getTracker(session);
 
 				ctx.removeSession(session);
 
@@ -1363,7 +1365,8 @@ public final class TalkService implements Service, SpeakerDelegate {
 
 		if (null != cellet) {
 			synchronized (ctx) {
-				tracker = ctx.getTracker();
+				tracker = ctx.getTracker(session);
+
 				if (!tracker.hasCellet(cellet)) {
 					tracker.addCellet(cellet);
 				}
@@ -1383,7 +1386,7 @@ public final class TalkService implements Service, SpeakerDelegate {
 					public void run() {
 						TalkSessionContext ctx = tagContexts.get(tag);
 						if (null != ctx) {
-							TalkCapacity capacity = ctx.getTracker().getCapacity();
+							TalkCapacity capacity = ctx.getTracker(session).getCapacity();
 							if (null != capacity) {
 								if (capacity.secure && !session.isSecure()) {
 									boolean ret = session.activeSecretKey((byte[]) session.getAttribute("key"));
@@ -1418,7 +1421,7 @@ public final class TalkService implements Service, SpeakerDelegate {
 		}
 
 		// 协商终端能力
-		TalkTracker tracker = ctx.getTracker();
+		TalkTracker tracker = ctx.getTracker(session);
 		tracker.setCapacity(capacity);
 
 		return capacity;
@@ -1431,7 +1434,7 @@ public final class TalkService implements Service, SpeakerDelegate {
 		if (null != ctx) {
 			ctx.dialogueTickTime = this.getTickTime();
 
-			TalkTracker tracker = ctx.getTracker();
+			TalkTracker tracker = ctx.getTracker(session);
 			Cellet cellet = tracker.getCellet(targetIdentifier);
 			if (null != cellet) {
 				primitive.setCelletIdentifier(cellet.getFeature().getIdentifier());

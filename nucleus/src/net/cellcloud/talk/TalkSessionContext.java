@@ -2,7 +2,7 @@
 -----------------------------------------------------------------------------
 This source file is part of Cell Cloud.
 
-Copyright (c) 2009-2015 Cell Cloud Team (www.cellcloud.net)
+Copyright (c) 2009-2017 Cell Cloud Team (www.cellcloud.net)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -26,6 +26,7 @@ THE SOFTWARE.
 
 package net.cellcloud.talk;
 
+import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
@@ -43,12 +44,13 @@ public final class TalkSessionContext {
 
 	private LinkedList<Session> sessions;
 	private ConcurrentHashMap<Long, Long> sessionHeartbeats;
+	private ConcurrentHashMap<Long, TalkTracker> sessionTrackers;
+	// 用于直接返回列表
+	private ArrayList<TalkTracker> trackerList;
 
 	private String tag;
 
 	private Endpoint endpoint;
-
-	private TalkTracker tracker;
 
 	protected long dialogueTickTime = 0;
 
@@ -63,20 +65,14 @@ public final class TalkSessionContext {
 		this.sessionHeartbeats = new ConcurrentHashMap<Long, Long>();
 		this.sessionHeartbeats.put(session.getId(), Clock.currentTimeMillis());
 
+		this.sessionTrackers = new ConcurrentHashMap<Long, TalkTracker>();
+		this.trackerList = new ArrayList<TalkTracker>();
+
+		TalkTracker tracker = new TalkTracker();
+		this.sessionTrackers.put(session.getId(), tracker);
+		this.trackerList.add(tracker);
+
 		this.endpoint = new Endpoint(tag, NucleusConfig.Role.CONSUMER, session.getAddress());
-		this.tracker = new TalkTracker();
-	}
-
-	/** 返回上下文对应的 Session 。
-	 */
-	public Session getLastSession() {
-		synchronized (this.sessions) {
-			if (this.sessions.isEmpty()) {
-				return null;
-			}
-
-			return this.sessions.getLast();
-		}
 	}
 
 	/** 返回 Session 会话列表。
@@ -98,6 +94,16 @@ public final class TalkSessionContext {
 		}
 	}
 
+	public TalkTracker getTracker(Session session) {
+		synchronized (this.sessions) {
+			return this.sessionTrackers.get(session.getId());
+		}
+	}
+
+	public List<TalkTracker> getTrackers() {
+		return this.trackerList;
+	}
+
 	public void addSession(Session session) {
 		synchronized (this.sessions) {
 			if (this.sessions.contains(session)) {
@@ -106,6 +112,10 @@ public final class TalkSessionContext {
 
 			this.sessions.add(session);
 			this.sessionHeartbeats.put(session.getId(), Clock.currentTimeMillis());
+
+			TalkTracker tracker = new TalkTracker();
+			this.trackerList.add(tracker);
+			this.sessionTrackers.put(session.getId(), tracker);
 		}
 	}
 
@@ -113,6 +123,10 @@ public final class TalkSessionContext {
 		synchronized (this.sessions) {
 			this.sessions.remove(session);
 			this.sessionHeartbeats.remove(session.getId());
+			TalkTracker tracker = this.sessionTrackers.remove(session.getId());
+			if (null != tracker) {
+				this.trackerList.remove(tracker);
+			}
 		}
 	}
 
@@ -131,13 +145,8 @@ public final class TalkSessionContext {
 			// 先删除
 			this.sessionHeartbeats.remove(session.getId());
 
-			// 更新
+			// 再更新
 			this.sessionHeartbeats.put(session.getId(), time);
-
-			// 将心跳的 Session 放到队尾
-			if (this.sessions.remove(session)) {
-				this.sessions.offer(session);
-			}
 		}
 	}
 
@@ -155,11 +164,4 @@ public final class TalkSessionContext {
 		return this.endpoint;
 	}
 
-	/**
-	 * 返回追踪器。
-	 * @return
-	 */
-	public TalkTracker getTracker() {
-		return this.tracker;
-	}
 }
