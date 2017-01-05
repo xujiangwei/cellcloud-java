@@ -616,12 +616,13 @@ public final class TalkService implements Service, SpeakerDelegate {
 				// 返回 tracker
 				TalkTracker tracker = context.getTracker(session);
 
-				// 兼容性处理
-				StuffVersion sv = CompatibilityHelper.match(tracker.getCapacity().getVersionNumber());
-				// 设置语素版本
-				primitive.setVersion(sv);
-
 				if (tracker.hasCellet(cellet)) {
+
+					// 兼容性处理
+					StuffVersion sv = CompatibilityHelper.match(tracker.getCapacity().getVersionNumber());
+					// 设置语素版本
+					primitive.setVersion(sv);
+
 					// 对方言进行是否劫持处理
 					if (null != this.callbackListener && primitive.isDialectal()) {
 						boolean ret = this.callbackListener.doTalk(cellet, targetTag, primitive.getDialect());
@@ -695,6 +696,18 @@ public final class TalkService implements Service, SpeakerDelegate {
 		list = null;
 
 		return true;
+	}
+
+	/**
+	 * 返回指定 Tag 的会话数量。
+	 */
+	public int numSessions(String tag) {
+		TalkSessionContext ctx = this.tagContexts.get(tag);
+		if (null == ctx) {
+			return 0;
+		}
+
+		return ctx.numSessions();
 	}
 
 	/** 申请调用 Cellet 服务。
