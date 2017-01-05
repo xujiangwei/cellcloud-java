@@ -264,6 +264,8 @@ public class DatagramConnector extends MessageService implements MessageConnecto
 		this.spinning = true;
 		this.running = true;
 
+		DatagramSocket socket = this.socket;
+
 		while (null != this.socket && this.spinning) {
 			try {
 				Thread.sleep(10L);
@@ -275,7 +277,7 @@ public class DatagramConnector extends MessageService implements MessageConnecto
 			DatagramPacket dp = new DatagramPacket(buf, this.block);
 
 			try {
-				this.socket.receive(dp);
+				socket.receive(dp);
 			} catch (SocketTimeoutException e) {
 				buf = null;
 				dp = null;
@@ -299,5 +301,6 @@ public class DatagramConnector extends MessageService implements MessageConnecto
 		}
 
 		this.running = false;
+		socket = null;
 	}
 }

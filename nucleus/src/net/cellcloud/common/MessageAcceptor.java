@@ -49,4 +49,13 @@ public interface MessageAcceptor {
 	/** 关闭指定会话。
 	*/
 	public void close(Session session);
+
+	/**
+	 * 返回指定 ID 的会话实例。
+	 * 
+	 * @param sessionId
+	 * @return
+	 */
+	public Session getSession(Long sessionId);
+
 }

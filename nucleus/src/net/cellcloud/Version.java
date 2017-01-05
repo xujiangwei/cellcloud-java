@@ -39,7 +39,7 @@ public final class Version {
 	public static final int MINOR = 5;
 
 	/// 修订号
-	public static final int REVISION = 3;
+	public static final int REVISION = 6;
 
 	/// 版本名
 	public static final String NAME = "Journey";

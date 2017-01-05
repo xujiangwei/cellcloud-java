@@ -273,6 +273,11 @@ public class NonblockingAcceptor extends MessageService implements MessageAccept
 	}
 
 	@Override
+	public Session getSession(Long sessionId) {
+		return this.idSessionMap.get(sessionId);
+	}
+
+	@Override
 	public void write(Session session, Message message) {
 		if (message.length() > this.writeLimit) {
 			this.fireErrorOccurred(session, MessageErrorCode.WRITE_OUTOFBOUNDS);

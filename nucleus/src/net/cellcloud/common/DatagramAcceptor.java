@@ -70,6 +70,7 @@ public class DatagramAcceptor extends MessageService implements MessageAcceptor 
 
 	// Key: IP:Port
 	private ConcurrentHashMap<String, DatagramAcceptorSession> sessionMap;
+	private ConcurrentHashMap<Long, DatagramAcceptorSession> idSessionMap;
 
 	private LinkedList<Message> udpWriteQueue;
 	private LinkedList<DatagramAcceptorSession> udpWriteSessionQueue;
@@ -79,6 +80,7 @@ public class DatagramAcceptor extends MessageService implements MessageAcceptor 
 		super();
 		this.sessionExpire = sessionExpire;
 		this.sessionMap = new ConcurrentHashMap<String, DatagramAcceptorSession>();
+		this.idSessionMap = new ConcurrentHashMap<Long, DatagramAcceptorSession>();
 		this.writeRunning = new AtomicBoolean(false);
 	}
 
@@ -181,6 +183,7 @@ public class DatagramAcceptor extends MessageService implements MessageAcceptor 
 
 		// 清空 Session
 		this.sessionMap.clear();
+		this.idSessionMap.clear();
 	}
 
 	@Override
@@ -202,6 +205,7 @@ public class DatagramAcceptor extends MessageService implements MessageAcceptor 
 
 			// 移除
 			this.sessionMap.remove(key);
+			this.idSessionMap.remove(session.getId());
 
 			// 删除所有待发送数据
 			synchronized (this.udpWriteQueue) {
@@ -222,6 +226,11 @@ public class DatagramAcceptor extends MessageService implements MessageAcceptor 
 				this.handler.sessionDestroyed(session);
 			}
 		}
+	}
+
+	@Override
+	public Session getSession(Long sessionId) {
+		return this.idSessionMap.get(sessionId);
 	}
 
 	@Override
@@ -311,6 +320,7 @@ public class DatagramAcceptor extends MessageService implements MessageAcceptor 
 			}
 
 			this.sessionMap.put(sessionKey, session);
+			this.idSessionMap.put(session.getId(), session);
 
 			if (null != this.handler) {
 				this.handler.sessionOpened(session);

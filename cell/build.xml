@@ -51,8 +51,7 @@
 	<!-- =================================================================== -->
 	<target name="debug" depends="prepare">
 		<echo message="Compiling the source code..." />
-		<javac srcdir="${src.dir}" destdir="${bin.dir}/debug" target="1.7" source="1.7" 
-				encoding="UTF-8" debug="on" deprecation="on" optimize="off" includes="**">
+		<javac srcdir="${src.dir}" destdir="${bin.dir}/debug" encoding="UTF-8" debug="on" deprecation="on" optimize="off" includes="**">
 			<classpath refid="classpath" />
 		</javac>
 		<echo message="Packing the class files..." />
@@ -68,8 +67,7 @@
 	<!-- =================================================================== -->
 	<target name="release" depends="prepare">
 		<echo message="Compiling the source code..." />
-		<javac srcdir="${src.dir}" destdir="${bin.dir}/release" target="1.7" source="1.7" 
-				encoding="UTF-8" debug="off" deprecation="on" optimize="on" includes="**">
+		<javac srcdir="${src.dir}" destdir="${bin.dir}/release" encoding="UTF-8" debug="off" deprecation="on" optimize="on" includes="**">
 			<classpath refid="classpath" />
 		</javac>
 		<echo message="Packing the class files..." />
