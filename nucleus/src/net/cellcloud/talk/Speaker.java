@@ -2,7 +2,7 @@
 -----------------------------------------------------------------------------
 This source file is part of Cell Cloud.
 
-Copyright (c) 2009-2014 Cell Cloud Team (www.cellcloud.net)
+Copyright (c) 2009-2017 Cell Cloud Team (www.cellcloud.net)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -503,7 +503,7 @@ public class Speaker implements Speakable {
 
 		// 包格式：源标签|能力描述序列化数据
 		Packet packet = new Packet(TalkDefinition.TPT_CONSULT, 4, 1, 0);
-		packet.appendSubsegment(Utils.string2Bytes(Nucleus.getInstance().getTagAsString()));
+		packet.appendSubsegment(this.nucleusTag);
 		packet.appendSubsegment(TalkCapacity.serialize(this.capacity));
 
 		byte[] data = Packet.pack(packet);
@@ -526,7 +526,7 @@ public class Speaker implements Speakable {
 			session.write(message);
 
 			try {
-				Thread.sleep(5);
+				Thread.sleep(5L);
 			} catch (InterruptedException e) {
 				e.printStackTrace();
 			}
@@ -540,22 +540,6 @@ public class Speaker implements Speakable {
 		if (null == newCapacity) {
 			return;
 		}
-
-		// 进行对比
-//		if (null != this.capacity) {
-//			if (newCapacity.autoSuspend != this.capacity.autoSuspend
-//				|| newCapacity.suspendDuration != this.capacity.suspendDuration) {
-//				StringBuilder buf = new StringBuilder();
-//				buf.append("Talk capacity has changed from '");
-//				buf.append(this.remoteTag);
-//				buf.append("' : AutoSuspend=");
-//				buf.append(newCapacity.autoSuspend);
-//				buf.append(" SuspendDuration=");
-//				buf.append(newCapacity.suspendDuration);
-//				Logger.w(Speaker.class, buf.toString());
-//				buf = null;
-//			}
-//		}
 
 		// 更新能力
 		if (null == this.capacity) {
@@ -640,36 +624,99 @@ public class Speaker implements Speakable {
 		this.fireDialogue(celletIdentifier, primitive);
 	}
 
-//	protected void doSuspend(Packet packet, Session session) {
-//		// 包格式：请求方标签|成功码|时间戳
-//
-//		byte[] code = packet.getSubsegment(1);
-//		if (TalkDefinition.SC_SUCCESS[0] == code[0] && TalkDefinition.SC_SUCCESS[1] == code[1]
-//			&& TalkDefinition.SC_SUCCESS[2] == code[2] && TalkDefinition.SC_SUCCESS[3] == code[3]) {
-//			// 更新状态
-//			this.state = SpeakerState.SUSPENDED;
-//
-//			long timestamp = Long.parseLong(Utils.bytes2String(packet.getSubsegment(2)));
-//			this.fireSuspended(timestamp, SuspendMode.INITATIVE);
-//		}
-//		else {
-//			this.state = SpeakerState.CALLED;
-//		}
-//	}
+	protected void requestQuick(Packet packet, Session session) {
+		byte[] ciphertext = packet.getSubsegment(0);
+		byte[] key = packet.getSubsegment(1);
 
-//	protected void doResume(Packet packet, Session session) {
-//		// 包格式：目的标签|时间戳|原语序列|Cellet
-//
-//		long timestamp = Long.parseLong(Utils.bytes2String(packet.getSubsegment(1)));
-//		byte[] pridata = packet.getSubsegment(2);
-//		ByteArrayInputStream stream = new ByteArrayInputStream(pridata);
-//		String celletIdentifier = Utils.bytes2String(packet.getSubsegment(3));
-//
-//		// 反序列化原语
-//		Primitive primitive = new Primitive(this.remoteTag);
-//		primitive.setCelletIdentifier(celletIdentifier);
-//		primitive.read(stream);
-//
-//		this.fireResumed(timestamp, primitive);
-//	}
+		// 写密钥
+		this.secretKey = new byte[key.length];
+		System.arraycopy(key, 0, this.secretKey, 0, key.length);
+
+		// 解密
+		byte[] plaintext = Cryptology.getInstance().simpleDecrypt(ciphertext, key);
+
+		// 协商能力
+		if (null == this.capacity) {
+			this.capacity = new TalkCapacity();
+		}
+
+		// 兼容性处理
+		StuffVersion version = CompatibilityHelper.match(Version.VERSION_NUMBER);
+		if (version == StuffVersion.V2) {
+			this.capacity.resetVersion(2);
+		}
+
+		// 包格式：明文|源标签|能力描述序列化数据|CelletIdentifiers
+		// 发送响应数据
+		Packet response = new Packet(TalkDefinition.TPT_QUICK, 2, 1, 0);
+		response.appendSubsegment(plaintext);
+		response.appendSubsegment(this.nucleusTag);
+		response.appendSubsegment(TalkCapacity.serialize(this.capacity));
+		for (String celletIdentifier : this.identifierList) {
+			response.appendSubsegment(celletIdentifier.getBytes());
+		}
+
+		byte[] data = Packet.pack(response);
+		Message message = new Message(data);
+		session.write(message);
+		message = null;
+
+		response = null;
+	}
+
+	protected void doQuick(Packet packet, Session session) {
+		// 包格式：状态码|源标签|能力描述序列化数据|CelletIdentifiers
+
+		byte[] code = packet.getSubsegment(0);
+		if (code[0] == TalkDefinition.SC_SUCCESS[0]
+			&& code[1] == TalkDefinition.SC_SUCCESS[1]
+			&& code[2] == TalkDefinition.SC_SUCCESS[2]
+			&& code[3] == TalkDefinition.SC_SUCCESS[3]) {
+			// 记录标签
+			byte[] rtag = packet.getSubsegment(1);
+			this.recordTag(Utils.bytes2String(rtag));
+
+			TalkCapacity newCapacity = TalkCapacity.deserialize(packet.getSubsegment(2));
+			// 更新能力
+			if (null != newCapacity) {
+				if (null == this.capacity) {
+					this.capacity = newCapacity;
+				}
+				else {
+					this.capacity.secure = newCapacity.secure;
+					this.capacity.retryAttempts = newCapacity.retryAttempts;
+					this.capacity.retryDelay = newCapacity.retryDelay;
+				}
+			}
+
+			// 变更状态
+			this.state = SpeakerState.CALLED;
+
+			for (int i = 3, size = packet.getSubsegmentCount(); i < size; ++i) {
+				String celletIdentifier = Utils.bytes2String(packet.getSubsegment(i));
+
+				StringBuilder buf = new StringBuilder();
+				buf.append("Cellet '");
+				buf.append(celletIdentifier);
+				buf.append("' has called at ");
+				buf.append(this.getAddress().getAddress().getHostAddress());
+				buf.append(":");
+				buf.append(this.getAddress().getPort());
+				Logger.i(Speaker.class, buf.toString());
+				buf = null;
+
+				// 回调事件
+				this.fireContacted(celletIdentifier);
+			}
+		}
+		else {
+			this.state = SpeakerState.HANGUP;
+
+			// 回调事件
+			TalkServiceFailure failure = new TalkServiceFailure(TalkFailureCode.NOT_FOUND, Speaker.class);
+			failure.setSourceCelletIdentifiers(this.identifierList);
+			this.fireFailed(failure);
+		}
+	}
+
 }

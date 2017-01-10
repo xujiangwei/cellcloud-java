@@ -1260,12 +1260,8 @@ public final class TalkService implements Service, SpeakerDelegate {
 					}
 				});
 
+				// 先取出 tracker
 				TalkTracker tracker = ctx.getTracker(session);
-				if (null != tracker) {
-					for (Cellet cellet : tracker.getCelletList()) {
-						cellet.quitted(tag);
-					}
-				}
 
 				// 从上下文移除 Session
 				ctx.removeSession(session);
@@ -1276,6 +1272,13 @@ public final class TalkService implements Service, SpeakerDelegate {
 					// 清理上下文记录
 					this.tagContexts.remove(tag);
 					this.tagList.remove(tag);
+				}
+
+				// 进行回调
+				if (null != tracker) {
+					for (Cellet cellet : tracker.getCelletList()) {
+						cellet.quitted(tag);
+					}
 				}
 			}
 
@@ -1416,7 +1419,7 @@ public final class TalkService implements Service, SpeakerDelegate {
 
 						session.removeAttribute("timer");
 					}
-				}, 100L);
+				}, 50L);
 
 				session.addAttribute("timer", timer);
 			}
@@ -1770,7 +1773,8 @@ public final class TalkService implements Service, SpeakerDelegate {
 
 		byte[] ciphertext = Cryptology.getInstance().simpleEncrypt(text.getBytes(), key.getBytes());
 
-		Packet packet = new Packet(TalkDefinition.TPT_INTERROGATE, 1, 1, 0);
+		// 使用 1.1 版包结构，支持 QUICK 快速握手
+		Packet packet = new Packet(TalkDefinition.TPT_INTERROGATE, 1, 1, 1);
 		packet.appendSubsegment(ciphertext);
 		packet.appendSubsegment(key.getBytes());
 
@@ -1783,24 +1787,6 @@ public final class TalkService implements Service, SpeakerDelegate {
 
 		packet = null;
 	}
-
-//	private Message packetResume(String targetTag, Long timestamp, Primitive primitive) {
-//		// 包格式：目的标签|时间戳|原语序列
-//
-//		// 序列化原语
-//		ByteArrayOutputStream stream = primitive.write();
-//
-//		// 封装数据包
-//		Packet packet = new Packet(TalkDefinition.TPT_RESUME, 6, 1, 0);
-//		packet.appendSubsegment(Utils.string2Bytes(targetTag));
-//		packet.appendSubsegment(Utils.string2Bytes(timestamp.toString()));
-//		packet.appendSubsegment(stream.toByteArray());
-//
-//		// 打包数据
-//		byte[] data = Packet.pack(packet);
-//		Message message = new Message(data);
-//		return message;
-//	}
 
 	/** 打包对话原语。
 	 */

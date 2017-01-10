@@ -642,7 +642,7 @@ public class NonblockingAcceptor extends MessageService implements MessageAccept
 		NonblockingAcceptorSession session = this.socketSessionMap.get(channel.socket().hashCode());
 		if (null == session) {
 			try {
-				Logger.w(NonblockingAcceptor.class, "Not found session: " + channel.socket().getInetAddress().getHostAddress());
+				Logger.d(NonblockingAcceptor.class, "Not found session: " + channel.socket().getInetAddress().getHostAddress());
 			} catch (Exception e) {
 				// Nothing
 			}

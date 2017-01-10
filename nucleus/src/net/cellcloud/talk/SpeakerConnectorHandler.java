@@ -148,6 +148,10 @@ public final class SpeakerConnectorHandler implements MessageHandler {
 			&& TalkDefinition.TPT_DIALOGUE[3] == tag[3]) {
 			this.speaker.doDialogue(packet, session);
 		}
+		else if (TalkDefinition.TPT_QUICK[2] == tag[2]
+			&& TalkDefinition.TPT_QUICK[3] == tag[3]) {
+			this.speaker.doQuick(packet, session);
+		}
 		else if (TalkDefinition.TPT_REQUEST[2] == tag[2]
 			&& TalkDefinition.TPT_REQUEST[3] == tag[3]) {
 			// 完成 Cellet 请求
@@ -174,8 +178,14 @@ public final class SpeakerConnectorHandler implements MessageHandler {
 		else if (TalkDefinition.TPT_INTERROGATE[2] == tag[2]
 			&& TalkDefinition.TPT_INTERROGATE[3] == tag[3]) {
 
-			// 请求进行校验会话
-			this.speaker.requestCheck(packet, session);
+			if (packet.getMajorVersion() == 1 && packet.getMinorVersion() == 1) {
+				// 使用 QUICK 进行握手
+				this.speaker.requestQuick(packet, session);
+			}
+			else {
+				// 请求进行校验会话
+				this.speaker.requestCheck(packet, session);
+			}
 
 			// 重置重试参数
 			if (null != this.speaker.capacity) {

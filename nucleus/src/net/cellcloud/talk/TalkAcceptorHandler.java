@@ -27,7 +27,6 @@ THE SOFTWARE.
 package net.cellcloud.talk;
 
 import java.util.LinkedList;
-import java.util.Queue;
 
 import net.cellcloud.common.LogLevel;
 import net.cellcloud.common.Logger;
@@ -43,8 +42,9 @@ import net.cellcloud.common.Session;
 public final class TalkAcceptorHandler implements MessageHandler {
 
 	private TalkService talkService;
-	private Queue<ServerDialogueCommand> dialogueCmdQueue;
-	private Queue<ServerHeartbeatCommand> heartbeatCmdQueue;
+	private LinkedList<ServerDialogueCommand> dialogueCmdQueue;
+	private LinkedList<ServerHeartbeatCommand> heartbeatCmdQueue;
+	private LinkedList<ServerQuickCommand> quickCmdQueue;
 
 	/** 构造函数。
 	 */
@@ -52,6 +52,7 @@ public final class TalkAcceptorHandler implements MessageHandler {
 		this.talkService = talkService;
 		this.dialogueCmdQueue = new LinkedList<ServerDialogueCommand>();
 		this.heartbeatCmdQueue = new LinkedList<ServerHeartbeatCommand>();
+		this.quickCmdQueue = new LinkedList<ServerQuickCommand>();
 	}
 
 	@Override
@@ -125,24 +126,15 @@ public final class TalkAcceptorHandler implements MessageHandler {
 				Logger.log(TalkAcceptorHandler.class, e, LogLevel.ERROR);
 			}
 		}
-//		else if (TalkDefinition.isSuspend(tag)) {
-//			try {
-//				ServerSuspendCommand cmd = new ServerSuspendCommand(this.talkService, session, packet);
-//				cmd.execute();
-//				cmd = null;
-//			} catch (Exception e) {
-//				Logger.log(TalkAcceptorHandler.class, e, LogLevel.ERROR);
-//			}
-//		}
-//		else if (TalkDefinition.isResume(tag)) {
-//			try {
-//				ServerResumeCommand cmd = new ServerResumeCommand(this.talkService, session, packet);
-//				cmd.execute();
-//				cmd = null;
-//			} catch (Exception e) {
-//				Logger.log(TalkAcceptorHandler.class, e, LogLevel.ERROR);
-//			}
-//		}
+		else if (TalkDefinition.isQuick(tag)) {
+			try {
+				ServerQuickCommand cmd = borrowQuickCommand(session, packet);
+				cmd.execute();
+				returnQuickCommand(cmd);
+			} catch (Exception e) {
+				Logger.log(TalkAcceptorHandler.class, e, LogLevel.ERROR);
+			}
+		}
 		else if (TalkDefinition.isRequest(tag)) {
 			try {
 				ServerRequestCommand cmd = new ServerRequestCommand(this.talkService, session, packet);
@@ -176,7 +168,7 @@ public final class TalkAcceptorHandler implements MessageHandler {
 		synchronized (this.dialogueCmdQueue) {
 			ServerDialogueCommand cmd = null;
 
-			if (this.dialogueCmdQueue.isEmpty()) {
+			if (this.dialogueCmdQueue.size() <= 1) {
 				cmd = new ServerDialogueCommand(this.talkService);
 			}
 			else {
@@ -203,7 +195,7 @@ public final class TalkAcceptorHandler implements MessageHandler {
 		synchronized (this.heartbeatCmdQueue) {
 			ServerHeartbeatCommand cmd = null;
 
-			if (this.heartbeatCmdQueue.isEmpty()) {
+			if (this.heartbeatCmdQueue.size() <= 1) {
 				cmd = new ServerHeartbeatCommand(this.talkService);
 			}
 			else {
@@ -225,4 +217,32 @@ public final class TalkAcceptorHandler implements MessageHandler {
 			this.heartbeatCmdQueue.offer(cmd);
 		}
 	}
+
+	private ServerQuickCommand borrowQuickCommand(Session session, Packet packet) {
+		synchronized (this.quickCmdQueue) {
+			ServerQuickCommand cmd = null;
+
+			if (this.quickCmdQueue.size() <= 1) {
+				cmd = new ServerQuickCommand(this.talkService);
+			}
+			else {
+				cmd = this.quickCmdQueue.poll();
+			}
+
+			cmd.session = session;
+			cmd.packet = packet;
+
+			return cmd;
+		}
+	}
+
+	private void returnQuickCommand(ServerQuickCommand cmd) {
+		synchronized (this.quickCmdQueue) {
+			cmd.session = null;
+			cmd.packet = null;
+
+			this.quickCmdQueue.offer(cmd);
+		}
+	}
+
 }

@@ -2,7 +2,7 @@
 -----------------------------------------------------------------------------
 This source file is part of Cell Cloud.
 
-Copyright (c) 2009-2013 Cell Cloud Team (www.cellcloud.net)
+Copyright (c) 2009-2017 Cell Cloud Team (www.cellcloud.net)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -31,7 +31,7 @@ package net.cellcloud.talk;
  * @author Jiangwei Xu
  */
 public final class TalkDefinition {
-	
+
 	// TPT - Talk Packet Tag
 
 	// 连接询问验证
@@ -55,11 +55,8 @@ public final class TalkDefinition {
 	// 网络心跳
 	public static final byte[] TPT_HEARTBEAT = {'C', 'T', 'H', 'B'};
 
-	// 挂起指定的 Cellet 服务
-//	public static final byte[] TPT_SUSPEND = {'C', 'T', 'S', 'U'};
-
-	// 恢复指定的 Cellet 服务
-//	public static final byte[] TPT_RESUME = {'C', 'T', 'R', 'E'};
+	// 快速握手
+	public static final byte[] TPT_QUICK = {'C', 'T', 'Q', 'K'};
 
 
 	// 状态码
@@ -112,27 +109,16 @@ public final class TalkDefinition {
 		}
 	}
 
-	/** 判断是否是 SUSPEND 包。
+	/** 判断是否是 QUICK 包。
 	 */
-//	public static boolean isSuspend(final byte[] ptg) {
-//		if (ptg[2] == TPT_SUSPEND[2] && ptg[3] == TPT_SUSPEND[3]) {
-//			return true;
-//		}
-//		else {
-//			return false;
-//		}
-//	}
-
-	/** 判断是否是 RESUME 包。
-	 */
-//	public static boolean isResume(final byte[] ptg) {
-//		if (ptg[2] == TPT_RESUME[2] && ptg[3] == TPT_RESUME[3]) {
-//			return true;
-//		}
-//		else {
-//			return false;
-//		}
-//	}
+	public static boolean isQuick(final byte[] ptg) {
+		if (ptg[2] == TPT_QUICK[2] && ptg[3] == TPT_QUICK[3]) {
+			return true;
+		}
+		else {
+			return false;
+		}
+	}
 
 	/** 判断是否是 DIALOGUE 包。
 	 */
