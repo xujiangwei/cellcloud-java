@@ -154,7 +154,9 @@ public final class HttpDialogueHandler extends AbstractJSONHandler implements Ca
 	@Override
 	protected void doOptions(HttpRequest request, HttpResponse response)
 			throws IOException {
-		this.doPost(request, response);
+		response.setHeader("Access-Control-Allow-Headers", "Accept, Content-Type");
+		response.setHeader("Access-Control-Allow-Methods", "POST, GET");
+		response.setHeader("Access-Control-Allow-Origin", "*");
 	}
 
 	/**

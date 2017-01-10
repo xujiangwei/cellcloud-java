@@ -51,6 +51,7 @@ public final class HttpInterrogationHandler extends AbstractJSONHandler implemen
 
 	protected static final String Ciphertext = "ciphertext";
 	protected static final String Key = "key";
+	protected static final String Version = "ver";
 
 	private TalkService talkService;
 
@@ -82,6 +83,7 @@ public final class HttpInterrogationHandler extends AbstractJSONHandler implemen
 					// {"ciphertext": ciphertext, "key": key}
 					json.put(Ciphertext, Cryptology.getInstance().encodeBase64(ciphertext));
 					json.put(Key, cert.key);
+					json.put(Version, "1.1");
 				} catch (JSONException e) {
 					Logger.log(HttpInterrogationHandler.class, e, LogLevel.ERROR);
 				}
@@ -108,6 +110,8 @@ public final class HttpInterrogationHandler extends AbstractJSONHandler implemen
 	@Override
 	protected void doOptions(HttpRequest request, HttpResponse response)
 			throws IOException {
-		this.doGet(request, response);
+		response.setHeader("Access-Control-Allow-Headers", "Accept, Content-Type");
+		response.setHeader("Access-Control-Allow-Methods", "POST, GET");
+		response.setHeader("Access-Control-Allow-Origin", "*");
 	}
 }

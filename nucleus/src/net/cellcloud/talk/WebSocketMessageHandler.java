@@ -38,6 +38,7 @@ import net.cellcloud.common.Session;
 import net.cellcloud.core.Nucleus;
 import net.cellcloud.talk.stuff.PrimitiveSerializer;
 
+import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -49,6 +50,7 @@ import org.json.JSONObject;
 public class WebSocketMessageHandler implements MessageHandler {
 
 	protected final static String TALK_PACKET_TAG = "tpt";
+	protected final static String TALK_PACKET_VERSION = "ver";
 	protected final static String TALK_PACKET = "packet";
 
 	protected final static String TPT_INTERROGATE = "interrogate";
@@ -56,6 +58,7 @@ public class WebSocketMessageHandler implements MessageHandler {
 	protected final static String TPT_REQUEST = "request";
 	protected final static String TPT_DIALOGUE = "dialogue";
 	protected final static String TPT_HEARTBEAT = "hb";
+	protected final static String TPT_QUICK = "quick";
 
 	private TalkService service;
 	private LinkedList<Task> taskList;
@@ -106,6 +109,9 @@ public class WebSocketMessageHandler implements MessageHandler {
 				if (packetTag.equals(TPT_DIALOGUE)) {
 					this.processDialogue(data.getJSONObject(TALK_PACKET), session);
 				}
+				else if (packetTag.equals(TPT_QUICK)) {
+					this.processQuick(data.getJSONObject(TALK_PACKET), session);
+				}
 				else if (packetTag.equals(TPT_HEARTBEAT)) {
 					// 更新心跳
 					this.service.updateSessionHeartbeat(session);
@@ -138,9 +144,69 @@ public class WebSocketMessageHandler implements MessageHandler {
 		// Nothing
 	}
 
-	private void processDialogue(final JSONObject data, final Session session) {
+	private void processDialogue(JSONObject data, Session session) {
 		// 异步执行任务
 		this.service.executor.execute(this.borrowTask(data, session));
+	}
+
+	private void processQuick(JSONObject data, Session session) {
+		TalkService.Certificate cert = this.service.getCertificate(session);
+		if (null == cert) {
+			Logger.w(this.getClass(), "Can not fined certificate for session: " + session.getId());
+			return;
+		}
+
+		// { "plaintext": plaintext, "tag": tag, "identifiers": identifiers }
+		try {
+			// 获得明文码
+			String plaintext = data.getString(HttpQuickHandler.Plaintext);
+			// 获得 Tag
+			String tag = data.getString(HttpQuickHandler.Tag);
+			// 获取 Cellet 清单
+			JSONArray identifiers = data.getJSONArray(HttpQuickHandler.Identifiers);
+
+			if (null != plaintext && plaintext.equals(cert.plaintext)) {
+				// 检测通过
+				this.service.acceptSession(session, tag);
+
+				// 请求 Cellet
+				boolean request = false;
+				for (int i = 0, size = identifiers.length(); i < size; ++i) {
+					String identifier = identifiers.getString(i);
+
+					TalkTracker tracker = this.service.processRequest(session, tag, identifier);
+					if (null != tracker) {
+						request = true;
+					}
+				}
+
+				JSONObject response = new JSONObject();
+				response.put(TALK_PACKET_TAG, TPT_QUICK);
+
+				if (request) {
+					JSONObject packet = new JSONObject();
+					packet.put(HttpQuickHandler.Tag, Nucleus.getInstance().getTagAsString().toString());
+					packet.put(HttpQuickHandler.Identifiers, identifiers);
+					response.put(TALK_PACKET, packet);
+				}
+				else {
+					JSONObject packet = new JSONObject();
+					packet.put(HttpQuickHandler.Tag, Nucleus.getInstance().getTagAsString().toString());
+					packet.put(HttpQuickHandler.Identifiers, identifiers);
+					packet.put(HttpQuickHandler.Error, new String(TalkDefinition.SC_FAILURE_NOCELLET, Charset.forName("UTF-8")));
+					response.put(TALK_PACKET, packet);
+				}
+
+				Message message = new Message(response.toString().getBytes(Charset.forName("UTF-8")));
+				session.write(message);
+			}
+			else {
+				// 拒绝 session
+				this.service.rejectSession(session);
+			}
+		} catch (JSONException e) {
+			Logger.log(this.getClass(), e, LogLevel.WARNING);
+		}
 	}
 
 	private void processCheck(JSONObject data, Session session) {
@@ -180,7 +246,7 @@ public class WebSocketMessageHandler implements MessageHandler {
 				ret.put(TALK_PACKET_TAG, TPT_CHECK);
 
 				JSONObject packet = new JSONObject();
-				packet.put(HttpCheckHandler.Error, "reject");
+				packet.put(HttpCheckHandler.Error, new String(TalkDefinition.SC_FAILURE, Charset.forName("UTF-8")));
 				ret.put(TALK_PACKET, packet);
 
 				Message message = new Message(ret.toString().getBytes(Charset.forName("UTF-8")));
@@ -220,7 +286,8 @@ public class WebSocketMessageHandler implements MessageHandler {
 				JSONObject packet = new JSONObject();
 				packet.put(HttpRequestHandler.Tag, tag);
 				packet.put(HttpRequestHandler.Identifier, identifier);
-				packet.put(HttpRequestHandler.Error, 0);
+				packet.put(HttpRequestHandler.Error,
+						new String(TalkDefinition.SC_FAILURE_NOCELLET, Charset.forName("UTF-8")));
 
 				JSONObject ret = new JSONObject();
 				ret.put(TALK_PACKET_TAG, TPT_REQUEST);

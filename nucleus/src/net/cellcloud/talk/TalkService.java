@@ -1085,6 +1085,7 @@ public final class TalkService implements Service, SpeakerDelegate {
 		capsule.setSessionManager(this.httpSessionManager);
 		// 依次添加 Holder 点
 		capsule.addHolder(new HttpInterrogationHandler(this));
+		capsule.addHolder(new HttpQuickHandler(this));
 		capsule.addHolder(new HttpCheckHandler(this));
 		capsule.addHolder(new HttpRequestHandler(this));
 		capsule.addHolder(new HttpDialogueHandler(this));
@@ -1753,6 +1754,7 @@ public final class TalkService implements Service, SpeakerDelegate {
 				packet.put(HttpInterrogationHandler.Key, key);
 
 				data.put(WebSocketMessageHandler.TALK_PACKET_TAG, WebSocketMessageHandler.TPT_INTERROGATE);
+				data.put(WebSocketMessageHandler.TALK_PACKET_VERSION, "1.1");
 				data.put(WebSocketMessageHandler.TALK_PACKET, packet);
 			} catch (JSONException e) {
 				Logger.log(TalkService.class, e, LogLevel.ERROR);

@@ -29,11 +29,9 @@ package net.cellcloud.talk;
 import java.io.IOException;
 import java.nio.charset.Charset;
 
-import org.json.JSONException;
-import org.json.JSONObject;
-
 import net.cellcloud.common.LogLevel;
 import net.cellcloud.common.Logger;
+import net.cellcloud.core.Nucleus;
 import net.cellcloud.http.AbstractJSONHandler;
 import net.cellcloud.http.CapsuleHolder;
 import net.cellcloud.http.HttpHandler;
@@ -41,29 +39,33 @@ import net.cellcloud.http.HttpRequest;
 import net.cellcloud.http.HttpResponse;
 import net.cellcloud.http.HttpSession;
 
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
+
 /**
- * 请求 Cellet 服务句柄。
+ * 快速握手服务句柄。
  * 
  * @author Jiangwei Xu
  *
  */
-public final class HttpRequestHandler extends AbstractJSONHandler implements CapsuleHolder {
+public class HttpQuickHandler extends AbstractJSONHandler implements CapsuleHolder {
 
-	protected static final String Identifier = "identifier";
+	protected static final String Plaintext = "plaintext";
 	protected static final String Tag = "tag";
-	protected static final String Version = "version";
+	protected static final String Identifiers = "identifiers";
 	protected static final String Error = "error";
 
 	private TalkService talkService;
 
-	public HttpRequestHandler(TalkService talkService) {
+	public HttpQuickHandler(TalkService talkService) {
 		super();
 		this.talkService = talkService;
 	}
 
 	@Override
 	public String getPathSpec() {
-		return "/talk/request";
+		return "/talk/quick";
 	}
 
 	@Override
@@ -71,55 +73,65 @@ public final class HttpRequestHandler extends AbstractJSONHandler implements Cap
 		return this;
 	}
 
-	/**
-	 * 返回数据：
-	 * tag
-	 * identifier
-	 * version
-	 */
 	@Override
 	protected void doPost(HttpRequest request, HttpResponse response)
-		throws IOException {
+			throws IOException {
 		HttpSession session = request.getSession();
 		if (null != session) {
-			// {"tag": tag, "identifier": identifier}
-			String data = new String(request.readRequestData(), Charset.forName("UTF-8"));
-			try {
-				JSONObject json = new JSONObject(data);
-				String tag = json.getString(Tag);
-				String identifier = json.getString(Identifier);
-				// 请求 Cellet
-				TalkTracker tracker = this.talkService.processRequest(session, tag, identifier);
-				if (null != tracker) {
-					// 成功
-					JSONObject ret = new JSONObject();
-					ret.put(Tag, tag);
-					ret.put(Identifier, identifier);
-					ret.put(Version, tracker.getCellet(identifier).getFeature().getVersion().toString());
-					this.respondWithOk(response, ret);
+			TalkService.Certificate cert = this.talkService.getCertificate(session);
+			if (null != cert) {
+				// { "plaintext": plaintext, "tag": tag }
+				String data = new String(request.readRequestData(), Charset.forName("UTF-8"));
+				try {
+					JSONObject json = new JSONObject(data);
+					// 获得明文码
+					String plaintext = json.getString(Plaintext);
+					// 获得 Tag
+					String tag = json.getString(Tag);
+					// 获取 Cellet 清单
+					JSONArray identifiers = json.getJSONArray(Identifiers);
+
+					if (null != plaintext && plaintext.equals(cert.plaintext)) {
+						// 检测通过
+						this.talkService.acceptSession(session, tag);
+
+						// 请求 Cellet
+						boolean requestState = false;
+						for (int i = 0, size = identifiers.length(); i < size; ++i) {
+							String identifier = identifiers.getString(i);
+
+							TalkTracker tracker = this.talkService.processRequest(session, tag, identifier);
+							if (null != tracker) {
+								requestState = true;
+							}
+						}
+
+						JSONObject responseData = new JSONObject();
+						responseData.put(HttpQuickHandler.Tag, Nucleus.getInstance().getTagAsString().toString());
+						responseData.put(HttpQuickHandler.Identifiers, identifiers);
+						if (!requestState) {
+							responseData.put(HttpQuickHandler.Error, new String(TalkDefinition.SC_FAILURE_NOCELLET, Charset.forName("UTF-8")));
+						}
+						this.respondWithOk(response, responseData);
+					}
+					else {
+						// 检测失败
+						this.talkService.rejectSession(session);
+						this.respond(response, HttpResponse.SC_UNAUTHORIZED);
+					}
+				} catch (JSONException e) {
+					Logger.log(HttpCheckHandler.class, e, LogLevel.WARNING);
+					this.respond(response, HttpResponse.SC_BAD_REQUEST);
 				}
-				else {
-					// 失败
-					JSONObject ret = new JSONObject();
-					ret.put(Tag, tag);
-					ret.put(Identifier, identifier);
-					ret.put(Error, new String(TalkDefinition.SC_FAILURE_NOCELLET, Charset.forName("UTF-8")));
-					this.respondWithOk(response, ret);
-				}
-			} catch (JSONException e) {
-				Logger.log(HttpRequestHandler.class, e, LogLevel.WARNING);
+			}
+			else {
 				this.respond(response, HttpResponse.SC_BAD_REQUEST);
 			}
 		}
 		else {
+			// 获取 Session 失败
 			this.respond(response, HttpResponse.SC_INTERNAL_SERVER_ERROR);
 		}
-	}
-
-	@Override
-	protected void doGet(HttpRequest request, HttpResponse response)
-			throws IOException {
-		this.doPost(request, response);
 	}
 
 	@Override
@@ -129,4 +141,5 @@ public final class HttpRequestHandler extends AbstractJSONHandler implements Cap
 		response.setHeader("Access-Control-Allow-Methods", "POST, GET");
 		response.setHeader("Access-Control-Allow-Origin", "*");
 	}
+
 }

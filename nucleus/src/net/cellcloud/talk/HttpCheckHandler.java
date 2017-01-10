@@ -78,7 +78,7 @@ public final class HttpCheckHandler extends AbstractJSONHandler implements Capsu
 		if (null != session) {
 			TalkService.Certificate cert = this.talkService.getCertificate(session);
 			if (null != cert) {
-				// {"plaintext": plaintext, "tag": tag}
+				// { "plaintext": plaintext, "tag": tag }
 				String data = new String(request.readRequestData(), Charset.forName("UTF-8"));
 				try {
 					JSONObject json = new JSONObject(data);
@@ -117,6 +117,9 @@ public final class HttpCheckHandler extends AbstractJSONHandler implements Capsu
 	@Override
 	protected void doOptions(HttpRequest request, HttpResponse response)
 			throws IOException {
-		this.doPost(request, response);
+		response.setHeader("Access-Control-Allow-Headers", "Accept, Content-Type");
+		response.setHeader("Access-Control-Allow-Methods", "POST, GET");
+		response.setHeader("Access-Control-Allow-Origin", "*");
 	}
+
 }
