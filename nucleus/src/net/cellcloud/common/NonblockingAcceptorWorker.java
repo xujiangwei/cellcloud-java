@@ -141,13 +141,13 @@ public final class NonblockingAcceptorWorker extends Thread {
 				Logger.log(this.getClass(), e, LogLevel.WARNING);
 			}
 
-			try {
-				Thread.sleep(1L);
-			} catch (InterruptedException e) {
-				// Nothing
-			}
+//			try {
+//				Thread.sleep(1L);
+//			} catch (InterruptedException e) {
+//				// Nothing
+//			}
 
-			Thread.yield();
+//			Thread.yield();
 
 			// 时间计数
 			++timeCounts;
@@ -522,6 +522,8 @@ public final class NonblockingAcceptorWorker extends Thread {
 	}
 
 	private void returnList(ArrayList<byte[]> list) {
+		list.clear();
+
 		synchronized (this.tenantablePool) {
 			this.tenantablePool.add(list);
 		}
@@ -656,26 +658,33 @@ public final class NonblockingAcceptorWorker extends Thread {
 		int headPos = -1;
 		int tailPos = -1;
 
-		if (compareBytes(headMark, 0, real, index, headMark.length)) {
+		if (0 == compareBytes(headMark, 0, real, index, headMark.length)) {
 			// 有头标签
 			index += headMark.length;
 			// 记录数据位置头
 			headPos = index;
-			// 判断是否有尾标签
+			// 判断是否有尾标签，依次计数
+			int ret = -1;
 			while (index < len) {
-//				if (real[index] == tailMark[0]) {
-					if (compareBytes(tailMark, 0, real, index, tailMark.length)) {
+				if (real[index] == tailMark[0]) {
+					ret = compareBytes(tailMark, 0, real, index, tailMark.length);
+					if (0 == ret) {
 						// 找到尾标签
 						tailPos = index;
 						break;
 					}
+					else if (1 == ret) {
+						// 越界
+						break;
+					}
 					else {
+						// 未找到尾标签
 						++index;
 					}
-//				}
-//				else {
-//					++index;
-//				}
+				}
+				else {
+					++index;
+				}
 			}
 
 			if (headPos > 0 && tailPos > 0) {
@@ -760,18 +769,28 @@ public final class NonblockingAcceptorWorker extends Thread {
 //		extract(out, session, newBytes);
 	}
 
-	private boolean compareBytes(byte[] b1, int offsetB1, byte[] b2, int offsetB2, int length) {
+	/**
+	 * 
+	 * @param b1
+	 * @param offsetB1
+	 * @param b2
+	 * @param offsetB2
+	 * @param length
+	 * @return 0 表示匹配，-1 表示不匹配，1 表示越界
+	 */
+	private int compareBytes(byte[] b1, int offsetB1, byte[] b2, int offsetB2, int length) {
 		for (int i = 0; i < length; ++i) {
 			// FIXME XJW 2015-12-30 判断数组越界
 			if (offsetB1 + i >= b1.length || offsetB2 + i >= b2.length) {
-				return false;
+				return 1;
 			}
 
 			if (b1[offsetB1 + i] != b2[offsetB2 + i]) {
-				return false;
+				return -1;
 			}
 		}
-		return true;
+
+		return 0;
 	}
 
 	private void encryptMessage(Message message, byte[] key) {
