@@ -250,6 +250,10 @@ public class DatagramConnector extends MessageService implements MessageConnecto
 							if (null != handler) {
 								handler.errorOccurred(MessageErrorCode.WRITE_FAILED, DatagramConnector.this.session);
 							}
+						} catch (NullPointerException e) {
+							if (null != handler) {
+								handler.errorOccurred(MessageErrorCode.WRITE_FAILED, DatagramConnector.this.session);
+							}
 						}
 					} while (!writeQueue.isEmpty() || counts > 0);
 
@@ -279,6 +283,10 @@ public class DatagramConnector extends MessageService implements MessageConnecto
 			try {
 				socket.receive(dp);
 			} catch (SocketTimeoutException e) {
+				buf = null;
+				dp = null;
+				continue;
+			} catch (SocketException e) {
 				buf = null;
 				dp = null;
 				continue;

@@ -304,7 +304,7 @@ public class DatagramAcceptor extends MessageService implements MessageAcceptor 
 	}
 
 
-	private DatagramAcceptorSession updateSession(String ip, int port) {
+	private synchronized DatagramAcceptorSession updateSession(String ip, int port) {
 		// 计算会话 Key
 		String sessionKey = this.calcSessionKey(ip, port);
 
@@ -383,7 +383,12 @@ public class DatagramAcceptor extends MessageService implements MessageAcceptor 
 
 				try {
 					// 接收数据
-					udpSocket.receive(packet);
+					if (!udpSocket.isClosed()) {
+						udpSocket.receive(packet);
+					}
+					else {
+						break;
+					}
 
 					// 处理接收
 					this.receive(packet);
@@ -392,10 +397,13 @@ public class DatagramAcceptor extends MessageService implements MessageAcceptor 
 					// Nothing
 					continue;
 				} catch (SocketException e) {
-					Logger.log(this.getClass(), e, LogLevel.INFO);
+					Logger.log(this.getClass(), e, LogLevel.DEBUG);
 					continue;
 				} catch (IOException e) {
 					Logger.log(this.getClass(), e, LogLevel.WARNING);
+					continue;
+				} catch (NullPointerException e) {
+					// Nothing
 					continue;
 				}
 			}
