@@ -82,6 +82,7 @@ public class DatagramAcceptor extends MessageService implements MessageAcceptor 
 		this.sessionMap = new ConcurrentHashMap<String, DatagramAcceptorSession>();
 		this.idSessionMap = new ConcurrentHashMap<Long, DatagramAcceptorSession>();
 		this.writeRunning = new AtomicBoolean(false);
+		this.setMaxConnectNum(5000);
 	}
 
 	public void setSoTimeout(int timeoutInMillisecond) {
@@ -363,7 +364,7 @@ public class DatagramAcceptor extends MessageService implements MessageAcceptor 
 
 		@Override
 		public void run() {
-			Logger.d(this.getClass(), "LoopDispatch#start");
+			Logger.d(this.getClass(), "LoopDispatch#start: " + socketAddress.getPort());
 
 			this.spinning = true;
 			this.running = true;

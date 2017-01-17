@@ -191,6 +191,21 @@ public class Session {
 		this.service.write(this, message);
 	}
 
+	@Override
+	public boolean equals(Object obj) {
+		if (null != obj && obj instanceof Session) {
+			Session other = (Session) obj;
+			return this.id.longValue() == other.id.longValue();
+		}
+
+		return false;
+	}
+
+	@Override
+	public int hashCode() {
+		return this.id.intValue();
+	}
+
 	protected int getCacheSize() {
 		return this.cache.length;
 	}
@@ -212,13 +227,4 @@ public class Session {
 		}
 	}
 
-	@Override
-	public boolean equals(Object obj) {
-		if (null != obj && obj instanceof Session) {
-			Session other = (Session) obj;
-			return this.id.longValue() == other.id.longValue();
-		}
-
-		return false;
-	}
 }

@@ -137,13 +137,7 @@ public final class ByteUtils {
 		return toString(bytes, "UTF-8");
 	}
 
-	public static void main(String[] args) {
-		double a = -23.89d;
-		byte[] bytes = toBytes(a);
-		for (byte b : bytes) {
-			System.out.println(b);
-		}
-
+//	public static void main(String[] args) {
 //		short s = -12;
 //		int i = -1234;
 //		long l = -123456789L;
@@ -176,5 +170,5 @@ public final class ByteUtils {
 //		System.out.println(toDouble(toBytes(d)));
 //		System.out.println(toBoolean(toBytes(b)));
 //		System.out.println(toString(toBytes(string)));
-	}
+//	}
 }
