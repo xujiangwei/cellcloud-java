@@ -35,7 +35,7 @@ import net.cellcloud.util.Utils;
  * 
  * @author Jiangwei Xu
  */
-public class Session {
+public class Session implements Comparable<Object> {
 
 	private Long id;
 	private long timestamp;
@@ -204,6 +204,15 @@ public class Session {
 	@Override
 	public int hashCode() {
 		return this.id.intValue();
+	}
+
+	@Override
+	public int compareTo(Object o) {
+		if (o instanceof Session) {
+			return (int)(this.timestamp - ((Session) o).timestamp);
+		}
+
+		return 0;
 	}
 
 	protected int getCacheSize() {

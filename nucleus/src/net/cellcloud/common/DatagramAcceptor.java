@@ -38,7 +38,7 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicLong;
 
 import net.cellcloud.util.CachedQueueExecutor;
 
@@ -74,15 +74,21 @@ public class DatagramAcceptor extends MessageService implements MessageAcceptor 
 
 	private LinkedList<Message> udpWriteQueue;
 	private LinkedList<DatagramAcceptorSession> udpWriteSessionQueue;
-	private AtomicBoolean writeRunning;
+	private long writeInterval;
+	private AtomicLong lastWriting;
 
 	public DatagramAcceptor(long sessionExpire) {
 		super();
 		this.sessionExpire = sessionExpire;
 		this.sessionMap = new ConcurrentHashMap<String, DatagramAcceptorSession>();
 		this.idSessionMap = new ConcurrentHashMap<Long, DatagramAcceptorSession>();
-		this.writeRunning = new AtomicBoolean(false);
+		this.writeInterval = 20L;
+		this.lastWriting = new AtomicLong(0L);
 		this.setMaxConnectNum(5000);
+	}
+
+	public void setWriteInterval(long intervalInMillisecond) {
+		this.writeInterval = intervalInMillisecond;
 	}
 
 	public void setSoTimeout(int timeoutInMillisecond) {
@@ -168,8 +174,6 @@ public class DatagramAcceptor extends MessageService implements MessageAcceptor 
 			this.executor = null;
 		}
 
-		this.writeRunning.set(false);
-
 		for (DatagramAcceptorSession session : this.sessionMap.values()) {
 			if (!session.removed) {
 				if (null != this.handler) {
@@ -253,55 +257,65 @@ public class DatagramAcceptor extends MessageService implements MessageAcceptor 
 			this.udpWriteSessionQueue.addLast(bas);
 		}
 
-		if (!this.writeRunning.get()) {
-			this.writeRunning.set(true);
-
-			this.executor.execute(new Runnable() {
-				@Override
-				public void run() {
-					while (null != udpSocket && !udpWriteQueue.isEmpty()) {
-						Message umessage = null;
-						DatagramAcceptorSession usession = null;
-						synchronized (udpWriteQueue) {
-							umessage = udpWriteQueue.removeFirst();
-							usession = udpWriteSessionQueue.removeFirst();
-						}
-
-						if (null != umessage) {
+		this.executor.execute(new Runnable() {
+			@Override
+			public void run() {
+				while (null != udpSocket && !udpWriteQueue.isEmpty()) {
+					if (writeInterval > 0L && lastWriting.get() > 0) {
+						long d = System.currentTimeMillis() - lastWriting.get();
+						if (d < writeInterval) {
 							try {
-								DatagramPacket dp = new DatagramPacket(umessage.get(), umessage.length(), usession.getAddress());
-
-								if (null == udpSocket) {
-									continue;
-								}
-
-								udpSocket.send(dp);
-
-								// 更新活跃时间
-								usession.activeTimestamp = System.currentTimeMillis();
-
-								if (null != handler) {
-									handler.messageSent(usession, umessage);
-								}
-							} catch (SocketException e) {
-								Logger.log(this.getClass(), e, LogLevel.ERROR);
-								if (null != handler) {
-									handler.errorOccurred(MessageErrorCode.SOCKET_FAILED, usession);
-								}
-							} catch (IOException e) {
-								Logger.log(this.getClass(), e, LogLevel.ERROR);
-								if (null != handler) {
-									handler.errorOccurred(MessageErrorCode.WRITE_FAILED, usession);
-								}
+								Thread.sleep(writeInterval - d);
+							} catch (InterruptedException e) {
+								// Nothing
 							}
 						}
-					} //#while
+					}
 
-					// 运行结束
-					writeRunning.set(false);
-				}
-			});
-		}
+					Message umessage = null;
+					DatagramAcceptorSession usession = null;
+					synchronized (udpWriteQueue) {
+						if (udpWriteQueue.isEmpty()) {
+							break;
+						}
+
+						umessage = udpWriteQueue.removeFirst();
+						usession = udpWriteSessionQueue.removeFirst();
+					}
+
+					if (null != umessage) {
+						try {
+							DatagramPacket dp = new DatagramPacket(umessage.get(), umessage.length(), usession.getAddress());
+
+							if (null == udpSocket) {
+								continue;
+							}
+
+							udpSocket.send(dp);
+
+							// 更新活跃时间
+							usession.activeTimestamp = System.currentTimeMillis();
+
+							lastWriting.set(usession.activeTimestamp);
+
+							if (null != handler) {
+								handler.messageSent(usession, umessage);
+							}
+						} catch (SocketException e) {
+							Logger.log(this.getClass(), e, LogLevel.ERROR);
+							if (null != handler) {
+								handler.errorOccurred(MessageErrorCode.SOCKET_FAILED, usession);
+							}
+						} catch (IOException e) {
+							Logger.log(this.getClass(), e, LogLevel.ERROR);
+							if (null != handler) {
+								handler.errorOccurred(MessageErrorCode.WRITE_FAILED, usession);
+							}
+						}
+					}
+				} //#while
+			}
+		});
 	}
 
 
