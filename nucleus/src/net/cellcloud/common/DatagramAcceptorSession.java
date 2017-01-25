@@ -40,6 +40,8 @@ public class DatagramAcceptorSession extends Session {
 
 	protected long activeTimestamp;
 
+	protected String mapKey;
+
 	public DatagramAcceptorSession(MessageService service, InetSocketAddress address) {
 		super(service, address);
 		this.activeTimestamp = System.currentTimeMillis();

@@ -36,11 +36,13 @@ import java.net.SocketTimeoutException;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.LinkedList;
+import java.util.Timer;
+import java.util.TimerTask;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
-
-import net.cellcloud.util.CachedQueueExecutor;
 
 /**
  * 数据报适配器。
@@ -52,7 +54,8 @@ public class DatagramAcceptor extends MessageService implements MessageAcceptor 
 	private InetSocketAddress socketAddress = null;
 
 	// 会话超期时间，单位：毫秒
-	private long sessionExpire = 10L * 60L * 1000L;
+	private long sessionExpired = 10L * 60L * 1000L;
+	private Timer expiredTimer;
 
 	// 30 秒
 	private int soTimeout = 30000;
@@ -67,6 +70,7 @@ public class DatagramAcceptor extends MessageService implements MessageAcceptor 
 
 	private ExecutorService executor = null;
 	private int maxThreads = 4;
+	private AtomicInteger numThreads = new AtomicInteger(0);
 
 	// Key: IP:Port
 	private ConcurrentHashMap<String, DatagramAcceptorSession> sessionMap;
@@ -77,9 +81,9 @@ public class DatagramAcceptor extends MessageService implements MessageAcceptor 
 	private long writeInterval;
 	private AtomicLong lastWriting;
 
-	public DatagramAcceptor(long sessionExpire) {
+	public DatagramAcceptor(long sessionExpired) {
 		super();
-		this.sessionExpire = sessionExpire;
+		this.sessionExpired = sessionExpired;
 		this.sessionMap = new ConcurrentHashMap<String, DatagramAcceptorSession>();
 		this.idSessionMap = new ConcurrentHashMap<Long, DatagramAcceptorSession>();
 		this.writeInterval = 20L;
@@ -116,7 +120,7 @@ public class DatagramAcceptor extends MessageService implements MessageAcceptor 
 		}
 
 		if (null == this.executor) {
-			this.executor = CachedQueueExecutor.newCachedQueueThreadPool(this.maxThreads);
+			this.executor = Executors.newCachedThreadPool();
 		}
 
 		this.socketAddress = address;
@@ -144,6 +148,17 @@ public class DatagramAcceptor extends MessageService implements MessageAcceptor 
 		this.mainThread = new LoopDispatchThread();
 		this.mainThread.start();
 
+		if (null == this.expiredTimer) {
+			this.expiredTimer = new Timer();
+			this.expiredTimer.schedule(new TimerTask() {
+				@Override
+				public void run() {
+					// 检查超期
+					checkExpire();
+				}
+			}, 1000L, 10000L);
+		}
+
 		return true;
 	}
 
@@ -153,6 +168,12 @@ public class DatagramAcceptor extends MessageService implements MessageAcceptor 
 		if (null != this.mainThread) {
 			this.mainThread.shutdown();
 			this.mainThread = null;
+		}
+
+		if (null != this.expiredTimer) {
+			this.expiredTimer.cancel();
+			this.expiredTimer.purge();
+			this.expiredTimer = null;
 		}
 
 		if (null != this.udpSocket) {
@@ -198,7 +219,7 @@ public class DatagramAcceptor extends MessageService implements MessageAcceptor 
 		}
 
 		DatagramAcceptorSession bas = (DatagramAcceptorSession) session;
-		String key = this.calcSessionKey(bas.getAddress().getHostString(), bas.getAddress().getPort());
+		String key = bas.mapKey;
 
 		if (this.sessionMap.containsKey(key)) {
 			// 标记移除
@@ -257,9 +278,15 @@ public class DatagramAcceptor extends MessageService implements MessageAcceptor 
 			this.udpWriteSessionQueue.addLast(bas);
 		}
 
+		if (this.numThreads.get() >= this.maxThreads) {
+			return;
+		}
+
 		this.executor.execute(new Runnable() {
 			@Override
 			public void run() {
+				numThreads.incrementAndGet();
+
 				while (null != udpSocket && !udpWriteQueue.isEmpty()) {
 					if (writeInterval > 0L && lastWriting.get() > 0) {
 						long d = System.currentTimeMillis() - lastWriting.get();
@@ -281,39 +308,41 @@ public class DatagramAcceptor extends MessageService implements MessageAcceptor 
 
 						umessage = udpWriteQueue.removeFirst();
 						usession = udpWriteSessionQueue.removeFirst();
-					}
 
-					if (null != umessage) {
-						try {
-							DatagramPacket dp = new DatagramPacket(umessage.get(), umessage.length(), usession.getAddress());
+						if (null != umessage) {
+							try {
+								DatagramPacket dp = new DatagramPacket(umessage.get(), umessage.length(), usession.getAddress());
 
-							if (null == udpSocket) {
-								continue;
-							}
+								if (null == udpSocket) {
+									continue;
+								}
 
-							udpSocket.send(dp);
+								udpSocket.send(dp);
 
-							// 更新活跃时间
-							usession.activeTimestamp = System.currentTimeMillis();
+								// 更新活跃时间
+								usession.activeTimestamp = System.currentTimeMillis();
 
-							lastWriting.set(usession.activeTimestamp);
+								lastWriting.set(usession.activeTimestamp);
 
-							if (null != handler) {
-								handler.messageSent(usession, umessage);
-							}
-						} catch (SocketException e) {
-							Logger.log(this.getClass(), e, LogLevel.ERROR);
-							if (null != handler) {
-								handler.errorOccurred(MessageErrorCode.SOCKET_FAILED, usession);
-							}
-						} catch (IOException e) {
-							Logger.log(this.getClass(), e, LogLevel.ERROR);
-							if (null != handler) {
-								handler.errorOccurred(MessageErrorCode.WRITE_FAILED, usession);
+								if (null != handler) {
+									handler.messageSent(usession, umessage);
+								}
+							} catch (SocketException e) {
+								Logger.log(this.getClass(), e, LogLevel.ERROR);
+								if (null != handler) {
+									handler.errorOccurred(MessageErrorCode.SOCKET_FAILED, usession);
+								}
+							} catch (IOException e) {
+								Logger.log(this.getClass(), e, LogLevel.ERROR);
+								if (null != handler) {
+									handler.errorOccurred(MessageErrorCode.WRITE_FAILED, usession);
+								}
 							}
 						}
 					}
 				} //#while
+
+				numThreads.decrementAndGet();
 			}
 		});
 	}
@@ -329,6 +358,7 @@ public class DatagramAcceptor extends MessageService implements MessageAcceptor 
 			InetSocketAddress isa = new InetSocketAddress(ip, port);
 
 			session = new DatagramAcceptorSession(this, isa);
+			session.mapKey = sessionKey;
 
 			if (null != this.handler) {
 				this.handler.sessionCreated(session);
@@ -355,14 +385,38 @@ public class DatagramAcceptor extends MessageService implements MessageAcceptor 
 		return ret;
 	}
 
+	private void checkExpire() {
+		// 当前时间
+		long time = System.currentTimeMillis();
+
+		// 清理清单
+		ArrayList<DatagramAcceptorSession> removedList = new ArrayList<DatagramAcceptorSession>();
+
+		Iterator<DatagramAcceptorSession> iter = this.sessionMap.values().iterator();
+		while (iter.hasNext()) {
+			DatagramAcceptorSession session = iter.next();
+			if (time - session.activeTimestamp > this.sessionExpired) {
+				removedList.add(session);
+			}
+		}
+
+		if (!removedList.isEmpty()) {
+			Logger.d(DatagramAcceptor.class, "Remove expired session : " + this.sessionMap.size()
+					+ " -> " + (this.sessionMap.size() - removedList.size()));
+
+			for (DatagramAcceptorSession session : removedList) {
+				close(session);
+			}
+			removedList.clear();
+		}
+		removedList = null;
+	}
+
 
 	protected class LoopDispatchThread extends Thread {
 
 		private boolean spinning = false;
 		private boolean running = false;
-
-		private boolean checkExpireLock = false;
-		private int checkExpireCounts = 0;
 
 		protected LoopDispatchThread() {
 			super("DatagramAcceptor@LoopDispatchThread");
@@ -389,9 +443,6 @@ public class DatagramAcceptor extends MessageService implements MessageAcceptor 
 				} catch (InterruptedException e) {
 					Logger.log(this.getClass(), e, LogLevel.DEBUG);
 				}
-
-				// 检查超期
-				this.checkExpire();
 
 				byte[] buf = new byte[block];
 				DatagramPacket packet = new DatagramPacket(buf, block);
@@ -431,6 +482,8 @@ public class DatagramAcceptor extends MessageService implements MessageAcceptor 
 			executor.execute(new Runnable() {
 				@Override
 				public void run() {
+					numThreads.incrementAndGet();
+
 					InetAddress addr = packet.getAddress();
 					String ip = addr.getHostAddress();
 					int port = packet.getPort();
@@ -441,63 +494,14 @@ public class DatagramAcceptor extends MessageService implements MessageAcceptor 
 					DatagramAcceptorSession session = updateSession(ip, port);
 					Message message = new Message(data);
 
+					// 更新活跃时间
+					session.activeTimestamp = System.currentTimeMillis();
+
 					if (null != handler) {
 						handler.messageReceived(session, message);
 					}
 
-					// 更新活跃时间
-					session.activeTimestamp = System.currentTimeMillis();
-				}
-			});
-		}
-
-		private void checkExpire() {
-			if (this.checkExpireLock) {
-				return;
-			}
-
-			// 计数
-			++this.checkExpireCounts;
-
-			// 连接数小于最大连接数时进行计数判断
-			if (sessionMap.size() < getMaxConnectNum() && this.checkExpireCounts < 10000) {
-				return;
-			}
-
-			// 上锁
-			this.checkExpireLock = true;
-			// 重置计数
-			this.checkExpireCounts = 0;
-
-			executor.execute(new Runnable() {
-				@Override
-				public void run() {
-					Logger.d(DatagramAcceptor.class, "DatagramAcceptor check session expire: " + sessionMap.size());
-
-					// 当前时间
-					long time = System.currentTimeMillis();
-
-					// 清理清单
-					ArrayList<DatagramAcceptorSession> removedList = new ArrayList<DatagramAcceptorSession>();
-
-					Iterator<DatagramAcceptorSession> iter = sessionMap.values().iterator();
-					while (iter.hasNext()) {
-						DatagramAcceptorSession session = iter.next();
-						if (time - session.activeTimestamp > sessionExpire) {
-							removedList.add(session);
-						}
-					}
-
-					if (!removedList.isEmpty()) {
-						for (DatagramAcceptorSession session : removedList) {
-							close(session);
-						}
-						removedList.clear();
-					}
-					removedList = null;
-
-					// 解锁
-					checkExpireLock = false;
+					numThreads.decrementAndGet();
 				}
 			});
 		}
