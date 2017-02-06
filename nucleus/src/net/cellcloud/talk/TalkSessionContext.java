@@ -33,7 +33,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import net.cellcloud.common.Session;
 import net.cellcloud.core.Endpoint;
-import net.cellcloud.core.NucleusConfig;
+import net.cellcloud.core.Role;
 import net.cellcloud.util.Clock;
 
 /** Talk 会话上下文。
@@ -72,7 +72,7 @@ public final class TalkSessionContext {
 		this.sessionTrackers.put(session.getId(), tracker);
 		this.trackerList.add(tracker);
 
-		this.endpoint = new Endpoint(tag, NucleusConfig.Role.CONSUMER, session.getAddress());
+		this.endpoint = new Endpoint(tag, Role.CONSUMER, session.getAddress());
 	}
 
 	/** 返回 Session 会话列表。

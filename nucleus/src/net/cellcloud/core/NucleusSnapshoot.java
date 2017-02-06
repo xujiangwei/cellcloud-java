@@ -62,4 +62,12 @@ public final class NucleusSnapshoot {
 		this.totalMemory = Runtime.getRuntime().totalMemory();
 		this.freeMemory = Runtime.getRuntime().freeMemory();
 	}
+
+	@Override
+	public String toString() {
+		StringBuilder buf = new StringBuilder();
+		buf.append("Talk port: ").append(talk.port).append("\n");
+		return buf.toString();
+	}
+
 }

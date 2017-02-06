@@ -48,8 +48,10 @@ import net.cellcloud.cell.log.RollFileLogger;
 import net.cellcloud.common.LogLevel;
 import net.cellcloud.common.LogManager;
 import net.cellcloud.common.Logger;
+import net.cellcloud.core.Device;
 import net.cellcloud.core.Nucleus;
 import net.cellcloud.core.NucleusConfig;
+import net.cellcloud.core.Role;
 import net.cellcloud.exception.SingletonException;
 
 import org.w3c.dom.Document;
@@ -123,8 +125,8 @@ public final class Application {
 	 */
 	protected boolean startup() {
 		NucleusConfig config = new NucleusConfig();
-		config.role = NucleusConfig.Role.NODE;
-		config.device = NucleusConfig.Device.SERVER;
+		config.role = Role.NODE;
+		config.device = Device.SERVER;
 
 		// 加载内核配置
 		HashMap<String, ArrayList<String>> cellets = null;
@@ -219,7 +221,7 @@ public final class Application {
 
 		try {
 			synchronized (this.monitor) {
-				this.monitor.notify();
+				this.monitor.notifyAll();
 			}
 		} catch (IllegalMonitorStateException e) {
 			// Nothing

@@ -77,13 +77,12 @@ public final class Nucleus {
 	private ConcurrentHashMap<String, Cellet> cellets = null;
 	private ConcurrentHashMap<String, CelletSandbox> sandboxes = null;
 
-	// Adapter
+	// Adapter, key is the instance name
 	private ConcurrentHashMap<String, Adapter> adapters = null;
 
 	/** 构造函数。
 	 */
-	private Nucleus(NucleusConfig config)
-			throws SingletonException {
+	private Nucleus(NucleusConfig config) throws SingletonException {
 		if (null == Nucleus.instance) {
 			Nucleus.instance = this;
 			// 设置配置
@@ -95,7 +94,7 @@ public final class Nucleus {
 			}
 			else {
 				this.tag = new NucleusTag();
-				if (this.config.role != NucleusConfig.Role.CONSUMER) {
+				if (this.config.role != Role.CONSUMER) {
 					Logger.d(Nucleus.class, "Nucleus Warning: No nucleus tag setting, use random tag: " + this.tag.asString());
 				}
 			}
@@ -165,8 +164,7 @@ public final class Nucleus {
 		Clock.start();
 
 		// 角色：节点
-		if ((this.config.role & NucleusConfig.Role.NODE) != 0 ||
-			(this.config.role & NucleusConfig.Role.GATEWAY) != 0) {
+		if (this.config.role == Role.NODE || this.config.role == Role.GATEWAY) {
 
 			//-------------------- 配置集群 --------------------
 
@@ -181,8 +179,7 @@ public final class Nucleus {
 				}
 				// 设置自动扫描网络
 				this.clusterController.autoScanNetwork = this.config.cluster.autoScan
-						&& (this.config.device == NucleusConfig.Device.SERVER
-							|| this.config.device == NucleusConfig.Device.DESKTOP);
+						&& (this.config.device == Device.SERVER || this.config.device == Device.DESKTOP);
 				// 启动集群控制器
 				if (this.clusterController.startup()) {
 					Logger.i(Nucleus.class, "Starting cluster controller service success.");
@@ -275,7 +272,7 @@ public final class Nucleus {
 		}
 
 		// 角色：消费者
-		if ((this.config.role & NucleusConfig.Role.CONSUMER) != 0) {
+		if (this.config.role == Role.CONSUMER) {
 			if (null == this.talkService) {
 				try {
 					// 创建 Talk Service
@@ -306,8 +303,7 @@ public final class Nucleus {
 		this.working.set(false);
 
 		// 角色：节点
-		if ((this.config.role & NucleusConfig.Role.NODE) != 0 ||
-			(this.config.role & NucleusConfig.Role.GATEWAY) != 0) {
+		if (this.config.role == Role.NODE || this.config.role == Role.GATEWAY) {
 			// 关闭集群服务
 			if (null != this.clusterController) {
 				this.clusterController.shutdown();
@@ -335,7 +331,7 @@ public final class Nucleus {
 		}
 
 		// 角色：消费者
-		if ((this.config.role & NucleusConfig.Role.CONSUMER) != 0) {
+		if (this.config.role == Role.CONSUMER) {
 			this.talkService.stopDaemon();
 		}
 
@@ -433,9 +429,9 @@ public final class Nucleus {
 
 	/** 返回指定名称的适配器。
 	 */
-	public Adapter getAdapter(final String name) {
+	public Adapter getAdapter(final String instanceName) {
 		if (null != this.adapters) {
-			return this.adapters.get(name);
+			return this.adapters.get(instanceName);
 		}
 
 		return null;
@@ -448,7 +444,7 @@ public final class Nucleus {
 			this.adapters = new ConcurrentHashMap<String, Adapter>();
 		}
 
-		this.adapters.put(adapter.getName(), adapter);
+		this.adapters.put(adapter.getInstanceName(), adapter);
 
 		if (this.working.get()) {
 			adapter.setup();
@@ -462,7 +458,7 @@ public final class Nucleus {
 			return;
 		}
 
-		this.adapters.remove(adapter.getName());
+		this.adapters.remove(adapter.getInstanceName());
 
 		if (this.working.get()) {
 			adapter.teardown();

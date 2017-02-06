@@ -2,7 +2,7 @@
 -----------------------------------------------------------------------------
 This source file is part of Cell Cloud.
 
-Copyright (c) 2009-2015 Cell Cloud Team (www.cellcloud.net)
+Copyright (c) 2009-2017 Cell Cloud Team (www.cellcloud.net)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -26,14 +26,19 @@ THE SOFTWARE.
 
 package net.cellcloud.adapter;
 
+/**
+ * 适配器工厂。
+ * 
+ * @author Ambrose Xu
+ */
 public final class AdapterFactory {
 
 	private AdapterFactory() {
 	}
 
-	public static Adapter createAdapter(String name) {
+	public static Adapter createAdapter(String name, String instanceName) {
 		if (name.equals(PushAdapter.Name)) {
-			return new PushAdapter();
+			return new PushAdapter(instanceName);
 		}
 		return null;
 	}

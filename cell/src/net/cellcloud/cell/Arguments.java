@@ -37,7 +37,7 @@ public final class Arguments {
 	/**
 	 * 是否使用交互式控制台。
 	 */
-	protected boolean console = true;
+	protected boolean console = false;
 
 	/**
 	 * 日志文件名。
@@ -51,4 +51,5 @@ public final class Arguments {
 
 	protected Arguments() {
 	}
+
 }

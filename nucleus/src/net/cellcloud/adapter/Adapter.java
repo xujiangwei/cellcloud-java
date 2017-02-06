@@ -26,6 +26,10 @@ THE SOFTWARE.
 
 package net.cellcloud.adapter;
 
+import java.util.Map;
+
+import net.cellcloud.core.Endpoint;
+
 /** 适配器接口。
  * 
  * @author Jiangwei Xu
@@ -34,6 +38,18 @@ public interface Adapter {
 
 	/** 返回适配器名。 */
 	public String getName();
+
+	/** 返回实例名。 */
+	public String getInstanceName();
+
+	/** 配置适配器。 */
+	public void config(Map<String, Object> parameters);
+
+	/** 添加关联终端 */
+	public boolean addEndpoint(Endpoint endpoint);
+
+	/** 移除关联终端 */
+	public void removeEndpoint(Endpoint endpoint);
 
 	/** 配置适配器。该方法由适配器管理器调用。 */
 	public void setup();
@@ -46,4 +62,5 @@ public interface Adapter {
 	 * @return
 	 */
 	public boolean isReady();
+
 }

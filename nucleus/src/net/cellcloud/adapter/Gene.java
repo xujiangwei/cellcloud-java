@@ -79,8 +79,6 @@ public class Gene {
 			buf.append(this.body).append("\r\n");
 		}
 
-		buf.append("\0");
-
 		String str = buf.toString();
 		buf = null;
 

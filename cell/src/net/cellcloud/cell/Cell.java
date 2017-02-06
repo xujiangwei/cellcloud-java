@@ -2,7 +2,7 @@
 -----------------------------------------------------------------------------
 This source file is part of Cell Cloud.
 
-Copyright (c) 2009-2015 Cell Cloud Team (www.cellcloud.net)
+Copyright (c) 2009-2017 Cell Cloud Team (www.cellcloud.net)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -50,6 +50,8 @@ public final class Cell {
 	private static boolean spinning = true;
 
 	private static Object signal = null;
+
+	private static String tagFilename = null;
 
 	private Cell() {
 	}
@@ -146,7 +148,9 @@ public final class Cell {
 				file.mkdir();
 			}
 
-			file = new File("bin/tag");
+			Cell.tagFilename = "bin/tag_" + Nucleus.getInstance().getTalkService().getPort();
+
+			file = new File(Cell.tagFilename);
 			if (file.exists()) {
 				file.delete();
 			}
@@ -169,7 +173,7 @@ public final class Cell {
 				while (spinning) {
 
 					try {
-						Thread.sleep(5000);
+						Thread.sleep(5000L);
 					} catch (InterruptedException e) {
 						Logger.log(Cell.class, e, LogLevel.WARNING);
 					}
@@ -182,7 +186,11 @@ public final class Cell {
 	}
 
 	private static void markStop() {
-		File file = new File("bin/tag");
+		if (null == Cell.tagFilename) {
+			return;
+		}
+
+		File file = new File(Cell.tagFilename);
 		try {
 			file.createNewFile();
 
@@ -199,10 +207,12 @@ public final class Cell {
 
 	private static void tick() {
 		// 文件不存在则退出
-		File file = new File("bin/tag");
-		if (!file.exists()) {
-			Cell.spinning = false; 
-			Cell.app.stop();
+		if (null != Cell.tagFilename) {
+			File file = new File(Cell.tagFilename);
+			if (!file.exists()) {
+				Cell.spinning = false; 
+				Cell.app.stop();
+			}
 		}
 	}
 
@@ -239,28 +249,35 @@ public final class Cell {
 				System.exit(0);
 			}
 			else if (args[0].equals("stop")) {
-				File file = new File("bin/tag");
+				if (args.length == 1) {
+					Cell.tagFilename = "bin/tag_" + 7000;
+				}
+				else {
+					Cell.tagFilename = "bin/tag_" + args[1];
+				}
+
+				File file = new File(Cell.tagFilename);
 				if (file.exists() && file.length() <= 36) {
 					// 删除文件
 					file.delete();
 
-					System.out.println("\nStopping Cell Cloud process, please waiting...");
+					System.out.println("\nStopping Cell Cloud process, please wait...");
 
 					long startTime = System.currentTimeMillis();
 
 					while (true) {
 						try {
-							Thread.sleep(1000);
+							Thread.sleep(1000L);
 						} catch (InterruptedException e) {
 							Logger.log(Cell.class, e, LogLevel.INFO);
 						}
 
-						File testFile = new File("bin/tag");
+						File testFile = new File(Cell.tagFilename);
 						if (testFile.exists()) {
 							break;
 						}
 						else {
-							if (System.currentTimeMillis() - startTime >= 30000) {
+							if (System.currentTimeMillis() - startTime >= 30000L) {
 								System.out.println("Shutdown program fail!");
 								System.exit(0);
 							}
@@ -268,7 +285,7 @@ public final class Cell {
 					}
 
 					System.out.println("\nCell Cloud process exit, progress elapsed time " +
-							(int)((System.currentTimeMillis() - startTime)/1000) + " seconds.\n");
+							(int)((System.currentTimeMillis() - startTime)/1000.0d) + " seconds.\n");
 				}
 				else {
 					System.out.println("Can not find Cell Cloud process.");

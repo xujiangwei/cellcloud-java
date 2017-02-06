@@ -2,7 +2,7 @@
 -----------------------------------------------------------------------------
 This source file is part of Cell Cloud.
 
-Copyright (c) 2009-2013 Cell Cloud Team (www.cellcloud.net)
+Copyright (c) 2009-2017 Cell Cloud Team (www.cellcloud.net)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -35,51 +35,14 @@ import java.util.List;
  */
 public final class NucleusConfig {
 
-	/** 内核工作角色定义。
-	 */
-	public final class Role {
-
-		/// 计算。
-		/// 内核启动标准的 Talk 服务和 Cellet 管理器。
-		public static final byte NODE = 0x01;
-
-		/// 存储。
-		/// 内核启动存储管理器。
-		public static final byte STORAGE = 0x02;
-
-		/// 网关。
-		/// 内核启动标准的 Talk 服务并启动网关模式。
-		public static final byte GATEWAY = 0x04;
-
-		/// 消费。
-		/// 内存启动 Talk 会话机制。
-		public static final byte CONSUMER = 0x08;
-	}
-
-	/** 设备平台。
-	 */
-	public final class Device {
-		/// 手机
-		public static final byte PHONE = 1;
-
-		/// 平板
-		public static final byte TABLET = 3;
-
-		/// 台式机
-		public static final byte DESKTOP = 5;
-
-		/// 服务器
-		public static final byte SERVER = 7;
-	}
-
 	/// 自定义内核标签
 	public String tag = null;
 
 	/// 角色
-	public byte role = Role.NODE;
+	public Role role = Role.NODE;
 
 	/// 设备
-	public byte device = Device.SERVER;
+	public Device device = Device.SERVER;
 
 	/// 是否启用 HTTP 服务器
 	public boolean httpd = true;

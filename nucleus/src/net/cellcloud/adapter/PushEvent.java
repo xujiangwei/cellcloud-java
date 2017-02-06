@@ -2,7 +2,7 @@
 -----------------------------------------------------------------------------
 This source file is part of Cell Cloud.
 
-Copyright (c) 2009-2015 Cell Cloud Team (www.cellcloud.net)
+Copyright (c) 2009-2017 Cell Cloud Team (www.cellcloud.net)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -31,22 +31,27 @@ import net.cellcloud.core.Endpoint;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+/**
+ * 推送事件。
+ * 
+ * @author Ambrose Xu
+ */
 public class PushEvent {
 
 	protected String name;
-	protected JSONObject body;
+	protected JSONObject payload;
 	protected Endpoint destination;
 	protected Endpoint source;
 
-	public PushEvent(String name, JSONObject body) {
+	public PushEvent(String name, JSONObject payload) {
 		this.name = name;
-		this.body = body;
+		this.payload = payload;
 	}
 
-	public PushEvent(Endpoint destination, String name, JSONObject body) {
+	public PushEvent(Endpoint destination, String name, JSONObject payload) {
 		this.destination = destination;
 		this.name = name;
-		this.body = body;
+		this.payload = payload;
 	}
 
 	protected PushEvent(Endpoint source, Gene gene) {
@@ -55,7 +60,7 @@ public class PushEvent {
 		String type = gene.getHeader("ContentType");
 		if (type.equalsIgnoreCase("json")) {
 			try {
-				this.body = new JSONObject(gene.getBody());
+				this.payload = new JSONObject(gene.getBody());
 			} catch (JSONException e) {
 				e.printStackTrace();
 			}
@@ -66,8 +71,8 @@ public class PushEvent {
 		return this.name;
 	}
 
-	public JSONObject getBody() {
-		return this.body;
+	public JSONObject getPayload() {
+		return this.payload;
 	}
 
 	public Endpoint getSource() {
@@ -77,7 +82,8 @@ public class PushEvent {
 	protected Gene toGene() {
 		Gene gene = new Gene(this.name);
 		gene.setHeader("ContentType", "json");
-		gene.setBody(this.body.toString());
+		gene.setBody(this.payload.toString());
 		return gene;
 	}
+
 }

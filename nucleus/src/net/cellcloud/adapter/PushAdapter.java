@@ -2,7 +2,7 @@
 -----------------------------------------------------------------------------
 This source file is part of Cell Cloud.
 
-Copyright (c) 2009-2015 Cell Cloud Team (www.cellcloud.net)
+Copyright (c) 2009-2017 Cell Cloud Team (www.cellcloud.net)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -26,25 +26,35 @@ THE SOFTWARE.
 
 package net.cellcloud.adapter;
 
-import java.util.LinkedList;
+import java.util.ArrayList;
+import java.util.Map;
 
 import net.cellcloud.common.Logger;
 import net.cellcloud.core.Endpoint;
 
+/**
+ * 
+ * @author Ambrose Xu
+ */
 public class PushAdapter extends RelationNucleusAdapter {
 
 	public final static String Name = "PushAdapter";
 
-	private LinkedList<PushAdapterListener> listeners;
+	private ArrayList<PushAdapterListener> listeners;
 
-	public PushAdapter() {
-		super(PushAdapter.Name);
-		this.listeners = new LinkedList<PushAdapterListener>();
+	public PushAdapter(String instanceName) {
+		super(PushAdapter.Name, instanceName);
+		this.listeners = new ArrayList<PushAdapterListener>();
+	}
+
+	@Override
+	public void config(Map<String, Object> parameters) {
+		super.config(parameters);
 	}
 
 	@Override
 	protected void onReady() {
-		Logger.d(this.getClass(), "Push adapter is ready.");
+		Logger.d(this.getClass(), "Push adapter (" + this.getPort() + ") is ready.");
 	}
 
 	@Override

@@ -107,6 +107,10 @@ public class DatagramAcceptor extends MessageService implements MessageAcceptor 
 		this.maxThreads = maxThreads;
 	}
 
+	public InetSocketAddress getBindAddress() {
+		return this.socketAddress;
+	}
+
 	@Override
 	public boolean bind(int port) {
 		InetSocketAddress address = new InetSocketAddress(port);

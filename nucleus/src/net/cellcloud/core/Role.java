@@ -2,7 +2,7 @@
 -----------------------------------------------------------------------------
 This source file is part of Cell Cloud.
 
-Copyright (c) 2009-2013 Cell Cloud Team (www.cellcloud.net)
+Copyright (c) 2009-2017 Cell Cloud Team (www.cellcloud.net)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -24,41 +24,24 @@ THE SOFTWARE.
 -----------------------------------------------------------------------------
 */
 
-package net.cellcloud;
+package net.cellcloud.core;
 
-/** 程序版本描述。
+/** 内核工作角色定义。
  * 
- * @author Jiangwei Xu
+ * @author Ambrose xu
  */
-public final class Version {
+public enum Role {
 
-	/// 主版本号
-	public static final int MAJOR = 1;
+	/// 计算。
+	/// 内核启动标准的 Talk 服务和 Cellet 管理器。
+	NODE,
 
-	/// 副版本号
-	public static final int MINOR = 5;
+	/// 网关。
+	/// 内核启动标准的 Talk 服务并启动网关模式。
+	GATEWAY,
 
-	/// 修订号
-	public static final int REVISION = 12;
-
-	/// 版本名
-	public static final String NAME = "Journey";
-
-	/// 版本串号
-	public static final int VERSION_NUMBER = 150;
-
-	/// 是否调试模式
-	public static boolean DEBUG = true;
-
-	private Version() {
-	}
-
-	public static String getNumbers() {
-		StringBuilder buf = new StringBuilder();
-		buf.append(MAJOR).append(".");
-		buf.append(MINOR).append(".");
-		buf.append(REVISION);
-		return buf.toString();
-	}
+	/// 消费。
+	/// 内存启动 Talk 会话机制。
+	CONSUMER
 
 }

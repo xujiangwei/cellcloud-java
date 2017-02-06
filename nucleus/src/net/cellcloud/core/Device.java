@@ -2,7 +2,7 @@
 -----------------------------------------------------------------------------
 This source file is part of Cell Cloud.
 
-Copyright (c) 2009-2013 Cell Cloud Team (www.cellcloud.net)
+Copyright (c) 2009-2017 Cell Cloud Team (www.cellcloud.net)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -24,41 +24,24 @@ THE SOFTWARE.
 -----------------------------------------------------------------------------
 */
 
-package net.cellcloud;
+package net.cellcloud.core;
 
-/** 程序版本描述。
- * 
- * @author Jiangwei Xu
+/** 设备平台。
+ *
+ * @author Ambrose Xu
  */
-public final class Version {
+public enum Device {
 
-	/// 主版本号
-	public static final int MAJOR = 1;
+	/// 移动设备
+	MOBILE,
 
-	/// 副版本号
-	public static final int MINOR = 5;
+	/// 平板设备
+	TABLET,
 
-	/// 修订号
-	public static final int REVISION = 12;
+	/// 桌面设备
+	DESKTOP,
 
-	/// 版本名
-	public static final String NAME = "Journey";
-
-	/// 版本串号
-	public static final int VERSION_NUMBER = 150;
-
-	/// 是否调试模式
-	public static boolean DEBUG = true;
-
-	private Version() {
-	}
-
-	public static String getNumbers() {
-		StringBuilder buf = new StringBuilder();
-		buf.append(MAJOR).append(".");
-		buf.append(MINOR).append(".");
-		buf.append(REVISION);
-		return buf.toString();
-	}
+	/// 服务器
+	SERVER
 
 }

@@ -35,7 +35,7 @@ import java.net.InetSocketAddress;
 public class Endpoint {
 
 	private NucleusTag tag;
-	private byte role;
+	private Role role;
 	private Coordinate coordinate;
 
 	public Endpoint(String host, int port) {
@@ -51,7 +51,7 @@ public class Endpoint {
 
 	/** 构造函数。
 	 */
-	public Endpoint(String tag, byte role, InetSocketAddress address) {
+	public Endpoint(String tag, Role role, InetSocketAddress address) {
 		this.tag = new NucleusTag(tag);
 		this.role = role;
 		this.coordinate = new Coordinate(address);
@@ -59,7 +59,7 @@ public class Endpoint {
 
 	/** 构造函数。
 	 */
-	public Endpoint(NucleusTag tag, byte role, InetSocketAddress address) {
+	public Endpoint(NucleusTag tag, Role role, InetSocketAddress address) {
 		this.tag = tag;
 		this.role = role;
 		this.coordinate = new Coordinate(address);
@@ -73,7 +73,7 @@ public class Endpoint {
 
 	/** 返回终端角色。
 	 */
-	public byte getRole() {
+	public Role getRole() {
 		return this.role;
 	}
 
