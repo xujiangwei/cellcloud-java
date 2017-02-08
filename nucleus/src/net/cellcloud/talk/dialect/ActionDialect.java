@@ -313,32 +313,6 @@ public class ActionDialect extends Dialect {
 		return null;
 	}
 
-	/**
-	 * 创建数据副本。
-	 * @return
-	 */
-//	public ActionDialect copy() {
-//		ActionDialect copy = new ActionDialect(this.tracker);
-//		synchronized (this) {
-//			copy.tag = this.tag;
-//			copy.celletIdentifier = this.celletIdentifier;
-//			copy.cellet = this.cellet;
-//
-//			copy.action = this.action;
-//
-//			for (String name : this.nameList) {
-//				copy.nameList.add(name);
-//			}
-//
-//			for (ObjectiveStuff value : this.valueList) {
-//				copy.valueList.add(value);
-//			}
-//
-//			copy.customContext = this.customContext;
-//		}
-//		return copy;
-//	}
-
 	/** 执行动作委派（异步）。
 	 */
 	public void act(ActionDelegate delegate) {

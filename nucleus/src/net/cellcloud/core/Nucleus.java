@@ -2,7 +2,7 @@
 -----------------------------------------------------------------------------
 This source file is part of Cell Cloud.
 
-Copyright (c) 2009-2016 Cell Cloud Team (www.cellcloud.net)
+Copyright (c) 2009-2017 Cell Cloud Team (www.cellcloud.net)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -28,6 +28,7 @@ package net.cellcloud.core;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLClassLoader;
@@ -55,6 +56,33 @@ import net.cellcloud.util.Clock;
  * @author Jiangwei Xu
  */
 public final class Nucleus {
+
+	static {
+		// 读取配置文件
+		ClassLoader cl = Nucleus.class.getClassLoader();
+		InputStream inputStream = null;
+		if (cl != null) {
+			inputStream = cl.getResourceAsStream("logging.properties");
+		}
+		else {
+			inputStream = ClassLoader.getSystemResourceAsStream("loggging.properties");
+		}
+		java.util.logging.LogManager logManager = java.util.logging.LogManager.getLogManager();
+		try {
+			// 重新初始化日志属性并重新读取日志配置。
+			logManager.readConfiguration(inputStream);
+		} catch (SecurityException e) {
+			System.err.println(e);
+		} catch (IOException e) {
+			System.err.println(e);
+		}
+
+		try {
+			inputStream.close();
+		} catch (IOException e) {
+			// Nothing
+		}
+    }
 
 	private static Nucleus instance = null;
 

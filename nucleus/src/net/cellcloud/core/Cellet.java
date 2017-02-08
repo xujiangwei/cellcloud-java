@@ -2,7 +2,7 @@
 -----------------------------------------------------------------------------
 This source file is part of Cell Cloud.
 
-Copyright (c) 2009-2014 Cell Cloud Team (www.cellcloud.net)
+Copyright (c) 2009-2017 Cell Cloud Team (www.cellcloud.net)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -28,6 +28,7 @@ package net.cellcloud.core;
 
 import java.util.Set;
 
+import net.cellcloud.adapter.Adapter;
 import net.cellcloud.adapter.RelationNucleusAdapter;
 import net.cellcloud.talk.Primitive;
 import net.cellcloud.talk.TalkService;
@@ -41,6 +42,8 @@ public abstract class Cellet extends AbstractCellet {
 
 	private CelletFeature feature;
 	private CelletSandbox sandbox;
+
+	
 
 	/**
 	 * 构造函数。
@@ -109,16 +112,13 @@ public abstract class Cellet extends AbstractCellet {
 		Nucleus.getInstance().prepareCellet(this, this.sandbox);
 	}
 
-	/** 加载指定的适配器。
-	 */
-	public RelationNucleusAdapter loadRelationNucleusAdapter() {
-		return null;
-	}
+	public RelationNucleusAdapter getAdapter(String instanceName) {
+		Adapter adapter = Nucleus.getInstance().getAdapter(instanceName);
+		if (null != adapter) {
+			return (RelationNucleusAdapter) adapter;
+		}
 
-	/** 卸载指定的适配器。
-	 */
-	public void unloadRelationNucleusAdapter() {
-		
+		return null;
 	}
 
 	/**

@@ -52,7 +52,7 @@ public final class LocalFileStorage implements FileStorage {
 	public final static String TYPE_NAME = "LocalFileStorage";
 
 	private String instanceName;
-	private byte[] monitor = new byte[0];
+	private Object monitor = new Object();
 
 	// 默认文件块大小：256KB
 	protected int chunkSize = 262144;

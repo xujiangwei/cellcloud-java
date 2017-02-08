@@ -2,7 +2,7 @@
 -----------------------------------------------------------------------------
 This source file is part of Cell Cloud.
 
-Copyright (c) 2009-2015 Cell Cloud Team (www.cellcloud.net)
+Copyright (c) 2009-2017 Cell Cloud Team (www.cellcloud.net)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -31,7 +31,6 @@ import java.net.InetAddress;
 import java.net.SocketException;
 import java.net.UnknownHostException;
 import java.nio.ByteBuffer;
-import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.LinkedList;
@@ -41,8 +40,12 @@ import java.util.concurrent.Executors;
 
 import net.cellcloud.common.LogLevel;
 import net.cellcloud.common.Logger;
+import net.cellcloud.common.QuotaCalculator;
+import net.cellcloud.common.QuotaCalculatorCallback;
 import net.cellcloud.core.Endpoint;
 import net.cellcloud.core.Nucleus;
+import net.cellcloud.core.Role;
+import net.cellcloud.talk.dialect.Dialect;
 import udt.UDTClient;
 import udt.UDTInputStream;
 import udt.UDTServerSocket;
@@ -70,6 +73,11 @@ public abstract class RelationNucleusAdapter implements Adapter {
 
 	private UDTServerSocket serverSocket;
 
+	private ArrayList<AdapterListener> listeners;
+
+	private QuotaCalculator quota;
+	private QuotaCallback quotaCallback;
+
 	/** 构建指定名称的适配器。
 	 */
 	public RelationNucleusAdapter(String name, String instanceName) {
@@ -79,6 +87,9 @@ public abstract class RelationNucleusAdapter implements Adapter {
 		this.endpointList = new LinkedList<Endpoint>();
 		this.clientList = new LinkedList<UDTClient>();
 		this.receiverTaskList = new LinkedList<ReceiverTask>();
+		this.listeners = new ArrayList<AdapterListener>();
+		this.quota = new QuotaCalculator(100 * 1024);
+		this.quotaCallback = new QuotaCallback();
 	}
 
 	@Override
@@ -106,10 +117,31 @@ public abstract class RelationNucleusAdapter implements Adapter {
 			this.thread.setDaemon(true);
 			this.thread.start();
 		}
+
+		synchronized (this.endpointList) {
+			for (int i = 0; i < this.endpointList.size(); ++i) {
+				// 获取客户端
+				UDTClient client = null;
+				try {
+					// 创建连接客户端
+					client = new UDTClient(InetAddress.getLocalHost());
+				} catch (SocketException e) {
+					Logger.log(this.getClass(), e, LogLevel.ERROR);
+				} catch (UnknownHostException e) {
+					Logger.log(this.getClass(), e, LogLevel.ERROR);
+				}
+
+				this.clientList.add(client);
+			}
+		}
+
+		this.quota.start();
 	}
 
 	@Override
 	public void teardown() {
+		this.quota.stop();
+
 		this.executor.shutdown();
 
 		if (null != this.thread) {
@@ -160,23 +192,7 @@ public abstract class RelationNucleusAdapter implements Adapter {
 	 */
 	@Override
 	public boolean addEndpoint(Endpoint endpoint) {
-		// 获取客户端
-		UDTClient client = null;
-		try {
-			// 创建连接客户端
-			client = new UDTClient(InetAddress.getLocalHost());
-		} catch (SocketException e) {
-			Logger.log(this.getClass(), e, LogLevel.ERROR);
-		} catch (UnknownHostException e) {
-			Logger.log(this.getClass(), e, LogLevel.ERROR);
-		}
-
-		if (null == client) {
-			return false;
-		}
-
 		synchronized (this.endpointList) {
-			this.clientList.add(client);
 			this.endpointList.add(endpoint);
 		}
 
@@ -210,6 +226,20 @@ public abstract class RelationNucleusAdapter implements Adapter {
 		}
 	}
 
+	@Override
+	public void addListener(AdapterListener listener) {
+		synchronized (this.listeners) {
+			this.listeners.add(listener);
+		}
+	}
+
+	@Override
+	public void removeListener(AdapterListener listener) {
+		synchronized (this.listeners) {
+			this.listeners.remove(listener);
+		}
+	}
+
 	public void setPort(int port) {
 		this.port = port;
 	}
@@ -218,42 +248,46 @@ public abstract class RelationNucleusAdapter implements Adapter {
 		return this.port;
 	}
 
+	public void setQuotaPerSecond(int quotaInSecond) {
+		this.quota.setQuota(quotaInSecond);
+	}
+
+	public int getQuotaPerSecond() {
+		return this.quota.getQuota();
+	}
+
+	/**
+	 * 向关联的终端分享方言。
+	 * 
+	 * @param dialect
+	 */
+	public abstract void share(String name, Dialect dialect);
+
+	protected void fireReceive(Endpoint endpoint, Dialect dialect) {
+		synchronized (this.listeners) {
+			for (AdapterListener l : this.listeners) {
+				l.onShared(this, endpoint, dialect);
+			}
+		}
+	}
+
 	/**
 	 * 广播。
 	 * 
 	 * @param index
 	 */
-	protected void broadcast(final Gene data) {
+	protected void broadcast(Gene data) {
 		if (this.endpointList.isEmpty()) {
 			return;
 		}
 
-		final ArrayList<Endpoint> list = new ArrayList<Endpoint>(this.endpointList.size());
-
-		synchronized (this.endpointList) {
-			list.addAll(this.endpointList);
-		}
-
-		this.executor.execute(new Runnable() {
-			@Override
-			public void run() {
-				for (Endpoint ep : list) {
-
-					// 传输数据
-					if (!transport(ep, data)) {
-						Logger.e(this.getClass(), "transport failed");
-					}
-
-					try {
-						Thread.sleep(20L);
-					} catch (InterruptedException e) {
-						e.printStackTrace();
-					}
-				}
-
-				list.clear();
+		for (int i = 0; i < this.endpointList.size(); ++i) {
+			Endpoint ep = this.endpointList.get(i);
+			// 传输数据
+			if (!transport(ep, data)) {
+				Logger.e(this.getClass(), "transport failed");
 			}
-		});
+		}
 	}
 
 	protected boolean transport(Endpoint destination, Gene data) {
@@ -271,8 +305,8 @@ public abstract class RelationNucleusAdapter implements Adapter {
 		// 连接
 		try {
 			if (!client.isReady()) {
-				client.connect(destination.getCoordinate().getAddress().getHostString(),
-						destination.getCoordinate().getAddress().getPort());
+				client.connect(destination.getCoordinate().getAddress(),
+						destination.getCoordinate().getPort());
 			}
 		} catch (UnknownHostException e) {
 			Logger.log(this.getClass(), e, LogLevel.ERROR);
@@ -287,10 +321,15 @@ public abstract class RelationNucleusAdapter implements Adapter {
 
 		// 为 Gene 设置 Tag
 		data.setHeader("SourceTag", Nucleus.getInstance().getTagAsString());
+		// 打包
+		byte[] bytes = Gene.pack(data);
+
+		// 配额计算，并阻塞
+		this.quota.consumeBlocking(bytes.length, this.quotaCallback, destination);
 
 		// 发送数据
 		try {
-			client.sendBlocking(data.packet());
+			client.sendBlocking(bytes);
 		} catch (IOException e) {
 			Logger.log(this.getClass(), e, LogLevel.ERROR);
 			return false;
@@ -437,14 +476,17 @@ public abstract class RelationNucleusAdapter implements Adapter {
 
 					String host = this.socket.getSession().getDestination().getAddress().getHostAddress();
 					int port = this.socket.getSession().getDestination().getPort();
-					Endpoint endpoint = new Endpoint(host, port);
 
-					Gene gene = parse(new String(data, Charset.forName("UTF-8")));
+					Gene gene = Gene.unpack(data);
 					if (null == gene) {
 						Logger.e(this.getClass(), "Parse gene data failed, from " + host);
 						data = null;
 						return;
 					}
+
+					// 创建 Endpoint
+					String tag = gene.getHeader("SourceTag");
+					Endpoint endpoint = new Endpoint(tag, Role.NODE, host, port);
 
 					// 回调
 					onReceive(endpoint, gene);
@@ -460,32 +502,19 @@ public abstract class RelationNucleusAdapter implements Adapter {
 		}
 	}
 
-	private Gene parse(String data) {
-		String[] ret = data.split("\\\r\\\n");
-		if (ret.length < 2) {
-			Logger.w(RelationNucleusAdapter.class, "Data format error");
-			return null;
+	private class QuotaCallback implements QuotaCalculatorCallback {
+
+		public QuotaCallback() {
 		}
 
-		String name = ret[0];
-		Gene gene = new Gene(name);
-
-		for (int i = 1; i < ret.length; ++i) {
-			String r = ret[i];
-
-			if (r.length() == 0) {
-				gene.setBody(ret[i+1]);
-				break;
-			}
-
-			int index = r.indexOf(":");
-			if (index > 0) {
-				String key = r.substring(0, index);
-				String value = r.substring(index + 1);
-				gene.setHeader(key.trim(), value.trim());
+		@Override
+		public void onCallback(int size, Object custom) {
+			synchronized (listeners) {
+				for (AdapterListener l : listeners) {
+					l.onCongested(RelationNucleusAdapter.this, (Endpoint) custom, size);
+				}
 			}
 		}
-
-		return gene;
 	}
+
 }

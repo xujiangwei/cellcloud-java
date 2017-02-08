@@ -72,7 +72,8 @@ public final class TalkSessionContext {
 		this.sessionTrackers.put(session.getId(), tracker);
 		this.trackerList.add(tracker);
 
-		this.endpoint = new Endpoint(tag, Role.CONSUMER, session.getAddress());
+		this.endpoint = new Endpoint(tag, Role.CONSUMER,
+				session.getAddress().getHostName(), session.getAddress().getPort());
 	}
 
 	/** 返回 Session 会话列表。

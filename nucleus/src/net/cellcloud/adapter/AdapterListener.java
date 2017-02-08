@@ -27,63 +27,30 @@ THE SOFTWARE.
 package net.cellcloud.adapter;
 
 import net.cellcloud.core.Endpoint;
-
-import org.json.JSONException;
-import org.json.JSONObject;
+import net.cellcloud.talk.dialect.Dialect;
 
 /**
- * 推送事件。
  * 
  * @author Ambrose Xu
  */
-public class PushEvent {
+public interface AdapterListener {
 
-	protected String name;
-	protected JSONObject payload;
-	protected Endpoint destination;
-	protected Endpoint source;
+	/**
+	 * 当收到对端分享的方言时被回调。
+	 * 
+	 * @param adapter
+	 * @param endpoint
+	 * @param dialect
+	 */
+	public void onShared(Adapter adapter, Endpoint endpoint, Dialect dialect);
 
-	public PushEvent(String name, JSONObject payload) {
-		this.name = name;
-		this.payload = payload;
-	}
-
-	public PushEvent(Endpoint destination, String name, JSONObject payload) {
-		this.destination = destination;
-		this.name = name;
-		this.payload = payload;
-	}
-
-	protected PushEvent(Endpoint source, Gene gene) {
-		this.source = source;
-		this.name = gene.getName();
-		String type = gene.getHeader("ContentType");
-		if (type.equalsIgnoreCase("json")) {
-			try {
-				this.payload = new JSONObject(gene.getBody());
-			} catch (JSONException e) {
-				e.printStackTrace();
-			}
-		}
-	}
-
-	public String getName() {
-		return this.name;
-	}
-
-	public JSONObject getPayload() {
-		return this.payload;
-	}
-
-	public Endpoint getSource() {
-		return this.source;
-	}
-
-	protected Gene toGene() {
-		Gene gene = new Gene(this.name);
-		gene.setHeader("ContentType", "json");
-		gene.setBody(this.payload.toString());
-		return gene;
-	}
+	/**
+	 * 当发送数据发生拥塞时被回调。
+	 * 
+	 * @param adapter
+	 * @param destination
+	 * @param dataSize
+	 */
+	public void onCongested(Adapter adapter, Endpoint destination, int dataSize);
 
 }

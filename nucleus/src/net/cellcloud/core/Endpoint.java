@@ -26,7 +26,6 @@ THE SOFTWARE.
 
 package net.cellcloud.core;
 
-import java.net.InetSocketAddress;
 
 /** 终端节点。
  * 
@@ -38,31 +37,26 @@ public class Endpoint {
 	private Role role;
 	private Coordinate coordinate;
 
+	/** 构造函数。
+	 */
 	public Endpoint(String host, int port) {
-		InetSocketAddress address = new InetSocketAddress(host, port);
-		this.coordinate = new Coordinate(address);
+		this.coordinate = new Coordinate(host, port);
 	}
 
 	/** 构造函数。
 	 */
-	public Endpoint(InetSocketAddress address) {
-		this.coordinate = new Coordinate(address);
-	}
-
-	/** 构造函数。
-	 */
-	public Endpoint(String tag, Role role, InetSocketAddress address) {
+	public Endpoint(String tag, Role role, String host, int port) {
 		this.tag = new NucleusTag(tag);
 		this.role = role;
-		this.coordinate = new Coordinate(address);
+		this.coordinate = new Coordinate(host, port);
 	}
 
 	/** 构造函数。
 	 */
-	public Endpoint(NucleusTag tag, Role role, InetSocketAddress address) {
+	public Endpoint(NucleusTag tag, Role role, String host, int port) {
 		this.tag = tag;
 		this.role = role;
-		this.coordinate = new Coordinate(address);
+		this.coordinate = new Coordinate(host, port);
 	}
 
 	/** 返回终端标签。
@@ -86,16 +80,25 @@ public class Endpoint {
 	/** 终端坐标。
 	 */
 	public final class Coordinate {
-		private InetSocketAddress address;
+		private String address;
+		private int port;
 
-		public Coordinate(InetSocketAddress address) {
+		public Coordinate(String address, int port) {
 			this.address = address;
+			this.port = port;
 		}
 
 		/** 返回访问地址。
 		 */
-		public InetSocketAddress getAddress() {
+		public String getAddress() {
 			return this.address;
 		}
+
+		/** 返回访问端口。
+		 */
+		public int getPort() {
+			return this.port;
+		}
 	}
+
 }

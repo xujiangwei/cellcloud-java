@@ -24,22 +24,24 @@ THE SOFTWARE.
 -----------------------------------------------------------------------------
 */
 
-package net.cellcloud.adapter;
+package net.cellcloud.adapter.annotation;
 
-/**
- * 适配器工厂。
- * 
- * @author Ambrose Xu
- */
-public final class AdapterFactory {
+import java.lang.annotation.Documented;
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
 
-	private AdapterFactory() {
-	}
+@Target(ElementType.FIELD)
+@Retention(RetentionPolicy.RUNTIME)
+@Documented
+public @interface NucleusAdapterListener {
 
-	public static Adapter createAdapter(String name, String instanceName) {
-		if (name.equals(SimpleAdapter.Name)) {
-			return new SimpleAdapter(instanceName);
-		}
-		return null;
-	}
+	/**
+	 * 监听器对应适配器的实例名。
+	 * 
+	 * @return
+	 */
+	public String instanceName() default "";
+
 }

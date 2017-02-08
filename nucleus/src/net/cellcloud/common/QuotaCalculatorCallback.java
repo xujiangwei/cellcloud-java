@@ -24,22 +24,10 @@ THE SOFTWARE.
 -----------------------------------------------------------------------------
 */
 
-package net.cellcloud.adapter;
+package net.cellcloud.common;
 
-/**
- * 适配器工厂。
- * 
- * @author Ambrose Xu
- */
-public final class AdapterFactory {
+public interface QuotaCalculatorCallback {
 
-	private AdapterFactory() {
-	}
+	public void onCallback(int size, Object custom);
 
-	public static Adapter createAdapter(String name, String instanceName) {
-		if (name.equals(SimpleAdapter.Name)) {
-			return new SimpleAdapter(instanceName);
-		}
-		return null;
-	}
 }

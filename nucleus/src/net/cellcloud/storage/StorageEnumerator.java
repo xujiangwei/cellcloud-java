@@ -2,7 +2,7 @@
 -----------------------------------------------------------------------------
 This source file is part of Cell Cloud.
 
-Copyright (c) 2009-2014 Cell Cloud Team (www.cellcloud.net)
+Copyright (c) 2009-2017 Cell Cloud Team (www.cellcloud.net)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -30,8 +30,12 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import net.cellcloud.storage.ehcache.EhcacheStorage;
 import net.cellcloud.storage.ehcache.EhcacheStorageFactory;
+import net.cellcloud.storage.file.LocalFileStorage;
 import net.cellcloud.storage.file.LocalFileStorageFactory;
+import net.cellcloud.storage.mongodb.MongoDBStorage;
 import net.cellcloud.storage.mongodb.MongoDBStorageFactory;
+import net.cellcloud.storage.sqlite.SQLiteStorage;
+import net.cellcloud.storage.sqlite.SQLiteStorageFactory;
 
 /** 存储器枚举。
  * 
@@ -39,7 +43,10 @@ import net.cellcloud.storage.mongodb.MongoDBStorageFactory;
  */
 public final class StorageEnumerator {
 
+	public final static String FILE = LocalFileStorage.TYPE_NAME;
+	public final static String SQLITE = SQLiteStorage.TYPE_NAME;
 	public final static String EHCACHE = EhcacheStorage.TYPE_NAME;
+	public final static String MONGODB = MongoDBStorage.TYPE_NAME;
 
 	private final static StorageEnumerator instance = new StorageEnumerator();
 
@@ -121,8 +128,9 @@ public final class StorageEnumerator {
 	}
 
 	private void buildIn() {
-		this.addFactory(new EhcacheStorageFactory());
 		this.addFactory(new LocalFileStorageFactory());
+		this.addFactory(new SQLiteStorageFactory());
+		this.addFactory(new EhcacheStorageFactory());
 		this.addFactory(new MongoDBStorageFactory());
 	}
 }

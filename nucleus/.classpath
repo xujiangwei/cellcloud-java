@@ -17,7 +17,7 @@
 	<classpathentry kind="lib" path="/Users/MD318/Repositories/cellcloud-java/deploy/libs/jetty-util-9.2.10.v20150310.jar"/>
 	<classpathentry kind="lib" path="/Users/MD318/Repositories/cellcloud-java/deploy/libs/jetty-xml-9.2.10.v20150310.jar"/>
 	<classpathentry kind="lib" path="/Users/MD318/Repositories/cellcloud-java/deploy/libs/servlet-api-3.1.jar"/>
-	<classpathentry kind="lib" path="/Users/MD318/Repositories/cellcloud-java/deploy/libs/sqljet-1.1.5.jar"/>
+	<classpathentry kind="lib" path="/Users/MD318/Repositories/cellcloud-java/deploy/libs/sqljet-1.1.10.jar"/>
 	<classpathentry kind="lib" path="/Users/MD318/Repositories/cellcloud-java/deploy/libs/websocket-api-9.2.10.v20150310.jar"/>
 	<classpathentry kind="lib" path="/Users/MD318/Repositories/cellcloud-java/deploy/libs/websocket-client-9.2.10.v20150310.jar"/>
 	<classpathentry kind="lib" path="/Users/MD318/Repositories/cellcloud-java/deploy/libs/websocket-common-9.2.10.v20150310.jar"/>

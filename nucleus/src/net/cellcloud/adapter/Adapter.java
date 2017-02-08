@@ -45,11 +45,17 @@ public interface Adapter {
 	/** 配置适配器。 */
 	public void config(Map<String, Object> parameters);
 
-	/** 添加关联终端 */
+	/** 添加关联终端。 */
 	public boolean addEndpoint(Endpoint endpoint);
 
-	/** 移除关联终端 */
+	/** 移除关联终端。 */
 	public void removeEndpoint(Endpoint endpoint);
+
+	/** 添加监听器。 */
+	public void addListener(AdapterListener listener);
+
+	/** 移除监听器。 */
+	public void removeListener(AdapterListener listener);
 
 	/** 配置适配器。该方法由适配器管理器调用。 */
 	public void setup();

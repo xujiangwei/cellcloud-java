@@ -2,7 +2,7 @@
 -----------------------------------------------------------------------------
 This source file is part of Cell Cloud.
 
-Copyright (c) 2009-2015 Cell Cloud Team (www.cellcloud.net)
+Copyright (c) 2009-2017 Cell Cloud Team (www.cellcloud.net)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -30,6 +30,9 @@ import java.nio.charset.Charset;
 import java.util.HashMap;
 import java.util.Map;
 
+import net.cellcloud.common.Logger;
+import net.cellcloud.core.Endpoint;
+
 /**
  * 
  * @author Jiangwei Xu
@@ -38,10 +41,17 @@ public class Gene {
 
 	private String name;
 	private HashMap<String, String> header;
-	private String body;
+	private String payload;
+
+	private Endpoint destination;
 
 	public Gene(String name) {
+		this(name, null);
+	}
+
+	public Gene(String name, String payload) {
 		this.name = name;
+		this.payload = payload;
 		this.header = new HashMap<String, String>();
 	}
 
@@ -57,26 +67,34 @@ public class Gene {
 		return this.header.get(name);
 	}
 
-	public void setBody(String body) {
-		this.body = body;
+	public void setPayload(String payload) {
+		this.payload = payload;
 	}
 
-	public String getBody() {
-		return this.body;
+	public String getPayload() {
+		return this.payload;
 	}
 
-	public byte[] packet() {
+	public void forceDestination(Endpoint destination) {
+		this.destination = destination;
+	}
+
+	public Endpoint getDestination() {
+		return this.destination;
+	}
+
+	public static byte[] pack(Gene gene) {
 		StringBuilder buf = new StringBuilder();
 
-		buf.append(this.name).append("\r\n");
+		buf.append(gene.name).append("\r\n");
 
-		for (Map.Entry<String, String> e : this.header.entrySet()) {
+		for (Map.Entry<String, String> e : gene.header.entrySet()) {
 			buf.append(e.getKey()).append(":").append(e.getValue()).append("\r\n");
 		}
 
-		if (null != this.body) {
+		if (null != gene.payload) {
 			buf.append("\r\n");
-			buf.append(this.body).append("\r\n");
+			buf.append(gene.payload).append("\r\n");
 		}
 
 		String str = buf.toString();
@@ -84,4 +102,36 @@ public class Gene {
 
 		return str.getBytes(Charset.forName("UTF-8"));
 	}
+
+	public static Gene unpack(byte[] bytes) {
+		String data = new String(bytes, Charset.forName("UTF-8"));
+
+		String[] ret = data.split("\\\r\\\n");
+		if (ret.length < 2) {
+			Logger.w(RelationNucleusAdapter.class, "Data format error");
+			return null;
+		}
+
+		String name = ret[0];
+		Gene gene = new Gene(name);
+
+		for (int i = 1; i < ret.length; ++i) {
+			String r = ret[i];
+
+			if (r.length() == 0) {
+				gene.setPayload(ret[i+1]);
+				break;
+			}
+
+			int index = r.indexOf(":");
+			if (index > 0) {
+				String key = r.substring(0, index);
+				String value = r.substring(index + 1);
+				gene.setHeader(key.trim(), value.trim());
+			}
+		}
+
+		return gene;
+	}
+
 }

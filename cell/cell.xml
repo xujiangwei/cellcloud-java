@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <cell>
 	<nucleus>
+	    <tag>1c1545f5-41b5-4b0d-a278-603cc80b469e</tag>
 		<httpd>true</httpd>
 		<talk>
 			<port>7000</port>

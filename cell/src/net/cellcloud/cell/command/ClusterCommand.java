@@ -80,7 +80,7 @@ public class ClusterCommand extends ConsoleCommand {
 
 				ClusterVirtualNode vnode = cltr.getNode().getVirtualNode(h);
 				// 虚拟节点物理地址
-				info.append("  ").append(vnode.getCoordinate().getAddress().getHostName()).append(":").append(vnode.getCoordinate().getAddress().getPort());
+				info.append("  ").append(vnode.getCoordinate().getAddress()).append(":").append(vnode.getCoordinate().getPort());
 
 				info.append("\n");
 				++sn;

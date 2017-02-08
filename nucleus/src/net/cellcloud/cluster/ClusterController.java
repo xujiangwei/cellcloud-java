@@ -212,7 +212,9 @@ public final class ClusterController implements Service, Observer {
 			// 选择可用节点
 			ClusterVirtualNode vnode = this.root.selectVNode(hash);
 			if (null != vnode) {
-				ClusterConnector connector = this.getOrCreateConnector(vnode.getCoordinate().getAddress(), hash);
+				InetSocketAddress sockAddress = new InetSocketAddress(vnode.getCoordinate().getAddress(),
+						vnode.getCoordinate().getPort());
+				ClusterConnector connector = this.getOrCreateConnector(sockAddress, hash);
 				// 阻塞方式执行 Push
 				ProtocolMonitor monitor = connector.doBlockingPush(targetHash, chunk, timeout);
 				return (null != monitor);
@@ -250,7 +252,9 @@ public final class ClusterController implements Service, Observer {
 			// 选择可用节点
 			ClusterVirtualNode vnode = this.root.selectVNode(hash);
 			if (null != vnode) {
-				ClusterConnector connector = this.getOrCreateConnector(vnode.master.getCoordinate().getAddress(), hash);
+				InetSocketAddress sockAddress = new InetSocketAddress(vnode.master.getCoordinate().getAddress(),
+						vnode.master.getCoordinate().getPort());
+				ClusterConnector connector = this.getOrCreateConnector(sockAddress, hash);
 				// 阻塞方式执行 Pull
 				ProtocolMonitor monitor = connector.doBlockingPull(targetHash, label, timeout);
 				return (null != monitor) ? monitor.chunk : null;
@@ -366,8 +370,9 @@ public final class ClusterController implements Service, Observer {
 			if (this.root.containsOwnVirtualNode(hash)) {
 				if (Logger.isDebugLevel()) {
 					Logger.d(this.getClass(), new StringBuilder("Hit target hash: ").append(hash).append(" at ")
-							.append(this.root.getCoordinate().getAddress().getAddress().getHostAddress())
-							.append(this.root.getCoordinate().getAddress().getPort()).toString());
+							.append(this.root.getCoordinate().getAddress())
+							.append(":")
+							.append(this.root.getCoordinate().getPort()).toString());
 				}
 
 				// 插入数据块
@@ -381,8 +386,9 @@ public final class ClusterController implements Service, Observer {
 			else {
 				if (Logger.isDebugLevel()) {
 					Logger.d(this.getClass(), new StringBuilder("Don't hit target hash: ").append(hash).append(" at ")
-							.append(this.root.getCoordinate().getAddress().getAddress().getHostAddress())
-							.append(this.root.getCoordinate().getAddress().getPort()).toString());
+							.append(this.root.getCoordinate().getAddress())
+							.append(":")
+							.append(this.root.getCoordinate().getPort()).toString());
 				}
 
 				// 响应

@@ -26,25 +26,28 @@ THE SOFTWARE.
 
 package net.cellcloud.adapter;
 
-import java.util.ArrayList;
 import java.util.Map;
 
+import net.cellcloud.common.LogLevel;
 import net.cellcloud.common.Logger;
 import net.cellcloud.core.Endpoint;
+import net.cellcloud.talk.Primitive;
+import net.cellcloud.talk.dialect.Dialect;
+import net.cellcloud.talk.stuff.PrimitiveSerializer;
+
+import org.json.JSONException;
+import org.json.JSONObject;
 
 /**
  * 
  * @author Ambrose Xu
  */
-public class PushAdapter extends RelationNucleusAdapter {
+public class SimpleAdapter extends RelationNucleusAdapter {
 
-	public final static String Name = "PushAdapter";
+	public final static String Name = "SimpleAdapter";
 
-	private ArrayList<PushAdapterListener> listeners;
-
-	public PushAdapter(String instanceName) {
-		super(PushAdapter.Name, instanceName);
-		this.listeners = new ArrayList<PushAdapterListener>();
+	public SimpleAdapter(String instanceName) {
+		super(SimpleAdapter.Name, instanceName);
 	}
 
 	@Override
@@ -54,39 +57,40 @@ public class PushAdapter extends RelationNucleusAdapter {
 
 	@Override
 	protected void onReady() {
-		Logger.d(this.getClass(), "Push adapter (" + this.getPort() + ") is ready.");
+		Logger.i(this.getClass(), "Simple adapter (" + this.getPort() + ") is ready.");
 	}
 
 	@Override
 	protected void onReceive(Endpoint endpoint, Gene gene) {
-		for (PushAdapterListener l : this.listeners) {
-			l.onEvent(this, new PushEvent(endpoint, gene));
+		String payload = gene.getPayload();
+
+		JSONObject json = null;
+		try {
+			json = new JSONObject(payload);
+
+			Primitive primitive = new Primitive();
+			PrimitiveSerializer.read(primitive, json);
+
+			super.fireReceive(endpoint, primitive.getDialect());
+		} catch (JSONException e) {
+			Logger.log(this.getClass(), e, LogLevel.WARNING);
 		}
 	}
 
-	/**
-	 * 推送事件。
-	 * 
-	 * @param event
-	 */
-	public void pushEvent(PushEvent event) {
-		if (null == event.destination) {
-			super.broadcast(event.toGene());
+	@Override
+	public void share(String name, Dialect dialect) {
+		JSONObject payload = new JSONObject();
+		try {
+			PrimitiveSerializer.write(payload, dialect.translate());
+		} catch (JSONException e) {
+			Logger.log(this.getClass(), e, LogLevel.WARNING);
+			return;
 		}
-		else {
-			super.transport(event.destination, event.toGene());
-		}
+
+		Gene gene = new Gene(name);
+		gene.setPayload(payload.toString());
+
+		super.broadcast(gene);
 	}
 
-	public void addListener(PushAdapterListener listener) {
-		synchronized (this.listeners) {
-			this.listeners.add(listener);
-		}
-	}
-
-	public void removeListener(PushAdapterListener listener) {
-		synchronized (this.listeners) {
-			this.listeners.remove(listener);
-		}
-	}
 }

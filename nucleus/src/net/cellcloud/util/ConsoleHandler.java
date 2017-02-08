@@ -24,13 +24,13 @@ THE SOFTWARE.
 -----------------------------------------------------------------------------
 */
 
-package net.cellcloud.adapter;
+package net.cellcloud.util;
 
-/**
- * 
- * @author Ambrose Xu
- */
-public interface PushAdapterListener {
+public class ConsoleHandler extends java.util.logging.ConsoleHandler {
 
-	public void onEvent(PushAdapter adapter, PushEvent event);
+	public ConsoleHandler() {
+		super();
+		this.setOutputStream(System.out);
+	}
+
 }

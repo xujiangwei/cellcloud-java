@@ -61,7 +61,7 @@ public class ClusterNode extends Endpoint implements Comparable<ClusterNode> {
 	/** 构造函数。
 	 */
 	public ClusterNode(long hashCode, InetSocketAddress address, int numVNode) {
-		super(Nucleus.getInstance().getTag(), Role.NODE, address);
+		super(Nucleus.getInstance().getTag(), Role.NODE, address.getHostString(), address.getPort());
 		this.hashCode = hashCode;
 
 		if (numVNode > 0) {
@@ -80,7 +80,7 @@ public class ClusterNode extends Endpoint implements Comparable<ClusterNode> {
 	/** 构造函数。
 	 */
 	public ClusterNode(long hashCode, InetSocketAddress address, List<Long> vnodeHashList) {
-		super(Nucleus.getInstance().getTag(), Role.NODE, address);
+		super(Nucleus.getInstance().getTag(), Role.NODE, address.getHostString(), address.getPort());
 		this.hashCode = hashCode;
 
 		if (!vnodeHashList.isEmpty()) {
