@@ -24,12 +24,13 @@ THE SOFTWARE.
 -----------------------------------------------------------------------------
 */
 
-package net.cellcloud.adapter;
+package net.cellcloud.adapter.gene;
 
 import java.nio.charset.Charset;
 import java.util.HashMap;
 import java.util.Map;
 
+import net.cellcloud.adapter.RelationNucleusAdapter;
 import net.cellcloud.common.Logger;
 import net.cellcloud.core.Endpoint;
 

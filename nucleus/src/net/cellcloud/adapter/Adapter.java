@@ -57,6 +57,10 @@ public interface Adapter {
 	/** 移除监听器。 */
 	public void removeListener(AdapterListener listener);
 
+	public void encourage(String keyword, Endpoint endpoint);
+
+	public void discourage(String keyword, Endpoint endpoint);
+
 	/** 配置适配器。该方法由适配器管理器调用。 */
 	public void setup();
 

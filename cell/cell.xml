@@ -1,27 +1,67 @@
 <?xml version="1.0" encoding="UTF-8"?>
+<!-- Cell Cloud 容器配置文件 -->
 <cell>
+	<!-- 内核参数配置 -->
 	<nucleus>
-	    <tag>1c1545f5-41b5-4b0d-a278-603cc80b469e</tag>
+		<!-- 指定内核的 Tag，如果不设置该值，则由系统随机生成 -->
+		<tag>1c1545f5-41b5-4b0d-a278-603cc80b469e</tag>
+
+		<!-- 是否启用 HTTP 服务 -->
 		<httpd>true</httpd>
+
+		<!-- Talk 服务配置 -->
 		<talk>
+			<!-- 服务使用的端口号 -->
 			<port>7000</port>
+			<!-- 每个连接的最大缓存块大小 -->
 			<block>65536</block>
+			<!-- 服务允许的最大连接数 -->
 			<connections>5000</connections>
+			<!-- 服务使用的工作器线程数 -->
 			<workers>8</workers>
+			<!-- 服务 HTTP 配置 -->
 			<http>
 				<enabled>true</enabled>
 				<port>7070</port>
 				<queue>5000</queue>
 			</http>
+			<!-- SSL 配置 -->
 			<ssl>
-			    <keystore>/nucleus.jks</keystore>
-			    <password>cellcloud</password>
+				<keystore>/nucleus.jks</keystore>
+				<password>cellcloud</password>
 			</ssl>
 		</talk>
 	</nucleus>
+
+	<!-- 适配器配置 -->
+	<adapters>
+		<adapter name="SmartAdapter" instance="broadcast">
+		    <!-- 适配器使用的主机地址（注：该地址不是监听地址） -->
+		    <host>192.168.0.197</host>
+		    <!-- 适配器监听端口 -->
+			<port>9813</port>
+			<!-- 上行数据流量配额，单位：B/S -->
+			<quota>10240</quota>
+			<!-- 配对的终端地址信息 -->
+			<endpoints>
+				<endpoint host="192.168.0.198" port="9813" />
+				<endpoint host="192.168.0.199" port="9813" />
+			</endpoints>
+		</adapter>
+	</adapters>
+
+	<!-- Cellet 配置 -->
 	<cellets>
+		<!-- 配置 Jar 包内的 Cellet -->
 		<cellet jar="cellet-dummy.jar">
 			<class>net.cellcloud.cellet.DummyCellet</class>
+			<class>net.cellcloud.cellet.BroadcastCellet</class>
+		</cellet>
+
+		<!-- 配置 class 目录下的 Cellet -->
+		<cellet path="bin">
+			<class>net.cellcloud.cellet.SimpleCellet</class>
+			<class>net.cellcloud.cellet.CommandCellet</class>
 		</cellet>
 	</cellets>
 </cell>

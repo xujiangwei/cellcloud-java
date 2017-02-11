@@ -34,10 +34,14 @@ import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.atomic.AtomicLong;
 
+import net.cellcloud.adapter.gene.Gene;
+import net.cellcloud.adapter.gene.GeneHeader;
 import net.cellcloud.common.LogLevel;
 import net.cellcloud.common.Logger;
 import net.cellcloud.common.QuotaCalculator;
@@ -61,6 +65,7 @@ public abstract class RelationNucleusAdapter implements Adapter {
 	private String name;
 	private String instanceName;
 
+	private String host = "127.0.0.1";
 	private int port = 9813;
 
 	private LinkedList<Endpoint> endpointList;
@@ -78,6 +83,8 @@ public abstract class RelationNucleusAdapter implements Adapter {
 	private QuotaCalculator quota;
 	private QuotaCallback quotaCallback;
 
+	private AtomicLong geneSeq;
+
 	/** 构建指定名称的适配器。
 	 */
 	public RelationNucleusAdapter(String name, String instanceName) {
@@ -90,6 +97,7 @@ public abstract class RelationNucleusAdapter implements Adapter {
 		this.listeners = new ArrayList<AdapterListener>();
 		this.quota = new QuotaCalculator(100 * 1024);
 		this.quotaCallback = new QuotaCallback();
+		this.geneSeq = new AtomicLong(0);
 	}
 
 	@Override
@@ -226,6 +234,14 @@ public abstract class RelationNucleusAdapter implements Adapter {
 		}
 	}
 
+	/**
+	 * 
+	 * @return
+	 */
+	protected List<Endpoint> endpointList() {
+		return this.endpointList;
+	}
+
 	@Override
 	public void addListener(AdapterListener listener) {
 		synchronized (this.listeners) {
@@ -238,6 +254,14 @@ public abstract class RelationNucleusAdapter implements Adapter {
 		synchronized (this.listeners) {
 			this.listeners.remove(listener);
 		}
+	}
+
+	public void setHost(String host) {
+		this.host = host;
+	}
+
+	public String getHost() {
+		return this.host;
 	}
 
 	public void setPort(int port) {
@@ -257,13 +281,36 @@ public abstract class RelationNucleusAdapter implements Adapter {
 	}
 
 	/**
+	 * 
+	 * @param keyword
+	 * @param endpoint
+	 */
+	@Override
+	public abstract void encourage(String keyword, Endpoint endpoint);
+
+	/**
+	 * 
+	 * @param keyword
+	 * @param endpoint
+	 */
+	@Override
+	public abstract void discourage(String keyword, Endpoint endpoint);
+
+	/**
 	 * 向关联的终端分享方言。
 	 * 
 	 * @param dialect
 	 */
-	public abstract void share(String name, Dialect dialect);
+	public abstract void share(String keyword, Dialect dialect);
 
-	protected void fireReceive(Endpoint endpoint, Dialect dialect) {
+	/**
+	 * 
+	 * @param keyword
+	 * @param dialect
+	 */
+	public abstract void share(String keyword, Endpoint endpoint, Dialect dialect);
+
+	protected void fireShared(Endpoint endpoint, Dialect dialect) {
 		synchronized (this.listeners) {
 			for (AdapterListener l : this.listeners) {
 				l.onShared(this, endpoint, dialect);
@@ -276,21 +323,25 @@ public abstract class RelationNucleusAdapter implements Adapter {
 	 * 
 	 * @param index
 	 */
-	protected void broadcast(Gene data) {
+	protected void broadcast(Gene gene) {
 		if (this.endpointList.isEmpty()) {
 			return;
 		}
 
-		for (int i = 0; i < this.endpointList.size(); ++i) {
-			Endpoint ep = this.endpointList.get(i);
+		this.broadcast(this.endpointList, gene);
+	}
+
+	protected void broadcast(List<Endpoint> destinationList, Gene gene) {
+		for (int i = 0; i < destinationList.size(); ++i) {
+			Endpoint ep = destinationList.get(i);
 			// 传输数据
-			if (!transport(ep, data)) {
-				Logger.e(this.getClass(), "transport failed");
+			if (!transport(ep, gene)) {
+				Logger.e(this.getClass(), "Transport failed: " + ep.getCoordinate().getAddress());
 			}
 		}
 	}
 
-	protected boolean transport(Endpoint destination, Gene data) {
+	protected boolean transport(Endpoint destination, Gene gene) {
 		UDTClient client = null;
 
 		synchronized (this.endpointList) {
@@ -319,10 +370,14 @@ public abstract class RelationNucleusAdapter implements Adapter {
 			return false;
 		}
 
-		// 为 Gene 设置 Tag
-		data.setHeader("SourceTag", Nucleus.getInstance().getTagAsString());
+		// 填充 Gene 头
+		gene.setHeader(GeneHeader.SourceTag, Nucleus.getInstance().getTagAsString());
+		gene.setHeader(GeneHeader.Host, this.host);
+		gene.setHeader(GeneHeader.Port, String.valueOf(this.port));
+		gene.setHeader(GeneHeader.Seq, String.valueOf(this.geneSeq.getAndIncrement()));
+
 		// 打包
-		byte[] bytes = Gene.pack(data);
+		byte[] bytes = Gene.pack(gene);
 
 		// 配额计算，并阻塞
 		this.quota.consumeBlocking(bytes.length, this.quotaCallback, destination);
@@ -338,6 +393,8 @@ public abstract class RelationNucleusAdapter implements Adapter {
 			return false;
 		}
 
+		this.fireSend(destination, gene);
+
 		return true;
 	}
 
@@ -347,10 +404,65 @@ public abstract class RelationNucleusAdapter implements Adapter {
 	protected abstract void onReady();
 
 	/**
-	 * 收到事件。
-	 * @param event
+	 * 
+	 * @param endpoint
+	 * @param gene
+	 */
+	protected abstract void onSend(Endpoint endpoint, Gene gene);
+
+	/**
+	 * 
+	 * @param endpoint
+	 * @param gene
 	 */
 	protected abstract void onReceive(Endpoint endpoint, Gene gene);
+
+	private void fireSend(Endpoint endpoint, Gene gene) {
+		this.onSend(endpoint, gene);
+	}
+
+	private void fireReceive(Endpoint endpoint, Gene gene) {
+		// 查找终端
+		Endpoint source = this.findEndpoint(endpoint);
+
+		if (null == source) {
+			// 未找到终端，增加新终端
+
+			synchronized (this.endpointList) {
+				UDTClient client = null;
+				try {
+					// 创建连接客户端
+					client = new UDTClient(InetAddress.getLocalHost());
+				} catch (SocketException e) {
+					Logger.log(this.getClass(), e, LogLevel.ERROR);
+				} catch (UnknownHostException e) {
+					Logger.log(this.getClass(), e, LogLevel.ERROR);
+				}
+
+				this.endpointList.add(endpoint);
+				this.clientList.add(client);
+			}
+
+			source = endpoint;
+		}
+
+		this.onReceive(source, gene);
+	}
+
+	private Endpoint findEndpoint(Endpoint endpoint) {
+		synchronized (this.endpointList) {
+			for (Endpoint ep : this.endpointList) {
+				if (ep.equals(endpoint)) {
+					if (null == ep.getTag()) {
+						ep.setTag(endpoint.getTag());
+					}
+					return ep;
+				}
+			}
+		}
+
+		return null;
+	}
 
 	private class ServerThread extends Thread {
 		private boolean stopped = false;
@@ -479,17 +591,20 @@ public abstract class RelationNucleusAdapter implements Adapter {
 
 					Gene gene = Gene.unpack(data);
 					if (null == gene) {
-						Logger.e(this.getClass(), "Parse gene data failed, from " + host);
+						Logger.e(this.getClass(), "Parse gene data failed, from " + host + ":" + port);
 						data = null;
 						return;
 					}
 
+					// 读取 Gene 头
+					String tag = gene.getHeader(GeneHeader.SourceTag);
+					host = gene.getHeader(GeneHeader.Host);
+					port = Integer.parseInt(gene.getHeader(GeneHeader.Port));
 					// 创建 Endpoint
-					String tag = gene.getHeader("SourceTag");
 					Endpoint endpoint = new Endpoint(tag, Role.NODE, host, port);
 
 					// 回调
-					onReceive(endpoint, gene);
+					fireReceive(endpoint, gene);
 
 					data = null;
 				}

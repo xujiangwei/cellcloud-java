@@ -26,20 +26,60 @@ THE SOFTWARE.
 
 package net.cellcloud.adapter;
 
+import java.util.concurrent.ConcurrentHashMap;
+
+import net.cellcloud.core.Endpoint;
+
 /**
- * 适配器工厂。
- * 
- * @author Ambrose Xu
  */
-public final class AdapterFactory {
+public class FeedbackController {
 
-	private AdapterFactory() {
+	private ConcurrentHashMap<String, Feedback> feedbackMap;
+
+	public FeedbackController() {
+		this.feedbackMap = new ConcurrentHashMap<String, Feedback>();
 	}
 
-	public static Adapter createAdapter(String name, String instanceName) {
-		if (name.equals(SmartAdapter.Name)) {
-			return new SmartAdapter(instanceName);
+	public int getPositiveCounts(String keyword, Endpoint endpoint) {
+		Feedback feedback = this.feedbackMap.get(keyword);
+		if (null == feedback) {
+			return 0;
 		}
-		return null;
+
+		return feedback.countPositive(endpoint);
 	}
+
+	public int getNegativeCounts(String keyword, Endpoint endpoint) {
+		Feedback feedback = this.feedbackMap.get(keyword);
+		if (null == feedback) {
+			return 0;
+		}
+
+		return feedback.countNegative(endpoint);
+	}
+
+	public void updateEncourage(String keyword, Endpoint endpoint) {
+		Feedback feedback = this.feedbackMap.get(keyword);
+		if (null != feedback) {
+			feedback.updatePositive(endpoint);
+		}
+		else {
+			feedback = new Feedback(keyword);
+			feedback.updatePositive(endpoint);
+			this.feedbackMap.put(keyword, feedback);
+		}
+	}
+
+	public void updateDiscourage(String keyword, Endpoint endpoint) {
+		Feedback feedback = this.feedbackMap.get(keyword);
+		if (null != feedback) {
+			feedback.updateNegative(endpoint);
+		}
+		else {
+			feedback = new Feedback(keyword);
+			feedback.updateNegative(endpoint);
+			this.feedbackMap.put(keyword, feedback);
+		}
+	}
+
 }

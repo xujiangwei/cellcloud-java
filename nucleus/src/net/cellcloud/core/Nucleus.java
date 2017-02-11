@@ -35,6 +35,7 @@ import java.net.URLClassLoader;
 import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.Iterator;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -53,12 +54,12 @@ import net.cellcloud.util.Clock;
 
 /** Cell Cloud 软件栈内核类。
  * 
- * @author Jiangwei Xu
+ * @author Ambrose Xu
  */
 public final class Nucleus {
 
 	static {
-		// 读取配置文件
+		// 读取日志配置文件
 		ClassLoader cl = Nucleus.class.getClassLoader();
 		InputStream inputStream = null;
 		if (cl != null) {
@@ -78,7 +79,9 @@ public final class Nucleus {
 		}
 
 		try {
-			inputStream.close();
+			if (null != inputStream) {
+				inputStream.close();
+			}
 		} catch (IOException e) {
 			// Nothing
 		}
@@ -86,26 +89,52 @@ public final class Nucleus {
 
 	private static Nucleus instance = null;
 
+	/** 是否处于工作状态。
+	 */
 	private AtomicBoolean working = new AtomicBoolean(false);
 
+	/** 内核标签。使用 UUID 规则。
+	 */
 	private NucleusTag tag = null;
+
+	/** 内核配置信息。
+	 */
 	private NucleusConfig config = null;
+
+	/** 内核上下文。
+	 */
 	private NucleusContext context = null;
 
-	// 集群网络控制
+	/** 集群网络控制器。
+	 */
 	private ClusterController clusterController = null;
 
-	// Talk 服务
+	/** Talk 服务。
+	 */
 	private TalkService talkService = null;
-	// Web 服务
+
+	/** Web 服务。
+	 */
 	private HttpService httpService = null;
 
-	// Cellet
+	/** Jar 包内的 Cellet 类映射表。
+	 */
 	private ConcurrentHashMap<String, ArrayList<String>> celletJarClasses = null;
+
+	/** 文件路径下 class 文件的 Cellet 类映射表。
+	 */
+	private ConcurrentHashMap<String, ArrayList<String>> celletPathClasses = null;
+
+	/** 当前内核内的所有 Cellet 对照表。
+	 */
 	private ConcurrentHashMap<String, Cellet> cellets = null;
+
+	/** Cellet 对应的沙盒表。
+	 */
 	private ConcurrentHashMap<String, CelletSandbox> sandboxes = null;
 
-	// Adapter, key is the instance name
+	/** 内核内适配器映射表。
+	 */
 	private ConcurrentHashMap<String, Adapter> adapters = null;
 
 	/** 构造函数。
@@ -134,8 +163,8 @@ public final class Nucleus {
 		}
 	}
 
-	/**
-	 * 创建实例。
+	/** 创建实例。
+	 * 
 	 * @param config
 	 * @return
 	 * @throws SingletonException
@@ -146,22 +175,26 @@ public final class Nucleus {
 	}
 
 	/** 返回单例。
+	 *
 	 * @return
 	 */
 	public static Nucleus getInstance() {
 		return Nucleus.instance;
 	}
 
-	/** 返回内核标签。 */
+	/** 返回内核标签。
+	 */
 	public NucleusTag getTag() {
 		return this.tag;
 	}
-	/** 返回内核标签。 */
+
+	/** 返回内核标签。
+	 */
 	public String getTagAsString() {
 		return this.tag.asString();
 	}
 
-	/** 返回配置。
+	/** 返回配置信息实例。
 	 */
 	public NucleusConfig getConfig() {
 		return this.config;
@@ -179,7 +212,10 @@ public final class Nucleus {
 		return this.talkService;
 	}
 
-	/** 启动内核。 */
+	/** 启动内核。
+	 * 
+	 * @return 如果返回 <code>true</code> 表示启动成功，否则表示启动失败。
+	 */
 	public boolean startup() {
 		if (this.working.get()) {
 			Logger.i(Nucleus.class, "*-*-* Cell Initialized *-*-*");
@@ -191,8 +227,8 @@ public final class Nucleus {
 		// 启动时钟
 		Clock.start();
 
-		// 角色：节点
 		if (this.config.role == Role.NODE || this.config.role == Role.GATEWAY) {
+			// 角色：节点或网关
 
 			//-------------------- 配置集群 --------------------
 
@@ -273,8 +309,18 @@ public final class Nucleus {
 			// 加载外部 Jar 包
 			this.loadExternalJar();
 
+			// 加载外部路径
+			this.loadExternalPath();
+
 			// 启动 Cellet
 			this.activateCellets();
+
+			// 启动适配器
+			if (null != this.adapters) {
+				for (Adapter adapter : this.adapters.values()) {
+					adapter.setup();
+				}
+			}
 
 			// 启动 HTTP Service
 			if (null != this.httpService) {
@@ -290,17 +336,9 @@ public final class Nucleus {
 					Logger.i(Nucleus.class, "Starting http service failure.");
 				}
 			}
-
-			// 配置适配器
-			if (null != this.adapters) {
-				for (Adapter adapter : this.adapters.values()) {
-					adapter.setup();
-				}
-			}
 		}
-
-		// 角色：消费者
-		if (this.config.role == Role.CONSUMER) {
+		else if (this.config.role == Role.CONSUMER) {
+			// 角色：消费者
 			if (null == this.talkService) {
 				try {
 					// 创建 Talk Service
@@ -319,7 +357,8 @@ public final class Nucleus {
 		return true;
 	}
 
-	/** 关停内核。 */
+	/** 关停内核。
+	 */
 	public void shutdown() {
 		if (!this.working.get()) {
 			Logger.i(Nucleus.class, "*-*-* Cell Finalized *-*-*");
@@ -329,9 +368,10 @@ public final class Nucleus {
 		Logger.i(Nucleus.class, "*-*-* Cell Finalizing *-*-*");
 
 		this.working.set(false);
-
-		// 角色：节点
+		
 		if (this.config.role == Role.NODE || this.config.role == Role.GATEWAY) {
+			// 角色：节点或网关
+
 			// 关闭集群服务
 			if (null != this.clusterController) {
 				this.clusterController.shutdown();
@@ -357,9 +397,8 @@ public final class Nucleus {
 				}
 			}
 		}
-
-		// 角色：消费者
-		if (this.config.role == Role.CONSUMER) {
+		else if (this.config.role == Role.CONSUMER) {
+			// 角色：消费者
 			this.talkService.stopDaemon();
 		}
 
@@ -368,8 +407,12 @@ public final class Nucleus {
 	}
 
 	/** 返回注册在该内核上的指定的 Cellet 。
+	 * 
+	 * @param identifier
+	 * @param context
+	 * @return
 	 */
-	public Cellet getCellet(final String identifier, final NucleusContext context) {
+	public Cellet getCellet(String identifier, NucleusContext context) {
 		if (null == this.cellets) {
 			return null;
 		}
@@ -381,6 +424,11 @@ public final class Nucleus {
 		return null;
 	}
 
+	/** 返回注册在该内核上的指定的 Cellet 。
+	 * 
+	 * @param identifier
+	 * @return
+	 */
 	public Cellet getCellet(String identifier) {
 		if (null == this.cellets) {
 			return null;
@@ -390,6 +438,9 @@ public final class Nucleus {
 	}
 
 	/** 载入 Cellet JAR 包信息。
+	 * 
+	 * @param jarFile
+	 * @param classes
 	 */
 	public void prepareCelletJar(String jarFile, ArrayList<String> classes) {
 		if (null == this.celletJarClasses) {
@@ -399,8 +450,23 @@ public final class Nucleus {
 		this.celletJarClasses.put(jarFile, classes);
 	}
 
+	/** 载入 Cellet class 路径信息。
+	 * 
+	 * @param path
+	 * @param classes
+	 */
+	public void prepareCelletPath(String path, ArrayList<String> classes) {
+		if (null == this.celletPathClasses) {
+			this.celletPathClasses = new ConcurrentHashMap<String, ArrayList<String>>();
+		}
+
+		this.celletPathClasses.put(path, classes);
+	}
+
 	/** 注册 Cellet 。
-	*/
+	 * 
+	 * @param cellet
+	 */
 	public void registerCellet(Cellet cellet) {
 		if (null == this.cellets) {
 			this.cellets = new ConcurrentHashMap<String, Cellet>();
@@ -410,7 +476,9 @@ public final class Nucleus {
 	}
 
 	/** 注销 Cellet 。
-	*/
+	 * 
+	 * @param cellet
+	 */
 	public void unregisterCellet(Cellet cellet) {
 		if (null == this.cellets) {
 			return;
@@ -419,8 +487,8 @@ public final class Nucleus {
 		this.cellets.remove(cellet.getFeature().getIdentifier());
 	}
 
-	/**
-	 * 返回所有 Cellet 的 Feature 列表。
+	/** 返回所有 Cellet 的 Feature 列表。
+	 *
 	 * @return
 	 */
 	public List<CelletFeature> getCelletFeatures() {
@@ -455,9 +523,11 @@ public final class Nucleus {
 		return false;
 	}
 
-	/** 返回指定名称的适配器。
+	/** 返回指定实例名的适配器。
+	 * 
+	 * @param instanceName
 	 */
-	public Adapter getAdapter(final String instanceName) {
+	public Adapter getAdapter(String instanceName) {
 		if (null != this.adapters) {
 			return this.adapters.get(instanceName);
 		}
@@ -465,7 +535,9 @@ public final class Nucleus {
 		return null;
 	}
 
-	/** 添加适配器。
+	/** 添加适配器。支持热拔插。
+	 * 
+	 * @param adapter
 	 */
 	public void addAdapter(Adapter adapter) {
 		if (null == this.adapters) {
@@ -479,7 +551,9 @@ public final class Nucleus {
 		}
 	}
 
-	/** 移除适配器。
+	/** 移除适配器。支持热拔插。
+	 * 
+	 * @param adapter
 	 */
 	public void removeAdapter(Adapter adapter) {
 		if (null == this.adapters) {
@@ -493,6 +567,10 @@ public final class Nucleus {
 		}
 	}
 
+	/** 返回内核实时快照。
+	 * 
+	 * @return
+	 */
 	public NucleusSnapshoot snapshoot() {
 		NucleusSnapshoot snapshoot = new NucleusSnapshoot();
 		snapshoot.tag = this.tag.asString().toString();
@@ -511,6 +589,11 @@ public final class Nucleus {
 		return snapshoot;
 	}
 
+	/** 为启动 Cellet 进行准备操作。
+	 * 
+	 * @param cellet
+	 * @param sandbox
+	 */
 	protected synchronized void prepareCellet(Cellet cellet, CelletSandbox sandbox) {
 		if (null == this.sandboxes) {
 			this.sandboxes = new ConcurrentHashMap<String, CelletSandbox>();
@@ -531,7 +614,7 @@ public final class Nucleus {
 		}
 	}
 
-	/** 加载外部 Jar 文件。
+	/** 加载外部 Jar 文件，实例化 Cellet
 	 */
 	private void loadExternalJar() {
 		if (null == this.celletJarClasses) {
@@ -601,6 +684,125 @@ public final class Nucleus {
 
 				// 取出 Cellet 类
 				ArrayList<String> celletClasslist = this.celletJarClasses.get(jarFilename);
+				// Cellet 类列表
+				ArrayList<Class<?>> classes = new ArrayList<Class<?>>();
+
+				// 加载所有的 Class
+				for (int i = 0, size = classNameList.size(); i < size; ++i) {
+					try {
+						String className = classNameList.get(i);
+						Class<?> clazz = loader.loadClass(className);
+						if (celletClasslist.contains(className)) {
+							classes.add(clazz);
+						}
+					} catch (ClassNotFoundException e) {
+						Logger.log(Nucleus.class, e, LogLevel.ERROR);
+					}
+				}
+
+				for (int i = 0, size = classes.size(); i < size; ++i) {
+					try {
+						Class<?> clazz = classes.get(i);
+						// 实例化 Cellet
+						Cellet cellet = (Cellet) clazz.newInstance();
+						// 存入列表
+						this.cellets.put(cellet.getFeature().getIdentifier(), cellet);
+					} catch (InstantiationException e) {
+						Logger.log(Nucleus.class, e, LogLevel.ERROR);
+						continue;
+					} catch (IllegalAccessException e) {
+						Logger.log(Nucleus.class, e, LogLevel.ERROR);
+						continue;
+					}
+				}
+			} finally {
+				// 以下为 JDK7 的代码
+				try {
+					loader.close();
+				} catch (Exception e) {
+					Logger.log(Nucleus.class, e, LogLevel.ERROR);
+				}
+			}
+		}
+	}
+
+	/** 加载外部 class 路径，实例化 Cellet
+	 */
+	private void loadExternalPath() {
+		if (null == this.celletPathClasses) {
+			return;
+		}
+
+		if (null == this.cellets) {
+			this.cellets = new ConcurrentHashMap<String, Cellet>();
+		}
+
+		// 遍历配置数据
+		Iterator<String> iter = this.celletPathClasses.keySet().iterator();
+		while (iter.hasNext()) {
+			// 路径名
+			final String pathName = iter.next();
+
+			// 判断路径是否存在
+			File path = new File(pathName);
+			if (!path.exists()) {
+				Logger.w(Nucleus.class, "Class path '"+ path.getAbsolutePath() +"' is not exists!");
+				path = null;
+				continue;
+			}
+
+			int classPathLen = path.getAbsolutePath().length();
+
+			// 生成类列表
+			ArrayList<String> classNameList = new ArrayList<String>();
+
+			// 第一遍遍历出所有的文件夹
+			LinkedList<File> pathList = new LinkedList<File>();
+			File[] files = path.listFiles();
+			for (File f : files) {
+				if (f.isDirectory()) {
+					pathList.add(f);
+				}
+			}
+
+			File file = null;
+			while (!pathList.isEmpty()) {
+				file = pathList.removeFirst();
+				files = file.listFiles();
+				for (File f : files) {
+					if (f.isDirectory()) {
+						pathList.add(f);
+					}
+					else {
+						String name = f.getAbsolutePath();
+						// 提取类名
+						if (name.endsWith("class")) {
+							name = name.substring(classPathLen + 1, name.length());
+							// 将 net/cellcloud/MyObject.class 转为 net.cellcloud.MyObject
+							name = name.replaceAll("/", ".").substring(0, name.length() - 6);
+							classNameList.add(name);
+						}
+					}
+				}
+			}
+
+			// 定位文件
+			URL url = null;
+			try {
+				url = new URL(file.toURI().toURL().toString());
+			} catch (MalformedURLException e) {
+				Logger.log(Nucleus.class, e, LogLevel.WARNING);
+				continue;
+			}
+
+			// 加载 Class
+			URLClassLoader loader = null;
+			try {
+				loader = new URLClassLoader(new URL[]{url}
+					, Thread.currentThread().getContextClassLoader());
+
+				// 取出 Cellet 类
+				ArrayList<String> celletClasslist = this.celletPathClasses.get(pathName);
 				// Cellet 类列表
 				ArrayList<Class<?>> classes = new ArrayList<Class<?>>();
 

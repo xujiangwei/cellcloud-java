@@ -2,7 +2,7 @@
 -----------------------------------------------------------------------------
 This source file is part of Cell Cloud.
 
-Copyright (c) 2009-2012 Cell Cloud Team (www.cellcloud.net)
+Copyright (c) 2009-2017 Cell Cloud Team (www.cellcloud.net)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -63,4 +63,17 @@ public final class NucleusTag {
 	public String toString() {
 		return this.strFormat;
 	}
+
+	@Override
+	public boolean equals(Object obj) {
+		if (null != obj && obj instanceof NucleusTag) {
+			NucleusTag other = (NucleusTag) obj;
+			if (other.strFormat.equals(this.strFormat)) {
+				return true;
+			}
+		}
+
+		return false;
+	}
+
 }

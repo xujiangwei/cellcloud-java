@@ -26,8 +26,12 @@ THE SOFTWARE.
 
 package net.cellcloud.adapter;
 
+import java.util.LinkedList;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
+import net.cellcloud.adapter.gene.Gene;
+import net.cellcloud.adapter.gene.GeneHeader;
 import net.cellcloud.common.LogLevel;
 import net.cellcloud.common.Logger;
 import net.cellcloud.core.Endpoint;
@@ -42,12 +46,20 @@ import org.json.JSONObject;
  * 
  * @author Ambrose Xu
  */
-public class SimpleAdapter extends RelationNucleusAdapter {
+public class SmartAdapter extends RelationNucleusAdapter {
 
-	public final static String Name = "SimpleAdapter";
+	public final static String Name = "SmartAdapter";
 
-	public SimpleAdapter(String instanceName) {
-		super(SimpleAdapter.Name, instanceName);
+	private final static String PT_FEEDBACK = "Feedback";
+
+	private FeedbackController controller;
+
+	private ConcurrentHashMap<Endpoint, LinkedList<Gene>> sendList;
+
+	public SmartAdapter(String instanceName) {
+		super(SmartAdapter.Name, instanceName);
+		this.controller = new FeedbackController();
+		this.sendList = new ConcurrentHashMap<Endpoint, LinkedList<Gene>>();
 	}
 
 	@Override
@@ -57,11 +69,22 @@ public class SimpleAdapter extends RelationNucleusAdapter {
 
 	@Override
 	protected void onReady() {
-		Logger.i(this.getClass(), "Simple adapter (" + this.getPort() + ") is ready.");
+		Logger.i(this.getClass(), "Smart adapter (" + this.getPort() + ") is ready.");
+	}
+
+	@Override
+	protected void onSend(Endpoint endpoint, Gene gene) {
 	}
 
 	@Override
 	protected void onReceive(Endpoint endpoint, Gene gene) {
+		String pt = gene.getHeader(GeneHeader.PayloadType);
+		if (null != pt && pt.equals(PT_FEEDBACK)) {
+			// 处理
+			this.processFeedback(endpoint, gene);
+			return;
+		}
+
 		String payload = gene.getPayload();
 
 		JSONObject json = null;
@@ -71,14 +94,15 @@ public class SimpleAdapter extends RelationNucleusAdapter {
 			Primitive primitive = new Primitive();
 			PrimitiveSerializer.read(primitive, json);
 
-			super.fireReceive(endpoint, primitive.getDialect());
+			// 执行回调
+			super.fireShared(endpoint, primitive.getDialect());
 		} catch (JSONException e) {
 			Logger.log(this.getClass(), e, LogLevel.WARNING);
 		}
 	}
 
 	@Override
-	public void share(String name, Dialect dialect) {
+	public void share(String keyword, Dialect dialect) {
 		JSONObject payload = new JSONObject();
 		try {
 			PrimitiveSerializer.write(payload, dialect.translate());
@@ -87,10 +111,31 @@ public class SimpleAdapter extends RelationNucleusAdapter {
 			return;
 		}
 
-		Gene gene = new Gene(name);
+		Gene gene = new Gene(keyword);
 		gene.setPayload(payload.toString());
 
 		super.broadcast(gene);
+	}
+
+	@Override
+	public void share(String keyword, Endpoint endpoint, Dialect dialect) {
+		
+	}
+
+	@Override
+	public void encourage(String keyword, Endpoint endpoint) {
+		Gene gene = new Gene(keyword);
+		gene.setHeader(GeneHeader.PayloadType, PT_FEEDBACK);
+		this.transport(endpoint, gene);
+	}
+
+	@Override
+	public void discourage(String keyword, Endpoint endpoint) {
+		
+	}
+
+	private void processFeedback(Endpoint endpoint, Gene gene) {
+		
 	}
 
 }

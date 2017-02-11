@@ -30,9 +30,12 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Timer;
+import java.util.TimerTask;
 
 import net.cellcloud.common.LogLevel;
 import net.cellcloud.common.Logger;
@@ -45,27 +48,33 @@ import net.cellcloud.util.Utils;
  */
 public final class Cell {
 
-	private static Application app = null;
-	private static Thread daemon = null;
-	private static boolean spinning = true;
+	private Application app = null;
 
-	private static Object signal = null;
+	private Thread daemon = null;
 
-	private static String tagFilename = null;
+	private Timer timer = null;
 
-	private Cell() {
+	private Object signal = null;
+
+	private String tagFilename = null;
+
+	protected Cell(Application app) {
+		this.app = app;
+	}
+
+	public Cell() {
 	}
 
 	/** 启动 Cell 容器。
 	 */
-	public static boolean start() {
-		return Cell.start(false, "cell.log");
+	public boolean start() {
+		return this.start(false, "cell.log");
 	}
 
 	/** 启动 Cell 容器。
 	 */
-	public static boolean start(final boolean console, final String logFile) {
-		if (null != Cell.daemon) {
+	public boolean start(final boolean console, final String logFile) {
+		if (null != this.daemon) {
 			return false;
 		}
 
@@ -74,60 +83,59 @@ public final class Cell {
 		arguments.logFile = logFile;
 
 		// 实例化 App
-		Cell.app = new Application(arguments);
+		this.app = new Application(arguments);
 
-		Cell.daemon = new Thread() {
+		this.daemon = new Thread() {
 			@Override
 			public void run() {
-				if (Cell.app.startup()) {
-					Cell.app.run();
+				if (app.startup()) {
+					app.run();
 				}
 
-				Cell.app.shutdown();
-				Cell.app = null;
+				app.shutdown();
 
-				if (null != Cell.signal) {
-					synchronized (Cell.signal) {
-						Cell.signal.notifyAll();
+				if (null != signal) {
+					synchronized (signal) {
+						signal.notifyAll();
 					}
 				}
 			}
 		};
-		Cell.daemon.setName("CellMain");
-		Cell.daemon.start();
+		this.daemon.setName("CellMain");
+		this.daemon.start();
 
 		return true;
 	}
 
 	/** 关闭 Cell 容器。
 	 */
-	public static void stop() {
-		if (null != Cell.app) {
-			if (null != Cell.app.getConsole())
-				Cell.app.getConsole().quit();
+	public void stop() {
+		if (null != this.app) {
+			if (null != this.app.getConsole())
+				this.app.getConsole().quit();
 
-			Cell.app.stop();
+			this.app.stop();
 		}
 
-		if (null != Cell.signal) {
-			synchronized (Cell.signal) {
-				Cell.signal.notifyAll();
+		if (null != this.signal) {
+			synchronized (this.signal) {
+				this.signal.notifyAll();
 			}
 		}
 
-		Cell.daemon = null;
+		this.daemon = null;
 	}
 
 	/** 阻塞当前线程直到 Cell 停止。
 	 */
-	public static void waitForCellStopped() {
-		if (null == Cell.signal) {
-			Cell.signal = new Object();
+	public void waitForCellStopped() {
+		if (null == this.signal) {
+			this.signal = new Object();
 		}
 
-		synchronized (Cell.signal) {
+		synchronized (this.signal) {
 			try {
-				Cell.signal.wait();
+				this.signal.wait();
 			} catch (InterruptedException e) {
 				e.printStackTrace();
 			}
@@ -136,11 +144,11 @@ public final class Cell {
 
 	/** 返回控制台。
 	 */
-	public static Console getConsole() {
-		return Cell.app.getConsole();
+	public Console getConsole() {
+		return this.app.getConsole();
 	}
 
-	private static void markStart() {
+	private void markStart() {
 		try {
 			// 处理文件
 			File file = new File("bin");
@@ -148,9 +156,9 @@ public final class Cell {
 				file.mkdir();
 			}
 
-			Cell.tagFilename = "bin/tag_" + Nucleus.getInstance().getTalkService().getPort();
+			this.tagFilename = "bin/tag_" + Nucleus.getInstance().getTalkService().getPort();
 
-			file = new File(Cell.tagFilename);
+			file = new File(this.tagFilename);
 			if (file.exists()) {
 				file.delete();
 			}
@@ -166,31 +174,21 @@ public final class Cell {
 			Logger.log(Cell.class, e, LogLevel.ERROR);
 		}
 
-		Thread daemon = new Thread() {
+		this.timer = new Timer("CellTimer");
+		this.timer.schedule(new TimerTask() {
 			@Override
 			public void run() {
-
-				while (spinning) {
-
-					try {
-						Thread.sleep(5000L);
-					} catch (InterruptedException e) {
-						Logger.log(Cell.class, e, LogLevel.WARNING);
-					}
-
-					Cell.tick();
-				}
+				tick();
 			}
-		};
-		daemon.start();
+		}, 5000L, 5000L);
 	}
 
-	private static void markStop() {
-		if (null == Cell.tagFilename) {
+	private void markStop() {
+		if (null == this.tagFilename) {
 			return;
 		}
 
-		File file = new File(Cell.tagFilename);
+		File file = new File(this.tagFilename);
 		try {
 			file.createNewFile();
 
@@ -205,13 +203,18 @@ public final class Cell {
 		}
 	}
 
-	private static void tick() {
+	private void tick() {
 		// 文件不存在则退出
-		if (null != Cell.tagFilename) {
-			File file = new File(Cell.tagFilename);
+		if (null != this.tagFilename) {
+			File file = new File(this.tagFilename);
 			if (!file.exists()) {
-				Cell.spinning = false; 
-				Cell.app.stop();
+				if (null != this.timer) {
+					this.timer.cancel();
+					this.timer.purge();
+					this.timer = null;
+				}
+
+				this.app.stop();
 			}
 		}
 	}
@@ -226,22 +229,18 @@ public final class Cell {
 				// 解析参数
 				Arguments arguments = Cell.parseArgs(args);
 
-				Cell.app = new Application(arguments);
+				Cell cell = new Cell(new Application(arguments));
 
-				if (Cell.app.startup()) {
+				if (cell.app.startup()) {
 
-					Cell.markStart();
+					cell.markStart();
 
-					Cell.app.run();
+					cell.app.run();
 				}
 
-				Cell.spinning = false;
+				cell.app.shutdown();
 
-				Cell.app.shutdown();
-
-				Cell.markStop();
-
-				Cell.app = null;
+				cell.markStop();
 
 				System.out.println("\nProcess exit.");
 
@@ -249,45 +248,67 @@ public final class Cell {
 				System.exit(0);
 			}
 			else if (args[0].equals("stop")) {
-				if (args.length == 1) {
-					Cell.tagFilename = "bin/tag_" + 7000;
-				}
-				else {
-					Cell.tagFilename = "bin/tag_" + args[1];
+				String tagFilename = null;
+				if (args.length > 1) {
+					tagFilename = "bin/tag_" + args[1];
 				}
 
-				File file = new File(Cell.tagFilename);
-				if (file.exists() && file.length() <= 36) {
-					// 删除文件
-					file.delete();
-
-					System.out.println("\nStopping Cell Cloud process, please wait...");
-
-					long startTime = System.currentTimeMillis();
-
-					while (true) {
-						try {
-							Thread.sleep(1000L);
-						} catch (InterruptedException e) {
-							Logger.log(Cell.class, e, LogLevel.INFO);
-						}
-
-						File testFile = new File(Cell.tagFilename);
-						if (testFile.exists()) {
-							break;
-						}
-						else {
-							if (System.currentTimeMillis() - startTime >= 30000L) {
-								System.out.println("Shutdown program fail!");
-								System.exit(0);
+				ArrayList<File> fileList = new ArrayList<File>();
+				// tagFilename 为 null 则表示停止所有
+				if (null == tagFilename) {
+					File dir = new File("bin");
+					if (dir.isDirectory()) {
+						File[] files = dir.listFiles();
+						for (File f : files) {
+							if (f.getName().startsWith("tag_") && f.length() <= 36) {
+								fileList.add(f);
 							}
 						}
 					}
-
-					System.out.println("\nCell Cloud process exit, progress elapsed time " +
-							(int)((System.currentTimeMillis() - startTime)/1000.0d) + " seconds.\n");
 				}
 				else {
+					File file = new File(tagFilename);
+					fileList.add(file);
+				}
+
+				for (int i = 0; i < fileList.size(); ++i) {
+					File file = fileList.get(i);
+					if (file.exists() && file.length() <= 36) {
+						// 删除文件
+						file.delete();
+
+						System.out.println("\nStopping Cell Cloud (" + file.getName() + ") process, please wait...");
+
+						long startTime = System.currentTimeMillis();
+
+						while (true) {
+							try {
+								Thread.sleep(1000L);
+							} catch (InterruptedException e) {
+								Logger.log(Cell.class, e, LogLevel.INFO);
+							}
+
+							File testFile = new File(file.getAbsolutePath());
+							if (testFile.exists()) {
+								break;
+							}
+							else {
+								if (System.currentTimeMillis() - startTime >= 30000L) {
+									System.out.println("Shutdown program fail!");
+									System.exit(0);
+								}
+							}
+						}
+
+						System.out.println("\nCell Cloud (" + file.getName() + ") process exit, progress elapsed time: " +
+								Math.round((System.currentTimeMillis() - startTime)/1000.0d) + " seconds.\n");
+					}
+					else {
+						System.out.println("Can not find Cell Cloud (" + file.getName() + ") process.");
+					}
+				}
+
+				if (fileList.isEmpty()) {
 					System.out.println("Can not find Cell Cloud process.");
 				}
 			}
@@ -339,7 +360,7 @@ public final class Cell {
 				}
 				else if (name.equals("-config")) {
 					// 配置文件
-					if (value.equals("none") || value.equals("null"))
+					if (value.equals("none") || value.equals("no"))
 						ret.confileFile = null;
 					else
 						ret.confileFile = value;

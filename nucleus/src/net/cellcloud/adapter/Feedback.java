@@ -26,20 +26,67 @@ THE SOFTWARE.
 
 package net.cellcloud.adapter;
 
-/**
- * 适配器工厂。
- * 
- * @author Ambrose Xu
- */
-public final class AdapterFactory {
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicInteger;
 
-	private AdapterFactory() {
+import net.cellcloud.core.Endpoint;
+
+public class Feedback {
+
+	private String keyword;
+
+	private ConcurrentHashMap<Endpoint, AtomicInteger> positiveMap;
+
+	private ConcurrentHashMap<Endpoint, AtomicInteger> negativeMap;
+
+	public Feedback(String keyword) {
+		this.keyword = keyword;
 	}
 
-	public static Adapter createAdapter(String name, String instanceName) {
-		if (name.equals(SmartAdapter.Name)) {
-			return new SmartAdapter(instanceName);
+	public String getKeyword() {
+		return this.keyword;
+	}
+
+	public int updatePositive(Endpoint endpoint) {
+		AtomicInteger value = this.positiveMap.get(endpoint);
+		if (null != value) {
+			value.incrementAndGet();
 		}
-		return null;
+		else {
+			value = new AtomicInteger(1);
+			this.positiveMap.put(endpoint, value);
+		}
+		return value.get();
 	}
+
+	public int updateNegative(Endpoint endpoint) {
+		AtomicInteger value = this.negativeMap.get(endpoint);
+		if (null != value) {
+			value.incrementAndGet();
+		}
+		else {
+			value = new AtomicInteger(1);
+			this.negativeMap.put(endpoint, value);
+		}
+		return value.get();
+	}
+
+	public int countPositive(Endpoint endpoint) {
+		AtomicInteger value = this.positiveMap.get(endpoint);
+		if (null == value) {
+			return 0;
+		}
+
+		return value.get();
+	}
+
+	public int countNegative(Endpoint endpoint) {
+		AtomicInteger value = this.negativeMap.get(endpoint);
+		if (null == value) {
+			return 0;
+		}
+
+		return value.get();
+	}
+
 }

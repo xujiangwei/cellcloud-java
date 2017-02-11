@@ -37,6 +37,8 @@ public class Endpoint {
 	private Role role;
 	private Coordinate coordinate;
 
+	private int hashCode = 0;
+
 	/** 构造函数。
 	 */
 	public Endpoint(String host, int port) {
@@ -75,6 +77,45 @@ public class Endpoint {
 	 */
 	public Coordinate getCoordinate() {
 		return this.coordinate;
+	}
+
+	public void setTag(NucleusTag tag) {
+		this.tag = tag;
+	}
+
+	@Override
+	public boolean equals(Object obj) {
+		if (null != obj && obj instanceof Endpoint) {
+			Endpoint other = (Endpoint) obj;
+			if (null != other.tag && null != this.tag) {
+				return other.tag.equals(this.tag);
+			}
+			else {
+				if (other.coordinate.address.equals(this.coordinate.address)
+					&& other.coordinate.port == this.coordinate.port) {
+					return true;
+				}
+			}
+		}
+
+		return false;
+	}
+
+	@Override
+	public int hashCode() {
+		if (this.hashCode == 0) {
+			StringBuilder buf = new StringBuilder();
+			buf.append(this.coordinate.address);
+			buf.append(":");
+			buf.append(this.coordinate.port);
+			if (null != this.tag) {
+				buf.append("#").append(this.tag.asString());
+			}
+
+			this.hashCode = buf.toString().hashCode();
+		}
+
+		return this.hashCode;
 	}
 
 	/** 终端坐标。

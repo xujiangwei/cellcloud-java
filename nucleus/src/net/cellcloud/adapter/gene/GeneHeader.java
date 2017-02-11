@@ -24,22 +24,26 @@ THE SOFTWARE.
 -----------------------------------------------------------------------------
 */
 
-package net.cellcloud.adapter;
+package net.cellcloud.adapter.gene;
 
 /**
- * 适配器工厂。
  * 
  * @author Ambrose Xu
+ *
  */
-public final class AdapterFactory {
+public class GeneHeader {
 
-	private AdapterFactory() {
+	public final static String SourceTag = "SourceTag";
+
+	public final static String Host = "Host";
+
+	public final static String Port = "Port";
+
+	public final static String Seq = "Seq";
+
+	public final static String PayloadType = "PayloadType";
+
+	private GeneHeader() {
 	}
 
-	public static Adapter createAdapter(String name, String instanceName) {
-		if (name.equals(SmartAdapter.Name)) {
-			return new SmartAdapter(instanceName);
-		}
-		return null;
-	}
 }

@@ -36,7 +36,7 @@ public final class VersionInfo {
 
 	public final static int MAJOR = 1;
 	public final static int MINOR = 5;
-	public final static int REVISION = 1;
+	public final static int REVISION = 2;
 
 	public static void main(String[] args) {
 		StringBuilder buf = new StringBuilder();

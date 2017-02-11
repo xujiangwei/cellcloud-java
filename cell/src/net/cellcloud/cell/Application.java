@@ -128,13 +128,15 @@ public final class Application {
 		config.role = Role.NODE;
 		config.device = Device.SERVER;
 
+		HashMap<String, ArrayList<String>> jarCelletMap = new HashMap<String, ArrayList<String>>();
+		HashMap<String, ArrayList<String>> pathCelletMap = new HashMap<String, ArrayList<String>>();
+
 		// 加载内核配置
-		HashMap<String, ArrayList<String>> cellets = null;
 		if (null != this.configFile) {
-			cellets = this.loadConfig(config, this.configFile);
-			if (null == cellets || cellets.isEmpty()) {
-				Logger.e(Application.class, "Can not find cellet in config file, start failed!");
-				return false;
+			this.loadConfig(this.configFile, config, jarCelletMap, pathCelletMap);
+			if (jarCelletMap.isEmpty() && pathCelletMap.isEmpty()) {
+				// 没有 Cellet 服务被找到
+				Logger.w(Application.class, "Can NOT find cellet in config file!");
 			}
 		}
 
@@ -149,15 +151,25 @@ public final class Application {
 		}
 
 		// 为内核准备 Cellet 信息
-		if (null != cellets) {
-			Iterator<Map.Entry<String, ArrayList<String>>> iter = cellets.entrySet().iterator();
+		if (!jarCelletMap.isEmpty()) {
+			Iterator<Map.Entry<String, ArrayList<String>>> iter = jarCelletMap.entrySet().iterator();
 			while (iter.hasNext()) {
 				Map.Entry<String, ArrayList<String>> e = iter.next();
 				nucleus.prepareCelletJar(e.getKey(), e.getValue());
 			}
 
-			cellets.clear();
-			cellets = null;
+			jarCelletMap.clear();
+			jarCelletMap = null;
+		}
+		if (!pathCelletMap.isEmpty()) {
+			Iterator<Map.Entry<String, ArrayList<String>>> iter = pathCelletMap.entrySet().iterator();
+			while (iter.hasNext()) {
+				Map.Entry<String, ArrayList<String>> e = iter.next();
+				nucleus.prepareCelletPath(e.getKey(), e.getValue());
+			}
+
+			pathCelletMap.clear();
+			pathCelletMap = null;
 		}
 
 		// 启动内核
@@ -236,8 +248,9 @@ public final class Application {
 
 	/** 加载配置。
 	 */
-	private HashMap<String, ArrayList<String>> loadConfig(NucleusConfig config, String configFile) {
-		HashMap<String, ArrayList<String>> celletMap = new HashMap<String, ArrayList<String>>();
+	private void loadConfig(String configFile, NucleusConfig config,
+			Map<String, ArrayList<String>> jarCelletMap,
+			Map<String, ArrayList<String>> pathCelletMap) {
 
 		try {
 			// 检测配置文件
@@ -273,6 +286,14 @@ public final class Application {
 				NodeList list = document.getElementsByTagName("nucleus");
 				if (list.getLength() > 0) {
 					Element el = (Element) list.item(0);
+
+					// tag
+					NodeList nl = el.getElementsByTagName("tag");
+					if (nl.getLength() > 0) {
+						config.tag = nl.item(0).getTextContent().toString();
+						Logger.i(this.getClass(), "nucleus.tag = " + config.tag);
+					}
+
 					// httpd
 					config.httpd = Boolean.parseBoolean(el.getElementsByTagName("httpd").item(0).getTextContent());
 					Logger.i(this.getClass(), "nucleus.httpd = " + config.httpd);
@@ -282,7 +303,7 @@ public final class Application {
 					if (talks.getLength() > 0) {
 						Element elTalk = (Element) talks.item(0);
 						// port
-						NodeList nl = elTalk.getElementsByTagName("port");
+						nl = elTalk.getElementsByTagName("port");
 						if (nl.getLength() > 0) {
 							try {
 								config.talk.port = Integer.parseInt(nl.item(0).getTextContent());
@@ -379,21 +400,47 @@ public final class Application {
 					}
 				}
 
+				// 读取 adapter
+				list = document.getElementsByTagName("adapter");
+				for (int i = 0; i < list.getLength(); ++i) {
+					
+				}
+
 				// 读取 cellet
 				list = document.getElementsByTagName("cellet");
 				for (int i = 0; i < list.getLength(); ++i) {
 					Node node = list.item(i);
-					String jar = node.getAttributes().getNamedItem("jar").getNodeValue();
 
-					ArrayList<String> classes = new ArrayList<String>();
-					for (int n = 0; n < node.getChildNodes().getLength(); ++n) {
-						if (node.getChildNodes().item(n).getNodeType() == Node.ELEMENT_NODE) {
-							classes.add(node.getChildNodes().item(n).getTextContent());
+					Node attr = node.getAttributes().getNamedItem("jar");
+					if (null != attr) {
+						String jar = attr.getNodeValue();
+
+						ArrayList<String> classes = new ArrayList<String>();
+						for (int n = 0; n < node.getChildNodes().getLength(); ++n) {
+							if (node.getChildNodes().item(n).getNodeType() == Node.ELEMENT_NODE) {
+								classes.add(node.getChildNodes().item(n).getTextContent());
+							}
+						}
+
+						// 添加 Jar
+						jarCelletMap.put(jar, classes);
+					}
+					else {
+						attr = node.getAttributes().getNamedItem("path");
+						if (null != attr) {
+							String path = attr.getNodeValue();
+
+							ArrayList<String> classes = new ArrayList<String>();
+							for (int n = 0; n < node.getChildNodes().getLength(); ++n) {
+								if (node.getChildNodes().item(n).getNodeType() == Node.ELEMENT_NODE) {
+									classes.add(node.getChildNodes().item(n).getTextContent());
+								}
+							}
+
+							// 添加 Path
+							pathCelletMap.put(path, classes);
 						}
 					}
-
-					// 添加 Jar
-					celletMap.put(jar, classes);
 				}
 			}
 		} catch (ParserConfigurationException e) {
@@ -403,8 +450,6 @@ public final class Application {
 		} catch (IOException e) {
 			Logger.log(Application.class, e, LogLevel.ERROR);
 		}
-
-		return celletMap;
 	}
 
 	/** 加载所有库文件
@@ -490,4 +535,9 @@ public final class Application {
 
 		return true;
 	}
+
+	private class AdapterInfo {
+		protected int port;
+	}
+
 }
