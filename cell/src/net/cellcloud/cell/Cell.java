@@ -283,7 +283,7 @@ public final class Cell {
 
 						while (true) {
 							try {
-								Thread.sleep(1000L);
+								Thread.sleep(500L);
 							} catch (InterruptedException e) {
 								Logger.log(Cell.class, e, LogLevel.INFO);
 							}
@@ -293,7 +293,7 @@ public final class Cell {
 								break;
 							}
 							else {
-								if (System.currentTimeMillis() - startTime >= 30000L) {
+								if (System.currentTimeMillis() - startTime >= 20000L) {
 									System.out.println("Shutdown program fail!");
 									System.exit(0);
 								}

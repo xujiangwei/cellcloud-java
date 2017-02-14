@@ -212,8 +212,7 @@ public final class ClusterController implements Service, Observer {
 			// 选择可用节点
 			ClusterVirtualNode vnode = this.root.selectVNode(hash);
 			if (null != vnode) {
-				InetSocketAddress sockAddress = new InetSocketAddress(vnode.getCoordinate().getAddress(),
-						vnode.getCoordinate().getPort());
+				InetSocketAddress sockAddress = new InetSocketAddress(vnode.getHost(), vnode.getPort());
 				ClusterConnector connector = this.getOrCreateConnector(sockAddress, hash);
 				// 阻塞方式执行 Push
 				ProtocolMonitor monitor = connector.doBlockingPush(targetHash, chunk, timeout);
@@ -252,8 +251,7 @@ public final class ClusterController implements Service, Observer {
 			// 选择可用节点
 			ClusterVirtualNode vnode = this.root.selectVNode(hash);
 			if (null != vnode) {
-				InetSocketAddress sockAddress = new InetSocketAddress(vnode.master.getCoordinate().getAddress(),
-						vnode.master.getCoordinate().getPort());
+				InetSocketAddress sockAddress = new InetSocketAddress(vnode.master.getHost(), vnode.master.getPort());
 				ClusterConnector connector = this.getOrCreateConnector(sockAddress, hash);
 				// 阻塞方式执行 Pull
 				ProtocolMonitor monitor = connector.doBlockingPull(targetHash, label, timeout);
@@ -370,9 +368,9 @@ public final class ClusterController implements Service, Observer {
 			if (this.root.containsOwnVirtualNode(hash)) {
 				if (Logger.isDebugLevel()) {
 					Logger.d(this.getClass(), new StringBuilder("Hit target hash: ").append(hash).append(" at ")
-							.append(this.root.getCoordinate().getAddress())
+							.append(this.root.getHost())
 							.append(":")
-							.append(this.root.getCoordinate().getPort()).toString());
+							.append(this.root.getPort()).toString());
 				}
 
 				// 插入数据块
@@ -386,9 +384,9 @@ public final class ClusterController implements Service, Observer {
 			else {
 				if (Logger.isDebugLevel()) {
 					Logger.d(this.getClass(), new StringBuilder("Don't hit target hash: ").append(hash).append(" at ")
-							.append(this.root.getCoordinate().getAddress())
+							.append(this.root.getHost())
 							.append(":")
-							.append(this.root.getCoordinate().getPort()).toString());
+							.append(this.root.getPort()).toString());
 				}
 
 				// 响应

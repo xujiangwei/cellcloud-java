@@ -1412,7 +1412,7 @@ public final class TalkService implements Service, SpeakerDelegate {
 									boolean ret = session.activeSecretKey((byte[]) session.getAttribute("key"));
 									if (ret) {
 										Endpoint ep = ctx.getEndpoint();
-										Logger.i(Speaker.class, "Active secret key for client: " + ep.getCoordinate().getAddress());
+										Logger.i(Speaker.class, "Active secret key for client: " + ep.getHost());
 									}
 								}
 							}

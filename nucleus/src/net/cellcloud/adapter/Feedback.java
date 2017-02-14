@@ -41,6 +41,8 @@ public class Feedback {
 
 	public Feedback(String keyword) {
 		this.keyword = keyword;
+		this.positiveMap = new ConcurrentHashMap<Endpoint, AtomicInteger>();
+		this.negativeMap = new ConcurrentHashMap<Endpoint, AtomicInteger>();
 	}
 
 	public String getKeyword() {

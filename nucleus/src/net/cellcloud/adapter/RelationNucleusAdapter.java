@@ -27,15 +27,20 @@ THE SOFTWARE.
 package net.cellcloud.adapter;
 
 import java.io.IOException;
-import java.net.InetAddress;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.net.InetSocketAddress;
+import java.net.Socket;
 import java.net.SocketException;
-import java.net.UnknownHostException;
+import java.net.SocketTimeoutException;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
-import java.util.Iterator;
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Vector;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicLong;
@@ -50,11 +55,9 @@ import net.cellcloud.core.Endpoint;
 import net.cellcloud.core.Nucleus;
 import net.cellcloud.core.Role;
 import net.cellcloud.talk.dialect.Dialect;
-import udt.UDTClient;
-import udt.UDTInputStream;
-import udt.UDTServerSocket;
-import udt.UDTSession;
-import udt.UDTSocket;
+import net.cellcloud.util.rudp.ReliableServerSocket;
+import net.cellcloud.util.rudp.ReliableSocket;
+import net.cellcloud.util.rudp.ReliableSocketStateListener;
 
 /** 关联内核适配器接口。
  * 
@@ -69,14 +72,25 @@ public abstract class RelationNucleusAdapter implements Adapter {
 	private int port = 9813;
 
 	private LinkedList<Endpoint> endpointList;
-	private LinkedList<UDTClient> clientList;
+	private HashMap<Endpoint, ReliableSocket> clientSocketMap;
+
+	/**
+	 * Client map endpoint
+	 * 
+	 * Key: socket host:port
+	 * Value: endpoint
+	 */
+	private ConcurrentHashMap<String, Endpoint> socketMap;
+
+	private int connectTimeout = 10 * 1000;
+	private int soTimeout = 30 * 1000;
 
 	private LinkedList<ReceiverTask> receiverTaskList;
 
 	private ServerThread thread;
 	private ExecutorService executor;
 
-	private UDTServerSocket serverSocket;
+	private ReliableServerSocket serverSocket;
 
 	private ArrayList<AdapterListener> listeners;
 
@@ -85,19 +99,28 @@ public abstract class RelationNucleusAdapter implements Adapter {
 
 	private AtomicLong geneSeq;
 
+	private ConcurrentHashMap<Endpoint, Vector<Long>> receivedGeneSeq;
+
 	/** 构建指定名称的适配器。
 	 */
 	public RelationNucleusAdapter(String name, String instanceName) {
 		this.name = name;
 		this.instanceName = instanceName;
-		this.executor = Executors.newCachedThreadPool(); //CachedQueueExecutor.newCachedQueueThreadPool(4);
+		this.executor = Executors.newCachedThreadPool();
+
 		this.endpointList = new LinkedList<Endpoint>();
-		this.clientList = new LinkedList<UDTClient>();
+		this.clientSocketMap = new HashMap<Endpoint, ReliableSocket>();
+		this.socketMap = new ConcurrentHashMap<String, Endpoint>();
+
 		this.receiverTaskList = new LinkedList<ReceiverTask>();
+
 		this.listeners = new ArrayList<AdapterListener>();
+
 		this.quota = new QuotaCalculator(100 * 1024);
 		this.quotaCallback = new QuotaCallback();
+
 		this.geneSeq = new AtomicLong(0);
+		this.receivedGeneSeq = new ConcurrentHashMap<Endpoint, Vector<Long>>();
 	}
 
 	@Override
@@ -126,28 +149,17 @@ public abstract class RelationNucleusAdapter implements Adapter {
 			this.thread.start();
 		}
 
-		synchronized (this.endpointList) {
-			for (int i = 0; i < this.endpointList.size(); ++i) {
-				// 获取客户端
-				UDTClient client = null;
-				try {
-					// 创建连接客户端
-					client = new UDTClient(InetAddress.getLocalHost());
-				} catch (SocketException e) {
-					Logger.log(this.getClass(), e, LogLevel.ERROR);
-				} catch (UnknownHostException e) {
-					Logger.log(this.getClass(), e, LogLevel.ERROR);
-				}
-
-				this.clientList.add(client);
-			}
-		}
-
 		this.quota.start();
+
+		// callback start
+		this.onStart();
 	}
 
 	@Override
 	public void teardown() {
+		// callback stop
+		this.onStop();
+
 		this.quota.stop();
 
 		this.executor.shutdown();
@@ -157,35 +169,26 @@ public abstract class RelationNucleusAdapter implements Adapter {
 			this.thread = null;
 		}
 
-		synchronized (this.endpointList) {
-			for (UDTClient c : this.clientList) {
-				try {
-					if (c.isReady()) {
-						c.shutdown();
-					}
+		ArrayList<ReceiverTask> taskList = new ArrayList<ReceiverTask>(this.receiverTaskList.size());
+		taskList.addAll(this.receiverTaskList);
+		for (ReceiverTask task : taskList) {
+			task.terminate();
+		}
+		this.receiverTaskList.clear();
 
-					Iterator<UDTSession> iter = c.getEndpoint().getSessions().iterator();
-					while (iter.hasNext()) {
-						UDTSession session = iter.next();
-						session.setState(UDTSession.invalid);
+		synchronized (this.endpointList) {
+			for (ReliableSocket socket : this.clientSocketMap.values()) {
+				try {
+					if (!socket.isClosed()) {
+						socket.close();
 					}
 				} catch (IOException e) {
-					Logger.log(this.getClass(), e, LogLevel.WARNING);
-				} catch (Exception e) {
-					Logger.log(this.getClass(), e, LogLevel.DEBUG);
+					e.printStackTrace();
 				}
 			}
 
 			this.endpointList.clear();
-			this.clientList.clear();
-		}
-
-		synchronized (this.receiverTaskList) {
-			for (ReceiverTask task : this.receiverTaskList) {
-				task.stop();
-			}
-
-			this.receiverTaskList.clear();
+			this.clientSocketMap.clear();
 		}
 	}
 
@@ -213,25 +216,22 @@ public abstract class RelationNucleusAdapter implements Adapter {
 	 */
 	@Override
 	public void removeEndpoint(Endpoint endpoint) {
-		UDTClient client = null;
+		ReliableSocket socket = null;
 
 		synchronized (this.endpointList) {
-			int index = this.endpointList.indexOf(endpoint);
-			if (index < 0) {
-				return;
-			}
-
-			this.endpointList.remove(index);
-			client = this.clientList.remove(index);
+			socket = this.clientSocketMap.remove(endpoint);
+			this.endpointList.remove(endpoint);
 		}
 
-		if (null != client) {
+		if (null != socket) {
 			try {
-				client.shutdown();
+				socket.close();
 			} catch (Exception e) {
 				// Nothing
 			}
 		}
+
+		this.receivedGeneSeq.remove(endpoint);
 	}
 
 	/**
@@ -297,6 +297,13 @@ public abstract class RelationNucleusAdapter implements Adapter {
 	public abstract void discourage(String keyword, Endpoint endpoint);
 
 	/**
+	 * 
+	 * @param keyword
+	 */
+	@Override
+	public abstract void declare(String keyword);
+
+	/**
 	 * 向关联的终端分享方言。
 	 * 
 	 * @param dialect
@@ -311,10 +318,9 @@ public abstract class RelationNucleusAdapter implements Adapter {
 	public abstract void share(String keyword, Endpoint endpoint, Dialect dialect);
 
 	protected void fireShared(Endpoint endpoint, Dialect dialect) {
-		synchronized (this.listeners) {
-			for (AdapterListener l : this.listeners) {
-				l.onShared(this, endpoint, dialect);
-			}
+		for (int i = 0; i < this.listeners.size(); ++i) {
+			AdapterListener l = this.listeners.get(i);
+			l.onShared(this, endpoint, dialect);
 		}
 	}
 
@@ -328,80 +334,118 @@ public abstract class RelationNucleusAdapter implements Adapter {
 			return;
 		}
 
-		this.broadcast(this.endpointList, gene);
+		this.transport(this.endpointList, gene);
 	}
 
-	protected void broadcast(List<Endpoint> destinationList, Gene gene) {
-		for (int i = 0; i < destinationList.size(); ++i) {
-			Endpoint ep = destinationList.get(i);
-			// 传输数据
-			if (!transport(ep, gene)) {
-				Logger.e(this.getClass(), "Transport failed: " + ep.getCoordinate().getAddress());
-			}
-		}
+	protected void transport(Endpoint destination, Gene gene) {
+		ArrayList<Endpoint> list = new ArrayList<Endpoint>(1);
+		list.add(destination);
+		this.transport(list, gene);
 	}
 
-	protected boolean transport(Endpoint destination, Gene gene) {
-		UDTClient client = null;
-
-		synchronized (this.endpointList) {
-			int index = this.endpointList.indexOf(destination);
-			client = this.clientList.get(index);
-		}
-
-		if (null == client) {
-			return false;
-		}
-
-		// 连接
-		try {
-			if (!client.isReady()) {
-				client.connect(destination.getCoordinate().getAddress(),
-						destination.getCoordinate().getPort());
-			}
-		} catch (UnknownHostException e) {
-			Logger.log(this.getClass(), e, LogLevel.ERROR);
-			return false;
-		} catch (InterruptedException e) {
-			Logger.log(this.getClass(), e, LogLevel.ERROR);
-			return false;
-		} catch (IOException e) {
-			Logger.log(this.getClass(), e, LogLevel.ERROR);
-			return false;
-		}
-
+	protected void transport(List<Endpoint> destinationList, Gene gene) {
 		// 填充 Gene 头
 		gene.setHeader(GeneHeader.SourceTag, Nucleus.getInstance().getTagAsString());
 		gene.setHeader(GeneHeader.Host, this.host);
 		gene.setHeader(GeneHeader.Port, String.valueOf(this.port));
-		gene.setHeader(GeneHeader.Seq, String.valueOf(this.geneSeq.getAndIncrement()));
+
+		long seq = this.geneSeq.getAndIncrement();
+		gene.setHeader(GeneHeader.Seq, String.valueOf(seq));
+		if (seq == Long.MAX_VALUE || seq < 0) {
+			this.geneSeq.set(0);
+		}
 
 		// 打包
 		byte[] bytes = Gene.pack(gene);
 
-		// 配额计算，并阻塞
-		this.quota.consumeBlocking(bytes.length, this.quotaCallback, destination);
+		for (int i = 0; i < destinationList.size(); ++i) {
+			Endpoint ep = destinationList.get(i);
+			// 传输数据
+			if (!transport(ep, bytes)) {
+				this.fireTransportFailed(ep, gene);
+			}
+			else {
+				this.fireSend(ep, gene);
+			}
+		}
+	}
 
-		// 发送数据
+	private boolean transport(Endpoint destination, byte[] data) {
+		ReliableSocket socket = null;
+		boolean newSocket = false;
+
+		synchronized (this.endpointList) {
+			socket = this.clientSocketMap.get(destination);
+			if (null == socket) {
+				try {
+					socket = new ReliableSocket();
+				} catch (IOException e) {
+					Logger.log(this.getClass(), e, LogLevel.ERROR);
+					return false;
+				}
+
+				newSocket = true;
+
+				this.clientSocketMap.put(destination, socket);
+			}
+		}
+
+		if (!socket.isConnected()) {
+			InetSocketAddress address = new InetSocketAddress(destination.getHost(), destination.getPort());
+			try {
+				socket.connect(address, this.connectTimeout);
+			} catch (Exception e) {
+				Logger.log(this.getClass(), e, LogLevel.ERROR);
+
+				if (newSocket) {
+					synchronized (this.endpointList) {
+						this.clientSocketMap.remove(destination);
+					}
+				}
+
+				return false;
+			}
+		}
+
+		if (newSocket) {
+			// 启动接收数据任务
+			ReceiverTask task = new ReceiverTask((ReliableSocket) socket);
+			synchronized (receiverTaskList) {
+				receiverTaskList.add(task);
+			}
+			task.start();
+		}
+
+		// 配额计算，并阻塞
+		this.quota.consumeBlocking(data.length, this.quotaCallback, destination);
+
+		OutputStream os = null;
 		try {
-			client.sendBlocking(bytes);
-		} catch (IOException e) {
-			Logger.log(this.getClass(), e, LogLevel.ERROR);
-			return false;
-		} catch (InterruptedException e) {
+			os = socket.getOutputStream();
+			os.write(data);
+			os.flush();
+		} catch (Exception e) {
 			Logger.log(this.getClass(), e, LogLevel.ERROR);
 			return false;
 		}
-
-		this.fireSend(destination, gene);
 
 		return true;
 	}
 
 	/**
-	 * 准备就绪。
+	 * 开始回调。
+	 */
+	protected abstract void onStart();
+
+	/**
+	 * 准备就绪回调。
 	 */
 	protected abstract void onReady();
+
+	/**
+	 * 停止回调。
+	 */
+	protected abstract void onStop();
 
 	/**
 	 * 
@@ -417,11 +461,36 @@ public abstract class RelationNucleusAdapter implements Adapter {
 	 */
 	protected abstract void onReceive(Endpoint endpoint, Gene gene);
 
+	/**
+	 * 
+	 * @param endpoint
+	 * @param gene
+	 */
+	protected abstract void onTransportFail(Endpoint endpoint, Gene gene);
+
 	private void fireSend(Endpoint endpoint, Gene gene) {
 		this.onSend(endpoint, gene);
 	}
 
-	private void fireReceive(Endpoint endpoint, Gene gene) {
+	private void fireReceive(Endpoint endpoint, Gene gene, ReliableSocket socket) {
+		// 判断数据是否重复，压制重复数据
+		Long seq = Long.valueOf(gene.getHeader(GeneHeader.Seq));
+		Vector<Long> list = this.receivedGeneSeq.get(endpoint);
+		if (null != list) {
+			if (list.contains(seq)) {
+				return;
+			}
+		}
+		else {
+			list = new Vector<Long>();
+			this.receivedGeneSeq.put(endpoint, list);
+		}
+		// 添加新 seq
+		list.add(seq);
+		if (list.size() > 100) {
+			list.remove(0);
+		}
+
 		// 查找终端
 		Endpoint source = this.findEndpoint(endpoint);
 
@@ -429,27 +498,33 @@ public abstract class RelationNucleusAdapter implements Adapter {
 			// 未找到终端，增加新终端
 
 			synchronized (this.endpointList) {
-				UDTClient client = null;
-				try {
-					// 创建连接客户端
-					client = new UDTClient(InetAddress.getLocalHost());
-				} catch (SocketException e) {
-					Logger.log(this.getClass(), e, LogLevel.ERROR);
-				} catch (UnknownHostException e) {
-					Logger.log(this.getClass(), e, LogLevel.ERROR);
-				}
-
 				this.endpointList.add(endpoint);
-				this.clientList.add(client);
 			}
 
 			source = endpoint;
 		}
 
+		// 匹配 socket
+		synchronized (this.endpointList) {
+			if (!this.clientSocketMap.containsKey(source)) {
+				this.clientSocketMap.put(source, socket);
+			}
+		}
+
 		this.onReceive(source, gene);
 	}
 
+	private void fireTransportFailed(Endpoint endpoint, Gene gene) {
+		Logger.e(this.getClass(), "Transport failed: " + endpoint.getHost());
+
+		this.onTransportFail(endpoint, gene);
+	}
+
 	private Endpoint findEndpoint(Endpoint endpoint) {
+		if (null == endpoint) {
+			return null;
+		}
+
 		synchronized (this.endpointList) {
 			for (Endpoint ep : this.endpointList) {
 				if (ep.equals(endpoint)) {
@@ -475,18 +550,17 @@ public abstract class RelationNucleusAdapter implements Adapter {
 			this.stopped = true;
 
 			if (null != serverSocket) {
-				serverSocket.shutDown();
-				serverSocket = null;
+				serverSocket.close();
 			}
 		}
 
 		@Override
 		public void run() {
 			try {
-				serverSocket = new UDTServerSocket(InetAddress.getByName("0.0.0.0"), port);
+				serverSocket = new ReliableServerSocket(port);
 			} catch (SocketException e) {
 				Logger.log(this.getClass(), e, LogLevel.ERROR);
-			} catch (UnknownHostException e) {
+			} catch (IOException e) {
 				Logger.log(this.getClass(), e, LogLevel.ERROR);
 			}
 
@@ -500,11 +574,12 @@ public abstract class RelationNucleusAdapter implements Adapter {
 			onReady();
 
 			while (!this.stopped) {
-				UDTSocket socket = null;
+				Socket socket = null;
 				try {
 					socket = serverSocket.accept();
-				} catch (InterruptedException e) {
+				} catch (Exception e) {
 					Logger.log(this.getClass(), e, LogLevel.ERROR);
+					continue;
 				}
 
 				if (null == socket) {
@@ -517,39 +592,58 @@ public abstract class RelationNucleusAdapter implements Adapter {
 					continue;
 				}
 
-				// 执行任务
-				ReceiverTask task = new ReceiverTask(socket);
+				try {
+					socket.setKeepAlive(true);
+					socket.setSoTimeout(soTimeout);
+				} catch (SocketException e) {
+					Logger.log(this.getClass(), e, LogLevel.WARNING);
+				}
+
+				// 启动接收数据任务
+				ReceiverTask task = new ReceiverTask((ReliableSocket) socket);
 				synchronized (receiverTaskList) {
 					receiverTaskList.add(task);
 				}
-
-				executor.execute(task);
+				task.start();
 			}
 
 			if (null != serverSocket) {
-				serverSocket.shutDown();
-				serverSocket = null;
+				if (!serverSocket.isClosed()) {
+					serverSocket.close();
+				}
 			}
 		}
 	}
 
-	private class ReceiverTask implements Runnable {
+	private class ReceiverTask extends Thread implements ReliableSocketStateListener {
 
 		private boolean spinning = false;
-		private UDTSocket socket;
+		private ReliableSocket socket;
+		private String socketString;
 
-		public ReceiverTask(UDTSocket socket) {
+		public ReceiverTask(ReliableSocket socket) {
+			super("ReceiverTask-" + socket.getInetAddress().getHostAddress());
 			this.socket = socket;
+			this.socket.addStateListener(this);
+
+			String host = this.socket.getInetAddress().getHostAddress();
+			int port = this.socket.getPort();
+
+			this.socketString = host + ":" + port;
 		}
 
-		public void stop() {
+		public void terminate() {
 			this.spinning = false;
 
 			try {
-				this.socket.close();
+				if (!this.socket.isClosed()) {
+					this.socket.close();
+				}
 			} catch (IOException e) {
 				Logger.log(this.getClass(), e, LogLevel.DEBUG);
 			}
+
+			receiverTaskList.remove(this);
 		}
 
 		@Override
@@ -557,8 +651,7 @@ public abstract class RelationNucleusAdapter implements Adapter {
 			this.spinning = true;
 
 			try {
-				UDTInputStream in = this.socket.getInputStream();
-				in.setBlocking(true);
+				InputStream in = this.socket.getInputStream();
 				ByteBuffer packet = ByteBuffer.allocate(65536);
 				byte[] buf = new byte[4096];
 
@@ -567,9 +660,41 @@ public abstract class RelationNucleusAdapter implements Adapter {
 
 					int total = 0;
 					int len = -1;
-					while ((len = in.read(buf)) > 0) {
-						packet.put(buf, 0, len);
-						total += len;
+					boolean eop = false;
+
+					try {
+						while ((len = in.read(buf)) > 0) {
+							packet.put(buf, 0, len);
+							total += len;
+
+							if (in.available() > 0) {
+								continue;
+							}
+							else {
+								// 判断数据结尾符
+								eop = true;
+								if (packet.position() >= 5) {
+									for (int i = packet.position() - 5, index = 0; index < 5; ++i, ++index) {
+										if (packet.get(i) != Gene.EOP_BYTES[index]) {
+											eop = false;
+											break;
+										}
+									}
+								}
+
+								if (eop) {
+									break;
+								}
+								else {
+									continue;
+								}
+							}
+						}
+					} catch (SocketTimeoutException e) {
+						Logger.log(this.getClass(), e, LogLevel.ERROR);
+					}
+					catch (Exception e) {
+						Logger.log(this.getClass(), e, LogLevel.ERROR);
 					}
 
 					if (packet.position() <= 0) {
@@ -586,14 +711,11 @@ public abstract class RelationNucleusAdapter implements Adapter {
 					byte[] data = new byte[total];
 					packet.get(data, 0, total);
 
-					String host = this.socket.getSession().getDestination().getAddress().getHostAddress();
-					int port = this.socket.getSession().getDestination().getPort();
-
 					Gene gene = Gene.unpack(data);
 					if (null == gene) {
-						Logger.e(this.getClass(), "Parse gene data failed, from " + host + ":" + port);
+						Logger.w(this.getClass(), "Parse gene data failed, from " + this.socketString);
 						data = null;
-						return;
+						continue;
 					}
 
 					// 读取 Gene 头
@@ -603,8 +725,13 @@ public abstract class RelationNucleusAdapter implements Adapter {
 					// 创建 Endpoint
 					Endpoint endpoint = new Endpoint(tag, Role.NODE, host, port);
 
+					// 更新 socket map
+					if (!socketMap.containsKey(this.socketString)) {
+						socketMap.put(this.socketString, endpoint);
+					}
+
 					// 回调
-					fireReceive(endpoint, gene);
+					fireReceive(endpoint, gene, this.socket);
 
 					data = null;
 				}
@@ -613,7 +740,47 @@ public abstract class RelationNucleusAdapter implements Adapter {
 				buf = null;
 			} catch (IOException e) {
 				Logger.log(this.getClass(), e, LogLevel.ERROR);
+			} catch (Exception e) {
+				Logger.log(this.getClass(), e, LogLevel.ERROR);
 			}
+
+			// 删除映射关系
+			Endpoint endpoint = socketMap.remove(this.socketString);
+			if (null != endpoint) {
+				synchronized (endpointList) {
+					// 删除
+					clientSocketMap.remove(endpoint);
+				}
+			}
+
+			Logger.d(this.getClass(), "Receiver thread stopped: " + this.socketString);
+		}
+
+		@Override
+		public void connectionOpened(ReliableSocket sock) {
+			Logger.d(this.getClass(), "connectionOpened");
+		}
+
+		@Override
+		public void connectionRefused(ReliableSocket sock) {
+			Logger.d(this.getClass(), "connectionRefused");
+		}
+
+		@Override
+		public void connectionClosed(ReliableSocket sock) {
+			Logger.d(this.getClass(), "connectionClosed");
+
+			this.terminate();
+		}
+
+		@Override
+		public void connectionFailure(ReliableSocket sock) {
+			Logger.d(this.getClass(), "connectionFailure");
+		}
+
+		@Override
+		public void connectionReset(ReliableSocket sock) {
+			Logger.d(this.getClass(), "connectionReset");
 		}
 	}
 
@@ -624,10 +791,9 @@ public abstract class RelationNucleusAdapter implements Adapter {
 
 		@Override
 		public void onCallback(int size, Object custom) {
-			synchronized (listeners) {
-				for (AdapterListener l : listeners) {
-					l.onCongested(RelationNucleusAdapter.this, (Endpoint) custom, size);
-				}
+			for (int i = 0; i < listeners.size(); ++i) {
+				AdapterListener l = listeners.get(i);
+				l.onCongested(RelationNucleusAdapter.this, (Endpoint) custom, size);
 			}
 		}
 	}

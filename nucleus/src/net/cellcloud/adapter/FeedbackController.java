@@ -26,18 +26,55 @@ THE SOFTWARE.
 
 package net.cellcloud.adapter;
 
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.Map.Entry;
+import java.util.Timer;
+import java.util.TimerTask;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicLong;
 
+import net.cellcloud.common.Logger;
 import net.cellcloud.core.Endpoint;
+import net.cellcloud.util.Clock;
 
 /**
  */
-public class FeedbackController {
+public class FeedbackController extends TimerTask {
 
 	private ConcurrentHashMap<String, Feedback> feedbackMap;
 
+	private ConcurrentHashMap<String, InitiativeRecord> initiativeRecordMap;
+
+	/**
+	 * 关键字超期时间
+	 */
+	private long keywordExpired = 12L * 60L * 60L * 1000L;
+
+	private long inhibitionInterval = 3L * 60L * 1000L;
+	private long inhibitionCounts = 3L;
+
+	private long inhibitionExpired = 10L * 60L * 1000L;
+
+	private Timer timer;
+
 	public FeedbackController() {
 		this.feedbackMap = new ConcurrentHashMap<String, Feedback>();
+		this.initiativeRecordMap = new ConcurrentHashMap<String, InitiativeRecord>();
+	}
+
+	public void start() {
+		if (null == this.timer) {
+			this.timer = new Timer(this.getClass().getSimpleName() + "-Timer");
+			this.timer.schedule(this, 10000L, 60000L);
+		}
+	}
+
+	public void stop() {
+		if (null != this.timer) {
+			this.timer.cancel();
+			this.timer = null;
+		}
 	}
 
 	public int getPositiveCounts(String keyword, Endpoint endpoint) {
@@ -80,6 +117,113 @@ public class FeedbackController {
 			feedback.updateNegative(endpoint);
 			this.feedbackMap.put(keyword, feedback);
 		}
+	}
+
+	public void recordEncourage(String keyword, Endpoint endpoint) {
+		InitiativeRecord record = this.initiativeRecordMap.get(keyword);
+		if (null != record) {
+			// 记录时间
+			synchronized (record.lastEncourageTime) {
+				AtomicLong time = record.lastEncourageTime.get(endpoint);
+				if (null != time) {
+					time.set(Clock.currentTimeMillis());
+				}
+				else {
+					record.lastEncourageTime.put(endpoint, new AtomicLong(Clock.currentTimeMillis()));
+				}
+			}
+
+			// 记录次数
+			synchronized (record.encourageCounts) {
+				AtomicLong counts = record.encourageCounts.get(endpoint);
+				if (null != counts) {
+					counts.incrementAndGet();
+				}
+				else {
+					record.encourageCounts.put(endpoint, new AtomicLong(1));
+				}
+			}
+		}
+		else {
+			record = new InitiativeRecord();
+			record.lastEncourageTime.put(endpoint, new AtomicLong(Clock.currentTimeMillis()));
+			record.encourageCounts.put(endpoint, new AtomicLong(1));
+			this.initiativeRecordMap.put(keyword, record);
+		}
+	}
+
+	public boolean isInhibitiveEncourage(String keyword, Endpoint endpoint) {
+		InitiativeRecord record = this.initiativeRecordMap.get(keyword);
+		if (null == record) {
+			return false;
+		}
+
+		AtomicLong time = null;
+		synchronized (record.lastEncourageTime) {
+			time = record.lastEncourageTime.get(endpoint);
+			if (null == time) {
+				return false;
+			}
+		}
+
+		// 计算指定的时间间隔内的执行次数
+		if (Clock.currentTimeMillis() - time.get() <= this.inhibitionInterval) {
+			// 间隔小于设置值
+			AtomicLong counts = null;
+			synchronized (record.encourageCounts) {
+				counts = record.encourageCounts.get(endpoint);
+			}
+			if (null != counts) {
+				if (counts.get() >= this.inhibitionCounts) {
+					// 发送次数大于等于设置门限
+					return true;
+				}
+			}
+
+			return false;
+		}
+
+		return false;
+	}
+
+	@Override
+	public void run() {
+		long time = Clock.currentTimeMillis();
+
+		Iterator<Entry<String, InitiativeRecord>> iter = this.initiativeRecordMap.entrySet().iterator();
+		while (iter.hasNext()) {
+			Entry<String, InitiativeRecord> e = iter.next();
+			InitiativeRecord record = e.getValue();
+			synchronized (record.lastEncourageTime) {
+				Iterator<Entry<Endpoint, AtomicLong>> reiter = record.lastEncourageTime.entrySet().iterator();
+				while (reiter.hasNext()) {
+					Entry<Endpoint, AtomicLong> re = reiter.next();
+					AtomicLong lastTime = re.getValue();
+					if (time - lastTime.get() > this.inhibitionExpired) {
+						Endpoint endpoint = re.getKey();
+						reiter.remove();
+						synchronized (record.encourageCounts) {
+							record.encourageCounts.remove(endpoint);
+						}
+
+						Logger.i(this.getClass(), "Remove expired initiative record: " + endpoint.toString());
+					}
+				}
+			}
+		}
+	}
+
+
+	/**
+	 * 
+	 * @author Ambrose Xu
+	 *
+	 */
+	protected class InitiativeRecord {
+
+		protected HashMap<Endpoint, AtomicLong> lastEncourageTime = new HashMap<Endpoint, AtomicLong>();
+		protected HashMap<Endpoint, AtomicLong> encourageCounts = new HashMap<Endpoint, AtomicLong>();
+
 	}
 
 }

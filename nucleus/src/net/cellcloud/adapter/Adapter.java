@@ -61,6 +61,8 @@ public interface Adapter {
 
 	public void discourage(String keyword, Endpoint endpoint);
 
+	public void declare(String keyword);
+
 	/** 配置适配器。该方法由适配器管理器调用。 */
 	public void setup();
 

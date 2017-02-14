@@ -26,7 +26,8 @@ THE SOFTWARE.
 
 package net.cellcloud.adapter;
 
-import java.util.LinkedList;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -52,19 +53,34 @@ public class SmartAdapter extends RelationNucleusAdapter {
 
 	private final static String PT_FEEDBACK = "Feedback";
 
+	private final static String PT_DECLARE = "Declare";
+
 	private FeedbackController controller;
 
-	private ConcurrentHashMap<Endpoint, LinkedList<Gene>> sendList;
+	/**
+	 * 关键字对应的可用终端名。
+	 */
+	private ConcurrentHashMap<String, ArrayList<Endpoint>> runtimeList;
 
 	public SmartAdapter(String instanceName) {
 		super(SmartAdapter.Name, instanceName);
 		this.controller = new FeedbackController();
-		this.sendList = new ConcurrentHashMap<Endpoint, LinkedList<Gene>>();
+		this.runtimeList = new ConcurrentHashMap<String, ArrayList<Endpoint>>();
 	}
 
 	@Override
 	public void config(Map<String, Object> parameters) {
 		super.config(parameters);
+	}
+
+	@Override
+	protected void onStart() {
+		this.controller.start();
+	}
+
+	@Override
+	protected void onStop() {
+		this.controller.stop();
 	}
 
 	@Override
@@ -74,6 +90,7 @@ public class SmartAdapter extends RelationNucleusAdapter {
 
 	@Override
 	protected void onSend(Endpoint endpoint, Gene gene) {
+		// Nothing
 	}
 
 	@Override
@@ -102,7 +119,12 @@ public class SmartAdapter extends RelationNucleusAdapter {
 	}
 
 	@Override
-	public void share(String keyword, Dialect dialect) {
+	protected void onTransportFail(Endpoint endpoint, Gene gene) {
+		
+	}
+
+	@Override
+	public synchronized void share(String keyword, Dialect dialect) {
 		JSONObject payload = new JSONObject();
 		try {
 			PrimitiveSerializer.write(payload, dialect.translate());
@@ -114,28 +136,119 @@ public class SmartAdapter extends RelationNucleusAdapter {
 		Gene gene = new Gene(keyword);
 		gene.setPayload(payload.toString());
 
-		super.broadcast(gene);
+		ArrayList<Endpoint> list = this.runtimeList.get(keyword);
+		if (null == list) {
+			// 对应的关键字没有建立回馈信息，所以进行广播
+			super.broadcast(gene);
+		}
+		else {
+			synchronized (list) {
+				// 建立了回馈信息
+				super.transport(list, gene);
+			}
+		}
 	}
 
 	@Override
 	public void share(String keyword, Endpoint endpoint, Dialect dialect) {
-		
+		// TODO
 	}
 
 	@Override
 	public void encourage(String keyword, Endpoint endpoint) {
+		if (this.controller.isInhibitiveEncourage(keyword, endpoint)) {
+			// 抑制鼓励数据发送
+			return;
+		}
+
 		Gene gene = new Gene(keyword);
 		gene.setHeader(GeneHeader.PayloadType, PT_FEEDBACK);
+
+		JSONObject json = new JSONObject();
+		try {
+			json.put("feedback", 1);
+		} catch (JSONException e) {
+			e.printStackTrace();
+		}
+
+		gene.setPayload(json.toString());
+
 		this.transport(endpoint, gene);
+
+		// 记录
+		this.controller.recordEncourage(keyword, endpoint);
 	}
 
 	@Override
 	public void discourage(String keyword, Endpoint endpoint) {
-		
+		Gene gene = new Gene(keyword);
+		gene.setHeader(GeneHeader.PayloadType, PT_FEEDBACK);
+
+		JSONObject json = new JSONObject();
+		try {
+			json.put("feedback", -1);
+		} catch (JSONException e) {
+			e.printStackTrace();
+		}
+
+		gene.setPayload(json.toString());
+
+		this.transport(endpoint, gene);
+	}
+
+	@Override
+	public void declare(String keyword) {
+		Gene gene = new Gene(keyword);
 	}
 
 	private void processFeedback(Endpoint endpoint, Gene gene) {
-		
+		Logger.d(this.getClass(), "Process feedback : " + endpoint.toString());
+
+		String str = gene.getPayload();
+		JSONObject payload = null;
+		int feedback = 0;
+		try {
+			payload = new JSONObject(str);
+			feedback = payload.getInt("feedback");
+		} catch (JSONException e) {
+			Logger.log(this.getClass(), e, LogLevel.ERROR);
+			return;
+		}
+
+		String keyword = gene.getName();
+
+		if (feedback > 0) {
+			// 正回馈
+			this.controller.updateEncourage(keyword, endpoint);
+		}
+		else if (feedback < 0) {
+			// 负回馈
+			this.controller.updateDiscourage(keyword, endpoint);
+		}
+		else {
+			Logger.d(this.getClass(), "NO feedback info");
+			return;
+		}
+
+		// 获取当前连接的终端
+		List<Endpoint> epList = super.endpointList();
+
+		// 更新实时路由表
+		ArrayList<Endpoint> list = this.runtimeList.get(keyword);
+		if (null == list) {
+			list = new ArrayList<Endpoint>(epList.size());
+			list.addAll(epList);
+			if (feedback < 0) {
+				list.remove(endpoint);
+			}
+			this.runtimeList.put(keyword, list);
+		}
+		else {
+			// 删除负回馈终端
+			if (feedback < 0) {
+				list.remove(endpoint);
+			}
+		}
 	}
 
 }

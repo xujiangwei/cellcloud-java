@@ -33,16 +33,19 @@ package net.cellcloud.core;
  */
 public class Endpoint {
 
+	private String host;
+	private int port;
+
 	private NucleusTag tag;
 	private Role role;
-	private Coordinate coordinate;
 
 	private int hashCode = 0;
 
 	/** 构造函数。
 	 */
 	public Endpoint(String host, int port) {
-		this.coordinate = new Coordinate(host, port);
+		this.host = host;
+		this.port = port;
 	}
 
 	/** 构造函数。
@@ -50,7 +53,8 @@ public class Endpoint {
 	public Endpoint(String tag, Role role, String host, int port) {
 		this.tag = new NucleusTag(tag);
 		this.role = role;
-		this.coordinate = new Coordinate(host, port);
+		this.host = host;
+		this.port = port;
 	}
 
 	/** 构造函数。
@@ -58,7 +62,20 @@ public class Endpoint {
 	public Endpoint(NucleusTag tag, Role role, String host, int port) {
 		this.tag = tag;
 		this.role = role;
-		this.coordinate = new Coordinate(host, port);
+		this.host = host;
+		this.port = port;
+	}
+
+	/** 返回访问地址。
+	 */
+	public String getHost() {
+		return this.host;
+	}
+
+	/** 返回访问端口。
+	 */
+	public int getPort() {
+		return this.port;
 	}
 
 	/** 返回终端标签。
@@ -73,12 +90,6 @@ public class Endpoint {
 		return this.role;
 	}
 
-	/** 返回终端坐标。
-	 */
-	public Coordinate getCoordinate() {
-		return this.coordinate;
-	}
-
 	public void setTag(NucleusTag tag) {
 		this.tag = tag;
 	}
@@ -91,8 +102,8 @@ public class Endpoint {
 				return other.tag.equals(this.tag);
 			}
 			else {
-				if (other.coordinate.address.equals(this.coordinate.address)
-					&& other.coordinate.port == this.coordinate.port) {
+				if (other.host.equals(this.host)
+					&& other.port == this.port) {
 					return true;
 				}
 			}
@@ -105,41 +116,26 @@ public class Endpoint {
 	public int hashCode() {
 		if (this.hashCode == 0) {
 			StringBuilder buf = new StringBuilder();
-			buf.append(this.coordinate.address);
+			buf.append(this.host);
 			buf.append(":");
-			buf.append(this.coordinate.port);
-			if (null != this.tag) {
-				buf.append("#").append(this.tag.asString());
-			}
+			buf.append(this.port);
 
 			this.hashCode = buf.toString().hashCode();
+
+			buf = null;
 		}
 
 		return this.hashCode;
 	}
 
-	/** 终端坐标。
-	 */
-	public final class Coordinate {
-		private String address;
-		private int port;
+	@Override
+	public String toString() {
+		StringBuilder buf = new StringBuilder();
+		buf.append(this.host);
+		buf.append(":");
+		buf.append(this.port);
 
-		public Coordinate(String address, int port) {
-			this.address = address;
-			this.port = port;
-		}
-
-		/** 返回访问地址。
-		 */
-		public String getAddress() {
-			return this.address;
-		}
-
-		/** 返回访问端口。
-		 */
-		public int getPort() {
-			return this.port;
-		}
+		return buf.toString();
 	}
 
 }

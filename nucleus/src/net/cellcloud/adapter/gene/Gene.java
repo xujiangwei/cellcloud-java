@@ -46,6 +46,14 @@ public class Gene {
 
 	private Endpoint destination;
 
+	public final static byte EOP_1 = 'E';
+	public final static byte EOP_2 = 'O';
+	public final static byte EOP_3 = 'P';
+	public final static byte EOP_4 = '\r';
+	public final static byte EOP_5 = '\n';
+	public final static byte[] EOP_BYTES = new byte[]{ EOP_1, EOP_2, EOP_3, EOP_4, EOP_5 };
+	public final static String EOP = "EOP";
+
 	public Gene(String name) {
 		this(name, null);
 	}
@@ -98,6 +106,9 @@ public class Gene {
 			buf.append(gene.payload).append("\r\n");
 		}
 
+		// EOP 结束符
+		buf.append(EOP).append("\r\n");
+
 		String str = buf.toString();
 		buf = null;
 
@@ -109,7 +120,7 @@ public class Gene {
 
 		String[] ret = data.split("\\\r\\\n");
 		if (ret.length < 2) {
-			Logger.w(RelationNucleusAdapter.class, "Data format error");
+			Logger.d(RelationNucleusAdapter.class, "Data format error");
 			return null;
 		}
 
@@ -118,6 +129,10 @@ public class Gene {
 
 		for (int i = 1; i < ret.length; ++i) {
 			String r = ret[i];
+
+			if (r.equals(EOP)) {
+				break;
+			}
 
 			if (r.length() == 0) {
 				gene.setPayload(ret[i+1]);
