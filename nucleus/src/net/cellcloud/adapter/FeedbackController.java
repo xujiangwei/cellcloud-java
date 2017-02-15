@@ -47,14 +47,14 @@ public class FeedbackController extends TimerTask {
 	private ConcurrentHashMap<String, InitiativeRecord> initiativeRecordMap;
 
 	/**
-	 * 关键字超期时间
+	 * 关键字超期时间。
 	 */
 	private long keywordExpired = 12L * 60L * 60L * 1000L;
 
 	private long inhibitionInterval = 3L * 60L * 1000L;
 	private long inhibitionCounts = 3L;
 
-	private long inhibitionExpired = 10L * 60L * 1000L;
+	private long inhibitionExpired = 30L * 60L * 1000L;
 
 	private Timer timer;
 
@@ -105,6 +105,9 @@ public class FeedbackController extends TimerTask {
 			feedback.updatePositive(endpoint);
 			this.feedbackMap.put(keyword, feedback);
 		}
+
+		// 从 Negative 中移除
+		feedback.removeNegative(endpoint);
 	}
 
 	public void updateDiscourage(String keyword, Endpoint endpoint) {
@@ -117,11 +120,16 @@ public class FeedbackController extends TimerTask {
 			feedback.updateNegative(endpoint);
 			this.feedbackMap.put(keyword, feedback);
 		}
+
+		// 从 Positive 中移除
+		feedback.removePositive(endpoint);
 	}
 
 	public void recordEncourage(String keyword, Endpoint endpoint) {
 		InitiativeRecord record = this.initiativeRecordMap.get(keyword);
 		if (null != record) {
+			record.timestamp = Clock.currentTimeMillis();
+
 			// 记录时间
 			synchronized (record.lastEncourageTime) {
 				AtomicLong time = record.lastEncourageTime.get(endpoint);
@@ -148,6 +156,41 @@ public class FeedbackController extends TimerTask {
 			record = new InitiativeRecord();
 			record.lastEncourageTime.put(endpoint, new AtomicLong(Clock.currentTimeMillis()));
 			record.encourageCounts.put(endpoint, new AtomicLong(1));
+			this.initiativeRecordMap.put(keyword, record);
+		}
+	}
+
+	public void recordDiscourage(String keyword, Endpoint endpoint) {
+		InitiativeRecord record = this.initiativeRecordMap.get(keyword);
+		if (null != record) {
+			record.timestamp = Clock.currentTimeMillis();
+
+			// 记录时间
+			synchronized (record.lastDiscourageTime) {
+				AtomicLong time = record.lastDiscourageTime.get(endpoint);
+				if (null != time) {
+					time.set(Clock.currentTimeMillis());
+				}
+				else {
+					record.lastDiscourageTime.put(endpoint, new AtomicLong(Clock.currentTimeMillis()));
+				}
+			}
+
+			// 记录次数
+			synchronized (record.discourageCounts) {
+				AtomicLong counts = record.discourageCounts.get(endpoint);
+				if (null != counts) {
+					counts.incrementAndGet();
+				}
+				else {
+					record.discourageCounts.put(endpoint, new AtomicLong(1));
+				}
+			}
+		}
+		else {
+			record = new InitiativeRecord();
+			record.lastDiscourageTime.put(endpoint, new AtomicLong(Clock.currentTimeMillis()));
+			record.discourageCounts.put(endpoint, new AtomicLong(1));
 			this.initiativeRecordMap.put(keyword, record);
 		}
 	}
@@ -186,14 +229,70 @@ public class FeedbackController extends TimerTask {
 		return false;
 	}
 
+	public boolean isInhibitiveDiscourage(String keyword, Endpoint endpoint) {
+		InitiativeRecord record = this.initiativeRecordMap.get(keyword);
+		if (null == record) {
+			return false;
+		}
+
+		AtomicLong time = null;
+		synchronized (record.lastDiscourageTime) {
+			time = record.lastDiscourageTime.get(endpoint);
+			if (null == time) {
+				return false;
+			}
+		}
+
+		// 计算指定的时间间隔内的执行次数
+		if (Clock.currentTimeMillis() - time.get() <= this.inhibitionInterval) {
+			// 间隔小于设置值
+			AtomicLong counts = null;
+			synchronized (record.discourageCounts) {
+				counts = record.discourageCounts.get(endpoint);
+			}
+			if (null != counts) {
+				if (counts.get() >= this.inhibitionCounts) {
+					// 发送次数大于等于设置门限
+					return true;
+				}
+			}
+
+			return false;
+		}
+
+		return false;
+	}
+
 	@Override
 	public void run() {
 		long time = Clock.currentTimeMillis();
+
+		// 关键字超期检测
+
+		Iterator<Entry<String, Feedback>> fiter = this.feedbackMap.entrySet().iterator();
+		while (fiter.hasNext()) {
+			Entry<String, Feedback> e = fiter.next();
+			Feedback fb = e.getValue();
+			if (time - fb.getTimestamp() >= this.keywordExpired) {
+				fiter.remove();
+				Logger.i(this.getClass(), "Remove expired feedback keyword: " + fb.getKeyword());
+			}
+		}
+
+		// 记录超期检测
 
 		Iterator<Entry<String, InitiativeRecord>> iter = this.initiativeRecordMap.entrySet().iterator();
 		while (iter.hasNext()) {
 			Entry<String, InitiativeRecord> e = iter.next();
 			InitiativeRecord record = e.getValue();
+
+			if (time - record.timestamp >= this.keywordExpired) {
+				String keyword = e.getKey();
+				iter.remove();
+				Logger.i(this.getClass(), "Remove expired initiative record keyword: " + keyword);
+				continue;
+			}
+
 			synchronized (record.lastEncourageTime) {
 				Iterator<Entry<Endpoint, AtomicLong>> reiter = record.lastEncourageTime.entrySet().iterator();
 				while (reiter.hasNext()) {
@@ -206,7 +305,24 @@ public class FeedbackController extends TimerTask {
 							record.encourageCounts.remove(endpoint);
 						}
 
-						Logger.i(this.getClass(), "Remove expired initiative record: " + endpoint.toString());
+						Logger.i(this.getClass(), "Remove expired initiative encourage record: " + endpoint.toString());
+					}
+				}
+			}
+
+			synchronized (record.lastDiscourageTime) {
+				Iterator<Entry<Endpoint, AtomicLong>> reiter = record.lastDiscourageTime.entrySet().iterator();
+				while (reiter.hasNext()) {
+					Entry<Endpoint, AtomicLong> re = reiter.next();
+					AtomicLong lastTime = re.getValue();
+					if (time - lastTime.get() > this.inhibitionExpired) {
+						Endpoint endpoint = re.getKey();
+						reiter.remove();
+						synchronized (record.discourageCounts) {
+							record.discourageCounts.remove(endpoint);
+						}
+
+						Logger.i(this.getClass(), "Remove expired initiative discourage record: " + endpoint.toString());
 					}
 				}
 			}
@@ -221,8 +337,13 @@ public class FeedbackController extends TimerTask {
 	 */
 	protected class InitiativeRecord {
 
+		protected long timestamp = System.currentTimeMillis();
+
 		protected HashMap<Endpoint, AtomicLong> lastEncourageTime = new HashMap<Endpoint, AtomicLong>();
 		protected HashMap<Endpoint, AtomicLong> encourageCounts = new HashMap<Endpoint, AtomicLong>();
+
+		protected HashMap<Endpoint, AtomicLong> lastDiscourageTime = new HashMap<Endpoint, AtomicLong>();
+		protected HashMap<Endpoint, AtomicLong> discourageCounts = new HashMap<Endpoint, AtomicLong>();
 
 	}
 

@@ -27,8 +27,10 @@ THE SOFTWARE.
 package net.cellcloud.adapter;
 
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.concurrent.ConcurrentHashMap;
 
 import net.cellcloud.adapter.gene.Gene;
@@ -52,8 +54,6 @@ public class SmartAdapter extends RelationNucleusAdapter {
 	public final static String Name = "SmartAdapter";
 
 	private final static String PT_FEEDBACK = "Feedback";
-
-	private final static String PT_DECLARE = "Declare";
 
 	private FeedbackController controller;
 
@@ -112,15 +112,50 @@ public class SmartAdapter extends RelationNucleusAdapter {
 			PrimitiveSerializer.read(primitive, json);
 
 			// 执行回调
-			super.fireShared(endpoint, primitive.getDialect());
+			this.fireShared(endpoint, primitive.getDialect());
 		} catch (JSONException e) {
+			Logger.log(this.getClass(), e, LogLevel.WARNING);
+		} catch (Exception e) {
 			Logger.log(this.getClass(), e, LogLevel.WARNING);
 		}
 	}
 
 	@Override
-	protected void onTransportFail(Endpoint endpoint, Gene gene) {
-		
+	protected void onTransportFailure(Endpoint endpoint, Gene gene) {
+		Iterator<Entry<String, ArrayList<Endpoint>>> iter = this.runtimeList.entrySet().iterator();
+		while (iter.hasNext()) {
+			Entry<String, ArrayList<Endpoint>> e = iter.next();
+			ArrayList<Endpoint> list = e.getValue();
+			synchronized (list) {
+				list.remove(endpoint);
+			}
+		}
+
+		// 跳过 PT_FEEDBACK
+		String pt = gene.getHeader(GeneHeader.PayloadType);
+		if (null != pt && pt.equals(PT_FEEDBACK)) {
+			return;
+		}
+
+		String payload = gene.getPayload();
+		if (null == payload) {
+			return;
+		}
+
+		JSONObject json = null;
+		try {
+			json = new JSONObject(payload);
+
+			Primitive primitive = new Primitive();
+			PrimitiveSerializer.read(primitive, json);
+
+			// 执行回调
+			this.fireShareFailed(endpoint, primitive.getDialect());
+		} catch (JSONException e) {
+			Logger.log(this.getClass(), e, LogLevel.WARNING);
+		} catch (Exception e) {
+			Logger.log(this.getClass(), e, LogLevel.WARNING);
+		}
 	}
 
 	@Override
@@ -143,15 +178,31 @@ public class SmartAdapter extends RelationNucleusAdapter {
 		}
 		else {
 			synchronized (list) {
-				// 建立了回馈信息
-				super.transport(list, gene);
+				if (!list.isEmpty()) {
+					// 建立了回馈信息
+					super.transport(list, gene);
+				}
+				else {
+					Logger.d(this.getClass(), "No endpoints to share dialect: " + keyword);
+				}
 			}
 		}
 	}
 
 	@Override
 	public void share(String keyword, Endpoint endpoint, Dialect dialect) {
-		// TODO
+		JSONObject payload = new JSONObject();
+		try {
+			PrimitiveSerializer.write(payload, dialect.translate());
+		} catch (JSONException e) {
+			Logger.log(this.getClass(), e, LogLevel.WARNING);
+			return;
+		}
+
+		Gene gene = new Gene(keyword);
+		gene.setPayload(payload.toString());
+
+		super.transport(endpoint, gene);
 	}
 
 	@Override
@@ -180,7 +231,38 @@ public class SmartAdapter extends RelationNucleusAdapter {
 	}
 
 	@Override
+	public void encourage(String keyword) {
+		Gene gene = new Gene(keyword);
+		gene.setHeader(GeneHeader.PayloadType, PT_FEEDBACK);
+
+		JSONObject json = new JSONObject();
+		try {
+			json.put("feedback", 1);
+		} catch (JSONException e) {
+			e.printStackTrace();
+		}
+
+		gene.setPayload(json.toString());
+
+		List<Endpoint> list = this.endpointList();
+		synchronized (list) {
+			for (Endpoint endpoint : list) {
+				// 记录
+				this.controller.recordEncourage(keyword, endpoint);
+			}
+		}
+
+		// 广播
+		this.broadcast(gene);
+	}
+
+	@Override
 	public void discourage(String keyword, Endpoint endpoint) {
+		if (this.controller.isInhibitiveDiscourage(keyword, endpoint)) {
+			// 抑制气馁数据发送
+			return;
+		}
+
 		Gene gene = new Gene(keyword);
 		gene.setHeader(GeneHeader.PayloadType, PT_FEEDBACK);
 
@@ -194,11 +276,35 @@ public class SmartAdapter extends RelationNucleusAdapter {
 		gene.setPayload(json.toString());
 
 		this.transport(endpoint, gene);
+
+		// 记录
+		this.controller.recordDiscourage(keyword, endpoint);
 	}
 
 	@Override
-	public void declare(String keyword) {
+	public void discourage(String keyword) {
 		Gene gene = new Gene(keyword);
+		gene.setHeader(GeneHeader.PayloadType, PT_FEEDBACK);
+
+		JSONObject json = new JSONObject();
+		try {
+			json.put("feedback", -1);
+		} catch (JSONException e) {
+			e.printStackTrace();
+		}
+
+		gene.setPayload(json.toString());
+
+		List<Endpoint> list = this.endpointList();
+		synchronized (list) {
+			for (Endpoint endpoint : list) {
+				// 记录
+				this.controller.recordDiscourage(keyword, endpoint);
+			}
+		}
+
+		// 广播
+		this.broadcast(gene);
 	}
 
 	private void processFeedback(Endpoint endpoint, Gene gene) {
@@ -238,16 +344,33 @@ public class SmartAdapter extends RelationNucleusAdapter {
 		if (null == list) {
 			list = new ArrayList<Endpoint>(epList.size());
 			list.addAll(epList);
-			if (feedback < 0) {
-				list.remove(endpoint);
-			}
 			this.runtimeList.put(keyword, list);
 		}
-		else {
-			// 删除负回馈终端
+		synchronized (list) {
 			if (feedback < 0) {
+				// 删除负回馈终端
 				list.remove(endpoint);
 			}
+			else {
+				// 正回馈处理
+				if (!list.contains(endpoint)) {
+					list.add(endpoint);
+				}
+			}
+		}
+	}
+
+	private void fireShared(Endpoint endpoint, Dialect dialect) {
+		for (int i = 0; i < this.listeners.size(); ++i) {
+			AdapterListener l = this.listeners.get(i);
+			l.onShared(this, endpoint, dialect);
+		}
+	}
+
+	private void fireShareFailed(Endpoint endpoint, Dialect dialect) {
+		for (int i = 0; i < this.listeners.size(); ++i) {
+			AdapterListener l = this.listeners.get(i);
+			l.onShareFailed(this, endpoint, dialect);
 		}
 	}
 

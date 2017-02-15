@@ -30,10 +30,17 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import net.cellcloud.core.Endpoint;
+import net.cellcloud.util.Clock;
 
+/**
+ * 
+ * @author Ambrose Xu
+ */
 public class Feedback {
 
 	private String keyword;
+
+	private long timestamp;
 
 	private ConcurrentHashMap<Endpoint, AtomicInteger> positiveMap;
 
@@ -43,13 +50,20 @@ public class Feedback {
 		this.keyword = keyword;
 		this.positiveMap = new ConcurrentHashMap<Endpoint, AtomicInteger>();
 		this.negativeMap = new ConcurrentHashMap<Endpoint, AtomicInteger>();
+		this.timestamp = Clock.currentTimeMillis();
 	}
 
 	public String getKeyword() {
 		return this.keyword;
 	}
 
+	public long getTimestamp() {
+		return this.timestamp;
+	}
+
 	public int updatePositive(Endpoint endpoint) {
+		this.timestamp = Clock.currentTimeMillis();
+
 		AtomicInteger value = this.positiveMap.get(endpoint);
 		if (null != value) {
 			value.incrementAndGet();
@@ -62,6 +76,8 @@ public class Feedback {
 	}
 
 	public int updateNegative(Endpoint endpoint) {
+		this.timestamp = Clock.currentTimeMillis();
+
 		AtomicInteger value = this.negativeMap.get(endpoint);
 		if (null != value) {
 			value.incrementAndGet();
@@ -71,6 +87,14 @@ public class Feedback {
 			this.negativeMap.put(endpoint, value);
 		}
 		return value.get();
+	}
+
+	public void removePositive(Endpoint endpoint) {
+		this.positiveMap.remove(endpoint);
+	}
+
+	public void removeNegative(Endpoint endpoint) {
+		this.negativeMap.remove(endpoint);
 	}
 
 	public int countPositive(Endpoint endpoint) {

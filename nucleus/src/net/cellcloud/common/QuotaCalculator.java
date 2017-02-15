@@ -29,11 +29,15 @@ package net.cellcloud.common;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.atomic.AtomicLong;
 
+/** 配置计算器。
+ * 
+ * @author Ambrose Xu
+ *
+ */
 public class QuotaCalculator {
 
-	private int quota = 10240;
+	private int quota = 102400;
 
 	private AtomicInteger runtime;
 
@@ -41,13 +45,13 @@ public class QuotaCalculator {
 
 	private AtomicInteger blockingSize;
 
-	private AtomicLong timestamp;
+//	private AtomicLong timestamp;
 
 	public QuotaCalculator(int quotaInSecond) {
 		this.quota = quotaInSecond;
 		this.runtime = new AtomicInteger(quotaInSecond);
 		this.blockingSize = new AtomicInteger(0);
-		this.timestamp = new AtomicLong(0);
+//		this.timestamp = new AtomicLong(0);
 	}
 
 	public void setQuota(int quotaInSecond) {
@@ -96,15 +100,16 @@ public class QuotaCalculator {
 			return;
 		}
 
-		long time = System.currentTimeMillis();
-		if (time - this.timestamp.get() < 20L) {
-			try {
-				Thread.sleep(20L);
-			} catch (InterruptedException e) {
-				e.printStackTrace();
-			}
-		}
-		this.timestamp.set(time);
+//		long time = System.currentTimeMillis();
+//		long d = time - this.timestamp.get();
+//		if (d < 10L) {
+//			try {
+//				Thread.sleep(10L - d);
+//			} catch (InterruptedException e) {
+//				e.printStackTrace();
+//			}
+//		}
+//		this.timestamp.set(time);
 
 		if (this.runtime.get() <= 0) {
 //			Logger.d(this.getClass(), "Out of quota: " + this.quota);

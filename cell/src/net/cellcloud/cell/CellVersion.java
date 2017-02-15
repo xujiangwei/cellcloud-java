@@ -2,7 +2,7 @@
 -----------------------------------------------------------------------------
 This source file is part of Cell Cloud.
 
-Copyright (c) 2009-2016 Cell Cloud Team (cellcloudproject@gmail.com)
+Copyright (c) 2009-2017 Cell Cloud Team (www.cellcloud.net)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -32,21 +32,21 @@ import net.cellcloud.Version;
  * 
  * @author Jiangwei Xu
  */
-public final class VersionInfo {
+public final class CellVersion {
 
 	public final static int MAJOR = 1;
 	public final static int MINOR = 5;
-	public final static int REVISION = 2;
+	public final static int REVISION = 3;
 
 	public static void main(String[] args) {
 		StringBuilder buf = new StringBuilder();
 		buf.append("\n-----------------------------------------------------------------------\n");
 		buf.append("Cell Application version ");
-		buf.append(VersionInfo.MAJOR);
+		buf.append(CellVersion.MAJOR);
 		buf.append(".");
-		buf.append(VersionInfo.MINOR);
+		buf.append(CellVersion.MINOR);
 		buf.append(".");
-		buf.append(VersionInfo.REVISION);
+		buf.append(CellVersion.REVISION);
 		buf.append("\n");
 
 		buf.append("Nucleus version ");

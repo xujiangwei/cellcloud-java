@@ -36,41 +36,85 @@ import net.cellcloud.core.Endpoint;
  */
 public interface Adapter {
 
-	/** 返回适配器名。 */
+	/** 返回适配器名。
+	 * 
+	 * @return
+	 */
 	public String getName();
 
-	/** 返回实例名。 */
+	/** 返回实例名。
+	 * 
+	 * @return
+	 */
 	public String getInstanceName();
 
-	/** 配置适配器。 */
+	/** 配置适配器。
+	 * 
+	 * @param parameters
+	 */
 	public void config(Map<String, Object> parameters);
 
-	/** 添加关联终端。 */
+	/** 添加关联终端。
+	 * 
+	 * @param endpoint
+	 * @return
+	 */
 	public boolean addEndpoint(Endpoint endpoint);
 
-	/** 移除关联终端。 */
+	/** 移除关联终端。
+	 * 
+	 * @param endpoint
+	 */
 	public void removeEndpoint(Endpoint endpoint);
 
-	/** 添加监听器。 */
+	/** 添加监听器。
+	 * 
+	 * @param listener
+	 */
 	public void addListener(AdapterListener listener);
 
-	/** 移除监听器。 */
+	/** 移除监听器。
+	 * 
+	 * @param listener
+	 */
 	public void removeListener(AdapterListener listener);
 
+	/** 以接纳方式对指定关键字进行回馈。
+	 * 
+	 * @param keyword
+	 * @param endpoint
+	 */
 	public void encourage(String keyword, Endpoint endpoint);
 
+	/** 以接纳方式对指定关键字进行回馈。
+	 * 
+	 * @param keyword
+	 */
+	public void encourage(String keyword);
+
+	/** 以排斥方式对指定关键字进行回馈。
+	 * 
+	 * @param keyword
+	 * @param endpoint
+	 */
 	public void discourage(String keyword, Endpoint endpoint);
 
-	public void declare(String keyword);
+	/** 以排斥方式对指定关键字进行回馈。
+	 * 
+	 * @param keyword
+	 */
+	public void discourage(String keyword);
 
-	/** 配置适配器。该方法由适配器管理器调用。 */
+	/** 配置适配器。该方法由适配器管理器调用。
+	 */
 	public void setup();
 
-	/** 拆卸适配器。该方法由适配器管理器调用。 */
+	/** 拆卸适配器。该方法由适配器管理器调用。
+	 */
 	public void teardown();
 
-	/**
-	 * 是否就绪。
+	/** 是否就绪。
+	 * 
 	 * @return
 	 */
 	public boolean isReady();

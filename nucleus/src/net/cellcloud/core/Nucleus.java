@@ -118,11 +118,11 @@ public final class Nucleus {
 
 	/** Jar 包内的 Cellet 类映射表。
 	 */
-	private ConcurrentHashMap<String, ArrayList<String>> celletJarClasses = null;
+	private ConcurrentHashMap<String, List<String>> celletJarClasses = null;
 
 	/** 文件路径下 class 文件的 Cellet 类映射表。
 	 */
-	private ConcurrentHashMap<String, ArrayList<String>> celletPathClasses = null;
+	private ConcurrentHashMap<String, List<String>> celletPathClasses = null;
 
 	/** 当前内核内的所有 Cellet 对照表。
 	 */
@@ -441,9 +441,9 @@ public final class Nucleus {
 	 * @param jarFile
 	 * @param classes
 	 */
-	public void prepareCelletJar(String jarFile, ArrayList<String> classes) {
+	public void prepareCelletJar(String jarFile, List<String> classes) {
 		if (null == this.celletJarClasses) {
-			this.celletJarClasses = new ConcurrentHashMap<String, ArrayList<String>>();
+			this.celletJarClasses = new ConcurrentHashMap<String, List<String>>();
 		}
 
 		this.celletJarClasses.put(jarFile, classes);
@@ -454,9 +454,9 @@ public final class Nucleus {
 	 * @param path
 	 * @param classes
 	 */
-	public void prepareCelletPath(String path, ArrayList<String> classes) {
+	public void prepareCelletPath(String path, List<String> classes) {
 		if (null == this.celletPathClasses) {
-			this.celletPathClasses = new ConcurrentHashMap<String, ArrayList<String>>();
+			this.celletPathClasses = new ConcurrentHashMap<String, List<String>>();
 		}
 
 		this.celletPathClasses.put(path, classes);
@@ -682,7 +682,7 @@ public final class Nucleus {
 					, Thread.currentThread().getContextClassLoader());
 
 				// 取出 Cellet 类
-				ArrayList<String> celletClasslist = this.celletJarClasses.get(jarFilename);
+				List<String> celletClasslist = this.celletJarClasses.get(jarFilename);
 				// Cellet 类列表
 				ArrayList<Class<?>> classes = new ArrayList<Class<?>>();
 
@@ -801,7 +801,7 @@ public final class Nucleus {
 					, Thread.currentThread().getContextClassLoader());
 
 				// 取出 Cellet 类
-				ArrayList<String> celletClasslist = this.celletPathClasses.get(pathName);
+				List<String> celletClasslist = this.celletPathClasses.get(pathName);
 				// Cellet 类列表
 				ArrayList<Class<?>> classes = new ArrayList<Class<?>>();
 

@@ -35,6 +35,7 @@ import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
@@ -44,11 +45,14 @@ import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 
 import net.cellcloud.Version;
+import net.cellcloud.adapter.AdapterFactory;
+import net.cellcloud.adapter.RelationNucleusAdapter;
 import net.cellcloud.cell.log.RollFileLogger;
 import net.cellcloud.common.LogLevel;
 import net.cellcloud.common.LogManager;
 import net.cellcloud.common.Logger;
 import net.cellcloud.core.Device;
+import net.cellcloud.core.Endpoint;
 import net.cellcloud.core.Nucleus;
 import net.cellcloud.core.NucleusConfig;
 import net.cellcloud.core.Role;
@@ -76,7 +80,7 @@ public final class Application {
 	public Application(Arguments args) {
 		StringBuilder buf = new StringBuilder();
 		buf.append("Cell Server version: ");
-		buf.append(VersionInfo.MAJOR).append(".").append(VersionInfo.MINOR).append(".").append(VersionInfo.REVISION);
+		buf.append(CellVersion.MAJOR).append(".").append(CellVersion.MINOR).append(".").append(CellVersion.REVISION);
 		buf.append("\n");
 		buf.append("Nucleus version: ");
 		buf.append(Version.getNumbers());
@@ -128,13 +132,13 @@ public final class Application {
 		config.role = Role.NODE;
 		config.device = Device.SERVER;
 
-		HashMap<String, ArrayList<String>> jarCelletMap = new HashMap<String, ArrayList<String>>();
-		HashMap<String, ArrayList<String>> pathCelletMap = new HashMap<String, ArrayList<String>>();
+		// 配置文件信息
+		ConfigInfo info = null;
 
 		// 加载内核配置
 		if (null != this.configFile) {
-			this.loadConfig(this.configFile, config, jarCelletMap, pathCelletMap);
-			if (jarCelletMap.isEmpty() && pathCelletMap.isEmpty()) {
+			info = this.loadConfig(this.configFile, config);
+			if (info.jarCelletMap.isEmpty() && info.pathCelletMap.isEmpty()) {
 				// 没有 Cellet 服务被找到
 				Logger.w(Application.class, "Can NOT find cellet in config file!");
 			}
@@ -151,25 +155,35 @@ public final class Application {
 		}
 
 		// 为内核准备 Cellet 信息
-		if (!jarCelletMap.isEmpty()) {
-			Iterator<Map.Entry<String, ArrayList<String>>> iter = jarCelletMap.entrySet().iterator();
+		if (null != info && !info.jarCelletMap.isEmpty()) {
+			Iterator<Map.Entry<String, List<String>>> iter = info.jarCelletMap.entrySet().iterator();
 			while (iter.hasNext()) {
-				Map.Entry<String, ArrayList<String>> e = iter.next();
+				Map.Entry<String, List<String>> e = iter.next();
 				nucleus.prepareCelletJar(e.getKey(), e.getValue());
 			}
-
-			jarCelletMap.clear();
-			jarCelletMap = null;
 		}
-		if (!pathCelletMap.isEmpty()) {
-			Iterator<Map.Entry<String, ArrayList<String>>> iter = pathCelletMap.entrySet().iterator();
+		if (null != info && !info.pathCelletMap.isEmpty()) {
+			Iterator<Map.Entry<String, List<String>>> iter = info.pathCelletMap.entrySet().iterator();
 			while (iter.hasNext()) {
-				Map.Entry<String, ArrayList<String>> e = iter.next();
+				Map.Entry<String, List<String>> e = iter.next();
 				nucleus.prepareCelletPath(e.getKey(), e.getValue());
 			}
+		}
 
-			pathCelletMap.clear();
-			pathCelletMap = null;
+		// 适配器
+		if (null != info && !info.adapterList.isEmpty()) {
+			for (AdapterInfo ai : info.adapterList) {
+				RelationNucleusAdapter adapter =
+						(RelationNucleusAdapter) AdapterFactory.createAdapter(ai.name, ai.instance);
+				adapter.setHost(ai.host);
+				adapter.setPort(ai.port);
+				adapter.setQuotaPerSecond(ai.quota);
+				for (Endpoint ep : ai.endpointList) {
+					adapter.addEndpoint(ep);
+				}
+
+				nucleus.addAdapter(adapter);
+			}
 		}
 
 		// 启动内核
@@ -179,6 +193,13 @@ public final class Application {
 		}
 
 		this.spinning = true;
+
+		if (null != info) {
+			info.jarCelletMap.clear();
+			info.pathCelletMap.clear();
+			info.adapterList.clear();
+			info = null;
+		}
 
 		return true;
 	}
@@ -248,9 +269,8 @@ public final class Application {
 
 	/** 加载配置。
 	 */
-	private void loadConfig(String configFile, NucleusConfig config,
-			Map<String, ArrayList<String>> jarCelletMap,
-			Map<String, ArrayList<String>> pathCelletMap) {
+	private ConfigInfo loadConfig(String configFile, NucleusConfig config) {
+		ConfigInfo ret = new ConfigInfo();
 
 		try {
 			// 检测配置文件
@@ -403,7 +423,39 @@ public final class Application {
 				// 读取 adapter
 				list = document.getElementsByTagName("adapter");
 				for (int i = 0; i < list.getLength(); ++i) {
-					
+					Element node = (Element) list.item(i);
+
+					AdapterInfo adapter = new AdapterInfo();
+
+					Node attr = node.getAttributes().getNamedItem("name");
+					adapter.name = attr.getNodeValue();
+
+					attr = node.getAttributes().getNamedItem("instance");
+					adapter.instance = attr.getNodeValue();
+
+					NodeList nlHost = node.getElementsByTagName("host");
+					adapter.host = nlHost.item(0).getTextContent();
+
+					NodeList nlPort = node.getElementsByTagName("port");
+					adapter.port = Integer.parseInt(nlPort.item(0).getTextContent());
+
+					NodeList nlQuota = node.getElementsByTagName("quota");
+					adapter.quota = Integer.parseInt(nlQuota.item(0).getTextContent());
+
+					NodeList nlEndpoints = node.getElementsByTagName("endpoints");
+					Element el = (Element) nlEndpoints.item(0);
+					for (int n = 0; n < el.getChildNodes().getLength(); ++n) {
+						Node nEP = el.getChildNodes().item(n);
+						if (nEP.getNodeType() == Node.ELEMENT_NODE) {
+							String host = nEP.getAttributes().getNamedItem("host").getNodeValue();
+							int port = Integer.parseInt(nEP.getAttributes().getNamedItem("port").getNodeValue());
+							Endpoint ep = new Endpoint(host, port);
+							adapter.endpointList.add(ep);
+						}
+					}
+
+					// 添加 Adapter
+					ret.adapterList.add(adapter);
 				}
 
 				// 读取 cellet
@@ -423,7 +475,7 @@ public final class Application {
 						}
 
 						// 添加 Jar
-						jarCelletMap.put(jar, classes);
+						ret.jarCelletMap.put(jar, classes);
 					}
 					else {
 						attr = node.getAttributes().getNamedItem("path");
@@ -438,7 +490,7 @@ public final class Application {
 							}
 
 							// 添加 Path
-							pathCelletMap.put(path, classes);
+							ret.pathCelletMap.put(path, classes);
 						}
 					}
 				}
@@ -450,6 +502,8 @@ public final class Application {
 		} catch (IOException e) {
 			Logger.log(Application.class, e, LogLevel.ERROR);
 		}
+
+		return ret;
 	}
 
 	/** 加载所有库文件
@@ -536,8 +590,23 @@ public final class Application {
 		return true;
 	}
 
-	private class AdapterInfo {
-		protected int port;
+	/** 配置信息数据。
+	 */
+	public class ConfigInfo {
+		public Map<String, List<String>> jarCelletMap = new HashMap<String, List<String>>();
+		public Map<String, List<String>> pathCelletMap = new HashMap<String, List<String>>();
+		public List<AdapterInfo> adapterList = new ArrayList<AdapterInfo>();
+	}
+
+	/** 适配器信息。
+	 */
+	public class AdapterInfo {
+		public String name;
+		public String instance;
+		public String host;
+		public int port;
+		public int quota;
+		public List<Endpoint> endpointList = new ArrayList<Endpoint>();
 	}
 
 }

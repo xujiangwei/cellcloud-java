@@ -36,9 +36,12 @@ import java.net.SocketTimeoutException;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Timer;
+import java.util.TimerTask;
 import java.util.Vector;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
@@ -75,6 +78,11 @@ public abstract class RelationNucleusAdapter implements Adapter {
 	private HashMap<Endpoint, ReliableSocket> clientSocketMap;
 
 	/**
+	 * 故障节点。
+	 */
+	private LinkedList<Endpoint> failureList;
+
+	/**
 	 * Client map endpoint
 	 * 
 	 * Key: socket host:port
@@ -92,7 +100,7 @@ public abstract class RelationNucleusAdapter implements Adapter {
 
 	private ReliableServerSocket serverSocket;
 
-	private ArrayList<AdapterListener> listeners;
+	protected ArrayList<AdapterListener> listeners;
 
 	private QuotaCalculator quota;
 	private QuotaCallback quotaCallback;
@@ -100,6 +108,9 @@ public abstract class RelationNucleusAdapter implements Adapter {
 	private AtomicLong geneSeq;
 
 	private ConcurrentHashMap<Endpoint, Vector<Long>> receivedGeneSeq;
+
+	private Timer heartbeatTimer;
+	private final static String sHeartbeat = "CellCloudHeartbeat";
 
 	/** 构建指定名称的适配器。
 	 */
@@ -111,6 +122,8 @@ public abstract class RelationNucleusAdapter implements Adapter {
 		this.endpointList = new LinkedList<Endpoint>();
 		this.clientSocketMap = new HashMap<Endpoint, ReliableSocket>();
 		this.socketMap = new ConcurrentHashMap<String, Endpoint>();
+
+		this.failureList = new LinkedList<Endpoint>();
 
 		this.receiverTaskList = new LinkedList<ReceiverTask>();
 
@@ -153,10 +166,22 @@ public abstract class RelationNucleusAdapter implements Adapter {
 
 		// callback start
 		this.onStart();
+
+		this.heartbeatTimer = new Timer();
+		this.heartbeatTimer.schedule(new TimerTask() {
+			@Override
+			public void run() {
+				Gene gene = new Gene(sHeartbeat);
+				broadcast(gene);
+			}
+		}, 5000L, 5L * 60L * 1000L);
 	}
 
 	@Override
 	public void teardown() {
+		this.heartbeatTimer.cancel();
+		this.heartbeatTimer.purge();
+
 		// callback stop
 		this.onStop();
 
@@ -232,6 +257,10 @@ public abstract class RelationNucleusAdapter implements Adapter {
 		}
 
 		this.receivedGeneSeq.remove(endpoint);
+
+		synchronized (this.failureList) {
+			this.failureList.remove(endpoint);
+		}
 	}
 
 	/**
@@ -281,29 +310,6 @@ public abstract class RelationNucleusAdapter implements Adapter {
 	}
 
 	/**
-	 * 
-	 * @param keyword
-	 * @param endpoint
-	 */
-	@Override
-	public abstract void encourage(String keyword, Endpoint endpoint);
-
-	/**
-	 * 
-	 * @param keyword
-	 * @param endpoint
-	 */
-	@Override
-	public abstract void discourage(String keyword, Endpoint endpoint);
-
-	/**
-	 * 
-	 * @param keyword
-	 */
-	@Override
-	public abstract void declare(String keyword);
-
-	/**
 	 * 向关联的终端分享方言。
 	 * 
 	 * @param dialect
@@ -311,18 +317,12 @@ public abstract class RelationNucleusAdapter implements Adapter {
 	public abstract void share(String keyword, Dialect dialect);
 
 	/**
+	 * 向指定的终端分享方言。
 	 * 
 	 * @param keyword
 	 * @param dialect
 	 */
 	public abstract void share(String keyword, Endpoint endpoint, Dialect dialect);
-
-	protected void fireShared(Endpoint endpoint, Dialect dialect) {
-		for (int i = 0; i < this.listeners.size(); ++i) {
-			AdapterListener l = this.listeners.get(i);
-			l.onShared(this, endpoint, dialect);
-		}
-	}
 
 	/**
 	 * 广播。
@@ -360,9 +360,17 @@ public abstract class RelationNucleusAdapter implements Adapter {
 
 		for (int i = 0; i < destinationList.size(); ++i) {
 			Endpoint ep = destinationList.get(i);
+
+			synchronized (this.failureList) {
+				// 如果是故障节点，则跳过
+				if (this.failureList.contains(ep)) {
+					continue;
+				}
+			}
+
 			// 传输数据
-			if (!transport(ep, bytes)) {
-				this.fireTransportFailed(ep, gene);
+			if (!this.transport(ep, bytes)) {
+				this.fireTransportFailure(ep, gene);
 			}
 			else {
 				this.fireSend(ep, gene);
@@ -370,50 +378,78 @@ public abstract class RelationNucleusAdapter implements Adapter {
 		}
 	}
 
-	private boolean transport(Endpoint destination, byte[] data) {
+	private synchronized boolean transport(Endpoint destination, byte[] data) {
 		ReliableSocket socket = null;
 		boolean newSocket = false;
 
 		synchronized (this.endpointList) {
 			socket = this.clientSocketMap.get(destination);
-			if (null == socket) {
-				try {
-					socket = new ReliableSocket();
-				} catch (IOException e) {
-					Logger.log(this.getClass(), e, LogLevel.ERROR);
-					return false;
-				}
+		}
 
-				newSocket = true;
-
-				this.clientSocketMap.put(destination, socket);
+		if (null == socket) {
+			try {
+				socket = new ReliableSocket();
+			} catch (IOException e) {
+				Logger.log(this.getClass(), e, LogLevel.ERROR);
+				return false;
 			}
+
+			newSocket = true;
 		}
 
 		if (!socket.isConnected()) {
 			InetSocketAddress address = new InetSocketAddress(destination.getHost(), destination.getPort());
 			try {
+				Logger.d(this.getClass(), "Try connect adapter: " + destination.toString());
+
 				socket.connect(address, this.connectTimeout);
 			} catch (Exception e) {
-				Logger.log(this.getClass(), e, LogLevel.ERROR);
-
-				if (newSocket) {
-					synchronized (this.endpointList) {
-						this.clientSocketMap.remove(destination);
-					}
-				}
-
+				Logger.log(this.getClass(), e, LogLevel.WARNING);
 				return false;
 			}
 		}
 
 		if (newSocket) {
-			// 启动接收数据任务
-			ReceiverTask task = new ReceiverTask((ReliableSocket) socket);
-			synchronized (receiverTaskList) {
-				receiverTaskList.add(task);
+			boolean dual = false;
+
+			// 在连接建立期间，如果服务器接收到连接，则 socketMap 里已经有 value 一样的 Endpoint 实例
+			Iterator<Endpoint> iter = this.socketMap.values().iterator();
+			while (iter.hasNext()) {
+				Endpoint dst = iter.next();
+				if (dst.equals(destination)) {
+					dual = true;
+					break;
+				}
 			}
-			task.start();
+
+			if (dual) {
+				try {
+					socket.close();
+				} catch (IOException e) {
+					Logger.log(this.getClass(), e, LogLevel.DEBUG);
+				}
+
+				socket = this.clientSocketMap.get(destination);
+				if (null == socket) {
+					try {
+						Thread.sleep(1L);
+					} catch (InterruptedException e) {
+						// Nothing
+					}
+					socket = this.clientSocketMap.get(destination);
+				}
+			}
+			else {
+				// 新 socket
+				this.clientSocketMap.put(destination, socket);
+
+				// 启动接收数据任务
+				ReceiverTask task = new ReceiverTask((ReliableSocket) socket);
+				synchronized (this.receiverTaskList) {
+					this.receiverTaskList.add(task);
+				}
+				task.start();
+			}
 		}
 
 		// 配额计算，并阻塞
@@ -466,9 +502,16 @@ public abstract class RelationNucleusAdapter implements Adapter {
 	 * @param endpoint
 	 * @param gene
 	 */
-	protected abstract void onTransportFail(Endpoint endpoint, Gene gene);
+	protected abstract void onTransportFailure(Endpoint endpoint, Gene gene);
 
 	private void fireSend(Endpoint endpoint, Gene gene) {
+		// 去除故障节点
+		synchronized (this.failureList) {
+			if (!this.failureList.isEmpty()) {
+				this.failureList.remove(endpoint);
+			}
+		}
+
 		this.onSend(endpoint, gene);
 	}
 
@@ -511,13 +554,37 @@ public abstract class RelationNucleusAdapter implements Adapter {
 			}
 		}
 
+		// 去除故障节点
+		synchronized (this.failureList) {
+			if (!this.failureList.isEmpty()) {
+				this.failureList.remove(endpoint);
+			}
+		}
+
+		if (gene.getName().equals(sHeartbeat)) {
+			// 处理心跳
+			Logger.i(this.getClass(), "Update endpoint '" + endpoint.toString() + "' with heartbeat");
+			return;
+		}
+
 		this.onReceive(source, gene);
 	}
 
-	private void fireTransportFailed(Endpoint endpoint, Gene gene) {
-		Logger.e(this.getClass(), "Transport failed: " + endpoint.getHost());
+	private void fireTransportFailure(Endpoint endpoint, Gene gene) {
+		Logger.e(this.getClass(), "Transport failed: " + endpoint.toString());
 
-		this.onTransportFail(endpoint, gene);
+		synchronized (this.failureList) {
+			if (!this.failureList.contains(endpoint)) {
+				this.failureList.add(endpoint);
+			}
+		}
+
+		// 跳过心跳包
+		if (gene.getName().equals(sHeartbeat)) {
+			return;
+		}
+
+		this.onTransportFailure(endpoint, gene);
 	}
 
 	private Endpoint findEndpoint(Endpoint endpoint) {
@@ -615,10 +682,13 @@ public abstract class RelationNucleusAdapter implements Adapter {
 		}
 	}
 
-	private class ReceiverTask extends Thread implements ReliableSocketStateListener {
+	protected class ReceiverTask extends Thread implements ReliableSocketStateListener {
 
 		private boolean spinning = false;
 		private ReliableSocket socket;
+
+		private String remoteHost;
+		private int remotePort;
 		private String socketString;
 
 		public ReceiverTask(ReliableSocket socket) {
@@ -626,10 +696,18 @@ public abstract class RelationNucleusAdapter implements Adapter {
 			this.socket = socket;
 			this.socket.addStateListener(this);
 
-			String host = this.socket.getInetAddress().getHostAddress();
-			int port = this.socket.getPort();
+			this.remoteHost = this.socket.getInetAddress().getHostAddress().toString();
+			this.remotePort = this.socket.getPort();
 
-			this.socketString = host + ":" + port;
+			this.socketString = this.remoteHost + ":" + this.remotePort;
+		}
+
+		public String getRemoteHost() {
+			return this.remoteHost;
+		}
+
+		public int getRemotePort() {
+			return this.remotePort;
 		}
 
 		public void terminate() {
@@ -720,8 +798,8 @@ public abstract class RelationNucleusAdapter implements Adapter {
 
 					// 读取 Gene 头
 					String tag = gene.getHeader(GeneHeader.SourceTag);
-					host = gene.getHeader(GeneHeader.Host);
-					port = Integer.parseInt(gene.getHeader(GeneHeader.Port));
+					String host = gene.getHeader(GeneHeader.Host);
+					int port = Integer.parseInt(gene.getHeader(GeneHeader.Port));
 					// 创建 Endpoint
 					Endpoint endpoint = new Endpoint(tag, Role.NODE, host, port);
 
@@ -751,6 +829,16 @@ public abstract class RelationNucleusAdapter implements Adapter {
 					// 删除
 					clientSocketMap.remove(endpoint);
 				}
+
+				synchronized (failureList) {
+					// 添加到故障节点
+					if (!failureList.contains(endpoint)) {
+						failureList.add(endpoint);
+					}
+				}
+
+				// 删除接收 Seq
+				receivedGeneSeq.remove(endpoint);
 			}
 
 			Logger.d(this.getClass(), "Receiver thread stopped: " + this.socketString);

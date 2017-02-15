@@ -313,12 +313,12 @@ public final class Cell {
 				}
 			}
 			else {
-				VersionInfo.main(args);
+				CellVersion.main(args);
 			}
 		}
 		else {
 			System.out.print("cell> No argument");
-			VersionInfo.main(args);
+			CellVersion.main(args);
 		}
 	}
 

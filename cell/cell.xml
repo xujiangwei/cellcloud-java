@@ -35,13 +35,13 @@
 
 	<!-- 适配器配置 -->
 	<adapters>
-		<adapter name="SmartAdapter" instance="broadcast">
+		<adapter name="SmartAdapter" instance="message">
 		    <!-- 适配器使用的主机地址（注：该地址不是监听地址） -->
 		    <host>192.168.0.197</host>
 		    <!-- 适配器监听端口 -->
 			<port>9813</port>
 			<!-- 上行数据流量配额，单位：B/S -->
-			<quota>10240</quota>
+			<quota>102400</quota>
 			<!-- 配对的终端地址信息 -->
 			<endpoints>
 				<endpoint host="192.168.0.198" port="9813" />

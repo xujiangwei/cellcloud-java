@@ -35,8 +35,7 @@ import net.cellcloud.talk.dialect.Dialect;
  */
 public interface AdapterListener {
 
-	/**
-	 * 当收到对端分享的方言时被回调。
+	/** 当收到对端分享的方言时被回调。
 	 * 
 	 * @param adapter
 	 * @param endpoint
@@ -44,13 +43,20 @@ public interface AdapterListener {
 	 */
 	public void onShared(Adapter adapter, Endpoint endpoint, Dialect dialect);
 
-	/**
-	 * 当发送数据发生拥塞时被回调。
+	/** 当发送数据发生拥塞时被回调。
 	 * 
 	 * @param adapter
 	 * @param destination
 	 * @param dataSize
 	 */
 	public void onCongested(Adapter adapter, Endpoint destination, int dataSize);
+
+	/** 当发送数据失败时被回调。
+	 * 
+	 * @param adapter
+	 * @param endpoint
+	 * @param dialect
+	 */
+	public void onShareFailed(Adapter adapter, Endpoint endpoint, Dialect dialect);
 
 }
