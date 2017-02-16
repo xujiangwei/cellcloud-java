@@ -2,7 +2,7 @@
 -----------------------------------------------------------------------------
 This source file is part of Cell Cloud.
 
-Copyright (c) 2009-2012 Cell Cloud Team (www.cellcloud.net)
+Copyright (c) 2009-2017 Cell Cloud Team (www.cellcloud.net)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -42,19 +42,24 @@ import net.cellcloud.common.Logger;
 
 /** 实用函数库。
  * 
- * @author Jiangwei Xu
+ * @author Ambrose Xu
  */
 public final class Utils {
 
-	// 常用日期格式
-	public final static SimpleDateFormat sDateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+	/** 常用日期格式。
+	 */
+	public final static SimpleDateFormat gsDateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 
-	// 序列号头格式
+	/** 序列号头格式。
+	 */
 	private final static SimpleDateFormat sFormatter = new SimpleDateFormat("yyMMdd");
 
+	/** 随机数发生器。
+	 */
 	private final static Random sRandom = new Random(System.currentTimeMillis());
 
-	// 字母表
+	/** 字母表。
+	 */
 	private static final char[] ALPHABET = {'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K',
 		'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z',
 		'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o',
@@ -73,6 +78,10 @@ public final class Utils {
 	}
 
 	/** 生成指定范围内的随机整数。
+	 * 
+	 * @param floor
+	 * @param ceil
+	 * @return
 	 */
 	public static int randomInt(final int floor, final int ceil) {
 		if (floor > ceil) {
@@ -85,7 +94,10 @@ public final class Utils {
 		return (sRandom.nextInt(realCeil) % (realCeil - realFloor + 1) + realFloor) - 1;
 	}
 
-	/** 生成随机字符串。
+	/** 生成指定长度的随机字符串。
+	 * 
+	 * @param length
+	 * @return
 	 */
 	public static String randomString(int length) {
 		char[] buf = new char[length];
@@ -99,8 +111,9 @@ public final class Utils {
 		return new String(buf);
 	}
 
-	/**
-	 * 生成唯一序列码。
+	/** 生成唯一序列码。
+	 * 
+	 * @return
 	 */
 	public static Long generateSerialNumber() {
 		StringBuilder buf = new StringBuilder();
@@ -144,15 +157,22 @@ public final class Utils {
 	}
 
 	/** 转换日期为字符串形式。
+	 * 
+	 * @param date
+	 * @return
 	 */
 	public static String convertDateToSimpleString(Date date) {
-		return sDateFormat.format(date);
+		return gsDateFormat.format(date);
 	}
+
 	/** 转换字符串形式为日期。
+	 * 
+	 * @param string
+	 * @return
 	 */
 	public static Date convertSimpleStringToDate(String string) {
 		try {
-			return sDateFormat.parse(string);
+			return gsDateFormat.parse(string);
 		} catch (ParseException e) {
 			Logger.log(Utils.class, e, LogLevel.ERROR);
 		}
@@ -161,31 +181,45 @@ public final class Utils {
 	}
 
 	/** Byte 数组转 UTF-8 字符串。
+	 * 
+	 * @param bytes
+	 * @return
 	 */
 	public static String bytes2String(byte[] bytes) {
 		return new String(bytes, Charset.forName("UTF-8"));
 	}
 	/** 字符串转 UTF-8 Byte 数组。 
+	 * 
+	 * @param string
+	 * @return
 	 */
 	public static byte[] string2Bytes(String string) {
 		return string.getBytes(Charset.forName("UTF-8"));
 	}
 
-	/** 判断字符串是否是数字。
+	/** 判断字符串是否是数字形式。
+	 * 
+	 * @param string
+	 * @return
 	 */
 	public static boolean isNumeral(String string) {
 		Pattern pattern = Pattern.compile("^[-\\+]?[\\d]*$");
 		return pattern.matcher(string).matches();
 	}
 
-	/** 操作系统是否是 Windows 系统。
+	/** 当前 JVM 运行时操作系统是否是 Windows 系统。
+	 * 
+	 * @return
 	 */
 	public static boolean isWindowsOS() {
 		String os = System.getProperties().getProperty("os.name");
 		return os.startsWith("Win") || os.startsWith("win");
 	}
 
-	/** 判断地址是否是 IPv4 格式。
+	/** 判断字符串形式的地址是否是 IPv4 格式。
+	 * 
+	 * @param address
+	 * @return
 	 */
 	public static boolean isIPv4(String address) {
 		if (address.replaceAll("\\d", "").length() == 3) {
@@ -196,7 +230,10 @@ public final class Utils {
 		}
 	}
 
-	/** 拆分 IPv4 地址。
+	/** 拆解 IPv4 地址。
+	 * 
+	 * @param ipAddress
+	 * @return
 	 */
 	public static int[] splitIPv4Address(String ipAddress) {
 		String[] ipSplit = ipAddress.split("\\.");
@@ -209,7 +246,10 @@ public final class Utils {
 		return ip;  
     }
 
-	/** 转换 IPv4 掩码为 IPv4 格式。
+	/** 转换 IPv4 掩码描述为 IPv4 格式。
+	 * 
+	 * @param length
+	 * @return
 	 */
 	public static int[] convertIPv4NetworkPrefixLength(short length) {
 		switch (length) {
@@ -225,8 +265,13 @@ public final class Utils {
 	}
 
 	/** 拷贝文件。
+	 * 
+	 * @param srcFile
+	 * @param destFileName
+	 * @return
+	 * @throws IOException
 	 */
-	public static long copyFile(File srcFile, String destFileName) throws IOException {
+	public static long copyFile(File srcFile, File destFile) throws IOException {
 		long bytesum = 0;
 		int byteread = 0;
 
@@ -235,8 +280,8 @@ public final class Utils {
 			FileOutputStream fos = null;
 			try {
 				fis = new FileInputStream(srcFile);
-				fos = new FileOutputStream(destFileName);
-				byte[] buffer = new byte[2048];
+				fos = new FileOutputStream(destFile);
+				byte[] buffer = new byte[4096];
 				while ((byteread = fis.read(buffer)) > 0) {
 					bytesum += byteread;
 					fos.write(buffer, 0, byteread);
@@ -256,4 +301,5 @@ public final class Utils {
 
 		return bytesum;
 	}
+
 }

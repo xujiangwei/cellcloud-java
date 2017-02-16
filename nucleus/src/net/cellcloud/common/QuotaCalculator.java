@@ -26,8 +26,9 @@ THE SOFTWARE.
 
 package net.cellcloud.common;
 
-import java.util.Timer;
-import java.util.TimerTask;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /** 配置计算器。
@@ -41,17 +42,18 @@ public class QuotaCalculator {
 
 	private AtomicInteger runtime;
 
-	private Timer timer;
+	private ScheduledExecutorService scheduledExecutor;
+	private ScheduledFuture<?> future;
 
-	private AtomicInteger blockingSize;
+	private volatile long lastBlockingSize;
+	private volatile long lastBlockingTime;
 
-//	private AtomicLong timestamp;
-
-	public QuotaCalculator(int quotaInSecond) {
+	public QuotaCalculator(ScheduledExecutorService scheduledExecutor, int quotaInSecond) {
+		this.scheduledExecutor = scheduledExecutor;
 		this.quota = quotaInSecond;
 		this.runtime = new AtomicInteger(quotaInSecond);
-		this.blockingSize = new AtomicInteger(0);
-//		this.timestamp = new AtomicLong(0);
+		this.lastBlockingSize = 0;
+		this.lastBlockingTime = 0;
 	}
 
 	public void setQuota(int quotaInSecond) {
@@ -62,32 +64,36 @@ public class QuotaCalculator {
 		return this.quota;
 	}
 
-	public void start() {
-		if (null == this.timer) {
-			this.timer = new Timer("QuotaCalculator#Timer");
-			this.timer.schedule(new TimerTask() {
-				@Override
-				public void run() {
-					if (runtime.get() < 0) {
-						runtime.set(quota + runtime.get());
-					}
-					else {
-						runtime.set(quota);
-					}
+	public long getLastBlockingSize() {
+		return this.lastBlockingSize;
+	}
 
-					synchronized (runtime) {
-						runtime.notifyAll();
-					}
+	public long getLastBlockingTime() {
+		return this.lastBlockingTime;
+	}
+
+	public void start() {
+		this.future = this.scheduledExecutor.scheduleWithFixedDelay(new Runnable() {
+			@Override
+			public void run() {
+				if (runtime.get() < 0) {
+					runtime.set(quota + runtime.get());
 				}
-			}, 1000L, 1000L);
-		}
+				else {
+					runtime.set(quota);
+				}
+
+				synchronized (runtime) {
+					runtime.notifyAll();
+				}
+			}
+		}, 1L, 1L, TimeUnit.SECONDS);
 	}
 
 	public void stop() {
-		if (null != this.timer) {
-			this.timer.cancel();
-			this.timer.purge();
-			this.timer = null;
+		if (null != this.future) {
+			this.future.cancel(false);
+			this.future = null;
 		}
 
 		synchronized (this.runtime) {
@@ -96,27 +102,20 @@ public class QuotaCalculator {
 	}
 
 	public void consumeBlocking(int value, QuotaCalculatorCallback callback, Object custom) {
-		if (null == this.timer) {
+		if (null == this.future) {
 			return;
 		}
-
-//		long time = System.currentTimeMillis();
-//		long d = time - this.timestamp.get();
-//		if (d < 10L) {
-//			try {
-//				Thread.sleep(10L - d);
-//			} catch (InterruptedException e) {
-//				e.printStackTrace();
-//			}
-//		}
-//		this.timestamp.set(time);
 
 		if (this.runtime.get() <= 0) {
 //			Logger.d(this.getClass(), "Out of quota: " + this.quota);
 
-			this.blockingSize.addAndGet(value);
+			this.lastBlockingTime = System.currentTimeMillis();
 
-			callback.onCallback(value, custom);
+			this.lastBlockingSize += value;
+
+			if (null != callback) {
+				callback.onCallback(value, custom);
+			}
 
 			synchronized (this.runtime) {
 				try {
@@ -126,14 +125,10 @@ public class QuotaCalculator {
 				}
 			}
 
-			this.blockingSize.set(this.blockingSize.get() - value);
+			this.lastBlockingSize -= value;
 		}
 
 		this.runtime.set(this.runtime.get() - value);
-	}
-
-	public int getBlockingSize() {
-		return this.blockingSize.get();
 	}
 
 }

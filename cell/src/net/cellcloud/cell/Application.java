@@ -427,22 +427,64 @@ public final class Application {
 
 					AdapterInfo adapter = new AdapterInfo();
 
+					// 必填 name
 					Node attr = node.getAttributes().getNamedItem("name");
+					if (null == attr) {
+						Logger.w(this.getClass(), "Configuration parameter error: adapter has no 'name' attribute");
+						continue;
+					}
 					adapter.name = attr.getNodeValue();
 
+					// 必填 instance
 					attr = node.getAttributes().getNamedItem("instance");
+					if (null == attr) {
+						Logger.w(this.getClass(), "Configuration parameter error: adapter has no 'instance' attribute");
+						continue;
+					}
 					adapter.instance = attr.getNodeValue();
 
+					// 必填 host
 					NodeList nlHost = node.getElementsByTagName("host");
+					if (nlHost.getLength() == 0) {
+						Logger.w(this.getClass(),
+								"Configuration parameter error: adapter '"
+										+ adapter.name + "#" + adapter.instance + "' has no 'host' node");
+						continue;
+					}
 					adapter.host = nlHost.item(0).getTextContent();
 
+					// 选填 port
 					NodeList nlPort = node.getElementsByTagName("port");
-					adapter.port = Integer.parseInt(nlPort.item(0).getTextContent());
+					if (nlPort.getLength() > 0) {
+						try {
+							adapter.port = Integer.parseInt(nlPort.item(0).getTextContent());
+						} catch (NumberFormatException e) {
+							Logger.w(this.getClass(),
+									"Configuration parameter error: adapter '"
+											+ adapter.name + "#" + adapter.instance + "' 'port' value isn't number format");
+						}
+					}
 
+					// 选填 quota
 					NodeList nlQuota = node.getElementsByTagName("quota");
-					adapter.quota = Integer.parseInt(nlQuota.item(0).getTextContent());
+					if (nlQuota.getLength() > 0) {
+						try {
+							adapter.quota = Integer.parseInt(nlQuota.item(0).getTextContent());
+						} catch (NumberFormatException e) {
+							Logger.w(this.getClass(),
+									"Configuration parameter error: adapter '"
+											+ adapter.name + "#" + adapter.instance + "' 'quota' value isn't number format");
+						}
+					}
 
+					// 必填 endpoints
 					NodeList nlEndpoints = node.getElementsByTagName("endpoints");
+					if (nlEndpoints.getLength() == 0) {
+						Logger.w(this.getClass(),
+								"Configuration parameter error: adapter '"
+										+ adapter.name + "#" + adapter.instance + "' has no 'endpoints' node");
+						continue;
+					}
 					Element el = (Element) nlEndpoints.item(0);
 					for (int n = 0; n < el.getChildNodes().getLength(); ++n) {
 						Node nEP = el.getChildNodes().item(n);
@@ -452,6 +494,13 @@ public final class Application {
 							Endpoint ep = new Endpoint(host, port);
 							adapter.endpointList.add(ep);
 						}
+					}
+
+					if (adapter.endpointList.isEmpty()) {
+						Logger.w(this.getClass(),
+								"Configuration parameter error: adapter '"
+										+ adapter.name + "#" + adapter.instance + "' has no 'endpoint' nodes");
+						continue;
 					}
 
 					// 添加 Adapter
@@ -604,8 +653,8 @@ public final class Application {
 		public String name;
 		public String instance;
 		public String host;
-		public int port;
-		public int quota;
+		public int port = 9813;
+		public int quota = 1024 * 1024;
 		public List<Endpoint> endpointList = new ArrayList<Endpoint>();
 	}
 

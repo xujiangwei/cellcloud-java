@@ -2,7 +2,7 @@
 -----------------------------------------------------------------------------
 This source file is part of Cell Cloud.
 
-Copyright (c) 2009-2016 Cell Cloud Team (www.cellcloud.net)
+Copyright (c) 2009-2017 Cell Cloud Team (www.cellcloud.net)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -38,18 +38,22 @@ import java.util.Collection;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
 
 
 /** 非阻塞网络接收器。
  * 
- * @author Jiangwei Xu
+ * @author Ambrose Xu
  */
 public class NonblockingAcceptor extends MessageService implements MessageAcceptor {
 
-	// 缓存数据块大小
+	/** 缓存数据块大小。 */
 	private int block = 65536;
+	/** 单次写数据块大小限制。 */
 	private int writeLimit = 32768;
 
+	/** 服务器 NIO socket channel */
 	private ServerSocketChannel channel;
 	private Selector selector;
 
@@ -58,12 +62,17 @@ public class NonblockingAcceptor extends MessageService implements MessageAccept
 	private boolean spinning;
 	private boolean running;
 
-	// 工作线程数组
+	/** 工作器线程数组。 */
 	private NonblockingAcceptorWorker[] workers;
+	/** 工作器数量。 */
 	private int workerNum;
 
-	// 存储 Session 的 Map，Key: Socket hash code ，Value: Session
+	/** 任务池执行器。 */
+	private ScheduledExecutorService scheduledExecutor;
+
+	/** Socket 映射 Session，Key: Socket hash code ，Value: Session */
 	private ConcurrentHashMap<Integer, NonblockingAcceptorSession> socketSessionMap;
+	/** Session Id 映射 Session，Key: Session Id ，Value: Session */
 	private ConcurrentHashMap<Long, NonblockingAcceptorSession> idSessionMap;
 
 	public NonblockingAcceptor() {
@@ -75,19 +84,28 @@ public class NonblockingAcceptor extends MessageService implements MessageAccept
 		this.workerNum = 8;
 	}
 
+	/** {@inheritDoc}
+	 */
 	@Override
 	public boolean bind(int port) {
 		return bind(new InetSocketAddress("0.0.0.0", port));
 	}
 
+	/** {@inheritDoc}
+	 */
 	@Override
 	public boolean bind(final InetSocketAddress address) {
+		// 创建任务池
+		if (null == this.scheduledExecutor) {
+			this.scheduledExecutor = Executors.newScheduledThreadPool(this.workerNum);
+		}
+
 		// 创建工作线程
 		if (null == this.workers) {
 			// 创建工作线程
 			this.workers = new NonblockingAcceptorWorker[this.workerNum];
 			for (int i = 0; i < this.workerNum; ++i) {
-				this.workers[i] = new NonblockingAcceptorWorker(this);
+				this.workers[i] = new NonblockingAcceptorWorker(this, this.scheduledExecutor);
 			}
 		}
 
@@ -165,6 +183,8 @@ public class NonblockingAcceptor extends MessageService implements MessageAccept
 		return true;
 	}
 
+	/** {@inheritDoc}
+	 */
 	@Override
 	public void unbind() {
 		// 退出事件循环
@@ -233,7 +253,7 @@ public class NonblockingAcceptor extends MessageService implements MessageAccept
 			}
 
 			try {
-				Thread.sleep(10);
+				Thread.sleep(10L);
 			} catch (InterruptedException e) {
 				Logger.log(NonblockingAcceptor.class, e, LogLevel.DEBUG);
 			}
@@ -252,9 +272,13 @@ public class NonblockingAcceptor extends MessageService implements MessageAccept
 		this.socketSessionMap.clear();
 		this.idSessionMap.clear();
 
+		this.scheduledExecutor.shutdown();
+
 		this.bindAddress = null;
 	}
 
+	/** {@inheritDoc}
+	 */
 	@Override
 	public void close(Session session) {
 		NonblockingAcceptorSession nas = this.idSessionMap.get(session.getId());
@@ -272,11 +296,15 @@ public class NonblockingAcceptor extends MessageService implements MessageAccept
 		}
 	}
 
+	/** {@inheritDoc}
+	 */
 	@Override
 	public Session getSession(Long sessionId) {
 		return this.idSessionMap.get(sessionId);
 	}
 
+	/** {@inheritDoc}
+	 */
 	@Override
 	public void write(Session session, Message message) {
 		if (message.length() > this.writeLimit) {
@@ -290,12 +318,17 @@ public class NonblockingAcceptor extends MessageService implements MessageAccept
 		}
 	}
 
+	/** 返回指定会话是否存在。
+	 * 
+	 * @param session
+	 * @return
+	 */
 	public boolean existSession(Session session) {
 		return this.idSessionMap.contains(session.getId());
 	}
 
-	/**
-	 * 适配器句柄线程是否正在运行。
+	/** 适配器句柄线程是否正在运行。
+	 *
 	 * @return
 	 */
 	public boolean isRunning() {
@@ -356,15 +389,21 @@ public class NonblockingAcceptor extends MessageService implements MessageAccept
 		return this.socketSessionMap.size();
 	}
 
-	public void setEachSessionReadInterval(long intervalMs) {
+	public void setEachSessionReadInterval(long intervalInMillisecond) {
 		for (NonblockingAcceptorWorker worker : this.workers) {
-			worker.setEachSessionReadInterval(intervalMs);
+			worker.setEachSessionReadInterval(intervalInMillisecond);
 		}
 	}
 
-	public void setEachSessionWriteInterval(long intervalMs) {
+	public void setEachSessionWriteInterval(long intervalInMillisecond) {
 		for (NonblockingAcceptorWorker worker : this.workers) {
-			worker.setEachSessionWriteInterval(intervalMs);
+			worker.setEachSessionWriteInterval(intervalInMillisecond);
+		}
+	}
+
+	public void setTransmissionQuota(int quotaInKilobytePerSecond) {
+		for (NonblockingAcceptorWorker worker : this.workers) {
+			worker.getQuotaCalculator().setQuota(quotaInKilobytePerSecond);
 		}
 	}
 

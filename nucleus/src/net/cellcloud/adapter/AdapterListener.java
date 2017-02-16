@@ -26,6 +26,8 @@ THE SOFTWARE.
 
 package net.cellcloud.adapter;
 
+import java.util.List;
+
 import net.cellcloud.core.Endpoint;
 import net.cellcloud.talk.dialect.Dialect;
 
@@ -51,12 +53,12 @@ public interface AdapterListener {
 	 */
 	public void onCongested(Adapter adapter, Endpoint destination, int dataSize);
 
-	/** 当发送数据失败时被回调。
+	/** 当外联节点发生故障时被回调。
 	 * 
 	 * @param adapter
 	 * @param endpoint
-	 * @param dialect
+	 * @param faultKeywords 由此故障可能影响的关键字列表。
 	 */
-	public void onShareFailed(Adapter adapter, Endpoint endpoint, Dialect dialect);
+	public void onEndpointFailure(Adapter adapter, Endpoint endpoint, List<String> faultKeywords);
 
 }

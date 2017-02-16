@@ -121,8 +121,18 @@ public class FileLogger implements LogHandle {
 			// 复制当前日志文件
 			SimpleDateFormat sdf = new SimpleDateFormat("yyyyMMddHHmmss");
 			Date date = new Date(file.lastModified());
+
+			File destFile = null;
+			String parent = file.getParent();
+			if (null == parent) {
+				destFile = new File(sdf.format(date) + "." + file.getName());
+			}
+			else {
+				destFile = new File(file.getParent() + File.separator + sdf.format(date) + "." + file.getName());
+			}
+
 			try {
-				Utils.copyFile(file, filename + "." + sdf.format(date));
+				Utils.copyFile(file, destFile);
 			} catch (IOException e) {
 				e.printStackTrace();
 			}

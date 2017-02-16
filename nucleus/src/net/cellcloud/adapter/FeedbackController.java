@@ -52,7 +52,7 @@ public class FeedbackController extends TimerTask {
 	private long keywordExpired = 12L * 60L * 60L * 1000L;
 
 	private long inhibitionInterval = 3L * 60L * 1000L;
-	private long inhibitionCounts = 3L;
+	private long inhibitionCounts = 2L;
 
 	private long inhibitionExpired = 30L * 60L * 1000L;
 
@@ -75,6 +75,10 @@ public class FeedbackController extends TimerTask {
 			this.timer.cancel();
 			this.timer = null;
 		}
+	}
+
+	public boolean hasFeedback(String keyword) {
+		return this.feedbackMap.containsKey(keyword);
 	}
 
 	public int getPositiveCounts(String keyword, Endpoint endpoint) {

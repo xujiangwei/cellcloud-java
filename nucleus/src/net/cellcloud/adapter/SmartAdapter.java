@@ -62,6 +62,8 @@ public class SmartAdapter extends RelationNucleusAdapter {
 	 */
 	private ConcurrentHashMap<String, ArrayList<Endpoint>> runtimeList;
 
+	private final int maxListSize = 10000;
+
 	public SmartAdapter(String instanceName) {
 		super(SmartAdapter.Name, instanceName);
 		this.controller = new FeedbackController();
@@ -85,7 +87,7 @@ public class SmartAdapter extends RelationNucleusAdapter {
 
 	@Override
 	protected void onReady() {
-		Logger.i(this.getClass(), "Smart adapter (" + this.getPort() + ") is ready.");
+		Logger.i(this.getClass(), "Smart adapter '" + this.getName() + "' (" + this.getPort() + ") is ready.");
 	}
 
 	@Override
@@ -122,40 +124,25 @@ public class SmartAdapter extends RelationNucleusAdapter {
 
 	@Override
 	protected void onTransportFailure(Endpoint endpoint, Gene gene) {
+		ArrayList<String> keywords = new ArrayList<String>();
 		Iterator<Entry<String, ArrayList<Endpoint>>> iter = this.runtimeList.entrySet().iterator();
 		while (iter.hasNext()) {
 			Entry<String, ArrayList<Endpoint>> e = iter.next();
 			ArrayList<Endpoint> list = e.getValue();
 			synchronized (list) {
-				list.remove(endpoint);
+				if (list.remove(endpoint)) {
+					keywords.add(e.getKey());
+				}
 			}
 		}
 
+		this.fireEndpointFailure(endpoint, keywords);
+
 		// 跳过 PT_FEEDBACK
-		String pt = gene.getHeader(GeneHeader.PayloadType);
-		if (null != pt && pt.equals(PT_FEEDBACK)) {
-			return;
-		}
-
-		String payload = gene.getPayload();
-		if (null == payload) {
-			return;
-		}
-
-		JSONObject json = null;
-		try {
-			json = new JSONObject(payload);
-
-			Primitive primitive = new Primitive();
-			PrimitiveSerializer.read(primitive, json);
-
-			// 执行回调
-			this.fireShareFailed(endpoint, primitive.getDialect());
-		} catch (JSONException e) {
-			Logger.log(this.getClass(), e, LogLevel.WARNING);
-		} catch (Exception e) {
-			Logger.log(this.getClass(), e, LogLevel.WARNING);
-		}
+//		String pt = gene.getHeader(GeneHeader.PayloadType);
+//		if (null != pt && pt.equals(PT_FEEDBACK)) {
+//			return;
+//		}
 	}
 
 	@Override
@@ -345,6 +332,23 @@ public class SmartAdapter extends RelationNucleusAdapter {
 			list = new ArrayList<Endpoint>(epList.size());
 			list.addAll(epList);
 			this.runtimeList.put(keyword, list);
+
+			if (this.runtimeList.size() > this.maxListSize) {
+				// 删除过期 keyword
+				Thread thread = new Thread(new Runnable() {
+					@Override
+					public void run() {
+						Iterator<Entry<String, ArrayList<Endpoint>>> iter = runtimeList.entrySet().iterator();
+						while (iter.hasNext()) {
+							Entry<String, ArrayList<Endpoint>> e = iter.next();
+							if (!controller.hasFeedback(e.getKey())) {
+								iter.remove();
+							}
+						}
+					}
+				});
+				thread.start();
+			}
 		}
 		synchronized (list) {
 			if (feedback < 0) {
@@ -367,10 +371,10 @@ public class SmartAdapter extends RelationNucleusAdapter {
 		}
 	}
 
-	private void fireShareFailed(Endpoint endpoint, Dialect dialect) {
+	private void fireEndpointFailure(Endpoint endpoint, List<String> faultKeywords)  {
 		for (int i = 0; i < this.listeners.size(); ++i) {
 			AdapterListener l = this.listeners.get(i);
-			l.onShareFailed(this, endpoint, dialect);
+			l.onEndpointFailure(this, endpoint, faultKeywords);
 		}
 	}
 

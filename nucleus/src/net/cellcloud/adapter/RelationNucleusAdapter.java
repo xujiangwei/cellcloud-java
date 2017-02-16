@@ -40,12 +40,12 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.Timer;
-import java.util.TimerTask;
 import java.util.Vector;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 
 import net.cellcloud.adapter.gene.Gene;
@@ -77,8 +77,7 @@ public abstract class RelationNucleusAdapter implements Adapter {
 	private LinkedList<Endpoint> endpointList;
 	private HashMap<Endpoint, ReliableSocket> clientSocketMap;
 
-	/**
-	 * 故障节点。
+	/** 故障节点列表。
 	 */
 	private LinkedList<Endpoint> failureList;
 
@@ -96,11 +95,12 @@ public abstract class RelationNucleusAdapter implements Adapter {
 	private LinkedList<ReceiverTask> receiverTaskList;
 
 	private ServerThread thread;
-	private ExecutorService executor;
 
 	private ReliableServerSocket serverSocket;
 
 	protected ArrayList<AdapterListener> listeners;
+
+	private ScheduledExecutorService scheduledExecutor;
 
 	private QuotaCalculator quota;
 	private QuotaCallback quotaCallback;
@@ -109,7 +109,8 @@ public abstract class RelationNucleusAdapter implements Adapter {
 
 	private ConcurrentHashMap<Endpoint, Vector<Long>> receivedGeneSeq;
 
-	private Timer heartbeatTimer;
+	private ScheduledFuture<?> heartbeatFuture;
+
 	private final static String sHeartbeat = "CellCloudHeartbeat";
 
 	/** 构建指定名称的适配器。
@@ -117,7 +118,6 @@ public abstract class RelationNucleusAdapter implements Adapter {
 	public RelationNucleusAdapter(String name, String instanceName) {
 		this.name = name;
 		this.instanceName = instanceName;
-		this.executor = Executors.newCachedThreadPool();
 
 		this.endpointList = new LinkedList<Endpoint>();
 		this.clientSocketMap = new HashMap<Endpoint, ReliableSocket>();
@@ -129,7 +129,9 @@ public abstract class RelationNucleusAdapter implements Adapter {
 
 		this.listeners = new ArrayList<AdapterListener>();
 
-		this.quota = new QuotaCalculator(100 * 1024);
+		this.scheduledExecutor = Executors.newScheduledThreadPool(2);
+
+		this.quota = new QuotaCalculator(this.scheduledExecutor, 1024 * 1024);
 		this.quotaCallback = new QuotaCallback();
 
 		this.geneSeq = new AtomicLong(0);
@@ -167,27 +169,28 @@ public abstract class RelationNucleusAdapter implements Adapter {
 		// callback start
 		this.onStart();
 
-		this.heartbeatTimer = new Timer();
-		this.heartbeatTimer.schedule(new TimerTask() {
+		this.heartbeatFuture = this.scheduledExecutor.scheduleWithFixedDelay(new Runnable() {
 			@Override
 			public void run() {
 				Gene gene = new Gene(sHeartbeat);
 				broadcast(gene);
 			}
-		}, 5000L, 5L * 60L * 1000L);
+		}, 5L, 5L * 60L, TimeUnit.SECONDS);
 	}
 
 	@Override
 	public void teardown() {
-		this.heartbeatTimer.cancel();
-		this.heartbeatTimer.purge();
+		if (null != this.heartbeatFuture) {
+			this.heartbeatFuture.cancel(false);
+			this.heartbeatFuture = null;
+		}
 
 		// callback stop
 		this.onStop();
 
 		this.quota.stop();
 
-		this.executor.shutdown();
+		this.scheduledExecutor.shutdown();
 
 		if (null != this.thread) {
 			this.thread.terminate();
@@ -263,12 +266,22 @@ public abstract class RelationNucleusAdapter implements Adapter {
 		}
 	}
 
-	/**
+	/** 返回所有预置节点列表。
 	 * 
 	 * @return
 	 */
 	protected List<Endpoint> endpointList() {
 		return this.endpointList;
+	}
+
+	/** 判读指定节点是否是故障节点。
+	 * 
+	 * @return
+	 */
+	public boolean isFailureEndpoint(Endpoint endpoint) {
+		synchronized (this.failureList) {
+			return this.failureList.contains(endpoint);
+		}
 	}
 
 	@Override

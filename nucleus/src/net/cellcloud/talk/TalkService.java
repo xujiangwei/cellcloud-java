@@ -435,12 +435,12 @@ public final class TalkService implements Service, SpeakerDelegate {
 		this.numWorkerThreads = num;
 	}
 
-	public void setEachSessionReadInterval(long intervalMs) {
-		this.acceptor.setEachSessionReadInterval(intervalMs);
+	public void setEachSessionReadInterval(long intervalInMillisecond) {
+		this.acceptor.setEachSessionReadInterval(intervalInMillisecond);
 	}
 
-	public void setEachSessionWriteInterval(long intervalMs) {
-		this.acceptor.setEachSessionWriteInterval(intervalMs);
+	public void setEachSessionWriteInterval(long intervalInMillisecond) {
+		this.acceptor.setEachSessionWriteInterval(intervalInMillisecond);
 	}
 
 	/** 设置是否激活 HTTP 服务。

@@ -851,10 +851,15 @@ public final class Nucleus {
 			Iterator<Cellet> iter = this.cellets.values().iterator();
 			while (iter.hasNext()) {
 				Cellet cellet = iter.next();
-				// 准备
-				cellet.prepare();
-				// 激活
-				cellet.activate();
+				try {
+					// 准备
+					cellet.prepare();
+					// 激活
+					cellet.activate();
+				} catch (Exception e) {
+					Logger.log(this.getClass(), e, LogLevel.ERROR);
+					Logger.e(this.getClass(), "Cellet '" + cellet.getFeature().getIdentifier() + "' activate failed.");
+				}
 			}
 		}
 	}
@@ -865,7 +870,11 @@ public final class Nucleus {
 		if (null != this.cellets && !this.cellets.isEmpty()) {
 			Iterator<Cellet> iter = this.cellets.values().iterator();
 			while (iter.hasNext()) {
-				iter.next().deactivate();
+				try {
+					iter.next().deactivate();
+				} catch (Exception e) {
+					Logger.log(this.getClass(), e, LogLevel.ERROR);
+				}
 			}
 		}
 	}

@@ -83,7 +83,7 @@ public abstract class ClusterProtocol {
 	/** 返回标准日期。
 	 */
 	public final String getStandardDate() {
-		return Utils.sDateFormat.format(new Date());
+		return Utils.gsDateFormat.format(new Date());
 	}
 
 	/** 返回协议内传输的标签。

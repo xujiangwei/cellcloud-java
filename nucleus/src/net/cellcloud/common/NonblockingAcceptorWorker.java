@@ -32,23 +32,27 @@ import java.nio.channels.SocketChannel;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.Vector;
+import java.util.concurrent.ScheduledExecutorService;
 
-
-/**
- * 非阻塞网络接收器工作线程。
+/** 非阻塞网络工作器线程。
  * 
- * @author Jiangwei Xu
+ * 此线程负责处理其关联的会话的数据读、写操作。
+ * 
+ * @author Ambrose Xu
+ *
  */
 public final class NonblockingAcceptorWorker extends Thread {
 
 	// 控制线程生命周期的条件变量
-	private byte[] mutex = new byte[0];
+	private Object mutex = new Object();
 	// 是否处于自旋
 	private boolean spinning = false;
 	// 是否正在工作
 	private boolean working = false;
 
 	private NonblockingAcceptor acceptor;
+
+	private QuotaCalculator transmissionQuota;
 
 	// 需要执行接收数据任务的 Session 列表
 	private Vector<NonblockingAcceptorSession> receiveSessions = new Vector<NonblockingAcceptorSession>();
@@ -66,8 +70,9 @@ public final class NonblockingAcceptorWorker extends Thread {
 	// 接收消息时的数组缓存池
 	private LinkedList<ArrayList<byte[]>> tenantablePool = new LinkedList<ArrayList<byte[]>>();
 
-	public NonblockingAcceptorWorker(NonblockingAcceptor acceptor) {
+	public NonblockingAcceptorWorker(NonblockingAcceptor acceptor, ScheduledExecutorService scheduledExecutor) {
 		this.acceptor = acceptor;
+		this.transmissionQuota = new QuotaCalculator(scheduledExecutor, 1024 * 1024);
 		this.setName("NonblockingAcceptorWorker@" + this.toString());
 	}
 
@@ -79,6 +84,10 @@ public final class NonblockingAcceptorWorker extends Thread {
 		this.eachSessionWriteInterval = intervalMs;
 	}
 
+	protected QuotaCalculator getQuotaCalculator() {
+		return this.transmissionQuota;
+	}
+
 	@Override
 	public void run() {
 		this.working = true;
@@ -86,6 +95,9 @@ public final class NonblockingAcceptorWorker extends Thread {
 		this.tx = 0;
 		this.rx = 0;
 		NonblockingAcceptorSession session = null;
+
+		// 启动配额管理
+		this.transmissionQuota.start();
 
 		long time = System.currentTimeMillis();
 		int timeCounts = 0;
@@ -141,14 +153,6 @@ public final class NonblockingAcceptorWorker extends Thread {
 				Logger.log(this.getClass(), e, LogLevel.WARNING);
 			}
 
-//			try {
-//				Thread.sleep(1L);
-//			} catch (InterruptedException e) {
-//				// Nothing
-//			}
-
-//			Thread.yield();
-
 			// 时间计数
 			++timeCounts;
 			if (timeCounts >= 1000) {
@@ -156,6 +160,9 @@ public final class NonblockingAcceptorWorker extends Thread {
 				timeCounts = 0;
 			}
 		}
+
+		// 停止配额管理
+		this.transmissionQuota.stop();
 
 		this.working = false;
 		this.tenantablePool.clear();
@@ -181,7 +188,7 @@ public final class NonblockingAcceptorWorker extends Thread {
 		if (blockingCheck) {
 			while (this.working) {
 				try {
-					Thread.sleep(10);
+					Thread.sleep(10L);
 				} catch (InterruptedException e) {
 					Logger.log(NonblockingAcceptorWorker.class, e, LogLevel.DEBUG);
 				}
@@ -428,6 +435,9 @@ public final class NonblockingAcceptorWorker extends Thread {
 							}
 
 							this.tx += size;
+
+							// 配额检测
+							this.transmissionQuota.consumeBlocking(size, null, null);
 						}
 					} catch (IOException e) {
 						Logger.log(NonblockingAcceptorWorker.class, e, LogLevel.WARNING);
@@ -526,93 +536,6 @@ public final class NonblockingAcceptorWorker extends Thread {
 
 		synchronized (this.tenantablePool) {
 			this.tenantablePool.add(list);
-		}
-	}
-
-	/** 解析数据格式。
-	 * @deprecated
-	 */
-	protected void parseData(NonblockingAcceptorSession session, byte[] data) {
-		// 拦截器返回 true 则该数据被拦截，不再进行数据解析。
-		if (this.acceptor.fireIntercepted(session, data)) {
-			return;
-		}
-
-		// 根据数据标志获取数据
-		if (this.acceptor.existDataMark()) {
-			byte[] headMark = this.acceptor.getHeadMark();
-			byte[] tailMark = this.acceptor.getTailMark();
-
-			int cursor = 0;
-			int length = data.length;
-			boolean head = false;
-			boolean tail = false;
-			byte[] buf = new byte[this.acceptor.getBlockSize()];
-			int bufIndex = 0;
-
-			while (cursor < length) {
-				head = true;
-				tail = true;
-
-				byte b = data[cursor];
-
-				// 判断是否是头标识
-				if (b == headMark[0]) {
-					for (int i = 1, len = headMark.length; i < len; ++i) {
-						if (data[cursor + i] != headMark[i]) {
-							head = false;
-							break;
-						}
-					}
-				}
-				else {
-					head = false;
-				}
-
-				// 判断是否是尾标识
-				if (b == tailMark[0]) {
-					for (int i = 1, len = tailMark.length; i < len; ++i) {
-						if (data[cursor + i] != tailMark[i]) {
-							tail = false;
-							break;
-						}
-					}
-				}
-				else {
-					tail = false;
-				}
-
-				if (head) {
-					// 遇到头标识，开始记录数据
-					cursor += headMark.length;
-					bufIndex = 0;
-					buf[bufIndex] = data[cursor];
-				}
-				else if (tail) {
-					// 遇到尾标识，提取 buf 内数据
-					byte[] pdata = new byte[bufIndex + 1];
-					System.arraycopy(buf, 0, pdata, 0, bufIndex + 1);
-					Message message = new Message(pdata);
-					this.acceptor.fireMessageReceived(session, message);
-
-					cursor += tailMark.length;
-					// 后面要移动到下一个字节因此这里先减1
-					cursor -= 1;
-				}
-				else {
-					++bufIndex;
-					buf[bufIndex] = b;
-				}
-
-				// 下一个字节
-				++cursor;
-			}
-
-			buf = null;
-		}
-		else {
-			Message message = new Message(data);
-			this.acceptor.fireMessageReceived(session, message);
 		}
 	}
 
@@ -804,4 +727,5 @@ public final class NonblockingAcceptorWorker extends Thread {
 		byte[] plaintext = Cryptology.getInstance().simpleDecrypt(ciphertext, key);
 		message.set(plaintext);
 	}
+
 }
