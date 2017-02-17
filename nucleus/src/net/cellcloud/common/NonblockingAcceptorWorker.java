@@ -79,9 +79,15 @@ public final class NonblockingAcceptorWorker extends Thread {
 	protected void setEachSessionReadInterval(long intervalMs) {
 		this.eachSessionReadInterval = intervalMs;
 	}
+	protected long getEachSessionReadInterval() {
+		return this.eachSessionReadInterval;
+	}
 
 	protected void setEachSessionWriteInterval(long intervalMs) {
 		this.eachSessionWriteInterval = intervalMs;
+	}
+	protected long getEachSessionWriteInterval() {
+		return this.eachSessionWriteInterval;
 	}
 
 	protected QuotaCalculator getQuotaCalculator() {

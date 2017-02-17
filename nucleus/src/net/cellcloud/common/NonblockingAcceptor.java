@@ -395,16 +395,40 @@ public class NonblockingAcceptor extends MessageService implements MessageAccept
 		}
 	}
 
+	public long getEachSessionReadInterval() {
+		if (null == this.workers) {
+			return -1;
+		}
+
+		return this.workers[0].getEachSessionReadInterval();
+	}
+
 	public void setEachSessionWriteInterval(long intervalInMillisecond) {
 		for (NonblockingAcceptorWorker worker : this.workers) {
 			worker.setEachSessionWriteInterval(intervalInMillisecond);
 		}
 	}
 
+	public long getEachSessionWriteInterval() {
+		if (null == this.workers) {
+			return -1;
+		}
+
+		return this.workers[0].getEachSessionWriteInterval();
+	}
+
 	public void setTransmissionQuota(int quotaInKilobytePerSecond) {
 		for (NonblockingAcceptorWorker worker : this.workers) {
 			worker.getQuotaCalculator().setQuota(quotaInKilobytePerSecond);
 		}
+	}
+
+	public int getTransmissionQuota() {
+		if (null == this.workers) {
+			return -1;
+		}
+
+		return this.workers[0].getQuotaCalculator().getQuota();
 	}
 
 	/**

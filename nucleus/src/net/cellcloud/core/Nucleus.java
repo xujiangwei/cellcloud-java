@@ -283,7 +283,7 @@ public final class Nucleus {
 				// 设置最大连接数
 				this.talkService.setMaxConnections(this.config.talk.maxConnections);
 				// 设置工作线程数
-				this.talkService.setWorkerThreads(this.config.talk.numWorkerThreads);
+				this.talkService.setWorkerThreadNum(this.config.talk.numWorkerThreads);
 				// 设置是否启用 HTTP 服务
 				this.talkService.httpEnabled(this.config.talk.httpEnabled);
 				// 设置 HTTP 端口号

@@ -166,7 +166,7 @@ public final class TalkService implements Service, SpeakerDelegate {
 
 			this.port = 7000;
 			this.block = 65536;
-			this.maxConnections = 1000;
+			this.maxConnections = 5000;
 			this.numWorkerThreads = 8;
 
 			this.httpEnabled = true;
@@ -426,21 +426,61 @@ public final class TalkService implements Service, SpeakerDelegate {
 		this.maxConnections = num;
 	}
 
+	public int getMaxConnections() {
+		return this.maxConnections;
+	}
+
 	/**
 	 * 设置工作线程数。
 	 * 
 	 * @param num
 	 */
-	public void setWorkerThreads(int num) {
+	public void setWorkerThreadNum(int num) throws InvalidException {
+		if (null != this.acceptor && this.acceptor.isRunning()) {
+			throw new InvalidException("Can't set the number of worker thread in talk service after the start");
+		}
+
 		this.numWorkerThreads = num;
 	}
 
+	public int getWorkerThreadNum() {
+		return this.numWorkerThreads;
+	}
+
 	public void setEachSessionReadInterval(long intervalInMillisecond) {
+		if (null == this.acceptor) {
+			return;
+		}
+
 		this.acceptor.setEachSessionReadInterval(intervalInMillisecond);
 	}
 
+	public long getEachSessionReadInterval() {
+		return (null != this.acceptor) ? this.acceptor.getEachSessionReadInterval() : -1;
+	}
+
 	public void setEachSessionWriteInterval(long intervalInMillisecond) {
+		if (null == this.acceptor) {
+			return;
+		}
+
 		this.acceptor.setEachSessionWriteInterval(intervalInMillisecond);
+	}
+
+	public long getEachSessionWriteInterval() {
+		return (null != this.acceptor) ? this.acceptor.getEachSessionWriteInterval() : -1;
+	}
+
+	public void setSessionTransmissionQuota(int quotaInKilobytePerSecond) {
+		if (null == this.acceptor) {
+			return;
+		}
+
+		this.acceptor.setTransmissionQuota(quotaInKilobytePerSecond);
+	}
+
+	public int getSessionTransmissionQuota() {
+		return (null != this.acceptor) ? this.acceptor.getTransmissionQuota() : -1;
 	}
 
 	/** 设置是否激活 HTTP 服务。
