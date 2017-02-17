@@ -471,12 +471,12 @@ public final class TalkService implements Service, SpeakerDelegate {
 		return (null != this.acceptor) ? this.acceptor.getEachSessionWriteInterval() : -1;
 	}
 
-	public void setSessionTransmissionQuota(int quotaInKilobytePerSecond) {
+	public void setSessionTransmissionQuota(int quotaInBytesPerSecond) {
 		if (null == this.acceptor) {
 			return;
 		}
 
-		this.acceptor.setTransmissionQuota(quotaInKilobytePerSecond);
+		this.acceptor.setTransmissionQuota(quotaInBytesPerSecond);
 	}
 
 	public int getSessionTransmissionQuota() {

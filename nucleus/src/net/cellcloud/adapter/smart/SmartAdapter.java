@@ -24,7 +24,7 @@ THE SOFTWARE.
 -----------------------------------------------------------------------------
 */
 
-package net.cellcloud.adapter;
+package net.cellcloud.adapter.smart;
 
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -33,6 +33,8 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.concurrent.ConcurrentHashMap;
 
+import net.cellcloud.adapter.AdapterListener;
+import net.cellcloud.adapter.RelationNucleusAdapter;
 import net.cellcloud.adapter.gene.Gene;
 import net.cellcloud.adapter.gene.GeneHeader;
 import net.cellcloud.common.LogLevel;
@@ -46,55 +48,92 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 /**
+ * 使用回馈机制的自动适配器。
  * 
  * @author Ambrose Xu
+ *
  */
 public class SmartAdapter extends RelationNucleusAdapter {
 
+	/**
+	 * 适配器名。
+	 */
 	public final static String Name = "SmartAdapter";
 
+	/**
+	 * Gene 负载类型定义。
+	 */
 	private final static String PT_FEEDBACK = "Feedback";
 
+	/**
+	 * 回馈控制器。
+	 */
 	private FeedbackController controller;
 
 	/**
-	 * 关键字对应的可用终端名。
+	 * 关键字对应的可用终端列表。
 	 */
 	private ConcurrentHashMap<String, ArrayList<Endpoint>> runtimeList;
 
+	/**
+	 * 运行时列表最大长度。
+	 */
 	private final int maxListSize = 10000;
 
+	/**
+	 * 构造器。
+	 * 
+	 * @param instanceName 指定该适配器的实例名。
+	 */
 	public SmartAdapter(String instanceName) {
 		super(SmartAdapter.Name, instanceName);
 		this.controller = new FeedbackController();
 		this.runtimeList = new ConcurrentHashMap<String, ArrayList<Endpoint>>();
 	}
 
+	/**
+	 * {@inheritDoc}
+	 */
 	@Override
 	public void config(Map<String, Object> parameters) {
 		super.config(parameters);
 	}
 
+	/**
+	 * {@inheritDoc}
+	 */
 	@Override
 	protected void onStart() {
 		this.controller.start();
 	}
 
+	/**
+	 * {@inheritDoc}
+	 */
 	@Override
 	protected void onStop() {
 		this.controller.stop();
 	}
 
+	/**
+	 * {@inheritDoc}
+	 */
 	@Override
 	protected void onReady() {
 		Logger.i(this.getClass(), "Smart adapter '" + this.getName() + "' (" + this.getPort() + ") is ready.");
 	}
 
+	/**
+	 * {@inheritDoc}
+	 */
 	@Override
 	protected void onSend(Endpoint endpoint, Gene gene) {
 		// Nothing
 	}
 
+	/**
+	 * {@inheritDoc}
+	 */
 	@Override
 	protected void onReceive(Endpoint endpoint, Gene gene) {
 		String pt = gene.getHeader(GeneHeader.PayloadType);
@@ -122,6 +161,9 @@ public class SmartAdapter extends RelationNucleusAdapter {
 		}
 	}
 
+	/**
+	 * {@inheritDoc}
+	 */
 	@Override
 	protected void onTransportFailure(Endpoint endpoint, Gene gene) {
 		ArrayList<String> keywords = new ArrayList<String>();
@@ -137,14 +179,11 @@ public class SmartAdapter extends RelationNucleusAdapter {
 		}
 
 		this.fireEndpointFailure(endpoint, keywords);
-
-		// 跳过 PT_FEEDBACK
-//		String pt = gene.getHeader(GeneHeader.PayloadType);
-//		if (null != pt && pt.equals(PT_FEEDBACK)) {
-//			return;
-//		}
 	}
 
+	/**
+	 * {@inheritDoc}
+	 */
 	@Override
 	public synchronized void share(String keyword, Dialect dialect) {
 		JSONObject payload = new JSONObject();
@@ -176,6 +215,9 @@ public class SmartAdapter extends RelationNucleusAdapter {
 		}
 	}
 
+	/**
+	 * {@inheritDoc}
+	 */
 	@Override
 	public void share(String keyword, Endpoint endpoint, Dialect dialect) {
 		JSONObject payload = new JSONObject();
@@ -192,6 +234,9 @@ public class SmartAdapter extends RelationNucleusAdapter {
 		super.transport(endpoint, gene);
 	}
 
+	/**
+	 * {@inheritDoc}
+	 */
 	@Override
 	public void encourage(String keyword, Endpoint endpoint) {
 		if (this.controller.isInhibitiveEncourage(keyword, endpoint)) {
@@ -217,6 +262,9 @@ public class SmartAdapter extends RelationNucleusAdapter {
 		this.controller.recordEncourage(keyword, endpoint);
 	}
 
+	/**
+	 * {@inheritDoc}
+	 */
 	@Override
 	public void encourage(String keyword) {
 		Gene gene = new Gene(keyword);
@@ -243,6 +291,9 @@ public class SmartAdapter extends RelationNucleusAdapter {
 		this.broadcast(gene);
 	}
 
+	/**
+	 * {@inheritDoc}
+	 */
 	@Override
 	public void discourage(String keyword, Endpoint endpoint) {
 		if (this.controller.isInhibitiveDiscourage(keyword, endpoint)) {
@@ -268,6 +319,9 @@ public class SmartAdapter extends RelationNucleusAdapter {
 		this.controller.recordDiscourage(keyword, endpoint);
 	}
 
+	/**
+	 * {@inheritDoc}
+	 */
 	@Override
 	public void discourage(String keyword) {
 		Gene gene = new Gene(keyword);
@@ -294,6 +348,12 @@ public class SmartAdapter extends RelationNucleusAdapter {
 		this.broadcast(gene);
 	}
 
+	/**
+	 * 处理接收到的回馈数据。
+	 * 
+	 * @param endpoint 发送该数据的终端。
+	 * @param gene 数据实例。
+	 */
 	private void processFeedback(Endpoint endpoint, Gene gene) {
 		Logger.d(this.getClass(), "Process feedback : " + endpoint.toString());
 
@@ -364,6 +424,12 @@ public class SmartAdapter extends RelationNucleusAdapter {
 		}
 	}
 
+	/**
+	 * 触发 onShared 回调。
+	 * 
+	 * @param endpoint 事件发生的终端。
+	 * @param dialect 方言数据。
+	 */
 	private void fireShared(Endpoint endpoint, Dialect dialect) {
 		for (int i = 0; i < this.listeners.size(); ++i) {
 			AdapterListener l = this.listeners.get(i);
@@ -371,6 +437,12 @@ public class SmartAdapter extends RelationNucleusAdapter {
 		}
 	}
 
+	/**
+	 * 触发 onEndpointFailure 回调。
+	 * 
+	 * @param endpoint 事件发生的终端。
+	 * @param faultKeywords 受此影响的关键字列表。
+	 */
 	private void fireEndpointFailure(Endpoint endpoint, List<String> faultKeywords)  {
 		for (int i = 0; i < this.listeners.size(); ++i) {
 			AdapterListener l = this.listeners.get(i);

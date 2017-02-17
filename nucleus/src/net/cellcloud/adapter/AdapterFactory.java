@@ -26,6 +26,8 @@ THE SOFTWARE.
 
 package net.cellcloud.adapter;
 
+import net.cellcloud.adapter.smart.SmartAdapter;
+
 /**
  * 适配器工厂。
  * 
@@ -36,10 +38,18 @@ public final class AdapterFactory {
 	private AdapterFactory() {
 	}
 
+	/**
+	 * 创建适配器。
+	 * 
+	 * @param name 指定适配器名称。
+	 * @param instanceName 指定创建的实例名。
+	 * @return
+	 */
 	public static Adapter createAdapter(String name, String instanceName) {
 		if (name.equals(SmartAdapter.Name)) {
 			return new SmartAdapter(instanceName);
 		}
 		return null;
 	}
+
 }

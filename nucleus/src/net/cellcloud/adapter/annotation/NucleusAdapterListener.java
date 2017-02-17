@@ -32,7 +32,15 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
-@Target(ElementType.FIELD)
+/**
+ * 内核适配监听器注解。
+ * 
+ * 使用此注解指定内核适配的监听器类。内核启动时将自动将有此注解的类实例化并添加到指定实例的监听器中。
+ * 
+ * @author Ambrose Xu
+ *
+ */
+@Target(ElementType.TYPE)
 @Retention(RetentionPolicy.RUNTIME)
 @Documented
 public @interface NucleusAdapterListener {
@@ -40,7 +48,7 @@ public @interface NucleusAdapterListener {
 	/**
 	 * 监听器对应适配器的实例名。
 	 * 
-	 * @return
+	 * @return 返回字符串形式的实例名。
 	 */
 	public String instanceName() default "";
 

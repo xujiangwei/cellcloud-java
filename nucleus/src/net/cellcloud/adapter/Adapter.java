@@ -2,7 +2,7 @@
 -----------------------------------------------------------------------------
 This source file is part of Cell Cloud.
 
-Copyright (c) 2009-2015 Cell Cloud Team (www.cellcloud.net)
+Copyright (c) 2009-2017 Cell Cloud Team (www.cellcloud.net)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -30,92 +30,108 @@ import java.util.Map;
 
 import net.cellcloud.core.Endpoint;
 
-/** 适配器接口。
+/**
+ * 适配器接口。
  * 
- * @author Jiangwei Xu
+ * @author Ambrose Xu
+ * 
  */
 public interface Adapter {
 
-	/** 返回适配器名。
+	/**
+	 * 获得适配器名。
 	 * 
-	 * @return
+	 * @return 返回字符串形式的适配器名。
 	 */
 	public String getName();
 
-	/** 返回实例名。
+	/**
+	 * 获得适配器的实例名。
 	 * 
-	 * @return
+	 * @return 返回字符串形式的实例名。
 	 */
 	public String getInstanceName();
 
-	/** 配置适配器。
+	/**
+	 * 配置适配器。
 	 * 
-	 * @param parameters
+	 * @param parameters 指定参数配置的键值对。
 	 */
 	public void config(Map<String, Object> parameters);
 
-	/** 添加关联终端。
+	/**
+	 * 添加关联终端。
 	 * 
-	 * @param endpoint
-	 * @return
+	 * @param endpoint 指定待添加终端。
+	 * @return 如果添加成功返回 <code>true</code>，否则返回 <code>false</code>。
 	 */
 	public boolean addEndpoint(Endpoint endpoint);
 
-	/** 移除关联终端。
+	/**
+	 * 移除关联终端。
 	 * 
-	 * @param endpoint
+	 * @param endpoint 指定待移除终端。
 	 */
 	public void removeEndpoint(Endpoint endpoint);
 
-	/** 添加监听器。
+	/**
+	 * 添加监听器。
 	 * 
-	 * @param listener
+	 * @param listener 指定适配器监听器。
 	 */
 	public void addListener(AdapterListener listener);
 
-	/** 移除监听器。
+	/**
+	 * 移除监听器。
 	 * 
-	 * @param listener
+	 * @param listener 指定适配器监听器。
 	 */
 	public void removeListener(AdapterListener listener);
 
-	/** 以接纳方式对指定关键字进行回馈。
+	/**
+	 * 以接纳方式对指定关键字进行回馈。
 	 * 
-	 * @param keyword
-	 * @param endpoint
+	 * @param keyword 指定进行回馈的关键字。
+	 * @param endpoint 指定予以回馈的终端。
 	 */
 	public void encourage(String keyword, Endpoint endpoint);
 
-	/** 以接纳方式对指定关键字进行回馈。
+	/**
+	 * 对所有终端以接纳方式对指定关键字进行回馈。
 	 * 
-	 * @param keyword
+	 * @param keyword 指定进行回馈的关键字。
 	 */
 	public void encourage(String keyword);
 
-	/** 以排斥方式对指定关键字进行回馈。
+	/**
+	 * 以排斥方式对指定关键字进行回馈。
 	 * 
-	 * @param keyword
-	 * @param endpoint
+	 * @param keyword 指定进行回馈的关键字。
+	 * @param endpoint 指定予以回馈的终端。
 	 */
 	public void discourage(String keyword, Endpoint endpoint);
 
-	/** 以排斥方式对指定关键字进行回馈。
+	/**
+	 * 对所有终端以排斥方式对指定关键字进行回馈。
 	 * 
-	 * @param keyword
+	 * @param keyword 指定进行回馈的关键字。
 	 */
 	public void discourage(String keyword);
 
-	/** 配置适配器。该方法由适配器管理器调用。
+	/**
+	 * 配置适配器。该方法由适配器管理器调用。
 	 */
 	public void setup();
 
-	/** 拆卸适配器。该方法由适配器管理器调用。
+	/**
+	 * 拆卸适配器。该方法由适配器管理器调用。
 	 */
 	public void teardown();
 
-	/** 是否就绪。
+	/**
+	 * 是否就绪。
 	 * 
-	 * @return
+	 * @return 如果适配器已就绪返回 <code>true</code>，否则返回 <code>false</code>。
 	 */
 	public boolean isReady();
 

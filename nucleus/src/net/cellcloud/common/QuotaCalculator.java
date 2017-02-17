@@ -38,7 +38,9 @@ import java.util.concurrent.atomic.AtomicInteger;
  */
 public class QuotaCalculator {
 
-	private int quota = 102400;
+	/** 标准配额数值。
+	 */
+	private volatile int quota = 102400;
 
 	private AtomicInteger runtime;
 

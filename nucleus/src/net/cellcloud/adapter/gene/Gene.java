@@ -32,66 +32,115 @@ import java.util.Map;
 
 import net.cellcloud.adapter.RelationNucleusAdapter;
 import net.cellcloud.common.Logger;
-import net.cellcloud.core.Endpoint;
 
 /**
+ * 用于描述内核适配器数据传输的最小数据单元。
  * 
- * @author Jiangwei Xu
+ * Gene 数据单元由名称、数据头描述、数据负载3部分组成。其中数据负载是非必要部分。
+ * 
+ * @author Ambrose Xu
+ *
  */
 public class Gene {
 
+	/**
+	 * 数据名。
+	 */
 	private String name;
-	private HashMap<String, String> header;
-	private String payload;
 
-	private Endpoint destination;
+	/**
+	 * 数据头内容。
+	 */
+	private HashMap<String, String> header;
+
+	/**
+	 * 数据负载内容。
+	 */
+	private String payload;
 
 	public final static byte EOP_1 = 'E';
 	public final static byte EOP_2 = 'O';
 	public final static byte EOP_3 = 'P';
 	public final static byte EOP_4 = '\r';
 	public final static byte EOP_5 = '\n';
+
+	/** 序列化数据的结束符。 */
 	public final static byte[] EOP_BYTES = new byte[]{ EOP_1, EOP_2, EOP_3, EOP_4, EOP_5 };
 	public final static String EOP = "EOP";
 
+	/**
+	 * 构造器。
+	 * 
+	 * @param name 指定数据名。
+	 */
 	public Gene(String name) {
 		this(name, null);
 	}
 
+	/**
+	 * 构造器。
+	 * 
+	 * @param name 指定数据名
+	 * @param payload 指定数据负载内容。
+	 */
 	public Gene(String name, String payload) {
 		this.name = name;
 		this.payload = payload;
 		this.header = new HashMap<String, String>();
 	}
 
+	/**
+	 * 获得数据名。
+	 * 
+	 * @return 返回字符串形式的数据名。
+	 */
 	public String getName() {
 		return this.name;
 	}
 
+	/** 设置数据头内容。
+	 * 
+	 * @param name 指定数据头名称。
+	 * @param value 指定数据头名称对应的内容。
+	 */
 	public void setHeader(String name, String value) {
 		this.header.put(name, value);
 	}
 
+	/**
+	 * 从数据头里获得指定名称的数据内容。
+	 * 
+	 * @param name 指定数据头名称。
+	 * @return 返回字符串形式的数据内容。
+	 */
 	public String getHeader(String name) {
 		return this.header.get(name);
 	}
 
+	/**
+	 * 设置数据负载内容。
+	 * 
+	 * @param payload 指定数据负责内容。
+	 */
 	public void setPayload(String payload) {
 		this.payload = payload;
 	}
 
+	/**
+	 * 获得数据负载内容。
+	 * 
+	 * @return 返回字符串形式的数据负载内容。
+	 */
 	public String getPayload() {
 		return this.payload;
 	}
 
-	public void forceDestination(Endpoint destination) {
-		this.destination = destination;
-	}
-
-	public Endpoint getDestination() {
-		return this.destination;
-	}
-
+	/**
+	 * 将 Gene 数据打包为字节序列。
+	 * 
+	 * @param gene 指定需要打包的 Gene 对象实例。
+	 * @return 返回字节数组形式的序列。
+	 */
 	public static byte[] pack(Gene gene) {
 		StringBuilder buf = new StringBuilder();
 
@@ -115,6 +164,12 @@ public class Gene {
 		return str.getBytes(Charset.forName("UTF-8"));
 	}
 
+	/**
+	 * 将字节序列解包为 Gene 实例。
+	 * 
+	 * @param bytes 指定需要解包的字节序列。
+	 * @return 返回 Gene 实例。如果序列的格式错误，返回 null 值。
+	 */
 	public static Gene unpack(byte[] bytes) {
 		String data = new String(bytes, Charset.forName("UTF-8"));
 

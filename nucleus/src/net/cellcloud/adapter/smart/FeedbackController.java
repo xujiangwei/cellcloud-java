@@ -24,7 +24,7 @@ THE SOFTWARE.
 -----------------------------------------------------------------------------
 */
 
-package net.cellcloud.adapter;
+package net.cellcloud.adapter.smart;
 
 import java.util.HashMap;
 import java.util.Iterator;
@@ -39,11 +39,21 @@ import net.cellcloud.core.Endpoint;
 import net.cellcloud.util.Clock;
 
 /**
+ * 回馈控制器。
+ * 
+ * @author Ambrose Xu
+ * 
  */
 public class FeedbackController extends TimerTask {
 
+	/**
+	 * 关键字与回馈信息的映射关系。
+	 */
 	private ConcurrentHashMap<String, Feedback> feedbackMap;
 
+	/**
+	 * 回馈信息主动发送记录。
+	 */
 	private ConcurrentHashMap<String, InitiativeRecord> initiativeRecordMap;
 
 	/**
@@ -51,18 +61,36 @@ public class FeedbackController extends TimerTask {
 	 */
 	private long keywordExpired = 12L * 60L * 60L * 1000L;
 
+	/**
+	 * 两次回馈数据压制间隔。
+	 */
 	private long inhibitionInterval = 3L * 60L * 1000L;
+	/**
+	 * 进行压制需要达到的主动发送次数。
+	 */
 	private long inhibitionCounts = 2L;
 
+	/**
+	 * 关键字压制生效之后的过期时长。当压制后达到此时长，则压制信息被清空。 
+	 */
 	private long inhibitionExpired = 30L * 60L * 1000L;
 
+	/**
+	 * 任务定时器。
+	 */
 	private Timer timer;
 
+	/**
+	 * 构造器。
+	 */
 	public FeedbackController() {
 		this.feedbackMap = new ConcurrentHashMap<String, Feedback>();
 		this.initiativeRecordMap = new ConcurrentHashMap<String, InitiativeRecord>();
 	}
 
+	/**
+	 * 启动控制器。
+	 */
 	public void start() {
 		if (null == this.timer) {
 			this.timer = new Timer(this.getClass().getSimpleName() + "-Timer");
@@ -70,6 +98,9 @@ public class FeedbackController extends TimerTask {
 		}
 	}
 
+	/**
+	 * 停止控制器。
+	 */
 	public void stop() {
 		if (null != this.timer) {
 			this.timer.cancel();
@@ -77,10 +108,23 @@ public class FeedbackController extends TimerTask {
 		}
 	}
 
+	/**
+	 * 判断指定的关键字是否有回馈信息。
+	 * 
+	 * @param keyword 指定关键字。
+	 * @return 如果关键字有回馈信息返回 true ，否则返回 false 。
+	 */
 	public boolean hasFeedback(String keyword) {
 		return this.feedbackMap.containsKey(keyword);
 	}
 
+	/**
+	 * 获取关键字在指定终端的回馈的正回馈计数。
+	 * 
+	 * @param keyword 指定待查询关键字。
+	 * @param endpoint 指定终端。
+	 * @return 返回此关键字由该终端回馈的正回馈次数。
+	 */
 	public int getPositiveCounts(String keyword, Endpoint endpoint) {
 		Feedback feedback = this.feedbackMap.get(keyword);
 		if (null == feedback) {
@@ -90,6 +134,13 @@ public class FeedbackController extends TimerTask {
 		return feedback.countPositive(endpoint);
 	}
 
+	/**
+	 * 获取关键字在指定终端的回馈的负回馈计数。
+	 * 
+	 * @param keyword 指定待查询关键字。
+	 * @param endpoint 指定终端。
+	 * @return 返回此关键字由该终端回馈的负回馈次数。
+	 */
 	public int getNegativeCounts(String keyword, Endpoint endpoint) {
 		Feedback feedback = this.feedbackMap.get(keyword);
 		if (null == feedback) {
@@ -99,6 +150,12 @@ public class FeedbackController extends TimerTask {
 		return feedback.countNegative(endpoint);
 	}
 
+	/**
+	 * 以正回馈方式更新关键字对应的终端。
+	 * 
+	 * @param keyword 指定关键字。
+	 * @param endpoint 指定终端。
+	 */
 	public void updateEncourage(String keyword, Endpoint endpoint) {
 		Feedback feedback = this.feedbackMap.get(keyword);
 		if (null != feedback) {
@@ -114,6 +171,12 @@ public class FeedbackController extends TimerTask {
 		feedback.removeNegative(endpoint);
 	}
 
+	/**
+	 * 以负回馈方式更新关键字对应的终端。
+	 * 
+	 * @param keyword 指定关键字。
+	 * @param endpoint 指定终端。
+	 */
 	public void updateDiscourage(String keyword, Endpoint endpoint) {
 		Feedback feedback = this.feedbackMap.get(keyword);
 		if (null != feedback) {
@@ -129,6 +192,12 @@ public class FeedbackController extends TimerTask {
 		feedback.removePositive(endpoint);
 	}
 
+	/**
+	 * 记录正回馈发送记录。
+	 * 
+	 * @param keyword 指定关键字。
+	 * @param endpoint 指定终端。
+	 */
 	public void recordEncourage(String keyword, Endpoint endpoint) {
 		InitiativeRecord record = this.initiativeRecordMap.get(keyword);
 		if (null != record) {
@@ -164,6 +233,12 @@ public class FeedbackController extends TimerTask {
 		}
 	}
 
+	/**
+	 * 记录负回馈发送记录。
+	 * 
+	 * @param keyword 指定关键字。
+	 * @param endpoint 指定终端。
+	 */
 	public void recordDiscourage(String keyword, Endpoint endpoint) {
 		InitiativeRecord record = this.initiativeRecordMap.get(keyword);
 		if (null != record) {
@@ -199,6 +274,13 @@ public class FeedbackController extends TimerTask {
 		}
 	}
 
+	/**
+	 * 判断指定关键字在指定终端上是否需要压制正回馈。以便减少不必要的数据发送。
+	 * 
+	 * @param keyword 指定关键字。
+	 * @param endpoint 指定终端。
+	 * @return 如果需要压制则返回 true ，否则返回 false 。
+	 */
 	public boolean isInhibitiveEncourage(String keyword, Endpoint endpoint) {
 		InitiativeRecord record = this.initiativeRecordMap.get(keyword);
 		if (null == record) {
@@ -233,6 +315,13 @@ public class FeedbackController extends TimerTask {
 		return false;
 	}
 
+	/**
+	 * 判断指定关键字在指定终端上是否需要压制负回馈。以便减少不必要的数据发送。
+	 * 
+	 * @param keyword 指定关键字。
+	 * @param endpoint 指定终端。
+	 * @return 如果需要压制则返回 true ，否则返回 false 。
+	 */
 	public boolean isInhibitiveDiscourage(String keyword, Endpoint endpoint) {
 		InitiativeRecord record = this.initiativeRecordMap.get(keyword);
 		if (null == record) {
@@ -335,18 +424,24 @@ public class FeedbackController extends TimerTask {
 
 
 	/**
+	 * 主动发送回馈记录。
 	 * 
 	 * @author Ambrose Xu
 	 *
 	 */
 	protected class InitiativeRecord {
 
+		/** 时间戳。 */
 		protected long timestamp = System.currentTimeMillis();
 
+		/** 最近一次发送给指定终端正回馈的时间戳。 */
 		protected HashMap<Endpoint, AtomicLong> lastEncourageTime = new HashMap<Endpoint, AtomicLong>();
+		/** 正回馈计数记录。 */
 		protected HashMap<Endpoint, AtomicLong> encourageCounts = new HashMap<Endpoint, AtomicLong>();
 
+		/** 最近一次发送给指定终端负回馈的时间戳。 */
 		protected HashMap<Endpoint, AtomicLong> lastDiscourageTime = new HashMap<Endpoint, AtomicLong>();
+		/** 负回馈计数记录。 */
 		protected HashMap<Endpoint, AtomicLong> discourageCounts = new HashMap<Endpoint, AtomicLong>();
 
 	}

@@ -417,9 +417,9 @@ public class NonblockingAcceptor extends MessageService implements MessageAccept
 		return this.workers[0].getEachSessionWriteInterval();
 	}
 
-	public void setTransmissionQuota(int quotaInKilobytePerSecond) {
+	public void setTransmissionQuota(int quotaInBytesPerSecond) {
 		for (NonblockingAcceptorWorker worker : this.workers) {
-			worker.getQuotaCalculator().setQuota(quotaInKilobytePerSecond);
+			worker.getQuotaCalculator().setQuota(quotaInBytesPerSecond);
 		}
 	}
 

@@ -27,20 +27,36 @@ THE SOFTWARE.
 package net.cellcloud.adapter.gene;
 
 /**
+ * Gene 数据单元，内置支持的数据头名称。
  * 
  * @author Ambrose Xu
  *
  */
 public class GeneHeader {
 
+	/**
+	 * 数据源的 Tag 信息。
+	 */
 	public final static String SourceTag = "SourceTag";
 
+	/**
+	 * Gene 所属的主机连接地址。
+	 */
 	public final static String Host = "Host";
 
+	/**
+	 * Gene 所属的主机连接端口。
+	 */
 	public final static String Port = "Port";
 
+	/**
+	 * Gene 的序号。在整个 Nucleus 生命周期里，该序号唯一。
+	 */
 	public final static String Seq = "Seq";
 
+	/**
+	 * Gene 的负载类型。
+	 */
 	public final static String PayloadType = "PayloadType";
 
 	private GeneHeader() {

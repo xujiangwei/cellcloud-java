@@ -42,6 +42,7 @@ import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 
 import net.cellcloud.adapter.Adapter;
+import net.cellcloud.adapter.AdapterListenerProfile;
 import net.cellcloud.cluster.ClusterController;
 import net.cellcloud.common.LogLevel;
 import net.cellcloud.common.Logger;
@@ -57,7 +58,8 @@ import net.cellcloud.util.Clock;
  */
 public final class Nucleus {
 
-	/*static {
+	/* 用于测试的配置文件管理
+	static {
 		// 读取日志配置文件
 		ClassLoader cl = Nucleus.class.getClassLoader();
 		InputStream inputStream = null;
@@ -135,6 +137,10 @@ public final class Nucleus {
 	/** 内核内适配器映射表。
 	 */
 	private ConcurrentHashMap<String, Adapter> adapters = null;
+
+	/** 仅用于启动时反射适配器监听器的临时存储。
+	 */
+	private ArrayList<AdapterListenerProfile> tempAdapterListeners = null;
 
 	/** 构造函数。
 	 */
@@ -319,6 +325,24 @@ public final class Nucleus {
 				for (Adapter adapter : this.adapters.values()) {
 					adapter.setup();
 				}
+			}
+			// 添加监听器
+			if (null != this.tempAdapterListeners) {
+				for (AdapterListenerProfile alp : this.tempAdapterListeners) {
+					Adapter adapter = this.adapters.get(alp.instanceName);
+					if (null != adapter) {
+						adapter.addListener(alp.listener);
+					}
+					else {
+						// 没有找到 Adapter
+						Logger.w(this.getClass(), "Can NOT find adapter '" + alp.instanceName
+								+ "' for listener '" + alp.listener.getClass().getName() + "'");
+					}
+					alp.listener = null;
+					alp.instanceName = null;
+				}
+				this.tempAdapterListeners.clear();
+				this.tempAdapterListeners = null;
 			}
 
 			// 启动 HTTP Service
@@ -694,6 +718,9 @@ public final class Nucleus {
 						if (celletClasslist.contains(className)) {
 							classes.add(clazz);
 						}
+
+						// 分析 class
+						this.analyzeClass(clazz);
 					} catch (ClassNotFoundException e) {
 						Logger.log(Nucleus.class, e, LogLevel.ERROR);
 					}
@@ -813,6 +840,9 @@ public final class Nucleus {
 						if (celletClasslist.contains(className)) {
 							classes.add(clazz);
 						}
+
+						// 分析 class
+						this.analyzeClass(clazz);
 					} catch (ClassNotFoundException e) {
 						Logger.log(Nucleus.class, e, LogLevel.ERROR);
 					}
@@ -841,6 +871,17 @@ public final class Nucleus {
 					Logger.log(Nucleus.class, e, LogLevel.ERROR);
 				}
 			}
+		}
+	}
+
+	private void analyzeClass(Class<?> clazz) {
+		if (null == this.tempAdapterListeners) {
+			this.tempAdapterListeners = new ArrayList<AdapterListenerProfile>();
+		}
+		// 分析是否是适配器监听器
+		AdapterListenerProfile alp = AdapterListenerProfile.load(clazz);
+		if (null != alp) {
+			this.tempAdapterListeners.add(alp);
 		}
 	}
 

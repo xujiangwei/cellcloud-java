@@ -106,6 +106,7 @@ public final class NonblockingAcceptorWorker extends Thread {
 		this.transmissionQuota.start();
 
 		long time = System.currentTimeMillis();
+		// 使用 time 计数方式来减少 System.currentTimeMillis() 的调用次数，提高效率
 		int timeCounts = 0;
 
 		while (this.spinning) {
@@ -442,7 +443,7 @@ public final class NonblockingAcceptorWorker extends Thread {
 
 							this.tx += size;
 
-							// 配额检测
+							// 配额控制
 							this.transmissionQuota.consumeBlocking(size, null, null);
 						}
 					} catch (IOException e) {

@@ -2,7 +2,7 @@
 -----------------------------------------------------------------------------
 This source file is part of Cell Cloud.
 
-Copyright (c) 2009-2015 Cell Cloud Team (www.cellcloud.net)
+Copyright (c) 2009-2017 Cell Cloud Team (www.cellcloud.net)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -26,13 +26,44 @@ THE SOFTWARE.
 
 package net.cellcloud.adapter;
 
+import java.lang.annotation.Annotation;
 
-/** 适配器上下文。
- * 
- * @author Jiangwei Xu
- */
-public final class AdapterContext {
+import net.cellcloud.adapter.annotation.NucleusAdapterListener;
+import net.cellcloud.common.LogLevel;
+import net.cellcloud.common.Logger;
 
-	protected AdapterContext() {
+public class AdapterListenerProfile {
+
+	public AdapterListener listener;
+	public String instanceName;
+
+	public AdapterListenerProfile(AdapterListener listener, String instanceName) {
+		this.listener = listener;
+		this.instanceName = instanceName;
 	}
+
+	public static AdapterListenerProfile load(Class<?> clazz) {
+		Annotation annotation = clazz.getAnnotation(NucleusAdapterListener.class);
+		if (null == annotation) {
+			return null;
+		}
+
+		NucleusAdapterListener listener = (NucleusAdapterListener) annotation;
+
+		String instanceName = listener.instanceName();
+		if (instanceName.length() <= 1) {
+			return null;
+		}
+
+		AdapterListenerProfile ret = null;
+		try {
+			ret = new AdapterListenerProfile((AdapterListener) clazz.newInstance(), instanceName);
+		} catch (InstantiationException e) {
+			Logger.log(AdapterListenerProfile.class, e, LogLevel.WARNING);
+		} catch (IllegalAccessException e) {
+			Logger.log(AdapterListenerProfile.class, e, LogLevel.WARNING);
+		}
+		return ret;
+	}
+
 }
