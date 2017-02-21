@@ -51,4 +51,5 @@ public interface CelletCallbackListener {
 	 * @return
 	 */
 	public boolean doDialogue(Cellet cellet, String sourceTag, Dialect dialect);
+
 }

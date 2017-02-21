@@ -24,7 +24,7 @@ THE SOFTWARE.
 -----------------------------------------------------------------------------
 */
 
-package net.cellcloud.talk;
+package net.cellcloud.talk.http;
 
 import java.io.IOException;
 import java.nio.charset.Charset;
@@ -38,6 +38,9 @@ import net.cellcloud.http.HttpHandler;
 import net.cellcloud.http.HttpRequest;
 import net.cellcloud.http.HttpResponse;
 import net.cellcloud.http.HttpSession;
+import net.cellcloud.talk.TalkDefinition;
+import net.cellcloud.talk.TalkServiceKernel;
+import net.cellcloud.talk.TalkTracker;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -51,16 +54,16 @@ import org.json.JSONObject;
  */
 public class HttpQuickHandler extends AbstractJSONHandler implements CapsuleHolder {
 
-	protected static final String Plaintext = "plaintext";
-	protected static final String Tag = "tag";
-	protected static final String Identifiers = "identifiers";
-	protected static final String Error = "error";
+	public static final String Plaintext = "plaintext";
+	public static final String Tag = "tag";
+	public static final String Identifiers = "identifiers";
+	public static final String Error = "error";
 
-	private TalkService talkService;
+	private TalkServiceKernel talkServiceKernel;
 
-	public HttpQuickHandler(TalkService talkService) {
+	public HttpQuickHandler(TalkServiceKernel talkServiceKernel) {
 		super();
-		this.talkService = talkService;
+		this.talkServiceKernel = talkServiceKernel;
 	}
 
 	@Override
@@ -78,7 +81,7 @@ public class HttpQuickHandler extends AbstractJSONHandler implements CapsuleHold
 			throws IOException {
 		HttpSession session = request.getSession();
 		if (null != session) {
-			TalkService.Certificate cert = this.talkService.getCertificate(session);
+			TalkServiceKernel.Certificate cert = this.talkServiceKernel.getCertificate(session);
 			if (null != cert) {
 				// { "plaintext": plaintext, "tag": tag }
 				String data = new String(request.readRequestData(), Charset.forName("UTF-8"));
@@ -93,14 +96,14 @@ public class HttpQuickHandler extends AbstractJSONHandler implements CapsuleHold
 
 					if (null != plaintext && plaintext.equals(cert.plaintext)) {
 						// 检测通过
-						this.talkService.acceptSession(session, tag);
+						this.talkServiceKernel.acceptSession(session, tag);
 
 						// 请求 Cellet
 						boolean requestState = false;
 						for (int i = 0, size = identifiers.length(); i < size; ++i) {
 							String identifier = identifiers.getString(i);
 
-							TalkTracker tracker = this.talkService.processRequest(session, tag, identifier);
+							TalkTracker tracker = this.talkServiceKernel.processRequest(session, tag, identifier);
 							if (null != tracker) {
 								requestState = true;
 							}
@@ -116,7 +119,7 @@ public class HttpQuickHandler extends AbstractJSONHandler implements CapsuleHold
 					}
 					else {
 						// 检测失败
-						this.talkService.rejectSession(session);
+						this.talkServiceKernel.rejectSession(session);
 						this.respond(response, HttpResponse.SC_UNAUTHORIZED);
 					}
 				} catch (JSONException e) {

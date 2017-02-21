@@ -2,7 +2,7 @@
 -----------------------------------------------------------------------------
 This source file is part of Cell Cloud.
 
-Copyright (c) 2009-2013 Cell Cloud Team (www.cellcloud.net)
+Copyright (c) 2009-2017 Cell Cloud Team (www.cellcloud.net)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -28,19 +28,25 @@ package net.cellcloud.cluster.protocol;
 
 import java.util.Map;
 
-/** 协议工厂。
+/**
+ * 协议工厂。根据数据键值对生成对应的协议实例。
  * 
- * @author Jiangwei Xu
+ * @author Ambrose Xu
+ * 
  */
 public final class ClusterProtocolFactory {
 
 	private ClusterProtocolFactory() {
 	}
 
-	/** 根据属性键值对创建协议。
+	/**
+	 * 根据属性键值对创建协议。
+	 * 
+	 * @param prop 指定数据键值对。
+	 * @return 返回集群协议。
 	 */
-	public static ClusterProtocol create(Map<String, String> prop) {
-		String protocol = prop.get(ClusterProtocol.KEY_PROTOCOL);
+	public static ClusterProtocol create(Map<String, Object> prop) {
+		String protocol = prop.get(ClusterProtocol.KEY_PROTOCOL).toString();
 		if (protocol.equalsIgnoreCase(ClusterPullProtocol.NAME)) {
 			return new ClusterPullProtocol(prop);
 		}
@@ -54,4 +60,5 @@ public final class ClusterProtocolFactory {
 			return null;
 		}
 	}
+
 }

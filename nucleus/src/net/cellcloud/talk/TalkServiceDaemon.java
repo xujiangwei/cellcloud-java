@@ -32,6 +32,8 @@ import java.util.LinkedList;
 import net.cellcloud.common.LogLevel;
 import net.cellcloud.common.Logger;
 import net.cellcloud.talk.dialect.DialectEnumerator;
+import net.cellcloud.talk.http.HttpSpeaker;
+import net.cellcloud.talk.speaker.Speaker;
 import net.cellcloud.util.Clock;
 
 /** Talk Service 守护线程。
@@ -61,7 +63,7 @@ public final class TalkServiceDaemon extends Thread {
 
 		LinkedList<Speaker> speakerList = new LinkedList<Speaker>();
 
-		TalkService service = TalkService.getInstance();
+		TalkServiceKernel service = TalkService.getInstance().kernel;
 
 		int heartbeatCount = 0;
 

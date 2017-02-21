@@ -38,12 +38,12 @@ public final class TalkCapacity {
 	private int version = 2;
 
 	/// 是否为加密会话
-	protected boolean secure = false;
+	public boolean secure = false;
 
 	/// 重复尝试连接的次数
-	protected int retryAttempts = 0;
+	public int retryAttempts = 0;
 	/// 两次连接中间隔时间，单位毫秒
-	protected long retryDelay = 5000L;
+	public long retryDelay = 5000L;
 
 	/// 内核的版本串号
 	private int versionNumber = 150;
@@ -76,7 +76,7 @@ public final class TalkCapacity {
 		}
 	}
 
-	protected void resetVersion(int version) {
+	public void resetVersion(int version) {
 		this.version = version;
 
 		if (version == 1) {

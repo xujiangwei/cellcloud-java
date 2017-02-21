@@ -24,13 +24,14 @@ THE SOFTWARE.
 -----------------------------------------------------------------------------
 */
 
-package net.cellcloud.talk;
+package net.cellcloud.talk.http;
 
 import java.net.InetSocketAddress;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeoutException;
 
 import net.cellcloud.common.Cryptology;
@@ -38,6 +39,12 @@ import net.cellcloud.common.LogLevel;
 import net.cellcloud.common.Logger;
 import net.cellcloud.core.Nucleus;
 import net.cellcloud.http.HttpResponse;
+import net.cellcloud.talk.Primitive;
+import net.cellcloud.talk.Speakable;
+import net.cellcloud.talk.SpeakerState;
+import net.cellcloud.talk.TalkFailureCode;
+import net.cellcloud.talk.TalkServiceFailure;
+import net.cellcloud.talk.speaker.SpeakerDelegate;
 import net.cellcloud.talk.stuff.PrimitiveSerializer;
 
 import org.eclipse.jetty.client.HttpClient;
@@ -86,7 +93,9 @@ public class HttpSpeaker implements Speakable {
 	/// 最大心跳失败次数
 	private int hbMaxFailed;
 
-	public HttpSpeaker(InetSocketAddress address, SpeakerDelegate delegate, int heartbeatPeriod) {
+	private ExecutorService executor;
+
+	public HttpSpeaker(InetSocketAddress address, SpeakerDelegate delegate, int heartbeatPeriod, ExecutorService executor) {
 		this.address = address;
 		this.delegate = delegate;
 		this.client = new HttpClient();
@@ -96,6 +105,7 @@ public class HttpSpeaker implements Speakable {
 		this.hbFailedCounts = 0;
 		this.hbMaxFailed = 10;
 		this.identifierList = new ArrayList<String>(2);
+		this.executor = executor;
 	}
 
 	@Override
@@ -175,7 +185,7 @@ public class HttpSpeaker implements Speakable {
 				final String key = data.getString(HttpInterrogationHandler.Key);
 				final byte[] ciphertext = Cryptology.getInstance().decodeBase64(ciphertextBase64);
 				// 发送 Check 请求
-				TalkService.getInstance().executor.execute(new Runnable() {
+				this.executor.execute(new Runnable() {
 					@Override
 					public void run() {
 						requestCheck(ciphertext, key.getBytes(Charset.forName("UTF-8")));
@@ -251,7 +261,7 @@ public class HttpSpeaker implements Speakable {
 						// 心跳 Tick 清零
 						this.hbTick = 0;
 
-						TalkService.getInstance().executor.execute(new Runnable() {
+						this.executor.execute(new Runnable() {
 							@Override
 							public void run() {
 								requestHeartbeat();
@@ -282,7 +292,7 @@ public class HttpSpeaker implements Speakable {
 	/**
 	 * 每秒计时。
 	 */
-	protected void tick() {
+	public void tick() {
 		if (this.state != SpeakerState.CALLED) {
 			return;
 		}
@@ -298,7 +308,7 @@ public class HttpSpeaker implements Speakable {
 			}
 
 			// 执行心跳
-			TalkService.getInstance().executor.execute(new Runnable() {
+			this.executor.execute(new Runnable() {
 				@Override
 				public void run() {
 					requestHeartbeat();
@@ -402,7 +412,7 @@ public class HttpSpeaker implements Speakable {
 					this.remoteTag = responseData.getString(HttpCheckHandler.Tag);
 
 					// 尝试请求 Cellet
-					TalkService.getInstance().executor.execute(new Runnable() {
+					this.executor.execute(new Runnable() {
 						@Override
 						public void run() {
 							requestCellets();

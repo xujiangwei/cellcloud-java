@@ -483,11 +483,6 @@ public final class NonblockingAcceptorWorker extends Thread {
 	}
 
 	private void parse(NonblockingAcceptorSession session, byte[] data) {
-		// 拦截器返回 true 则该数据被拦截，不再进行数据解析。
-		if (this.acceptor.fireIntercepted(session, data)) {
-			return;
-		}
-
 		try {
 			// 根据数据标志获取数据
 			if (this.acceptor.existDataMark()) {

@@ -2,7 +2,7 @@
 -----------------------------------------------------------------------------
 This source file is part of Cell Cloud.
 
-Copyright (c) 2009-2012 Cell Cloud Team (www.cellcloud.net)
+Copyright (c) 2009-2017 Cell Cloud Team (www.cellcloud.net)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -26,15 +26,58 @@ THE SOFTWARE.
 
 package net.cellcloud.common;
 
-/** 消息拦截器。
+/**
+ * 消息拦截器。
  * 
- * @author Jiangwei Xu
+ * @author Ambrose Xu
  */
 public interface MessageInterceptor {
 
 	/**
-	 * 数据拦截处理。
-	 * 如果返回 true 则表示消息被拦截，不进入消息解析和处理器回调，否则继续后续数据处理。
+	 * 拦截会话创建。
+	 * 
+	 * @param session
+	 * @return
 	 */
-	public boolean intercepted(Session session, byte[] rawData);
+	public boolean interceptCreating(Session session);
+
+	/**
+	 * 
+	 * @param session
+	 * @return
+	 */
+	public boolean interceptOpening(Session session);
+
+	/**
+	 * 
+	 * @param session
+	 * @return
+	 */
+	public boolean interceptClosing(Session session);
+
+	/**
+	 * 
+	 * @param session
+	 * @return
+	 */
+	public boolean interceptDestroying(Session session);
+
+	/**
+	 * 拦截消息数据处理。
+	 * 
+	 * @param session 本次事件的会话。
+	 * @param message 本次事件的消息数据。
+	 * @return 如果返回 <code>true</code> 则表示消息被拦截，不调用消息解析和处理器回调，否则不进行拦截，继续后续数据处理。
+	 */
+	public boolean interceptMessage(Session session, Message message);
+
+	/**
+	 * 
+	 * 
+	 * @param session
+	 * @param errorCode
+	 * @return
+	 */
+	public boolean interceptError(Session session, int errorCode);
+
 }

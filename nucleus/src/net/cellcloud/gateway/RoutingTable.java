@@ -2,7 +2,7 @@
 -----------------------------------------------------------------------------
 This source file is part of Cell Cloud.
 
-Copyright (c) 2009-2012 Cell Cloud Team (www.cellcloud.net)
+Copyright (c) 2009-2017 Cell Cloud Team (www.cellcloud.net)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -24,17 +24,17 @@ THE SOFTWARE.
 -----------------------------------------------------------------------------
 */
 
-package net.cellcloud.talk;
+package net.cellcloud.gateway;
 
-/** 挂起模式。
+/**
+ * 代理服务路由表。
  * 
- * @author Jiangwei Xu
+ * @author Ambrose Xu
+ *
  */
-public final class SuspendMode {
+public class RoutingTable {
 
-	/** 主动挂起。 */
-	public final static int INITATIVE = 10;
+	public RoutingTable() {
+	}
 
-	/** 被动挂起。 */
-	public final static int PASSIVE = 20;
 }

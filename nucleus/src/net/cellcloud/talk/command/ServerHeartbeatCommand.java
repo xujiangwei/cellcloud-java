@@ -24,56 +24,34 @@ THE SOFTWARE.
 -----------------------------------------------------------------------------
 */
 
-package net.cellcloud.cluster.protocol;
+package net.cellcloud.talk.command;
 
-import net.cellcloud.cluster.ClusterFailure;
-import net.cellcloud.cluster.ClusterNode;
+import net.cellcloud.common.Packet;
 import net.cellcloud.common.Session;
+import net.cellcloud.talk.TalkServiceKernel;
 
 /**
- * 集群模块故障状态协议。
+ * Talk heartbeat command
  * 
- * @author Ambrose Xu
- * 
+ * @author Jiangwei Xu
  */
-public class ClusterFailureProtocol extends ClusterProtocol {
+public final class ServerHeartbeatCommand extends ServerCommand {
 
-	/**
-	 * 故障描述。
+	/** 构造函数。
 	 */
-	protected ClusterFailure failure;
-
-	/**
-	 * 描述故障的子协议。
-	 */
-	protected ClusterProtocol protocol;
-
-	/**
-	 * 构造器。
-	 * 
-	 * @param failure
-	 * @param protocol
-	 */
-	public ClusterFailureProtocol(ClusterFailure failure, ClusterProtocol protocol) {
-		super("Failure");
-		this.failure = failure;
-		this.protocol = protocol;
+	public ServerHeartbeatCommand(TalkServiceKernel service) {
+		super(service, null, null);
 	}
 
-	/**
-	 * {@inheritDoc}
+	/** 构造函数。
 	 */
-	@Override
-	public void launch(Session session) {
-		// TODO
+	public ServerHeartbeatCommand(TalkServiceKernel service, Session session, Packet packet) {
+		super(service, session, packet);
 	}
 
-	/**
-	 * {@inheritDoc}
-	 */
 	@Override
-	public void respond(ClusterNode node, StateCode state, Object custom) {
-		// TODO
+	public void execute() {
+		this.service.updateSessionHeartbeat(this.session);
 	}
 
 }

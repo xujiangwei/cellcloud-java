@@ -34,16 +34,16 @@ import net.cellcloud.talk.Primitive;
 import net.cellcloud.talk.TalkService;
 import net.cellcloud.talk.dialect.Dialect;
 
-/** Cellet 管理单元。
+/**
+ * Cellet 管理单元。
  * 
- * @author Jiangwei Xu
+ * @author Ambrose Xu
+ * 
  */
 public abstract class Cellet extends AbstractCellet {
 
 	private CelletFeature feature;
 	private CelletSandbox sandbox;
-
-	
 
 	/**
 	 * 构造函数。
@@ -144,4 +144,5 @@ public abstract class Cellet extends AbstractCellet {
 	public void quitted(final String tag) {
 		// Nothing
 	}
+
 }

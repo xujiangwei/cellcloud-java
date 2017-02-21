@@ -2,7 +2,7 @@
 -----------------------------------------------------------------------------
 This source file is part of Cell Cloud.
 
-Copyright (c) 2009-2017 Cell Cloud Team (www.cellcloud.net)
+Copyright (c) 2009-2012 Cell Cloud Team (www.cellcloud.net)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -24,53 +24,61 @@ THE SOFTWARE.
 -----------------------------------------------------------------------------
 */
 
-package net.cellcloud.talk;
-
-import java.io.ByteArrayInputStream;
+package net.cellcloud.talk.command;
 
 import net.cellcloud.common.Logger;
+import net.cellcloud.common.Message;
 import net.cellcloud.common.Packet;
 import net.cellcloud.common.Session;
+import net.cellcloud.talk.TalkCapacity;
+import net.cellcloud.talk.TalkDefinition;
+import net.cellcloud.talk.TalkServiceKernel;
 import net.cellcloud.util.Utils;
 
-/**
- * 
- * Dialogue Command
+/** Consult Command
  * 
  * @author Jiangwei Xu
  */
-public final class ServerDialogueCommand extends ServerCommand {
+public final class ServerConsultCommand extends ServerCommand {
 
-	protected ServerDialogueCommand(TalkService service) {
-		super(service, null, null);
-	}
-
-	public ServerDialogueCommand(TalkService service, Session session, Packet packet) {
+	public ServerConsultCommand(TalkServiceKernel service, Session session, Packet packet) {
 		super(service, session, packet);
 	}
 
 	@Override
 	public void execute() {
-		// 包格式：序列化的原语|源标签
+		// 包格式：源标签|能力描述序列化数据
 
-		if (this.packet.getSubsegmentCount() < 2) {
-			Logger.e(ServerDialogueCommand.class, "Dialogue packet format error");
-			return;
+		// 标签
+		String tag = Utils.bytes2String(this.packet.getSubsegment(0));
+
+		// 能力描述
+		TalkCapacity capacity = TalkCapacity.deserialize(this.packet.getSubsegment(1));
+
+		if (null == capacity) {
+			Logger.w(ServerConsultCommand.class, "Error talk capacity data format: tag=" + tag);
+			capacity = new TalkCapacity();
 		}
 
-		byte[] priData = this.packet.getSubsegment(0);
-		ByteArrayInputStream stream = new ByteArrayInputStream(priData);
+		TalkCapacity ret = this.service.processConsult(this.session, tag, capacity);
 
-		byte[] tagData = this.packet.getSubsegment(1);
-		String speakerTag = Utils.bytes2String(tagData);
+//		if (null == ret) {
+//			Logger.w(ServerConsultCommand.class, "Can not match talk capacity: tag=" + tag);
+//		}
 
-		byte[] identifierData = this.packet.getSubsegment(2);
+		// 应答		
+		// 包格式：源标签|能力描述序列化数据
 
-		// 反序列化原语
-		Primitive primitive = new Primitive(speakerTag);
-		primitive.read(stream);
+		byte[] capdata = TalkCapacity.serialize(ret);
 
-		this.service.processDialogue(this.session, speakerTag, Utils.bytes2String(identifierData), primitive);
+		Packet response = new Packet(TalkDefinition.TPT_CONSULT, 4, 1, 0);
+		response.appendSubsegment(this.packet.getSubsegment(0));
+		response.appendSubsegment(capdata);
+
+		byte[] data = Packet.pack(response);
+		if (null != data) {
+			Message message = new Message(data);
+			this.session.write(message);
+		}
 	}
-
 }

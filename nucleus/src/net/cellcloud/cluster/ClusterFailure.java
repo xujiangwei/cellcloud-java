@@ -2,7 +2,7 @@
 -----------------------------------------------------------------------------
 This source file is part of Cell Cloud.
 
-Copyright (c) 2009-2013 Cell Cloud Team (www.cellcloud.net)
+Copyright (c) 2009-2017 Cell Cloud Team (www.cellcloud.net)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -26,12 +26,17 @@ THE SOFTWARE.
 
 package net.cellcloud.cluster;
 
-/** 集群故障。
+/**
+ * 集群故障枚举。
  * 
- * @author Jiangwei Xu
+ * @author Ambrose Xu
+ * 
  */
 public enum ClusterFailure {
 
-	// 节点消失
+	/**
+	 * 节点消失。
+	 */
 	DisappearingNode
+
 }

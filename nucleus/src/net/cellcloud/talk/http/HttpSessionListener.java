@@ -2,7 +2,7 @@
 -----------------------------------------------------------------------------
 This source file is part of Cell Cloud.
 
-Copyright (c) 2009-2017 Cell Cloud Team (www.cellcloud.net)
+Copyright (c) 2009-2013 Cell Cloud Team (www.cellcloud.net)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -24,56 +24,34 @@ THE SOFTWARE.
 -----------------------------------------------------------------------------
 */
 
-package net.cellcloud.cluster.protocol;
+package net.cellcloud.talk.http;
 
-import net.cellcloud.cluster.ClusterFailure;
-import net.cellcloud.cluster.ClusterNode;
-import net.cellcloud.common.Session;
+import net.cellcloud.http.HttpSession;
+import net.cellcloud.http.SessionListener;
+import net.cellcloud.talk.TalkServiceKernel;
 
 /**
- * 集群模块故障状态协议。
+ * HTTP 会话监听器。
  * 
- * @author Ambrose Xu
- * 
+ * @author Jiangwei Xu
+ *
  */
-public class ClusterFailureProtocol extends ClusterProtocol {
+public class HttpSessionListener implements SessionListener {
 
-	/**
-	 * 故障描述。
-	 */
-	protected ClusterFailure failure;
+	private TalkServiceKernel talkServiceKernel;
 
-	/**
-	 * 描述故障的子协议。
-	 */
-	protected ClusterProtocol protocol;
-
-	/**
-	 * 构造器。
-	 * 
-	 * @param failure
-	 * @param protocol
-	 */
-	public ClusterFailureProtocol(ClusterFailure failure, ClusterProtocol protocol) {
-		super("Failure");
-		this.failure = failure;
-		this.protocol = protocol;
+	public HttpSessionListener(TalkServiceKernel talkServiceKernel) {
+		this.talkServiceKernel = talkServiceKernel;
 	}
 
-	/**
-	 * {@inheritDoc}
-	 */
 	@Override
-	public void launch(Session session) {
-		// TODO
+	public void onCreate(HttpSession session) {
+		// Nothing
 	}
 
-	/**
-	 * {@inheritDoc}
-	 */
 	@Override
-	public void respond(ClusterNode node, StateCode state, Object custom) {
-		// TODO
+	public void onDestroy(HttpSession session) {
+		this.talkServiceKernel.closeSession(session);
 	}
 
 }

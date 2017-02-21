@@ -32,16 +32,43 @@ import net.cellcloud.adapter.annotation.NucleusAdapterListener;
 import net.cellcloud.common.LogLevel;
 import net.cellcloud.common.Logger;
 
+/**
+ * 用于解析适配器注解的描述类。
+ * 
+ * @author Ambrose Xu
+ *
+ */
 public class AdapterListenerProfile {
 
+	/**
+	 * 适配器监听器实例。
+	 */
 	public AdapterListener listener;
+
+	/**
+	 * 监听器对应的适配器的实例名。
+	 */
 	public String instanceName;
 
+	/**
+	 * 构造器。
+	 * 
+	 * @param listener 指定适配器监听器。
+	 * @param instanceName 指定监听器对应的适配器实例名。
+	 */
 	public AdapterListenerProfile(AdapterListener listener, String instanceName) {
 		this.listener = listener;
 		this.instanceName = instanceName;
 	}
 
+	/**
+	 * 尝试加载指定的 Class 为适配器监听器。
+	 * 该方法通过判断 Class 是否被注解为 {@link net.cellcloud.adapter.annotation.NucleusAdapterListener}
+	 * 将 Class 实例化为监听。
+	 * 
+	 * @param clazz 指定待加载 Class
+	 * @return 如果 Class 没有正确的注解返回 <code>null</code>，否则返回 <code>AdapterListenerProfile</code> 实例。
+	 */
 	public static AdapterListenerProfile load(Class<?> clazz) {
 		Annotation annotation = clazz.getAnnotation(NucleusAdapterListener.class);
 		if (null == annotation) {
@@ -61,6 +88,8 @@ public class AdapterListenerProfile {
 		} catch (InstantiationException e) {
 			Logger.log(AdapterListenerProfile.class, e, LogLevel.WARNING);
 		} catch (IllegalAccessException e) {
+			Logger.log(AdapterListenerProfile.class, e, LogLevel.WARNING);
+		} catch (Exception e) {
 			Logger.log(AdapterListenerProfile.class, e, LogLevel.WARNING);
 		}
 		return ret;

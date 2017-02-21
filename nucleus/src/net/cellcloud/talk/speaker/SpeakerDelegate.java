@@ -2,7 +2,7 @@
 -----------------------------------------------------------------------------
 This source file is part of Cell Cloud.
 
-Copyright (c) 2009-2012 Cell Cloud Team (www.cellcloud.net)
+Copyright (c) 2009-2013 Cell Cloud Team (www.cellcloud.net)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -24,30 +24,42 @@ THE SOFTWARE.
 -----------------------------------------------------------------------------
 */
 
-package net.cellcloud.talk;
+package net.cellcloud.talk.speaker;
 
-import net.cellcloud.common.Packet;
-import net.cellcloud.common.Session;
+import net.cellcloud.talk.Primitive;
+import net.cellcloud.talk.Speakable;
+import net.cellcloud.talk.TalkServiceFailure;
 
-/** 会话命令。
+/**
+ * Speaker 事件委派。
  * 
  * @author Jiangwei Xu
  */
-public abstract class ServerCommand {
+public interface SpeakerDelegate {
 
-	protected TalkService service;
-	protected Session session;
-	protected Packet packet;
-
-	/** 构造函数。
+	/**
+	 * Dialogue
+	 * @param speaker
+	 * @param primitive
 	 */
-	public ServerCommand(TalkService service, Session session, Packet packet) {
-		this.service = service;
-		this.session = session;
-		this.packet = packet;
-	}
+	public void onDialogue(Speakable speaker, String celletIdentifier, Primitive primitive);
 
-	/** 执行命令。
+	/**
+	 * 
+	 * @param speaker
 	 */
-	public abstract void execute();
+	public void onContacted(Speakable speaker, String celletIdentifier);
+
+	/**
+	 * 
+	 * @param speaker
+	 */
+	public void onQuitted(Speakable speaker, String celletIdentifier);
+
+	/**
+	 * 
+	 * @param speaker
+	 * @param failure
+	 */
+	public void onFailed(Speakable speaker, TalkServiceFailure failure);
 }

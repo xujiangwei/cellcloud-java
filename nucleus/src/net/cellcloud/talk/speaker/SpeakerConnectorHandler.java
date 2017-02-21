@@ -24,7 +24,7 @@ THE SOFTWARE.
 -----------------------------------------------------------------------------
 */
 
-package net.cellcloud.talk;
+package net.cellcloud.talk.speaker;
 
 import net.cellcloud.common.LogLevel;
 import net.cellcloud.common.Logger;
@@ -33,6 +33,9 @@ import net.cellcloud.common.MessageErrorCode;
 import net.cellcloud.common.MessageHandler;
 import net.cellcloud.common.Packet;
 import net.cellcloud.common.Session;
+import net.cellcloud.talk.TalkDefinition;
+import net.cellcloud.talk.TalkFailureCode;
+import net.cellcloud.talk.TalkServiceFailure;
 import net.cellcloud.util.Utils;
 
 /** Speaker 连接处理器。

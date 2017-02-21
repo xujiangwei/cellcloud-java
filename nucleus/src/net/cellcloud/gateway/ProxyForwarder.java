@@ -2,7 +2,7 @@
 -----------------------------------------------------------------------------
 This source file is part of Cell Cloud.
 
-Copyright (c) 2009-2013 Cell Cloud Team (www.cellcloud.net)
+Copyright (c) 2009-2017 Cell Cloud Team (www.cellcloud.net)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -24,38 +24,48 @@ THE SOFTWARE.
 -----------------------------------------------------------------------------
 */
 
-package net.cellcloud.talk;
+package net.cellcloud.gateway;
 
-/**
- * Speaker 事件委派。
- * 
- * @author Jiangwei Xu
- */
-public interface SpeakerDelegate {
+import net.cellcloud.common.Message;
+import net.cellcloud.common.MessageInterceptor;
+import net.cellcloud.common.Session;
 
-	/**
-	 * Dialogue
-	 * @param speaker
-	 * @param primitive
-	 */
-	public void onDialogue(Speakable speaker, String celletIdentifier, Primitive primitive);
+public class ProxyForwarder implements MessageInterceptor {
 
-	/**
-	 * 
-	 * @param speaker
-	 */
-	public void onContacted(Speakable speaker, String celletIdentifier);
+	private RoutingTable routingTable;
 
-	/**
-	 * 
-	 * @param speaker
-	 */
-	public void onQuitted(Speakable speaker, String celletIdentifier);
+	public ProxyForwarder(RoutingTable routingTable) {
+		this.routingTable = routingTable;
+	}
 
-	/**
-	 * 
-	 * @param speaker
-	 * @param failure
-	 */
-	public void onFailed(Speakable speaker, TalkServiceFailure failure);
+	@Override
+	public boolean interceptCreating(Session session) {
+		return false;
+	}
+
+	@Override
+	public boolean interceptOpening(Session session) {
+		return false;
+	}
+
+	@Override
+	public boolean interceptClosing(Session session) {
+		return false;
+	}
+
+	@Override
+	public boolean interceptDestroying(Session session) {
+		return false;
+	}
+
+	@Override
+	public boolean interceptMessage(Session session, Message message) {
+		return false;
+	}
+
+	@Override
+	public boolean interceptError(Session session, int errorCode) {
+		return false;
+	}
+
 }

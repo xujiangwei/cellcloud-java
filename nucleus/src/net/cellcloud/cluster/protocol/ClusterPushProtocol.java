@@ -2,7 +2,7 @@
 -----------------------------------------------------------------------------
 This source file is part of Cell Cloud.
 
-Copyright (c) 2009-2013 Cell Cloud Team (www.cellcloud.net)
+Copyright (c) 2009-2017 Cell Cloud Team (www.cellcloud.net)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -31,104 +31,148 @@ import java.util.Map;
 import net.cellcloud.cluster.Chunk;
 import net.cellcloud.cluster.ClusterNode;
 import net.cellcloud.common.Cryptology;
-import net.cellcloud.common.LogLevel;
-import net.cellcloud.common.Logger;
 import net.cellcloud.common.Session;
 import net.cellcloud.core.Nucleus;
 import net.cellcloud.util.Utils;
 
-import org.json.JSONException;
-import org.json.JSONObject;
-
-/** 集群内数据块推送协议。
+/**
+ * 集群内数据块推送协议。
  * 
- * @author Jiangwei Xu
+ * @author Ambrose Xu
+ * 
  */
 public class ClusterPushProtocol extends ClusterProtocol {
 
+	/**
+	 * 协议名。
+	 */
 	public final static String NAME = "Push";
 
-	/// 块标签
+	/**
+	 * 数据键：块标签。
+	 */
 	public final static String KEY_LABEL = "Label";
-	/// 块数据
-	public final static String KEY_CHUNK = "Chunk";
-	/// 目标虚节点 Hash
+
+	/**
+	 * 数据键：目标虚节点 Hash 值。
+	 */
 	public final static String KEY_TARGET_HASH = "Target-Hash";
 
+	/** 目标虚拟节点 Hash 值。 */
 	private long targetHash = 0;
+	/** 数据块。 */
 	private Chunk chunk = null;
+	/** 数据块标签。 */
+	private String chunkLabel = null;
 
+	/**
+	 * 构造器。
+	 * 
+	 * @param targetHash 指定目标虚拟节点 Hash 值。
+	 * @param chunk 指定拉取数据的标签。
+	 */
 	public ClusterPushProtocol(long targetHash, Chunk chunk) {
 		super(ClusterPushProtocol.NAME);
 		this.targetHash = targetHash;
 		this.chunk = chunk;
 	}
 
-	public ClusterPushProtocol(Map<String, String> prop) {
+	/**
+	 * 构造器。
+	 * 
+	 * @param prop 指定协议的参数映射。
+	 */
+	public ClusterPushProtocol(Map<String, Object> prop) {
 		super(ClusterPushProtocol.NAME, prop);
 	}
 
-	/** 返回目标节点 Hash 。
+	/**
+	 * 获得推送目标节点 Hash 值。
+	 * 
+	 * @return 返回目标节点 Hash 值。
 	 */
 	public long getTargetHash() {
 		if (0 == this.targetHash) {
-			String str = this.getProp(KEY_TARGET_HASH);
-			if (null != str) {
-				this.targetHash = Long.parseLong(str);
+			Object value = this.getProp(KEY_TARGET_HASH);
+			if (null != value) {
+				this.targetHash = Long.parseLong(value.toString());
 			}
 		}
 
 		return this.targetHash;
 	}
 
-	/** 返回数据块。
+	/**
+	 * 获得数据块对象实例。
+	 * 
+	 * @return 返回数据块。
 	 */
-	public Chunk getChunk() {
+	public synchronized Chunk getChunk() {
 		if (null == this.chunk) {
-			String strLabel = this.getProp(KEY_LABEL);
-			String strChunk = this.getProp(KEY_CHUNK);
-			if (null != strLabel && null != strChunk) {
-				String label = Utils.bytes2String(Cryptology.getInstance().decodeBase64(strLabel));
-				String jsChunk = Utils.bytes2String(Cryptology.getInstance().decodeBase64(strChunk));
-				JSONObject json = null;
-				try {
-					json = new JSONObject(jsChunk);
-				} catch (JSONException e) {
-					Logger.log(ClusterPushProtocol.class, e, LogLevel.ERROR);
-				}
-				if (null != json) {
-					this.chunk = new Chunk(label, json);
-				}
+			Object vLabel = this.getProp(KEY_LABEL);
+			Object vData = this.getProp(KEY_PAYLOAD);
+			if (null != vLabel && null != vData) {
+				String label = Utils.bytes2String(Cryptology.getInstance().decodeBase64(vLabel.toString()));
+				byte[] data = (byte[]) vData;
+				this.chunk = new Chunk(label, data);
 			}
 		}
 
 		return this.chunk;
 	}
 
+	/**
+	 * 获得拉取区块的标签值。
+	 * 
+	 * @return 返回 Chunk 标签。
+	 */
+	public String getChunkLabel() {
+		if (null == this.chunkLabel) {
+			Object value = this.getProp(KEY_LABEL);
+			if (null != value) {
+				this.chunkLabel = Utils.bytes2String(Cryptology.getInstance().decodeBase64(value.toString()));
+			}
+		}
+
+		if (null == this.chunkLabel && null != this.chunk) {
+			this.chunkLabel = this.chunk.getLabel();
+		}
+
+		return this.chunkLabel;
+	}
+
+	/**
+	 * {@inheritDoc}
+	 */
 	@Override
 	public void launch(Session session) {
 		StringBuilder buf = new StringBuilder();
-		buf.append(KEY_PROTOCOL).append(": ").append(NAME).append("\n");
-		buf.append(KEY_TAG).append(": ").append(Nucleus.getInstance().getTagAsString()).append("\n");
-		buf.append(KEY_DATE).append(": ").append(super.getStandardDate()).append("\n");
+		buf.append(KEY_PROTOCOL).append(":").append(NAME).append("\n");
+		buf.append(KEY_TAG).append(":").append(Nucleus.getInstance().getTagAsString()).append("\n");
+		buf.append(KEY_DATE).append(":").append(super.getStandardDate()).append("\n");
 
-		buf.append(KEY_TARGET_HASH).append(": ").append(this.targetHash).append("\n");
-		buf.append(KEY_LABEL).append(": ").append(Cryptology.getInstance().encodeBase64(Utils.string2Bytes(this.chunk.getLabel()))).append("\n");
-		buf.append(KEY_CHUNK).append(": ").append(Cryptology.getInstance().encodeBase64(Utils.string2Bytes(this.chunk.getData().toString()))).append("\n");
+		buf.append(KEY_TARGET_HASH).append(":").append(this.targetHash).append("\n");
+		buf.append(KEY_LABEL).append(":").append(Cryptology.getInstance().encodeBase64(Utils.string2Bytes(this.chunk.getLabel()))).append("\n");
 
-		this.touch(session, buf);
+		this.touch(session, buf, this.chunk.getData());
 		buf = null;
 	}
 
+	/**
+	 * {@inheritDoc}
+	 */
 	@Override
-	public void respond(ClusterNode node, StateCode state) {
+	public void respond(ClusterNode node, StateCode state, Object custom) {
 		StringBuilder buf = new StringBuilder();
-		buf.append(KEY_PROTOCOL).append(": ").append(NAME).append("\n");
-		buf.append(KEY_TAG).append(": ").append(Nucleus.getInstance().getTagAsString()).append("\n");
-		buf.append(KEY_DATE).append(": ").append(super.getStandardDate()).append("\n");
-		buf.append(KEY_STATE).append(": ").append(state.getCode()).append("\n");
+		buf.append(KEY_PROTOCOL).append(":").append(NAME).append("\n");
+		buf.append(KEY_TAG).append(":").append(Nucleus.getInstance().getTagAsString()).append("\n");
+		buf.append(KEY_DATE).append(":").append(super.getStandardDate()).append("\n");
+		buf.append(KEY_STATE).append(":").append(state.getCode()).append("\n");
 
-		this.touch(this.contextSession, buf);
+		buf.append(KEY_LABEL).append(":").append(Cryptology.getInstance().encodeBase64(Utils.string2Bytes(custom.toString())));
+
+		this.touch(this.contextSession, buf, null);
 		buf = null;
 	}
+
 }

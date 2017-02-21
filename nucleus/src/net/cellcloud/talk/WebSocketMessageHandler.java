@@ -36,6 +36,10 @@ import net.cellcloud.common.Message;
 import net.cellcloud.common.MessageHandler;
 import net.cellcloud.common.Session;
 import net.cellcloud.core.Nucleus;
+import net.cellcloud.talk.http.HttpCheckHandler;
+import net.cellcloud.talk.http.HttpDialogueHandler;
+import net.cellcloud.talk.http.HttpQuickHandler;
+import net.cellcloud.talk.http.HttpRequestHandler;
 import net.cellcloud.talk.stuff.PrimitiveSerializer;
 
 import org.json.JSONArray;
@@ -60,11 +64,11 @@ public class WebSocketMessageHandler implements MessageHandler {
 	protected final static String TPT_HEARTBEAT = "hb";
 	protected final static String TPT_QUICK = "quick";
 
-	private TalkService service;
+	private TalkServiceKernel service;
 	private LinkedList<Task> taskList;
 	private AtomicInteger taskCounts;
 
-	public WebSocketMessageHandler(TalkService service) {
+	public WebSocketMessageHandler(TalkServiceKernel service) {
 		this.service = service;
 		this.taskList = new LinkedList<Task>();
 		this.taskCounts = new AtomicInteger(0);
@@ -150,7 +154,7 @@ public class WebSocketMessageHandler implements MessageHandler {
 	}
 
 	private void processQuick(JSONObject data, Session session) {
-		TalkService.Certificate cert = this.service.getCertificate(session);
+		TalkServiceKernel.Certificate cert = this.service.getCertificate(session);
 		if (null == cert) {
 			Logger.w(this.getClass(), "Can not fined certificate for session: " + session.getId());
 			return;
@@ -210,7 +214,7 @@ public class WebSocketMessageHandler implements MessageHandler {
 	}
 
 	private void processCheck(JSONObject data, Session session) {
-		TalkService.Certificate cert = this.service.getCertificate(session);
+		TalkServiceKernel.Certificate cert = this.service.getCertificate(session);
 		if (null == cert) {
 			Logger.w(this.getClass(), "Can not fined certificate for session: " + session.getId());
 			return;

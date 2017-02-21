@@ -7,12 +7,12 @@ import net.cellcloud.talk.stuff.StuffVersion;
  * 
  * @author Ambrose Xu
  */
-class CompatibilityHelper {
+public class CompatibilityHelper {
 
 	protected CompatibilityHelper() {
 	}
 
-	protected static StuffVersion match(int versionNumber) {
+	public static StuffVersion match(int versionNumber) {
 		if (versionNumber >= 150) {
 			return StuffVersion.V2;
 		}

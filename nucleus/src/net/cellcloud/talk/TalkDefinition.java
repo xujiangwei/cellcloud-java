@@ -40,9 +40,6 @@ public final class TalkDefinition {
 	// 请求验证密文结果
 	public static final byte[] TPT_CHECK = {'C', 'T', 'C', 'K'};
 
-	// 代理访问
-	public static final byte[] TPT_PROXY = {'C', 'T', 'P', 'X'};
-
 	// 协商服务能力
 	public static final byte[] TPT_CONSULT = {'C', 'T', 'C', 'O'};
 
@@ -58,11 +55,14 @@ public final class TalkDefinition {
 	// 快速握手
 	public static final byte[] TPT_QUICK = {'C', 'T', 'Q', 'K'};
 
+	// 代理访问
+	public static final byte[] TPT_PROXY = {'C', 'T', 'P', 'X'};
+
 
 	// 状态码
-	protected static final byte[] SC_SUCCESS = {'0', '0', '0', '0'};
-	protected static final byte[] SC_FAILURE = {'0', '0', '0', '1'};
-	protected static final byte[] SC_FAILURE_NOCELLET = {'0', '0', '1', '0'};
+	public static final byte[] SC_SUCCESS = {'0', '0', '0', '0'};
+	public static final byte[] SC_FAILURE = {'0', '0', '0', '1'};
+	public static final byte[] SC_FAILURE_NOCELLET = {'0', '0', '1', '0'};
 
 
 	/** 判断是否是 INTERROGATE 包。

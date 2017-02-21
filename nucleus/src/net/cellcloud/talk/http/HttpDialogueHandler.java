@@ -24,7 +24,7 @@ THE SOFTWARE.
 -----------------------------------------------------------------------------
 */
 
-package net.cellcloud.talk;
+package net.cellcloud.talk.http;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -43,6 +43,8 @@ import net.cellcloud.http.HttpHandler;
 import net.cellcloud.http.HttpRequest;
 import net.cellcloud.http.HttpResponse;
 import net.cellcloud.http.HttpSession;
+import net.cellcloud.talk.Primitive;
+import net.cellcloud.talk.TalkServiceKernel;
 import net.cellcloud.talk.stuff.PrimitiveSerializer;
 import net.cellcloud.util.Utils;
 
@@ -58,17 +60,17 @@ import org.json.JSONObject;
  */
 public final class HttpDialogueHandler extends AbstractJSONHandler implements CapsuleHolder {
 
-	protected static final String Tag = "tag";
-	protected static final String Identifier = "identifier";
-	protected static final String Primitive = "primitive";
-	protected static final String Primitives = "primitives";
-	protected static final String Queue = "queue";
+	public static final String Tag = "tag";
+	public static final String Identifier = "identifier";
+	public static final String Primitive = "primitive";
+	public static final String Primitives = "primitives";
+	public static final String Queue = "queue";
 
-	private TalkService talkService;
+	private TalkServiceKernel talkServiceKernel;
 
-	public HttpDialogueHandler(TalkService service) {
+	public HttpDialogueHandler(TalkServiceKernel service) {
 		super();
-		this.talkService = service;
+		this.talkServiceKernel = service;
 	}
 
 	@Override
@@ -97,7 +99,7 @@ public final class HttpDialogueHandler extends AbstractJSONHandler implements Ca
 				Primitive primitive = new Primitive(speakerTag);
 				PrimitiveSerializer.read(primitive, primitiveJSON);
 				// 处理原语
-				this.talkService.processDialogue(session, speakerTag, celletIdentifier, primitive);
+				this.talkServiceKernel.processDialogue(session, speakerTag, celletIdentifier, primitive);
 
 				// 响应
 				// FIXME 2014/10/03 修改为直接携带回数据

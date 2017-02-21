@@ -2,7 +2,7 @@
 -----------------------------------------------------------------------------
 This source file is part of Cell Cloud.
 
-Copyright (c) 2009-2013 Cell Cloud Team (www.cellcloud.net)
+Copyright (c) 2009-2017 Cell Cloud Team (www.cellcloud.net)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -26,7 +26,6 @@ THE SOFTWARE.
 
 package net.cellcloud.cluster.protocol;
 
-import java.nio.charset.Charset;
 import java.util.Date;
 import java.util.Map;
 
@@ -35,111 +34,189 @@ import net.cellcloud.common.Message;
 import net.cellcloud.common.Session;
 import net.cellcloud.util.Utils;
 
-/** 集群协议。
+/**
+ * 集群协议接口描述。
  * 
- * @author Jiangwei Xu
+ * @author Ambrose Xu
+ * 
  */
 public abstract class ClusterProtocol {
 
-	// 协议名
+	/** 数据键：协议名。 */
 	public final static String KEY_PROTOCOL = "Protocol";
-	// 内核标签
+	/** 数据键：内核标签。 */
 	public final static String KEY_TAG = "Tag";
-	// 本地时间
+	/** 数据键：本地时间。 */
 	public final static String KEY_DATE = "Date";
-	// 状态
+	/** 数据键：状态。 */
 	public final static String KEY_STATE = "State";
-	// 节点散列码
+	/** 数据键：节点散列码。 */
 	public final static String KEY_HASH = "Hash";
+	/** 数据键：负载。 */
+	public final static String KEY_PAYLOAD = "Payload";
 
+	/** 数据负载分割符。 */
+	public final static byte[] SEPARATOR = new byte[]{ 2, 0, 1, 3, 0, 9, 0, 8 };
+
+	/** 协议名称。 */
 	private String name;
 
-	// 上下文会话
+	/** 上下文会话。 */
 	public Session contextSession;
 
-	// 属性
-	protected Map<String, String> prop;
+	/** 属性描述。 */
+	private Map<String, Object> prop;
 
-	/** 指定协议名构建协议。
+	/**
+	 * 构造器。
+	 * 
+	 * @param name 指定协议名构建协议。
 	 */
 	public ClusterProtocol(String name) {
 		this.name = name;
 		this.prop = null;
 	}
 
-	/** 指定协议属性值构建协议。
+	/**
+	 * 构造器。
+	 * 
+	 * @param name 指定协议名构建协议。
+	 * @param prop 指定协议属性。
 	 */
-	public ClusterProtocol(String name, Map<String, String> prop) {
+	public ClusterProtocol(String name, Map<String, Object> prop) {
 		this.name = name;
 		this.prop = prop;
 	}
 
-	/** 返回协议名。
+	/**
+	 * 获得协议名称。
+	 * 
+	 * @return 返回协议名。
 	 */
 	public final String getName() {
 		return this.name;
 	}
 
-	/** 返回标准日期。
+	/**
+	 * 获得标准日期描述。
+	 * 
+	 * @return 返回字符串形式的标准日期描述。
 	 */
 	public final String getStandardDate() {
 		return Utils.gsDateFormat.format(new Date());
 	}
 
-	/** 返回协议内传输的标签。
+	/**
+	 * 获得节点标签。
+	 * 
+	 * @return 返回协议内传输的标签。
 	 */
 	public final String getTag() {
-		return this.prop.get(KEY_TAG);
+		return this.prop.get(KEY_TAG).toString();
 	}
 
-	/** 返回协议状态。
+	/**
+	 * 获得协议状态。
+	 * 
+	 * @return 返回整数形式的协议状态。
 	 */
 	public int getStateCode() {
-		String szState = this.prop.get(KEY_STATE);
-		return (null != szState) ? Integer.parseInt(szState) : -1;
+		Object oState = this.prop.get(KEY_STATE);
+		if (null == oState) {
+			return -1;
+		}
+
+		if (oState instanceof Integer) {
+			return ((Integer) oState).intValue();
+		}
+		else {
+			return Integer.parseInt(oState.toString());
+		}
 	}
 
-	/** 返回物理节点 Hash 。
+	/**
+	 * 获得物理节点的 Hash 值。
+	 * 
+	 * @return 返回物理节点 Hash 值。
 	 */
 	public long getHash() {
-		String szHash = this.prop.get(KEY_HASH);
-		return (null != szHash) ? Long.parseLong(szHash) : 0;
+		Object oHash = this.prop.get(KEY_HASH);
+
+		if (oHash instanceof Long) {
+			return ((Long) oHash).longValue();
+		}
+		else {
+			return Long.parseLong(oHash.toString());
+		}
 	}
 
-	/** 返回指定键对应的属性值。
+	/**
+	 * 获得指定键对应的属性值。
+	 * 
+	 * @param key 指定数据键。
+	 * @return 返回字符串形式的指定键对应的属性值。
 	 */
-	public String getProp(String key) {
+	public Object getProp(String key) {
 		return (null != this.prop) ? this.prop.get(key) : null;
 	}
 
-	/** 启动协议。
+	/**
+	 * 启动并执行协议。
+	 * 
+	 * @param session 指定执行协议的会话。
 	 */
 	abstract public void launch(Session session);
 
-	/** 向指定 Session 回送执行结果。
+	/**
+	 * 向指定 Session 回送执行结果。
+	 * 
+	 * @param node 指定应答节点。
+	 * @param state 指定应当状态。
+	 * @param custom 指定需要应答的自定义数据。
 	 */
-	abstract public void respond(ClusterNode node, StateCode state);
+	abstract public void respond(ClusterNode node, StateCode state, Object custom);
 
-	/** 协议收尾处理并发送。
+	/**
+	 * 协议打包处理并发送。
+	 * 
+	 * @param session 指定会话。
+	 * @param buffer 指定存储数据的缓存。
 	 */
-	protected void touch(Session session, StringBuilder buffer) {
-		buffer.append("\r\n\r\n");
-		Message message = new Message(buffer.toString().getBytes(Charset.forName("UTF-8")));
+	protected void touch(Session session, StringBuilder buffer, byte[] payload) {
+		Message message = null;
+		if (null != payload) {
+			byte[] data = Utils.string2Bytes(buffer.toString());
+			byte[] tail = new byte[]{ '\r', '\n', '\r', '\n' };
+			// 合并后的数据
+			byte[] bytes = new byte[data.length + payload.length + tail.length];
+			System.arraycopy(data, 0, bytes, 0, data.length);
+			System.arraycopy(payload, 0, bytes, data.length, payload.length);
+			System.arraycopy(tail, 0, bytes, data.length + payload.length, tail.length);
+			message = new Message(bytes);
+			data = null;
+			tail = null;
+		}
+		else {
+			buffer.append("\r\n\r\n");
+			message = new Message(Utils.string2Bytes(buffer.toString()));
+		}
+
 		session.write(message);
 	}
 
-	/** 协议状态。
+	/**
+	 * 协议状态。
 	 */
 	public enum StateCode {
 
-		// 成功
+		/** 成功。 */
 		SUCCESS(200),
 
-		// 操作被拒绝
+		/** 操作被拒绝。 */
 		REJECT(201),
 
-		// 操作失败
-		FAILURE(209);
+		/** 操作失败。 */
+		FAILURE(400);
 
 		private int code;
 
@@ -147,6 +224,11 @@ public abstract class ClusterProtocol {
 			this.code = code;
 		}
 
+		/**
+		 * 返回状态编码。
+		 * 
+		 * @return 返回状态编码。
+		 */
 		public int getCode() {
 			return this.code;
 		}
@@ -155,5 +237,7 @@ public abstract class ClusterProtocol {
 		public String toString() {
 			return String.valueOf(this.code);
 		}
+
 	}
+
 }

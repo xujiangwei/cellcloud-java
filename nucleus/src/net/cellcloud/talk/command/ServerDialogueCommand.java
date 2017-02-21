@@ -24,33 +24,55 @@ THE SOFTWARE.
 -----------------------------------------------------------------------------
 */
 
-package net.cellcloud.talk;
+package net.cellcloud.talk.command;
 
+import java.io.ByteArrayInputStream;
+
+import net.cellcloud.common.Logger;
 import net.cellcloud.common.Packet;
 import net.cellcloud.common.Session;
+import net.cellcloud.talk.Primitive;
+import net.cellcloud.talk.TalkServiceKernel;
+import net.cellcloud.util.Utils;
 
 /**
- * Talk heartbeat command
+ * 
+ * Dialogue Command
  * 
  * @author Jiangwei Xu
  */
-public final class ServerHeartbeatCommand extends ServerCommand {
+public final class ServerDialogueCommand extends ServerCommand {
 
-	/** 构造函数。
-	 */
-	protected ServerHeartbeatCommand(TalkService service) {
+	public ServerDialogueCommand(TalkServiceKernel service) {
 		super(service, null, null);
 	}
 
-	/** 构造函数。
-	 */
-	public ServerHeartbeatCommand(TalkService service, Session session, Packet packet) {
+	public ServerDialogueCommand(TalkServiceKernel service, Session session, Packet packet) {
 		super(service, session, packet);
 	}
 
 	@Override
 	public void execute() {
-		this.service.updateSessionHeartbeat(this.session);
+		// 包格式：序列化的原语|源标签
+
+		if (this.packet.getSubsegmentCount() < 2) {
+			Logger.e(ServerDialogueCommand.class, "Dialogue packet format error");
+			return;
+		}
+
+		byte[] priData = this.packet.getSubsegment(0);
+		ByteArrayInputStream stream = new ByteArrayInputStream(priData);
+
+		byte[] tagData = this.packet.getSubsegment(1);
+		String speakerTag = Utils.bytes2String(tagData);
+
+		byte[] identifierData = this.packet.getSubsegment(2);
+
+		// 反序列化原语
+		Primitive primitive = new Primitive(speakerTag);
+		primitive.read(stream);
+
+		this.service.processDialogue(this.session, speakerTag, Utils.bytes2String(identifierData), primitive);
 	}
 
 }

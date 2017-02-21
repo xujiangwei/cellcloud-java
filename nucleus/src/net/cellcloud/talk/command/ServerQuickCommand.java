@@ -24,7 +24,7 @@ THE SOFTWARE.
 -----------------------------------------------------------------------------
 */
 
-package net.cellcloud.talk;
+package net.cellcloud.talk.command;
 
 import java.nio.charset.Charset;
 
@@ -33,7 +33,11 @@ import net.cellcloud.common.Message;
 import net.cellcloud.common.Packet;
 import net.cellcloud.common.Session;
 import net.cellcloud.core.Nucleus;
-import net.cellcloud.talk.TalkService.Certificate;
+import net.cellcloud.talk.TalkCapacity;
+import net.cellcloud.talk.TalkDefinition;
+import net.cellcloud.talk.TalkServiceKernel;
+import net.cellcloud.talk.TalkTracker;
+import net.cellcloud.talk.TalkServiceKernel.Certificate;
 import net.cellcloud.util.Utils;
 
 /**
@@ -43,11 +47,11 @@ import net.cellcloud.util.Utils;
  */
 public final class ServerQuickCommand extends ServerCommand {
 
-	public ServerQuickCommand(TalkService service) {
+	public ServerQuickCommand(TalkServiceKernel service) {
 		super(service, null, null);
 	}
 
-	public ServerQuickCommand(TalkService service, Session session, Packet packet) {
+	public ServerQuickCommand(TalkServiceKernel service, Session session, Packet packet) {
 		super(service, session, packet);
 	}
 

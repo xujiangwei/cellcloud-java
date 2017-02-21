@@ -2,7 +2,7 @@
 -----------------------------------------------------------------------------
 This source file is part of Cell Cloud.
 
-Copyright (c) 2009-2017 Cell Cloud Team (www.cellcloud.net)
+Copyright (c) 2009-2013 Cell Cloud Team (www.cellcloud.net)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -24,14 +24,11 @@ THE SOFTWARE.
 -----------------------------------------------------------------------------
 */
 
-package net.cellcloud.talk;
+package net.cellcloud.talk.http;
 
 import java.io.IOException;
-import java.nio.charset.Charset;
 
-import org.json.JSONException;
-import org.json.JSONObject;
-
+import net.cellcloud.common.Cryptology;
 import net.cellcloud.common.LogLevel;
 import net.cellcloud.common.Logger;
 import net.cellcloud.http.AbstractJSONHandler;
@@ -40,30 +37,33 @@ import net.cellcloud.http.HttpHandler;
 import net.cellcloud.http.HttpRequest;
 import net.cellcloud.http.HttpResponse;
 import net.cellcloud.http.HttpSession;
+import net.cellcloud.talk.TalkServiceKernel;
+
+import org.json.JSONException;
+import org.json.JSONObject;
 
 /**
- * 请求 Cellet 服务句柄。
+ * 会话询问。
  * 
  * @author Jiangwei Xu
  *
  */
-public final class HttpRequestHandler extends AbstractJSONHandler implements CapsuleHolder {
+public final class HttpInterrogationHandler extends AbstractJSONHandler implements CapsuleHolder {
 
-	protected static final String Identifier = "identifier";
-	protected static final String Tag = "tag";
-	protected static final String Version = "version";
-	protected static final String Error = "error";
+	public static final String Ciphertext = "ciphertext";
+	public static final String Key = "key";
+	public static final String Version = "ver";
 
-	private TalkService talkService;
+	private TalkServiceKernel talkServiceKernel;
 
-	public HttpRequestHandler(TalkService talkService) {
+	public HttpInterrogationHandler(TalkServiceKernel talkServiceKernel) {
 		super();
-		this.talkService = talkService;
+		this.talkServiceKernel = talkServiceKernel;
 	}
 
 	@Override
 	public String getPathSpec() {
-		return "/talk/request";
+		return "/talk/int";
 	}
 
 	@Override
@@ -71,55 +71,41 @@ public final class HttpRequestHandler extends AbstractJSONHandler implements Cap
 		return this;
 	}
 
-	/**
-	 * 返回数据：
-	 * tag
-	 * identifier
-	 * version
-	 */
 	@Override
-	protected void doPost(HttpRequest request, HttpResponse response)
-		throws IOException {
+	protected void doGet(HttpRequest request, HttpResponse response)
+			throws IOException {
 		HttpSession session = request.getSession();
 		if (null != session) {
-			// {"tag": tag, "identifier": identifier}
-			String data = new String(request.readRequestData(), Charset.forName("UTF-8"));
-			try {
-				JSONObject json = new JSONObject(data);
-				String tag = json.getString(Tag);
-				String identifier = json.getString(Identifier);
-				// 请求 Cellet
-				TalkTracker tracker = this.talkService.processRequest(session, tag, identifier);
-				if (null != tracker) {
-					// 成功
-					JSONObject ret = new JSONObject();
-					ret.put(Tag, tag);
-					ret.put(Identifier, identifier);
-					ret.put(Version, tracker.getCellet(identifier).getFeature().getVersion().toString());
-					this.respondWithOk(response, ret);
+			TalkServiceKernel.Certificate cert = this.talkServiceKernel.openSession(session);
+			if (null != cert) {
+				byte[] ciphertext = Cryptology.getInstance().simpleEncrypt(cert.plaintext.getBytes(), cert.key.getBytes());
+				JSONObject json = new JSONObject();
+				try {
+					// {"ciphertext": ciphertext, "key": key}
+					json.put(Ciphertext, Cryptology.getInstance().encodeBase64(ciphertext));
+					json.put(Key, cert.key);
+					json.put(Version, "1.1");
+				} catch (JSONException e) {
+					Logger.log(HttpInterrogationHandler.class, e, LogLevel.ERROR);
 				}
-				else {
-					// 失败
-					JSONObject ret = new JSONObject();
-					ret.put(Tag, tag);
-					ret.put(Identifier, identifier);
-					ret.put(Error, new String(TalkDefinition.SC_FAILURE_NOCELLET, Charset.forName("UTF-8")));
-					this.respondWithOk(response, ret);
-				}
-			} catch (JSONException e) {
-				Logger.log(HttpRequestHandler.class, e, LogLevel.WARNING);
-				this.respond(response, HttpResponse.SC_BAD_REQUEST);
+				// 响应
+				this.respondWithOk(response, json);
+			}
+			else {
+				// 返回 Certificate 为 null
+				this.respond(response, HttpResponse.SC_NOT_FOUND);
 			}
 		}
 		else {
+			// 获取 Session 失败
 			this.respond(response, HttpResponse.SC_INTERNAL_SERVER_ERROR);
 		}
 	}
 
 	@Override
-	protected void doGet(HttpRequest request, HttpResponse response)
+	protected void doPost(HttpRequest request, HttpResponse response)
 			throws IOException {
-		this.doPost(request, response);
+		this.doGet(request, response);
 	}
 
 	@Override

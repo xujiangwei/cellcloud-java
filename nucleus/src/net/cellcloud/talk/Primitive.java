@@ -145,7 +145,7 @@ public class Primitive {
 
 	/** 设置 Cellet 标识。
 	 */
-	protected void setCelletIdentifier(String celletIdentifier) {
+	public void setCelletIdentifier(String celletIdentifier) {
 		this.celletIdentifier = celletIdentifier;
 		if (null != this.dialect) {
 			this.dialect.setCelletIdentifier(celletIdentifier);

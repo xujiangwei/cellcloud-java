@@ -2,7 +2,7 @@
 -----------------------------------------------------------------------------
 This source file is part of Cell Cloud.
 
-Copyright (c) 2009-2013 Cell Cloud Team (www.cellcloud.net)
+Copyright (c) 2009-2017 Cell Cloud Team (www.cellcloud.net)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -47,31 +47,46 @@ import net.cellcloud.common.Service;
 import net.cellcloud.core.Nucleus;
 import net.cellcloud.util.SlidingWindowExecutor;
 
-/** 集群控制器。
+/**
+ * 集群控制器。负责调度整个集群内各模块。
  * 
- * @author Jiangwei Xu
+ * @author Ambrose Xu
+ * 
  */
 public final class ClusterController implements Service, Observer {
 
+	/** 集群网络描述。 */
 	private ClusterNetwork network;
+	/** 定时任务定时器。 */
 	private Timer timer;
+	/** 滑窗算法执行器。 */
 	protected SlidingWindowExecutor executor;
 
-	// 集群地址列表
+	/** 集群地址列表。 */
 	private ArrayList<InetSocketAddress> addressList;
 
-	// Key: Socket address hash code
+	/** 连接器映射，键为 Socket 地址 Hash 值。 */
 	private ConcurrentHashMap<Long, ClusterConnector> connectors;
 
+	/** 虚拟节点数量。 */
 	private int numVNode;
 
-	private byte[] monitor = new byte[0];
+	/** 线程监视器。 */
+	private Object monitor = new Object();
 
+	/** 本地根节点。 */
 	private ClusterNode root;
 
-	// 是否自动扫描网络
+	/** 是否自动扫描网络。 */
 	public boolean autoScanNetwork = false;
 
+	/**
+	 * 构造器。
+	 * 
+	 * @param hostname 指定本机名。
+	 * @param preferredPort 指定优先使用的端口。
+	 * @param numVNode 指定虚拟节点个数。
+	 */
 	public ClusterController(String hostname, int preferredPort, int numVNode) {
 		// 创建执行器
 		this.executor = SlidingWindowExecutor.newSlidingWindowThreadPool(8);
@@ -83,6 +98,9 @@ public final class ClusterController implements Service, Observer {
 		this.connectors = new ConcurrentHashMap<Long, ClusterConnector>();
 	}
 
+	/**
+	 * {@inheritDoc}
+	 */
 	@Override
 	public boolean startup() {
 		if (!this.network.startup()) {
@@ -101,6 +119,9 @@ public final class ClusterController implements Service, Observer {
 		return true;
 	}
 
+	/**
+	 * {@inheritDoc}
+	 */
 	@Override
 	public void shutdown() {
 		if (null != this.timer) {
@@ -148,13 +169,19 @@ public final class ClusterController implements Service, Observer {
 		}
 	}
 
-	/** 返回根节点。
+	/**
+	 * 获得本地根节点。
+	 * 
+	 * @return 返回根节点实例。
 	 */
 	public ClusterNode getNode() {
 		return this.root;
 	}
 
-	/** 添加集群地址列表。
+	/**
+	 * 添加集群地址列表。
+	 * 
+	 * @param addressList 指定需要添加的地址列表。
 	 */
 	public void addClusterAddress(List<InetSocketAddress> addressList) {
 		for (InetSocketAddress address : addressList) {
@@ -163,6 +190,7 @@ public final class ClusterController implements Service, Observer {
 				continue;
 			}
 
+			// 计算地址 Hash 值
 			long addrHash = ClusterController.hashAddress(address);
 
 			synchronized (this.monitor) {
@@ -184,11 +212,17 @@ public final class ClusterController implements Service, Observer {
 		}
 	}
 
-	/** 以阻塞方式向集群内写入数据块。
+	/**
+	 * 以阻塞方式向集群内写入数据块。
+	 * 
+	 * @param chunk 指定待操作数据块。
+	 * @param timeout 指定最大超时时间，单位：毫秒。
+	 * @return 写入数据成功返回 <code>true</code> ，否则返回 <code>false</code> 。
 	 */
 	public boolean writeChunk(Chunk chunk, long timeout) {
 		// 获得目标 Hash
 		long hash = ClusterController.hashChunk(chunk);
+		// 为 Chunk 检索一个可被使用的虚拟节点的 Hash
 		Long targetHash = this.root.findVNodeHash(hash);
 		if (null == targetHash) {
 			return false;
@@ -225,7 +259,12 @@ public final class ClusterController implements Service, Observer {
 		}
 	}
 
-	/** 以阻塞方式从集群内读取数据块。
+	/**
+	 * 以阻塞方式从集群内读取数据块。
+	 * 
+	 * @param label 指定需要读取的数据库标签。
+	 * @param timeout 指定读取数据最大超时时间。
+	 * @return 返回读取到的数据块实例。如果读取数失败返回 <code>null</code>。
 	 */
 	public Chunk readChunk(String label, long timeout) {
 		// 获得目标 Hash
@@ -264,7 +303,10 @@ public final class ClusterController implements Service, Observer {
 		}
 	}
 
-	/** 执行发现。
+	/**
+	 * 对指定地址执行发现协议。
+	 * 
+	 * @param addressList 指定需要进行发现操作的地址列表。
 	 */
 	private void doDiscover(List<InetSocketAddress> addressList) {
 		for (InetSocketAddress address : addressList) {
@@ -287,7 +329,8 @@ public final class ClusterController implements Service, Observer {
 		} // #for
 	}
 
-	/** 对指定地址进行端口猜测并进行发现。
+	/**
+	 * 对指定地址进行端口猜测并进行发现。
 	 */
 	private boolean guessDiscover(InetSocketAddress oldAddress) {
 		if (oldAddress.getPort() == this.network.getPort()) {
@@ -304,7 +347,8 @@ public final class ClusterController implements Service, Observer {
 		return false;
 	}
 
-	/** 定时器操作。
+	/**
+	 * 定时器操作。
 	 */
 	private void timerHandle() {
 		ArrayList<InetSocketAddress> list = null;
@@ -336,7 +380,9 @@ public final class ClusterController implements Service, Observer {
 		}
 	}
 
-	/** 处理适配器网络句柄函数 */
+	/**
+	 * 处理集群网络句柄。
+	 */
 	private void update(ClusterNetwork network, ClusterProtocol protocol) {
 		if (protocol instanceof ClusterPullProtocol) {
 			ClusterPullProtocol prtl = (ClusterPullProtocol)protocol;
@@ -349,16 +395,16 @@ public final class ClusterController implements Service, Observer {
 				if (null != chunk) {
 					// 获取到 Chunk
 					prtl.setChunk(chunk);
-					prtl.respond(this.root, ClusterProtocol.StateCode.SUCCESS);
+					prtl.respond(this.root, ClusterProtocol.StateCode.SUCCESS, chunk.getLabel());
 				}
 				else {
 					// 没有获取到 Chunk
-					prtl.respond(this.root, ClusterProtocol.StateCode.FAILURE);
+					prtl.respond(this.root, ClusterProtocol.StateCode.FAILURE, prtl.getChunkLabel());
 				}
 			}
 			else {
 				// 目标不是自己的虚节点
-				prtl.respond(this.root, ClusterProtocol.StateCode.REJECT);
+				prtl.respond(this.root, ClusterProtocol.StateCode.REJECT, prtl.getChunkLabel());
 			}
 		}
 		else if (protocol instanceof ClusterPushProtocol) {
@@ -379,7 +425,7 @@ public final class ClusterController implements Service, Observer {
 				vnode.insertChunk(chunk);
 
 				// 响应
-				prtl.respond(this.root, ClusterProtocol.StateCode.SUCCESS);
+				prtl.respond(this.root, ClusterProtocol.StateCode.SUCCESS, chunk.getLabel());
 			}
 			else {
 				if (Logger.isDebugLevel()) {
@@ -390,7 +436,7 @@ public final class ClusterController implements Service, Observer {
 				}
 
 				// 响应
-				prtl.respond(this.root, ClusterProtocol.StateCode.REJECT);
+				prtl.respond(this.root, ClusterProtocol.StateCode.REJECT, prtl.getChunkLabel());
 			}
 		}
 		else if (protocol instanceof ClusterDiscoveringProtocol) {
@@ -420,24 +466,30 @@ public final class ClusterController implements Service, Observer {
 					}
 
 					// 回应对端
-					discovering.respond(this.root, ClusterProtocol.StateCode.SUCCESS);
+					discovering.respond(this.root, ClusterProtocol.StateCode.SUCCESS, null);
+				}
+				else {
+					// 回应对端
+					discovering.respond(this.root, ClusterProtocol.StateCode.FAILURE, null);
 				}
 			}
 		}
 	}
 
-	/** 处理连接器句柄 */
+	/**
+	 * 处理连接器事件。
+	 */
 	private void update(ClusterConnector connector, ClusterProtocol protocol) {
 		if (protocol instanceof ClusterPullProtocol) {
 			ClusterPullProtocol prtl = (ClusterPullProtocol) protocol;
 			if (ClusterProtocol.StateCode.SUCCESS.getCode() == prtl.getStateCode()) {
 				// 获取 Chunk 数据，并尝试通知阻塞线程
 				Chunk chunk = prtl.getChunk();
-				connector.notifyBlockingPull(chunk);
+				connector.notifyBlocking(chunk);
 			}
 			else {
 				// 通知阻塞线程
-				connector.notifyBlockingPull(prtl.getChunkLabel());
+				connector.notifyBlocking(prtl.getChunkLabel());
 			}
 		}
 		else if (protocol instanceof ClusterDiscoveringProtocol) {
@@ -481,7 +533,13 @@ public final class ClusterController implements Service, Observer {
 		}
 	}
 
-	/** 返回或创建连接器。 */
+	/**
+	 * 获得或创建指定连接器。
+	 * 
+	 * @param address 指定 Socket 连接地址
+	 * @param hash 指定节点的物理 Hash 值。
+	 * @return 返回连接实例。
+	 */
 	private ClusterConnector getOrCreateConnector(InetSocketAddress address, Long hash) {
 		ClusterConnector connector = this.connectors.get(hash);
 		if (null == connector) {
@@ -493,7 +551,11 @@ public final class ClusterController implements Service, Observer {
 		return connector;
 	}
 
-	/** 关闭并销毁连接器。 */
+	/**
+	 * 关闭并销毁连接器。
+	 * 
+	 * @param connector 指定关闭的连接器。
+	 */
 	private void closeAndDestroyConnector(ClusterConnector connector) {
 		// 关闭连接
 		connector.close();
@@ -503,7 +565,11 @@ public final class ClusterController implements Service, Observer {
 		connector.deleteObserver(this);
 	}
 
-	/** 计算地址 Hash 。
+	/**
+	 * 计算 Socket 地址 Hash 值。
+	 * 
+	 * @param address 指定待计算的地址。
+	 * @return 返回长整型 Hash Code 。
 	 */
 	public static long hashAddress(InetSocketAddress address) {
 		String str = new StringBuilder().append(address.getAddress().getHostAddress())
@@ -513,7 +579,12 @@ public final class ClusterController implements Service, Observer {
 		return hash;
 	}
 
-	/** 计算节点 Hash 。
+	/**
+	 * 计算地址对应的节点 Hash 值。
+	 * 
+	 * @param address 指定待计算的地址。
+	 * @param sequence 指定虚拟节点序号。
+	 * @return 返回长整型 Hash Code 。
 	 */
 	public static long hashVNode(InetSocketAddress address, int sequence) {
 		String str = new StringBuilder().append(address.getAddress().getHostAddress())
@@ -523,7 +594,11 @@ public final class ClusterController implements Service, Observer {
 		return hash;
 	}
 
-	/** 计算数据块 Hash 。
+	/**
+	 * 计算数据块 Hash 值。
+	 * 
+	 * @param chunk 指定数据块。
+	 * @return 返回长整型 Hash Code 。
 	 */
 	public static long hashChunk(Chunk chunk) {
 		String str = chunk.getLabel();
@@ -531,7 +606,12 @@ public final class ClusterController implements Service, Observer {
 		long hash = ((long)(md5[3]&0xFF) << 24) | ((long)(md5[2]&0xFF) << 16) | ((long)(md5[1]&0xFF) << 8) | (long)(md5[0]&0xFF);
 		return hash;
 	}
-	/** 计算数据块 Hash 。
+
+	/**
+	 * 计算数据块 Hash 值。
+	 * 
+	 * @param chunkLabel 指定数据块标签。
+	 * @return 返回长整型 Hash Code 。
 	 */
 	public static long hashChunk(String chunkLabel) {
 		String str = chunkLabel;
@@ -540,7 +620,8 @@ public final class ClusterController implements Service, Observer {
 		return hash;
 	}
 
-	/** 控制器定时任务。
+	/**
+	 * 控制器定时任务。
 	 */
 	protected class ControllerTimerTask extends TimerTask {
 		protected ControllerTimerTask() {
@@ -558,4 +639,5 @@ public final class ClusterController implements Service, Observer {
 			timerHandle();
 		}
 	}
+
 }

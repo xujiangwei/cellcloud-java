@@ -24,7 +24,7 @@ THE SOFTWARE.
 -----------------------------------------------------------------------------
 */
 
-package net.cellcloud.talk;
+package net.cellcloud.talk.speaker;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -42,6 +42,14 @@ import net.cellcloud.common.NonblockingConnector;
 import net.cellcloud.common.Packet;
 import net.cellcloud.common.Session;
 import net.cellcloud.core.Nucleus;
+import net.cellcloud.talk.CompatibilityHelper;
+import net.cellcloud.talk.Primitive;
+import net.cellcloud.talk.Speakable;
+import net.cellcloud.talk.SpeakerState;
+import net.cellcloud.talk.TalkCapacity;
+import net.cellcloud.talk.TalkDefinition;
+import net.cellcloud.talk.TalkFailureCode;
+import net.cellcloud.talk.TalkServiceFailure;
 import net.cellcloud.talk.stuff.StuffVersion;
 import net.cellcloud.util.Utils;
 
@@ -62,7 +70,7 @@ public class Speaker implements Speakable {
 
 	private List<String> identifierList;
 
-	protected TalkCapacity capacity = null;
+	public TalkCapacity capacity = null;
 
 	private byte[] secretKey = null;
 
@@ -72,10 +80,10 @@ public class Speaker implements Speakable {
 	private volatile int state = SpeakerState.HANGUP;
 
 	// 是否需要重新连接
-	protected boolean lost = false;
-	protected long retryTimestamp = 0;
-	protected int retryCounts = 0;
-	protected boolean retryEnd = false;
+	public boolean lost = false;
+	public long retryTimestamp = 0;
+	public int retryCounts = 0;
+	public boolean retryEnd = false;
 
 	private Timer contactedTimer = null;
 
@@ -309,7 +317,7 @@ public class Speaker implements Speakable {
 	}
 
 	/** 发送心跳。 */
-	protected boolean heartbeat() {
+	public boolean heartbeat() {
 		if (this.authenticated && !this.lost && this.connector.isConnected()) {
 			Packet packet = new Packet(TalkDefinition.TPT_HEARTBEAT, 9, 1, 0);
 			byte[] data = Packet.pack(packet);
@@ -323,17 +331,6 @@ public class Speaker implements Speakable {
 	}
 
 	protected void notifySessionClosed() {
-		// 判断是否要通知被挂起
-//		if (null != this.capacity && SpeakerState.CALLED == this.state) {
-//			if (this.capacity.autoSuspend) {
-//				this.state = SpeakerState.SUSPENDED;
-//				this.fireSuspended(System.currentTimeMillis(), SuspendMode.PASSIVE);
-//
-//				// 标记为丢失
-//				this.lost = true;
-//			}
-//		}
-
 		// 判断是否为异常网络中断
 		if (SpeakerState.CALLING == this.state) {
 			TalkServiceFailure failure = new TalkServiceFailure(TalkFailureCode.CALL_FAILED
@@ -460,7 +457,7 @@ public class Speaker implements Speakable {
 		}
 	}
 
-	protected void fireRetryEnd() {
+	public void fireRetryEnd() {
 		TalkServiceFailure failure = new TalkServiceFailure(TalkFailureCode.RETRY_END, this.getClass());
 		failure.setSourceCelletIdentifiers(this.identifierList);
 		this.fireFailed(failure);

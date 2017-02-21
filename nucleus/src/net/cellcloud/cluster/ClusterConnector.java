@@ -2,7 +2,7 @@
 -----------------------------------------------------------------------------
 This source file is part of Cell Cloud.
 
-Copyright (c) 2009-2013 Cell Cloud Team (www.cellcloud.net)
+Copyright (c) 2009-2017 Cell Cloud Team (www.cellcloud.net)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -29,10 +29,10 @@ package net.cellcloud.cluster;
 import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
 import java.util.HashMap;
-import java.util.LinkedList;
 import java.util.Observable;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentLinkedQueue;
 
 import net.cellcloud.cluster.protocol.ClusterDiscoveringProtocol;
 import net.cellcloud.cluster.protocol.ClusterFailureProtocol;
@@ -44,61 +44,84 @@ import net.cellcloud.common.Cryptology;
 import net.cellcloud.common.LogLevel;
 import net.cellcloud.common.Logger;
 import net.cellcloud.common.Message;
-import net.cellcloud.common.MessageErrorCode;
 import net.cellcloud.common.MessageHandler;
 import net.cellcloud.common.NonblockingConnector;
 import net.cellcloud.common.Session;
 import net.cellcloud.util.Utils;
 
-/** 集群连接器。
+/**
+ * 集群连接器。
  * 
- * @author Jiangwei Xu
+ * @author Ambrose Xu
+ *
  */
 public final class ClusterConnector extends Observable implements MessageHandler {
 
-	protected final static String SUBJECT_FAILURE = "failure";
-	protected final static String SUBJECT_DISCOVERING = "discovering";
-
-	private final int bufferSize = 8192;
-
+	/** 连接器对应的物理节点的 Hash 值。 */
 	private Long hashCode;
+	/** 连接器工作的 Socket 地址。 */
 	private InetSocketAddress address;
 
+	/** 非阻塞连接器。 */
 	private NonblockingConnector connector;
+	/** 接收数据的临时缓存。 */
 	private ByteBuffer buffer;
+	/** 连接器 Buffer 区大小。 */
+	private int bufferSize = 8192 * 8;
+	/** 待处理协议队列。 */
 	private Queue<ClusterProtocol> protocolQueue;
 
+	/** 协议监听器。存储来自不同虚拟节点的协议请求，键为节点 Hash 值。 */
 	private ConcurrentHashMap<Long, ProtocolMonitor> monitors;
 
+	/**
+	 * 构造器。
+	 * 
+	 * @param address 指定待连接地址。
+	 * @param hashCode 指定目标节点的 Hash 值。
+	 */
 	public ClusterConnector(InetSocketAddress address, Long hashCode) {
 		this.address = address;
 		this.hashCode = hashCode;
 		this.connector = new NonblockingConnector();
 		this.buffer = ByteBuffer.allocate(this.bufferSize);
 		this.connector.setHandler(this);
-		this.protocolQueue = new LinkedList<ClusterProtocol>();
+		this.protocolQueue = new ConcurrentLinkedQueue<ClusterProtocol>();
 		this.monitors = new ConcurrentHashMap<Long, ProtocolMonitor>();
 	}
 
-	/** 返回连接器地址。
+	/**
+	 * 获得连接器连接的 Socket 地址。
+	 * 
+	 * @return 返回连接器地址。
 	 */
 	public InetSocketAddress getAddress() {
 		return this.address;
 	}
 
-	/** 返回连接器 Hash 码。
+	/**
+	 * 获得连接目标的 Hash 值。
+	 * 
+	 * @return 返回连接器 Hash 码。
 	 */
 	public Long getHashCode() {
 		return this.hashCode;
 	}
 
-	/** 关闭连接。
+	/**
+	 * 关闭连接。
 	 */
 	public void close() {
 		this.connector.disconnect();
 	}
 
-	/** 执行发现。
+	/**
+	 * 执行发现协议。
+	 * 
+	 * @param sourceIP 指定源IP。
+	 * @param sourcePort 指定源端口。
+	 * @param node 指定源根节点。
+	 * @return 当协议被正确执行时返回 <code>true</code>，否则返回 <code>false</code> 。
 	 */
 	public boolean doDiscover(String sourceIP, int sourcePort, ClusterNode node) {
 		if (this.connector.isConnected()) {
@@ -108,9 +131,7 @@ public final class ClusterConnector extends Observable implements MessageHandler
 		}
 		else {
 			ClusterDiscoveringProtocol protocol = new ClusterDiscoveringProtocol(sourceIP, sourcePort, node);
-			synchronized (this.protocolQueue) {
-				this.protocolQueue.offer(protocol);
-			}
+			this.protocolQueue.offer(protocol);
 
 			// 连接
 			if (!this.connector.connect(this.address)) {
@@ -125,65 +146,19 @@ public final class ClusterConnector extends Observable implements MessageHandler
 		}
 	}
 
-	/** 以同步方式执行数据推送。
+	/**
+	 * 以阻塞方式执行数据推送。
+	 * 
+	 * @param targetHash 指定推送目标的 Hash 值。
+	 * @param chunk 指定推送的数据。
+	 * @param timeout 指定阻塞的超时时间，单位：毫秒。
+	 * @return 返回线程监视器。
 	 */
 	public ProtocolMonitor doBlockingPush(long targetHash, Chunk chunk, long timeout) {
 		ClusterPushProtocol protocol = new ClusterPushProtocol(targetHash, chunk);
+		this.protocolQueue.offer(protocol);
 
-		if (this.connector.isConnected()) {
-			protocol.launch(this.connector.getSession());
-			ProtocolMonitor monitor = new ProtocolMonitor(protocol);
-			monitor.blocking = true;
-			monitor.chunk = chunk;
-			return monitor;
-		}
-		else {
-			synchronized (this.protocolQueue) {
-				this.protocolQueue.offer(protocol);
-			}
-
-			// 连接
-			if (!this.connector.connect(this.address)) {
-				// 请求连接失败
-				this.protocolQueue.remove(protocol);
-				return null;
-			}
-			else {
-				Long lh = Cryptology.getInstance().fastHash(chunk.getLabel());
-				ProtocolMonitor monitor = this.getOrCreateMonitor(lh, protocol);
-				monitor.blocking = true;
-				synchronized (monitor) {
-					try {
-						monitor.wait(timeout);
-					} catch (InterruptedException e) {
-						Logger.log(ClusterConnector.class, e, LogLevel.ERROR);
-						this.destroyMonitor(lh);
-						return null;
-					}
-				}
-
-				// 删除监听器
-				this.destroyMonitor(lh);
-
-				monitor.chunk = chunk;
-				return monitor;
-			}
-		}
-	}
-
-	/** 以同步方式执行数据拉取。
-	 */
-	public ProtocolMonitor doBlockingPull(long targetHash, String chunkLabel, long timeout) {
-		ClusterPullProtocol protocol = new ClusterPullProtocol(targetHash, chunkLabel);
-
-		if (this.connector.isConnected()) {
-			protocol.launch(this.connector.getSession());
-		}
-		else {
-			synchronized (this.protocolQueue) {
-				this.protocolQueue.offer(protocol);
-			}
-
+		if (!this.connector.isConnected()) {
 			// 连接
 			if (!this.connector.connect(this.address)) {
 				// 请求连接失败
@@ -192,9 +167,10 @@ public final class ClusterConnector extends Observable implements MessageHandler
 			}
 		}
 
-		Long lh = Cryptology.getInstance().fastHash(chunkLabel);
+		// 生成标签对应的 Hash 值
+		Long lh = Cryptology.getInstance().fastHash(chunk.getLabel());
 		ProtocolMonitor monitor = this.getOrCreateMonitor(lh, protocol);
-		monitor.blocking = true;
+		monitor.chunk = chunk;
 		synchronized (monitor) {
 			try {
 				monitor.wait(timeout);
@@ -210,13 +186,54 @@ public final class ClusterConnector extends Observable implements MessageHandler
 		return monitor;
 	}
 
-	// 通知阻塞线程
-	protected void notifyBlockingPull(Chunk chunk) {
+	/**
+	 * 以阻塞方式执行数据拉取。
+	 * 
+	 * @param targetHash 指定拉取目标的 Hash 值。
+	 * @param chunkLabel 指定待来去的区块标签的数据。
+	 * @param timeout 指定阻塞的超时时间，单位：毫秒。
+	 * @return 返回线程监视器。
+	 */
+	public ProtocolMonitor doBlockingPull(long targetHash, String chunkLabel, long timeout) {
+		ClusterPullProtocol protocol = new ClusterPullProtocol(targetHash, chunkLabel);
+		this.protocolQueue.offer(protocol);
+
+		if (!this.connector.isConnected()) {
+			// 连接
+			if (!this.connector.connect(this.address)) {
+				// 请求连接失败
+				this.protocolQueue.remove(protocol);
+				return null;
+			}
+		}
+
+		Long lh = Cryptology.getInstance().fastHash(chunkLabel);
+		ProtocolMonitor monitor = this.getOrCreateMonitor(lh, protocol);
+		synchronized (monitor) {
+			try {
+				monitor.wait(timeout);
+			} catch (InterruptedException e) {
+				Logger.log(ClusterConnector.class, e, LogLevel.ERROR);
+				return null;
+			} finally {
+				// 删除监听器
+				this.destroyMonitor(lh);
+			}
+		}
+
+		return monitor;
+	}
+
+	/**
+	 * 通知阻塞线程结束等待。
+	 * 
+	 * @param chunk 指定被阻塞的数据块。
+	 */
+	protected void notifyBlocking(Chunk chunk) {
 		Long lh = Cryptology.getInstance().fastHash(chunk.getLabel());
 		ProtocolMonitor monitor = this.getMonitor(lh);
 		if (null != monitor) {
 			synchronized (monitor) {
-				monitor.chunk = chunk;
 				monitor.notifyAll();
 			}
 
@@ -224,8 +241,13 @@ public final class ClusterConnector extends Observable implements MessageHandler
 			this.destroyMonitor(lh);
 		}
 	}
-	// 通知阻塞线程
-	protected void notifyBlockingPull(String chunkLabel) {
+
+	/**
+	 * 通知阻塞线程结束等待。
+	 * 
+	 * @param chunkLabel 指定被阻塞的数据块标签。
+	 */
+	protected void notifyBlocking(String chunkLabel) {
 		Long lh = Cryptology.getInstance().fastHash(chunkLabel);
 		ProtocolMonitor monitor = this.getMonitor(lh);
 		if (null != monitor) {
@@ -238,19 +260,22 @@ public final class ClusterConnector extends Observable implements MessageHandler
 		}
 	}
 
-	/** 以异步方式执行数据推送。
+	/**
+	 * 以非阻塞方式执行数据推送。
+	 * 
+	 * @param targetHash 指定推送目标的 Hash 值。
+	 * @param chunk 指定推送的数据。
+	 * @return 返回推送协议实例。
 	 */
-	public ProtocolMonitor doPush(long targetHash, Chunk chunk) {
+	public ClusterPushProtocol doPush(long targetHash, Chunk chunk) {
 		if (this.connector.isConnected()) {
 			ClusterPushProtocol protocol = new ClusterPushProtocol(targetHash, chunk);
 			protocol.launch(this.connector.getSession());
-			return new ProtocolMonitor(protocol);
+			return protocol;
 		}
 		else {
 			ClusterPushProtocol protocol = new ClusterPushProtocol(targetHash, chunk);
-			synchronized (this.protocolQueue) {
-				this.protocolQueue.offer(protocol);
-			}
+			this.protocolQueue.offer(protocol);
 
 			// 连接
 			if (!this.connector.connect(this.address)) {
@@ -258,20 +283,19 @@ public final class ClusterConnector extends Observable implements MessageHandler
 				this.protocolQueue.remove(protocol);
 				return null;
 			}
-			else {
-				Long lh = Cryptology.getInstance().fastHash(chunk.getLabel());
-				ProtocolMonitor monitor = this.getOrCreateMonitor(lh, protocol);
-				return monitor;
-			}
+
+			return protocol;
 		}
 	}
 
 	@Override
 	public void sessionCreated(Session session) {
+		// Nothing
 	}
 
 	@Override
 	public void sessionDestroyed(Session session) {
+		// Nothing
 	}
 
 	@Override
@@ -280,30 +304,22 @@ public final class ClusterConnector extends Observable implements MessageHandler
 			ClusterProtocol protocol = this.protocolQueue.poll();
 			protocol.launch(session);
 
-			Chunk chunk = null;
+			// 仅处理 Cluster Push Protocol 协议
+			String chunkLabel = null;
 			if (protocol instanceof ClusterPushProtocol) {
 				ClusterPushProtocol pushPrtl = (ClusterPushProtocol) protocol;
-				chunk = pushPrtl.getChunk();
+				chunkLabel = pushPrtl.getChunkLabel();
 			}
 
-			if (null != chunk) {
-				Long lh = Cryptology.getInstance().fastHash(chunk.getLabel());
-				ProtocolMonitor monitor = this.getMonitor(lh);
-				if (null != monitor) {
-					if (monitor.blocking) {
-						synchronized (monitor) {
-							monitor.notifyAll();
-						}
-					}
-
-					this.destroyMonitor(lh);
-				}
+			if (null != chunkLabel) {
+				this.notifyBlocking(chunkLabel);
 			}
 		}
 	}
 
 	@Override
 	public void sessionClosed(Session session) {
+		// Nothing
 	}
 
 	@Override
@@ -322,37 +338,31 @@ public final class ClusterConnector extends Observable implements MessageHandler
 
 	@Override
 	public void errorOccurred(int errorCode, Session session) {
-		if (errorCode == MessageErrorCode.CONNECT_TIMEOUT
-			|| errorCode == MessageErrorCode.CONNECT_FAILED) {
-			while (!this.protocolQueue.isEmpty()) {
-				ClusterProtocol prtl = this.protocolQueue.poll();
-				ClusterFailureProtocol failure = new ClusterFailureProtocol(ClusterFailure.DisappearingNode, prtl);
-				this.distribute(failure);
+		while (!this.protocolQueue.isEmpty()) {
+			ClusterProtocol prtl = this.protocolQueue.poll();
+			ClusterFailureProtocol failure = new ClusterFailureProtocol(ClusterFailure.DisappearingNode, prtl);
+			this.distribute(failure);
 
-				Chunk chunk = null;
-				if (prtl instanceof ClusterPushProtocol) {
-					ClusterPushProtocol pushPrtl = (ClusterPushProtocol) prtl;
-					chunk = pushPrtl.getChunk();
-				}
+			String chunkLabel = null;
+			if (prtl instanceof ClusterPushProtocol) {
+				ClusterPushProtocol pushPrtl = (ClusterPushProtocol) prtl;
+				chunkLabel = pushPrtl.getChunkLabel();
+			}
+			else if (prtl instanceof ClusterPullProtocol) {
+				ClusterPullProtocol pullPrtl = (ClusterPullProtocol) prtl;
+				chunkLabel = pullPrtl.getChunkLabel();
+			}
 
-				if (null != chunk) {
-					Long lh = Cryptology.getInstance().fastHash(chunk.getLabel());
-					ProtocolMonitor monitor = this.getMonitor(lh);
-					if (null != monitor) {
-						if (monitor.blocking) {
-							synchronized (monitor) {
-								monitor.notifyAll();
-							}
-						}
-
-						this.destroyMonitor(lh);
-					}
-				}
+			if (null != chunkLabel) {
+				this.notifyBlocking(chunkLabel);
 			}
 		}
 	}
 
-	/** 解析消息。
+	/**
+	 * 解析原始消息数据格式。
+	 * 
+	 * @return 返回去除消息结束符的原始数据字节缓存。
 	 */
 	private ByteBuffer parseMessage(Message message) {
 		byte[] data = message.get();
@@ -383,14 +393,59 @@ public final class ClusterConnector extends Observable implements MessageHandler
 		}
 	}
 
-	/** 处理解析后的消息。
+	/**
+	 * 处理解析后的消息。
+	 * 
+	 * @param buffer 指定原始字节数据。
 	 */
 	private void process(ByteBuffer buffer) {
 		byte[] bytes = new byte[buffer.limit()];
 		buffer.get(bytes);
-		String str = Utils.bytes2String(bytes);
+
+		int total = bytes.length;
+		for (int i = 0, len = bytes.length; i < len; ++i) {
+			if (i + ClusterProtocol.SEPARATOR.length >= len) {
+				break;
+			}
+
+			if (bytes[i] != ClusterProtocol.SEPARATOR[0]) {
+				continue;
+			}
+
+			boolean match = true;
+			for (int n = 0; n < ClusterProtocol.SEPARATOR.length; ++n) {
+				byte b = bytes[i + n];
+				if (b != ClusterProtocol.SEPARATOR[n]) {
+					match = false;
+					break;
+				}
+			}
+
+			if (match) {
+				total = i - 1;
+				break;
+			}
+		}
+
+		String str = null;
+		byte[] payload = null;
+		if (total != bytes.length) {
+			byte[] buf = new byte[total];
+			System.arraycopy(bytes, 0, buf, 0, total);
+			str = Utils.bytes2String(buf);
+			buf = null;
+
+			payload = new byte[bytes.length - total - ClusterProtocol.SEPARATOR.length];
+			System.arraycopy(bytes, total + ClusterProtocol.SEPARATOR.length,
+					payload, 0, payload.length);
+		}
+		else {
+			str = Utils.bytes2String(bytes);
+		}
+		bytes = null;
+
 		String[] array = str.split("\\\n");
-		HashMap<String, String> prop = new HashMap<String, String>();
+		HashMap<String, Object> prop = new HashMap<String, Object>();
 		for (String line : array) {
 			int index = line.indexOf(":");
 			if (index > 0) {
@@ -398,6 +453,9 @@ public final class ClusterConnector extends Observable implements MessageHandler
 				String value = line.substring(index + 1, line.length()).trim();
 				prop.put(key, value);
 			}
+		}
+		if (null != payload) {
+			prop.put(ClusterProtocol.KEY_PAYLOAD, payload);
 		}
 
 		ClusterProtocol protocol = ClusterProtocolFactory.create(prop);
@@ -410,7 +468,10 @@ public final class ClusterConnector extends Observable implements MessageHandler
 		}
 	}
 
-	/** 处理具体协议。
+	/**
+	 * 处理协议。将协议通知观察者。
+	 * 
+	 * @param protocol 指定需要处理的协议。
 	 */
 	private void distribute(ClusterProtocol protocol) {
 		protocol.contextSession = this.connector.getSession();
@@ -418,8 +479,27 @@ public final class ClusterConnector extends Observable implements MessageHandler
 		this.setChanged();
 		this.notifyObservers(protocol);
 		this.clearChanged();
+
+		String chunkLabel = null;
+		if (protocol instanceof ClusterPushProtocol) {
+			chunkLabel = ((ClusterPushProtocol) protocol).getChunkLabel();
+		}
+		else if (protocol instanceof ClusterPullProtocol) {
+			chunkLabel = ((ClusterPullProtocol) protocol).getChunkLabel();
+		}
+
+		if (null != chunkLabel) {
+			this.notifyBlocking(chunkLabel);
+		}
 	}
 
+	/**
+	 * 获得或者创建对应 Hash 值和协议的监视器。
+	 * 
+	 * @param hash 指定识别 Hash 值。
+	 * @param protocol 指定需要监视的协议。
+	 * @return 返回协议监视器实例。
+	 */
 	private ProtocolMonitor getOrCreateMonitor(Long hash, ClusterProtocol protocol) {
 		if (this.monitors.containsKey(hash)) {
 			return this.monitors.get(hash);
@@ -431,11 +511,23 @@ public final class ClusterConnector extends Observable implements MessageHandler
 		}
 	}
 
+	/**
+	 * 获得对应 Hash 值的监视器。
+	 * 
+	 * @param hash 指定 Hash 值。
+	 * @return 返回对应 Hash 值的监视器。
+	 */
 	private ProtocolMonitor getMonitor(Long hash) {
 		return this.monitors.get(hash);
 	}
 
+	/**
+	 * 销毁对应 Hash 值的监视器。
+	 * 
+	 * @param hash 指定 Hash 值。
+	 */
 	private void destroyMonitor(Long hash) {
 		this.monitors.remove(hash);
 	}
+
 }

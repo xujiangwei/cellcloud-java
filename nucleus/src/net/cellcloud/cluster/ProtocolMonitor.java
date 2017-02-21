@@ -37,13 +37,11 @@ public final class ProtocolMonitor {
 	protected ClusterProtocol protocol;
 	protected long timestamp;
 
-	// 是否阻塞模式
-	protected boolean blocking = false;
-
 	protected Chunk chunk = null;
 
 	public ProtocolMonitor(ClusterProtocol protocol) {
 		this.protocol = protocol;
 		this.timestamp = System.currentTimeMillis();
 	}
+
 }

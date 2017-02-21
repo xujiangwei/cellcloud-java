@@ -2,7 +2,7 @@
 -----------------------------------------------------------------------------
 This source file is part of Cell Cloud.
 
-Copyright (c) 2009-2012 Cell Cloud Team (www.cellcloud.net)
+Copyright (c) 2009-2013 Cell Cloud Team (www.cellcloud.net)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -24,55 +24,64 @@ THE SOFTWARE.
 -----------------------------------------------------------------------------
 */
 
-package net.cellcloud.talk;
+package net.cellcloud.talk.command;
 
-import net.cellcloud.common.Logger;
 import net.cellcloud.common.Message;
 import net.cellcloud.common.Packet;
 import net.cellcloud.common.Session;
+import net.cellcloud.core.Cellet;
+import net.cellcloud.talk.TalkDefinition;
+import net.cellcloud.talk.TalkServiceKernel;
+import net.cellcloud.talk.TalkTracker;
 import net.cellcloud.util.Utils;
 
-/** Consult Command
+/** Talk request cellet command
  * 
  * @author Jiangwei Xu
  */
-public final class ServerConsultCommand extends ServerCommand {
+public final class ServerRequestCommand extends ServerCommand {
 
-	public ServerConsultCommand(TalkService service, Session session, Packet packet) {
+	public ServerRequestCommand(TalkServiceKernel service, Session session,
+			Packet packet) {
 		super(service, session, packet);
 	}
 
 	@Override
 	public void execute() {
-		// 包格式：源标签|能力描述序列化数据
+		// 包格式：Cellet标识串|请求方标签
 
-		// 标签
-		String tag = Utils.bytes2String(this.packet.getSubsegment(0));
+		byte[] identifier = this.packet.getSubsegment(0);
+		byte[] talkTag = this.packet.getSubsegment(1);
 
-		// 能力描述
-		TalkCapacity capacity = TalkCapacity.deserialize(this.packet.getSubsegment(1));
+		// 包格式：
+		// 成功：请求方标签|成功码|Cellet识别串|Cellet版本
+		// 失败：请求方标签|失败码
 
-		if (null == capacity) {
-			Logger.w(ServerConsultCommand.class, "Error talk capacity data format: tag=" + tag);
-			capacity = new TalkCapacity();
+		Packet packet = new Packet(TalkDefinition.TPT_REQUEST, 3, 1, 0);
+		// 请求方标签
+		packet.appendSubsegment(talkTag);
+
+		// 请求 Cellet
+		TalkTracker tracker = this.service.processRequest(this.session,
+				Utils.bytes2String(talkTag), Utils.bytes2String(identifier));
+
+		if (null != tracker) {
+			Cellet cellet = tracker.getCellet(Utils.bytes2String(identifier));
+
+			// 成功码
+			packet.appendSubsegment(TalkDefinition.SC_SUCCESS);
+			// Cellet识别串
+			packet.appendSubsegment(identifier);
+			// Cellet版本
+			packet.appendSubsegment(Utils.string2Bytes(cellet.getFeature().getVersion().toString()));
+		}
+		else {
+			// 失败码
+			packet.appendSubsegment(TalkDefinition.SC_FAILURE_NOCELLET);
 		}
 
-		TalkCapacity ret = this.service.processConsult(this.session, tag, capacity);
-
-//		if (null == ret) {
-//			Logger.w(ServerConsultCommand.class, "Can not match talk capacity: tag=" + tag);
-//		}
-
-		// 应答		
-		// 包格式：源标签|能力描述序列化数据
-
-		byte[] capdata = TalkCapacity.serialize(ret);
-
-		Packet response = new Packet(TalkDefinition.TPT_CONSULT, 4, 1, 0);
-		response.appendSubsegment(this.packet.getSubsegment(0));
-		response.appendSubsegment(capdata);
-
-		byte[] data = Packet.pack(response);
+		// 打包数据
+		byte[] data = Packet.pack(packet);
 		if (null != data) {
 			Message message = new Message(data);
 			this.session.write(message);

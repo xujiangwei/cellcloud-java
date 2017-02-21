@@ -70,7 +70,7 @@ public final class TalkTracker {
 		}
 	}
 
-	protected Cellet getCellet(String identifier) {
+	public Cellet getCellet(String identifier) {
 		synchronized (this.cellets) {
 			for (Cellet cellet : this.cellets) {
 				if (cellet.getFeature().getIdentifier().equals(identifier)) {

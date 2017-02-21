@@ -24,7 +24,7 @@ THE SOFTWARE.
 -----------------------------------------------------------------------------
 */
 
-package net.cellcloud.talk;
+package net.cellcloud.talk.command;
 
 import java.nio.charset.Charset;
 
@@ -33,7 +33,9 @@ import net.cellcloud.common.Message;
 import net.cellcloud.common.Packet;
 import net.cellcloud.common.Session;
 import net.cellcloud.core.Nucleus;
-import net.cellcloud.talk.TalkService.Certificate;
+import net.cellcloud.talk.TalkDefinition;
+import net.cellcloud.talk.TalkServiceKernel;
+import net.cellcloud.talk.TalkServiceKernel.Certificate;
 import net.cellcloud.util.Utils;
 
 /** Talk check command
@@ -42,7 +44,7 @@ import net.cellcloud.util.Utils;
  */
 public final class ServerCheckCommand extends ServerCommand {
 
-	public ServerCheckCommand(TalkService service, Session session, Packet packet) {
+	public ServerCheckCommand(TalkServiceKernel service, Session session, Packet packet) {
 		super(service, session, packet);
 	}
 

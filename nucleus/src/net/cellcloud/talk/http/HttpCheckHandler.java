@@ -24,45 +24,47 @@ THE SOFTWARE.
 -----------------------------------------------------------------------------
 */
 
-package net.cellcloud.talk;
+package net.cellcloud.talk.http;
 
 import java.io.IOException;
+import java.nio.charset.Charset;
 
-import org.json.JSONException;
-import org.json.JSONObject;
-
-import net.cellcloud.common.Cryptology;
 import net.cellcloud.common.LogLevel;
 import net.cellcloud.common.Logger;
+import net.cellcloud.core.Nucleus;
 import net.cellcloud.http.AbstractJSONHandler;
 import net.cellcloud.http.CapsuleHolder;
 import net.cellcloud.http.HttpHandler;
 import net.cellcloud.http.HttpRequest;
 import net.cellcloud.http.HttpResponse;
 import net.cellcloud.http.HttpSession;
+import net.cellcloud.talk.TalkServiceKernel;
+
+import org.json.JSONException;
+import org.json.JSONObject;
 
 /**
- * 会话询问。
+ * 接入校验。
  * 
  * @author Jiangwei Xu
  *
  */
-public final class HttpInterrogationHandler extends AbstractJSONHandler implements CapsuleHolder {
+public final class HttpCheckHandler extends AbstractJSONHandler implements CapsuleHolder {
 
-	protected static final String Ciphertext = "ciphertext";
-	protected static final String Key = "key";
-	protected static final String Version = "ver";
+	public static final String Plaintext = "plaintext";
+	public static final String Tag = "tag";
+	public static final String Error = "error";
 
-	private TalkService talkService;
+	private TalkServiceKernel talkServiceKernel;
 
-	public HttpInterrogationHandler(TalkService talkService) {
+	public HttpCheckHandler(TalkServiceKernel talkServiceKernel) {
 		super();
-		this.talkService = talkService;
+		this.talkServiceKernel = talkServiceKernel;
 	}
 
 	@Override
 	public String getPathSpec() {
-		return "/talk/int";
+		return "/talk/check";
 	}
 
 	@Override
@@ -71,28 +73,40 @@ public final class HttpInterrogationHandler extends AbstractJSONHandler implemen
 	}
 
 	@Override
-	protected void doGet(HttpRequest request, HttpResponse response)
-			throws IOException {
+	protected void doPost(HttpRequest request, HttpResponse response)
+		throws IOException {
 		HttpSession session = request.getSession();
 		if (null != session) {
-			TalkService.Certificate cert = this.talkService.openSession(session);
+			TalkServiceKernel.Certificate cert = this.talkServiceKernel.getCertificate(session);
 			if (null != cert) {
-				byte[] ciphertext = Cryptology.getInstance().simpleEncrypt(cert.plaintext.getBytes(), cert.key.getBytes());
-				JSONObject json = new JSONObject();
+				// { "plaintext": plaintext, "tag": tag }
+				String data = new String(request.readRequestData(), Charset.forName("UTF-8"));
 				try {
-					// {"ciphertext": ciphertext, "key": key}
-					json.put(Ciphertext, Cryptology.getInstance().encodeBase64(ciphertext));
-					json.put(Key, cert.key);
-					json.put(Version, "1.1");
+					JSONObject json = new JSONObject(data);
+					// 获得明文码
+					String plaintext = json.getString(Plaintext);
+					// 获得 Tag
+					String tag = json.getString(Tag);
+					if (null != plaintext && plaintext.equals(cert.plaintext)) {
+						// 检测通过
+						this.talkServiceKernel.acceptSession(session, tag);
+						// 返回数据
+						JSONObject ret = new JSONObject();
+						ret.put(Tag, Nucleus.getInstance().getTagAsString());
+						this.respondWithOk(response, ret);
+					}
+					else {
+						// 检测失败
+						this.talkServiceKernel.rejectSession(session);
+						this.respond(response, HttpResponse.SC_UNAUTHORIZED);
+					}
 				} catch (JSONException e) {
-					Logger.log(HttpInterrogationHandler.class, e, LogLevel.ERROR);
+					Logger.log(HttpCheckHandler.class, e, LogLevel.WARNING);
+					this.respond(response, HttpResponse.SC_BAD_REQUEST);
 				}
-				// 响应
-				this.respondWithOk(response, json);
 			}
 			else {
-				// 返回 Certificate 为 null
-				this.respond(response, HttpResponse.SC_NOT_FOUND);
+				this.respond(response, HttpResponse.SC_BAD_REQUEST);
 			}
 		}
 		else {
@@ -102,16 +116,11 @@ public final class HttpInterrogationHandler extends AbstractJSONHandler implemen
 	}
 
 	@Override
-	protected void doPost(HttpRequest request, HttpResponse response)
-			throws IOException {
-		this.doGet(request, response);
-	}
-
-	@Override
 	protected void doOptions(HttpRequest request, HttpResponse response)
 			throws IOException {
 		response.setHeader("Access-Control-Allow-Headers", "Accept, Content-Type");
 		response.setHeader("Access-Control-Allow-Methods", "POST, GET");
 		response.setHeader("Access-Control-Allow-Origin", "*");
 	}
+
 }

@@ -2,7 +2,7 @@
 -----------------------------------------------------------------------------
 This source file is part of Cell Cloud.
 
-Copyright (c) 2009-2013 Cell Cloud Team (www.cellcloud.net)
+Copyright (c) 2009-2017 Cell Cloud Team (www.cellcloud.net)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -37,26 +37,45 @@ import net.cellcloud.cluster.ClusterVirtualNode;
 import net.cellcloud.common.Session;
 import net.cellcloud.core.Nucleus;
 
-/** 发现协议。
+/**
+ * 集群发现协议。
  * 
- * @author Jiangwei Xu
+ * @author Ambrose Xu
+ * 
  */
 public class ClusterDiscoveringProtocol extends ClusterProtocol {
 
+	/**
+	 * 协议名。
+	 */
 	public final static String NAME = "Discovering";
 
-	// 网络层IP
+	/**
+	 * 数据键：网络层IP。
+	 */
 	public final static String KEY_SOURCE_IP = "Source-IP";
-	// 网络层端口
+	/**
+	 * 数据键：网络层端口。
+	 */
 	public final static String KEY_SOURCE_PORT = "Source-Port";
-	// 虚节点 Hash
+	/**
+	 * 数据键：虚节点 Hash 串。
+	 */
 	public final static String KEY_VNODES = "VNodes";
 
+	/** 源IP地址。 */
 	private String sourceIP = null;
+	/** 源端口号。 */
 	private int sourcePort = 0;
+	/** 节点。 */
 	private ClusterNode node = null;
 
-	/** 构造函数。
+	/**
+	 * 构造函数。
+	 * 
+	 * @param sourceIP 指定源IP地址。
+	 * @param sourcePort 指定源端口号。
+	 * @param node 指定源节点。
 	 */
 	public ClusterDiscoveringProtocol(String sourceIP, int sourcePort, ClusterNode node) {
 		super(ClusterDiscoveringProtocol.NAME);
@@ -65,41 +84,57 @@ public class ClusterDiscoveringProtocol extends ClusterProtocol {
 		this.node = node;
 	}
 
-	/** 指定数据键值对创建协议。
+	/**
+	 * 构造函数。
+	 * 
+	 * @param prop 指定数据键值对创建协议。
 	 */
-	public ClusterDiscoveringProtocol(Map<String, String> prop) {
+	public ClusterDiscoveringProtocol(Map<String, Object> prop) {
 		super(ClusterDiscoveringProtocol.NAME, prop);
 	}
 
-	/** 返回源 IP 。
+	/**
+	 * 返回源 IP 。
 	 */
 	public String getSourceIP() {
 		if (null != this.sourceIP) {
 			return this.sourceIP;
 		}
 
-		return this.getProp(KEY_SOURCE_IP);
+		Object value = this.getProp(KEY_SOURCE_IP);
+		if (null != value) {
+			this.sourceIP = value.toString();
+		}
+
+		return this.sourceIP;
 	}
 
-	/** 返回源端口。
+	/**
+	 * 返回源端口。
 	 */
 	public int getSourcePort() {
 		if (0 != this.sourcePort) {
 			return this.sourcePort;
 		}
 
-		String str = this.getProp(KEY_SOURCE_PORT);
-		return (null != str) ? Integer.parseInt(str) : 0;
+		Object value = this.getProp(KEY_SOURCE_PORT);
+		if (null != value) {
+			this.sourcePort = Integer.parseInt(value.toString());
+		}
+
+		return this.sourcePort;
 	}
 
-	/** 返回虚拟节点的 Hash 码列表。
+	/**
+	 * 返回虚拟节点的 Hash 码列表。
 	 */
 	public List<Long> getVNodeHash() {
-		String str = this.getProp(KEY_VNODES);
-		if (null == str) {
+		Object value = this.getProp(KEY_VNODES);
+		if (null == value) {
 			return null;
 		}
 
+		String str = value.toString();
 		String[] array = str.split(",");
 		ArrayList<Long> res = new ArrayList<Long>();
 		for (String sz : array) {
@@ -109,20 +144,23 @@ public class ClusterDiscoveringProtocol extends ClusterProtocol {
 		return res;
 	}
 
+	/**
+	 * {@inheritDoc}
+	 */
 	@Override
 	public void launch(Session session) {
 		StringBuilder buf = new StringBuilder();
-		buf.append(KEY_PROTOCOL).append(": ").append(ClusterDiscoveringProtocol.NAME).append("\n");
-		buf.append(KEY_TAG).append(": ").append(Nucleus.getInstance().getTagAsString()).append("\n");
-		buf.append(KEY_DATE).append(": ").append(super.getStandardDate()).append("\n");
-		buf.append(KEY_SOURCE_IP).append(": ").append(this.sourceIP).append("\n");
-		buf.append(KEY_SOURCE_PORT).append(": ").append(this.sourcePort).append("\n");
-		buf.append(KEY_HASH).append(": ").append(this.node.getHashCode()).append("\n");
+		buf.append(KEY_PROTOCOL).append(":").append(ClusterDiscoveringProtocol.NAME).append("\n");
+		buf.append(KEY_TAG).append(":").append(Nucleus.getInstance().getTagAsString()).append("\n");
+		buf.append(KEY_DATE).append(":").append(super.getStandardDate()).append("\n");
+		buf.append(KEY_SOURCE_IP).append(":").append(this.sourceIP).append("\n");
+		buf.append(KEY_SOURCE_PORT).append(":").append(this.sourcePort).append("\n");
+		buf.append(KEY_HASH).append(":").append(this.node.getHashCode()).append("\n");
 
 		// 写入虚拟节点信息
 		Collection<ClusterVirtualNode> vnodes = this.node.getOwnVirtualNodes();
 		if (null != vnodes && !vnodes.isEmpty()) {
-			buf.append(KEY_VNODES).append(": ");
+			buf.append(KEY_VNODES).append(":");
 
 			Iterator<ClusterVirtualNode> iter = vnodes.iterator();
 			while (iter.hasNext()) {
@@ -134,23 +172,26 @@ public class ClusterDiscoveringProtocol extends ClusterProtocol {
 			buf.append("\n");
 		}
 
-		this.touch(session, buf);
+		this.touch(session, buf, null);
 		buf = null;
 	}
 
+	/**
+	 * {@inheritDoc}
+	 */
 	@Override
-	public void respond(ClusterNode node, StateCode state) {
+	public void respond(ClusterNode node, StateCode state, Object custom) {
 		StringBuilder buf = new StringBuilder();
-		buf.append(KEY_PROTOCOL).append(": ").append(ClusterDiscoveringProtocol.NAME).append("\n");
-		buf.append(KEY_TAG).append(": ").append(Nucleus.getInstance().getTagAsString()).append("\n");
-		buf.append(KEY_DATE).append(": ").append(super.getStandardDate()).append("\n");
-		buf.append(KEY_STATE).append(": ").append(state.getCode()).append("\n");
-		buf.append(KEY_HASH).append(": ").append(node.getHashCode()).append("\n");
+		buf.append(KEY_PROTOCOL).append(":").append(ClusterDiscoveringProtocol.NAME).append("\n");
+		buf.append(KEY_TAG).append(":").append(Nucleus.getInstance().getTagAsString()).append("\n");
+		buf.append(KEY_DATE).append(":").append(super.getStandardDate()).append("\n");
+		buf.append(KEY_STATE).append(":").append(state.getCode()).append("\n");
+		buf.append(KEY_HASH).append(":").append(node.getHashCode()).append("\n");
 
 		// 写入虚拟节点信息
 		Collection<ClusterVirtualNode> vnodes = node.getOwnVirtualNodes();
 		if (null != vnodes && !vnodes.isEmpty()) {
-			buf.append(KEY_VNODES).append(": ");
+			buf.append(KEY_VNODES).append(":");
 
 			Iterator<ClusterVirtualNode> iter = vnodes.iterator();
 			while (iter.hasNext()) {
@@ -162,18 +203,22 @@ public class ClusterDiscoveringProtocol extends ClusterProtocol {
 			buf.append("\n");
 		}
 
-		this.touch(this.contextSession, buf);
+		this.touch(this.contextSession, buf, null);
 		buf = null;
 	}
 
+	/**
+	 * 拒绝被发现。
+	 */
 	public void reject() {
 		StringBuilder buf = new StringBuilder();
-		buf.append(KEY_PROTOCOL).append(": ").append(ClusterDiscoveringProtocol.NAME).append("\n");
-		buf.append(KEY_TAG).append(": ").append(Nucleus.getInstance().getTagAsString()).append("\n");
-		buf.append(KEY_DATE).append(": ").append(super.getStandardDate()).append("\n");
-		buf.append(KEY_STATE).append(": ").append(ClusterProtocol.StateCode.REJECT.getCode()).append("\n");
+		buf.append(KEY_PROTOCOL).append(":").append(ClusterDiscoveringProtocol.NAME).append("\n");
+		buf.append(KEY_TAG).append(":").append(Nucleus.getInstance().getTagAsString()).append("\n");
+		buf.append(KEY_DATE).append(":").append(super.getStandardDate()).append("\n");
+		buf.append(KEY_STATE).append(":").append(ClusterProtocol.StateCode.REJECT.getCode()).append("\n");
 
-		this.touch(this.contextSession, buf);
+		this.touch(this.contextSession, buf, null);
 		buf = null;
 	}
+
 }

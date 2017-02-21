@@ -34,22 +34,31 @@ import net.cellcloud.common.Message;
 import net.cellcloud.common.MessageHandler;
 import net.cellcloud.common.Packet;
 import net.cellcloud.common.Session;
+import net.cellcloud.talk.command.ServerCheckCommand;
+import net.cellcloud.talk.command.ServerConsultCommand;
+import net.cellcloud.talk.command.ServerDialogueCommand;
+import net.cellcloud.talk.command.ServerHeartbeatCommand;
+import net.cellcloud.talk.command.ServerQuickCommand;
+import net.cellcloud.talk.command.ServerRequestCommand;
 
-/** Talk 服务句柄。
+/**
+ * Talk 服务器网络数据处理句柄。
  * 
- * @author Jiangwei Xu
+ * @author Ambrose Xu
+ * 
  */
 public final class TalkAcceptorHandler implements MessageHandler {
 
-	private TalkService talkService;
+	private TalkServiceKernel kernel;
 	private LinkedList<ServerDialogueCommand> dialogueCmdQueue;
 	private LinkedList<ServerHeartbeatCommand> heartbeatCmdQueue;
 	private LinkedList<ServerQuickCommand> quickCmdQueue;
 
-	/** 构造函数。
+	/**
+	 * 构造函数。
 	 */
-	protected TalkAcceptorHandler(TalkService talkService) {
-		this.talkService = talkService;
+	protected TalkAcceptorHandler(TalkServiceKernel talkServiceKernel) {
+		this.kernel = talkServiceKernel;
 		this.dialogueCmdQueue = new LinkedList<ServerDialogueCommand>();
 		this.heartbeatCmdQueue = new LinkedList<ServerHeartbeatCommand>();
 		this.quickCmdQueue = new LinkedList<ServerQuickCommand>();
@@ -62,17 +71,17 @@ public final class TalkAcceptorHandler implements MessageHandler {
 
 	@Override
 	public void sessionDestroyed(Session session) {
-		this.talkService.closeSession(session);
+		this.kernel.closeSession(session);
 	}
 
 	@Override
 	public void sessionOpened(Session session) {
-		this.talkService.openSession(session);
+		this.kernel.openSession(session);
 	}
 
 	@Override
 	public void sessionClosed(Session session) {
-		this.talkService.closeSession(session);
+		this.kernel.closeSession(session);
 	}
 
 	@Override
@@ -81,7 +90,7 @@ public final class TalkAcceptorHandler implements MessageHandler {
 		try {
 			final Packet packet = Packet.unpack(data);
 			if (null != packet) {
-				this.talkService.executor.execute(new Runnable() {
+				this.kernel.executor.execute(new Runnable() {
 					@Override
 					public void run() {
 						interpret(session, packet);
@@ -137,7 +146,7 @@ public final class TalkAcceptorHandler implements MessageHandler {
 		}
 		else if (TalkDefinition.isRequest(tag)) {
 			try {
-				ServerRequestCommand cmd = new ServerRequestCommand(this.talkService, session, packet);
+				ServerRequestCommand cmd = new ServerRequestCommand(this.kernel, session, packet);
 				cmd.execute();
 				cmd = null;
 			} catch (Exception e) {
@@ -146,7 +155,7 @@ public final class TalkAcceptorHandler implements MessageHandler {
 		}
 		else if (TalkDefinition.isConsult(tag)) {
 			try {
-				ServerConsultCommand cmd = new ServerConsultCommand(this.talkService, session, packet);
+				ServerConsultCommand cmd = new ServerConsultCommand(this.kernel, session, packet);
 				cmd.execute();
 				cmd = null;
 			} catch (Exception e) {
@@ -155,7 +164,7 @@ public final class TalkAcceptorHandler implements MessageHandler {
 		}
 		else if (TalkDefinition.isCheck(tag)) {
 			try {
-				ServerCheckCommand cmd = new ServerCheckCommand(this.talkService, session, packet);
+				ServerCheckCommand cmd = new ServerCheckCommand(this.kernel, session, packet);
 				cmd.execute();
 				cmd = null;
 			} catch (Exception e) {
@@ -169,7 +178,7 @@ public final class TalkAcceptorHandler implements MessageHandler {
 			ServerDialogueCommand cmd = null;
 
 			if (this.dialogueCmdQueue.size() <= 1) {
-				cmd = new ServerDialogueCommand(this.talkService);
+				cmd = new ServerDialogueCommand(this.kernel);
 			}
 			else {
 				cmd = this.dialogueCmdQueue.poll();
@@ -196,7 +205,7 @@ public final class TalkAcceptorHandler implements MessageHandler {
 			ServerHeartbeatCommand cmd = null;
 
 			if (this.heartbeatCmdQueue.size() <= 1) {
-				cmd = new ServerHeartbeatCommand(this.talkService);
+				cmd = new ServerHeartbeatCommand(this.kernel);
 			}
 			else {
 				cmd = this.heartbeatCmdQueue.poll();
@@ -223,7 +232,7 @@ public final class TalkAcceptorHandler implements MessageHandler {
 			ServerQuickCommand cmd = null;
 
 			if (this.quickCmdQueue.size() <= 1) {
-				cmd = new ServerQuickCommand(this.talkService);
+				cmd = new ServerQuickCommand(this.kernel);
 			}
 			else {
 				cmd = this.quickCmdQueue.poll();

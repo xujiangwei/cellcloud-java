@@ -2,7 +2,7 @@
 -----------------------------------------------------------------------------
 This source file is part of Cell Cloud.
 
-Copyright (c) 2009-2013 Cell Cloud Team (www.cellcloud.net)
+Copyright (c) 2009-2017 Cell Cloud Team (www.cellcloud.net)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -24,46 +24,49 @@ THE SOFTWARE.
 -----------------------------------------------------------------------------
 */
 
-package net.cellcloud.talk;
+package net.cellcloud.talk.http;
 
 import java.io.IOException;
 import java.nio.charset.Charset;
 
+import org.json.JSONException;
+import org.json.JSONObject;
+
 import net.cellcloud.common.LogLevel;
 import net.cellcloud.common.Logger;
-import net.cellcloud.core.Nucleus;
 import net.cellcloud.http.AbstractJSONHandler;
 import net.cellcloud.http.CapsuleHolder;
 import net.cellcloud.http.HttpHandler;
 import net.cellcloud.http.HttpRequest;
 import net.cellcloud.http.HttpResponse;
 import net.cellcloud.http.HttpSession;
-
-import org.json.JSONException;
-import org.json.JSONObject;
+import net.cellcloud.talk.TalkDefinition;
+import net.cellcloud.talk.TalkServiceKernel;
+import net.cellcloud.talk.TalkTracker;
 
 /**
- * 接入校验。
+ * 请求 Cellet 服务句柄。
  * 
  * @author Jiangwei Xu
  *
  */
-public final class HttpCheckHandler extends AbstractJSONHandler implements CapsuleHolder {
+public final class HttpRequestHandler extends AbstractJSONHandler implements CapsuleHolder {
 
-	protected static final String Plaintext = "plaintext";
-	protected static final String Tag = "tag";
-	protected static final String Error = "error";
+	public static final String Identifier = "identifier";
+	public static final String Tag = "tag";
+	public static final String Version = "version";
+	public static final String Error = "error";
 
-	private TalkService talkService;
+	private TalkServiceKernel talkServiceKernel;
 
-	public HttpCheckHandler(TalkService talkService) {
+	public HttpRequestHandler(TalkServiceKernel talkServiceKernel) {
 		super();
-		this.talkService = talkService;
+		this.talkServiceKernel = talkServiceKernel;
 	}
 
 	@Override
 	public String getPathSpec() {
-		return "/talk/check";
+		return "/talk/request";
 	}
 
 	@Override
@@ -71,47 +74,55 @@ public final class HttpCheckHandler extends AbstractJSONHandler implements Capsu
 		return this;
 	}
 
+	/**
+	 * 返回数据：
+	 * tag
+	 * identifier
+	 * version
+	 */
 	@Override
 	protected void doPost(HttpRequest request, HttpResponse response)
 		throws IOException {
 		HttpSession session = request.getSession();
 		if (null != session) {
-			TalkService.Certificate cert = this.talkService.getCertificate(session);
-			if (null != cert) {
-				// { "plaintext": plaintext, "tag": tag }
-				String data = new String(request.readRequestData(), Charset.forName("UTF-8"));
-				try {
-					JSONObject json = new JSONObject(data);
-					// 获得明文码
-					String plaintext = json.getString(Plaintext);
-					// 获得 Tag
-					String tag = json.getString(Tag);
-					if (null != plaintext && plaintext.equals(cert.plaintext)) {
-						// 检测通过
-						this.talkService.acceptSession(session, tag);
-						// 返回数据
-						JSONObject ret = new JSONObject();
-						ret.put(Tag, Nucleus.getInstance().getTagAsString());
-						this.respondWithOk(response, ret);
-					}
-					else {
-						// 检测失败
-						this.talkService.rejectSession(session);
-						this.respond(response, HttpResponse.SC_UNAUTHORIZED);
-					}
-				} catch (JSONException e) {
-					Logger.log(HttpCheckHandler.class, e, LogLevel.WARNING);
-					this.respond(response, HttpResponse.SC_BAD_REQUEST);
+			// {"tag": tag, "identifier": identifier}
+			String data = new String(request.readRequestData(), Charset.forName("UTF-8"));
+			try {
+				JSONObject json = new JSONObject(data);
+				String tag = json.getString(Tag);
+				String identifier = json.getString(Identifier);
+				// 请求 Cellet
+				TalkTracker tracker = this.talkServiceKernel.processRequest(session, tag, identifier);
+				if (null != tracker) {
+					// 成功
+					JSONObject ret = new JSONObject();
+					ret.put(Tag, tag);
+					ret.put(Identifier, identifier);
+					ret.put(Version, tracker.getCellet(identifier).getFeature().getVersion().toString());
+					this.respondWithOk(response, ret);
 				}
-			}
-			else {
+				else {
+					// 失败
+					JSONObject ret = new JSONObject();
+					ret.put(Tag, tag);
+					ret.put(Identifier, identifier);
+					ret.put(Error, new String(TalkDefinition.SC_FAILURE_NOCELLET, Charset.forName("UTF-8")));
+					this.respondWithOk(response, ret);
+				}
+			} catch (JSONException e) {
+				Logger.log(HttpRequestHandler.class, e, LogLevel.WARNING);
 				this.respond(response, HttpResponse.SC_BAD_REQUEST);
 			}
 		}
 		else {
-			// 获取 Session 失败
 			this.respond(response, HttpResponse.SC_INTERNAL_SERVER_ERROR);
 		}
+	}
+
+	@Override
+	protected void doGet(HttpRequest request, HttpResponse response)
+			throws IOException {
+		this.doPost(request, response);
 	}
 
 	@Override
@@ -121,5 +132,4 @@ public final class HttpCheckHandler extends AbstractJSONHandler implements Capsu
 		response.setHeader("Access-Control-Allow-Methods", "POST, GET");
 		response.setHeader("Access-Control-Allow-Origin", "*");
 	}
-
 }

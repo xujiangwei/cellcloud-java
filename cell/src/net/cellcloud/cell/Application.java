@@ -177,7 +177,7 @@ public final class Application {
 						(RelationNucleusAdapter) AdapterFactory.createAdapter(ai.name, ai.instance);
 				adapter.setHost(ai.host);
 				adapter.setPort(ai.port);
-				adapter.setQuotaPerSecond(ai.quota);
+				adapter.setTransmissionQuota(ai.quota);
 				for (Endpoint ep : ai.endpointList) {
 					adapter.addEndpoint(ep);
 				}

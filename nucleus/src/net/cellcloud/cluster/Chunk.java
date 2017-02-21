@@ -2,7 +2,7 @@
 -----------------------------------------------------------------------------
 This source file is part of Cell Cloud.
 
-Copyright (c) 2009-2013 Cell Cloud Team (www.cellcloud.net)
+Copyright (c) 2009-2017 Cell Cloud Team (www.cellcloud.net)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -26,31 +26,75 @@ THE SOFTWARE.
 
 package net.cellcloud.cluster;
 
-import org.json.JSONObject;
 
-/** 节点数据块。
+/**
+ * 节点数据块。
  * 
- * @author Jiangwei Xu
+ * @author Ambrose Xu
+ * 
  */
 public class Chunk {
 
-	// 块标签
+	/** 块标签。 */
 	private String label;
-	// 块数据
-	private JSONObject data;
+	/** 块数据。 */
+	private byte[] data;
+	/** 块数据长度。 */
+	private int length;
 
-	/** 指定块标签和数据构建数据块。
+	/**
+	 * 构造器。
+	 * 指定块标签和数据构建数据块。
+	 * 
+	 * @param label 指定标签。
+	 * @param data 指定数据。
 	 */
-	public Chunk(String label, JSONObject data) {
+	public Chunk(String label, byte[] data) {
 		this.label = label;
 		this.data = data;
+		this.length = data.length;
 	}
 
+	/**
+	 * 构造器。
+	 * 指定块标签和数据构建数据块。
+	 * 
+	 * @param label 指定标签。
+	 * @param data 指定数据。
+	 * @param length 指定数据长度。
+	 */
+	public Chunk(String label, byte[] data, int length) {
+		this.label = label;
+		this.data = new byte[length];
+		System.arraycopy(data, 0, this.data, 0, length);
+		this.length = length;
+	}
+
+	/**
+	 * 获得块标签。
+	 * 
+	 * @return 返回块标签。
+	 */
 	public String getLabel() {
 		return this.label;
 	}
 
-	public JSONObject getData() {
+	/**
+	 * 获得块数据。
+	 * 
+	 * @return 返回字节数组形式的块数据。
+	 */
+	public byte[] getData() {
 		return this.data;
 	}
+
+	/**
+	 * 获得块数据长度。
+	 * 
+	 * @return 返回块数据长度。
+	 */
+	public int getLength() {
+		return this.length;
+	}
+
 }

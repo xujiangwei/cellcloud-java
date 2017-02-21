@@ -24,7 +24,7 @@ THE SOFTWARE.
 -----------------------------------------------------------------------------
 */
 
-package net.cellcloud.talk;
+package net.cellcloud.talk.http;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -42,6 +42,8 @@ import net.cellcloud.http.HttpHandler;
 import net.cellcloud.http.HttpRequest;
 import net.cellcloud.http.HttpResponse;
 import net.cellcloud.http.HttpSession;
+import net.cellcloud.talk.Primitive;
+import net.cellcloud.talk.TalkServiceKernel;
 import net.cellcloud.talk.stuff.PrimitiveSerializer;
 import net.cellcloud.util.Utils;
 
@@ -61,9 +63,9 @@ public final class HttpHeartbeatHandler extends AbstractJSONHandler implements C
 	protected static final String Primitive = "primitive";
 	protected static final String Primitives = "primitives";
 
-	private TalkService service;
+	private TalkServiceKernel service;
 
-	public HttpHeartbeatHandler(TalkService service) {
+	public HttpHeartbeatHandler(TalkServiceKernel service) {
 		this.service = service;
 	}
 

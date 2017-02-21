@@ -48,13 +48,16 @@ import net.cellcloud.common.LogLevel;
 import net.cellcloud.common.Logger;
 import net.cellcloud.exception.CelletSandboxException;
 import net.cellcloud.exception.SingletonException;
+import net.cellcloud.gateway.GatewayService;
 import net.cellcloud.http.HttpService;
 import net.cellcloud.talk.TalkService;
 import net.cellcloud.util.Clock;
 
-/** Cell Cloud 软件栈内核类。
+/**
+ * Cell Cloud 软件栈内核类。
  * 
  * @author Ambrose Xu
+ * 
  */
 public final class Nucleus {
 
@@ -90,59 +93,80 @@ public final class Nucleus {
 
 	private static Nucleus instance = null;
 
-	/** 是否处于工作状态。
+	/**
+	 * 是否处于工作状态。
 	 */
 	private AtomicBoolean working = new AtomicBoolean(false);
 
-	/** 内核标签。使用 UUID 规则。
+	/**
+	 * 内核标签。使用 UUID 规则。
 	 */
 	private NucleusTag tag = null;
 
-	/** 内核配置信息。
+	/**
+	 * 内核配置信息。
 	 */
 	private NucleusConfig config = null;
 
-	/** 内核上下文。
+	/**
+	 * 内核上下文。
 	 */
 	private NucleusContext context = null;
 
-	/** 集群网络控制器。
+	/**
+	 * 集群网络控制器。
 	 */
 	private ClusterController clusterController = null;
 
-	/** Talk 服务。
+	/**
+	 * Talk 服务。
 	 */
 	private TalkService talkService = null;
 
-	/** Web 服务。
+	/**
+	 * HTTP 协议服务。
 	 */
 	private HttpService httpService = null;
 
-	/** Jar 包内的 Cellet 类映射表。
+	/**
+	 * 网关服务。
+	 */
+	private GatewayService gatewayService = null;
+
+	/**
+	 * Jar 包内的 Cellet 类映射表。
 	 */
 	private ConcurrentHashMap<String, List<String>> celletJarClasses = null;
 
-	/** 文件路径下 class 文件的 Cellet 类映射表。
+	/**
+	 * 文件路径下 Class 文件的 Cellet 类映射表。
 	 */
 	private ConcurrentHashMap<String, List<String>> celletPathClasses = null;
 
-	/** 当前内核内的所有 Cellet 对照表。
+	/**
+	 * 当前内核内的所有 Cellet 对照表。
 	 */
 	private ConcurrentHashMap<String, Cellet> cellets = null;
 
-	/** Cellet 对应的沙盒表。
+	/**
+	 * Cellet 对应的沙盒表。
 	 */
 	private ConcurrentHashMap<String, CelletSandbox> sandboxes = null;
 
-	/** 内核内适配器映射表。
+	/**
+	 * 内核内适配器映射表。
 	 */
 	private ConcurrentHashMap<String, Adapter> adapters = null;
 
-	/** 仅用于启动时反射适配器监听器的临时存储。
+	/**
+	 * 仅用于启动时反射适配器监听器的临时存储。
 	 */
 	private ArrayList<AdapterListenerProfile> tempAdapterListeners = null;
 
-	/** 构造函数。
+	/**
+	 * 构造器。
+	 * 
+	 * @param config 指定配置信息。
 	 */
 	private Nucleus(NucleusConfig config) throws SingletonException {
 		if (null == Nucleus.instance) {
@@ -168,7 +192,8 @@ public final class Nucleus {
 		}
 	}
 
-	/** 创建实例。
+	/**
+	 * 创建实例。
 	 * 
 	 * @param config
 	 * @return
@@ -359,6 +384,19 @@ public final class Nucleus {
 					Logger.i(Nucleus.class, "Starting http service failure.");
 				}
 			}
+
+			// 如果是网关节点，启动网关服务
+			if (Role.GATEWAY == this.config.role) {
+				this.gatewayService = new GatewayService();
+
+				if (this.gatewayService.startup()) {
+					Logger.i(Nucleus.class, "Starting gateway service success.");
+				}
+				else {
+					this.gatewayService = null;
+					Logger.i(Nucleus.class, "Starting gateway service failure.");
+				}
+			}
 		}
 		else if (this.config.role == Role.CONSUMER) {
 			// 角色：消费者
@@ -394,6 +432,11 @@ public final class Nucleus {
 		
 		if (this.config.role == Role.NODE || this.config.role == Role.GATEWAY) {
 			// 角色：节点或网关
+
+			// 关闭网关
+			if (null != this.gatewayService) {
+				this.gatewayService.shutdown();
+			}
 
 			// 关闭集群服务
 			if (null != this.clusterController) {

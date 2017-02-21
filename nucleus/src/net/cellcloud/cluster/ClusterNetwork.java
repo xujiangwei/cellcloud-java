@@ -2,7 +2,7 @@
 -----------------------------------------------------------------------------
 This source file is part of Cell Cloud.
 
-Copyright (c) 2009-2013 Cell Cloud Team (www.cellcloud.net)
+Copyright (c) 2009-2017 Cell Cloud Team (www.cellcloud.net)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -56,9 +56,11 @@ import net.cellcloud.common.Service;
 import net.cellcloud.common.Session;
 import net.cellcloud.util.Utils;
 
-/** 集群网络。
+/**
+ * 集群网络。
  * 
- * @author Jiangwei Xu
+ * @author Ambrose Xu
+ * 
  */
 public final class ClusterNetwork extends Observable implements Service, MessageHandler {
 
@@ -75,7 +77,10 @@ public final class ClusterNetwork extends Observable implements Service, Message
 
 	private ConcurrentHashMap<Long, Queue<byte[]>> sessionMessageCache;
 
-	/** 构造函数。
+	/**
+	 * 构造器。
+	 * 
+	 * 
 	 */
 	public ClusterNetwork(String hostname, int preferredPort, ExecutorService executor) {
 		this.hostname = hostname;
@@ -125,19 +130,22 @@ public final class ClusterNetwork extends Observable implements Service, Message
 		this.port = -1;
 	}
 
-	/** 返回绑定地址。
+	/**
+	 * 返回绑定地址。
 	 */
 	public InetSocketAddress getBindAddress() {
 		return this.acceptor.getBindAddress();
 	}
 
-	/** 返回监听端口。
+	/**
+	 * 返回监听端口。
 	 */
 	public int getPort() {
 		return this.port;
 	}
 
-	/** 阻塞模式检测可用的端口号。
+	/**
+	 * 阻塞模式检测可用的端口号。
 	 */
 	private int detectUsablePort(int port) {
 		ServerSocket socket = null;
@@ -155,7 +163,8 @@ public final class ClusterNetwork extends Observable implements Service, Message
 		}
 	}
 
-	/** 扫描网络。
+	/**
+	 * 扫描网络。
 	 */
 	protected void scanNetwork() {
 		// 在子线程中进行地址扫描
@@ -227,12 +236,54 @@ public final class ClusterNetwork extends Observable implements Service, Message
 
 	/** 处理解析后的数据。
 	 */
-	private void process(Session session, ByteBuffer buf) {
-		byte[] bytes = new byte[buf.limit()];
-		buf.get(bytes);
-		String str = Utils.bytes2String(bytes);
+	private void process(Session session, ByteBuffer buffer) {
+		byte[] bytes = new byte[buffer.limit()];
+		buffer.get(bytes);
+
+		int total = bytes.length;
+		for (int i = 0, len = bytes.length; i < len; ++i) {
+			if (i + ClusterProtocol.SEPARATOR.length >= len) {
+				break;
+			}
+
+			if (bytes[i] != ClusterProtocol.SEPARATOR[0]) {
+				continue;
+			}
+
+			boolean match = true;
+			for (int n = 0; n < ClusterProtocol.SEPARATOR.length; ++n) {
+				byte b = bytes[i + n];
+				if (b != ClusterProtocol.SEPARATOR[n]) {
+					match = false;
+					break;
+				}
+			}
+
+			if (match) {
+				total = i - 1;
+				break;
+			}
+		}
+
+		String str = null;
+		byte[] payload = null;
+		if (total != bytes.length) {
+			byte[] buf = new byte[total];
+			System.arraycopy(bytes, 0, buf, 0, total);
+			str = Utils.bytes2String(buf);
+			buf = null;
+
+			payload = new byte[bytes.length - total - ClusterProtocol.SEPARATOR.length];
+			System.arraycopy(bytes, total + ClusterProtocol.SEPARATOR.length,
+					payload, 0, payload.length);
+		}
+		else {
+			str = Utils.bytes2String(bytes);
+		}
+		bytes = null;
+
 		String[] array = str.split("\\\n");
-		HashMap<String, String> prop = new HashMap<String, String>();
+		HashMap<String, Object> prop = new HashMap<String, Object>();
 		for (String line : array) {
 			int index = line.indexOf(":");
 			if (index > 0) {
@@ -240,6 +291,9 @@ public final class ClusterNetwork extends Observable implements Service, Message
 				String value = line.substring(index + 1, line.length()).trim();
 				prop.put(key, value);
 			}
+		}
+		if (null != payload) {
+			prop.put(ClusterProtocol.KEY_PAYLOAD, payload);
 		}
 
 		// 创建协议

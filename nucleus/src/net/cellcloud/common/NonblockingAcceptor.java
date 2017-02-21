@@ -502,36 +502,60 @@ public class NonblockingAcceptor extends MessageService implements MessageAccept
 
 	/** 通知创建会话。 */
 	protected void fireSessionCreated(Session session) {
+		if (null != this.interceptor && this.interceptor.interceptCreating(session)) {
+			return;
+		}
+
 		if (null != this.handler) {
 			this.handler.sessionCreated(session);
 		}
 	}
 	/** 通知打开会话。 */
 	protected void fireSessionOpened(Session session) {
+		if (null != this.interceptor && this.interceptor.interceptOpening(session)) {
+			return;
+		}
+
 		if (null != this.handler) {
 			this.handler.sessionOpened(session);
 		}
 	}
 	/** 通知关闭会话。 */
 	protected void fireSessionClosed(Session session) {
+		if (null != this.interceptor && this.interceptor.interceptClosing(session)) {
+			return;
+		}
+
 		if (null != this.handler) {
 			this.handler.sessionClosed(session);
 		}
 	}
 	/** 通知销毁会话。 */
 	protected void fireSessionDestroyed(Session session) {
+		if (null != this.interceptor && this.interceptor.interceptDestroying(session)) {
+			return;
+		}
+
 		if (null != this.handler) {
 			this.handler.sessionDestroyed(session);
 		}
 	}
 	/** 通知会话错误。 */
 	protected void fireErrorOccurred(Session session, int errorCode) {
+		if (null != this.interceptor && this.interceptor.interceptError(session, errorCode)) {
+			return;
+		}
+
 		if (null != this.handler) {
 			this.handler.errorOccurred(errorCode, session);
 		}
 	}
 	/** 通知会话接收到消息。 */
 	protected void fireMessageReceived(Session session, Message message) {
+		if (null != this.interceptor && this.interceptor.interceptMessage(session, message)) {
+			return;
+		}
+
 		if (null != this.handler) {
 			this.handler.messageReceived(session, message);
 		}
@@ -540,15 +564,6 @@ public class NonblockingAcceptor extends MessageService implements MessageAccept
 	protected void fireMessageSent(Session session, Message message) {
 		if (null != this.handler) {
 			this.handler.messageSent(session, message);
-		}
-	}
-	/** 通知消息拦截。 */
-	protected boolean fireIntercepted(Session session, byte[] rawData) {
-		if (null != this.interceptor) {
-			return this.interceptor.intercepted(session, rawData);
-		}
-		else {
-			return false;
 		}
 	}
 
