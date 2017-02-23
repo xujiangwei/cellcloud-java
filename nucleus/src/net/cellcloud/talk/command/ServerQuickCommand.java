@@ -117,6 +117,10 @@ public final class ServerQuickCommand extends ServerCommand {
 					// 设置 Cellet 的 identifier
 					identifiers[i - 3] = identifier;
 				}
+				else {
+					request = false;
+					break;
+				}
 			}
 
 			// 包格式：成功码|内核标签|能力描述序列化数据|CelletIdentifiers

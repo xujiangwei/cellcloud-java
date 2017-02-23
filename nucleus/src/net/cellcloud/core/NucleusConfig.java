@@ -27,7 +27,6 @@ THE SOFTWARE.
 package net.cellcloud.core;
 
 import java.net.InetSocketAddress;
-import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -119,11 +118,13 @@ public final class NucleusConfig {
 	 */
 	public final class GatewayConfig {
 
+		public String routingRule = "Hash";
+
 		/** 下位机地址列表。 */
-		public List<InetSocketAddress> slaveAddressList = new ArrayList<InetSocketAddress>();
+		public List<InetSocketAddress> slaveAddressList = null;
 
 		/** 代理的 Cellet 识别串列表。 */
-		public List<String> celletIdentifiers = new ArrayList<String>();
+		public List<String> celletIdentifiers = null;
 
 		private GatewayConfig() {
 		}

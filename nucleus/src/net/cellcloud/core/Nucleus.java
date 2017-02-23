@@ -406,7 +406,10 @@ public final class Nucleus {
 
 				this.gatewayService = new GatewayService(this.sandboxes);
 
-				// 配置
+				// 配置路由算法
+				this.gatewayService.setRoutingRule(this.config.gateway.routingRule);
+
+				// 配置下位机
 				if (null != this.config.gateway.slaveAddressList
 					&& null != this.config.gateway.celletIdentifiers) {
 					for (InetSocketAddress address : this.config.gateway.slaveAddressList) {

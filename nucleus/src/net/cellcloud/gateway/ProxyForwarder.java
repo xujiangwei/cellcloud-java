@@ -91,12 +91,15 @@ public class ProxyForwarder implements MessageInterceptor {
 							proxy.put("identifier", record.runtimeIdentifiers.get(i));
 							proxy.put("active", false);
 						} catch (JSONException e) {
-							e.printStackTrace();
+							Logger.log(ProxyForwarder.class, e, LogLevel.WARNING);
 						}
 
 						// 通过代理协议关闭路由
 						slave.kernel.proxy(slave.celletIdentifiers.get(0), proxy);
 					}
+
+					// 从下位机移除
+					slave.removeSession(record.tag);
 				}
 			}
 		});

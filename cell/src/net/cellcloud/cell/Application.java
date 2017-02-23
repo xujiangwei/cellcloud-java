@@ -28,6 +28,7 @@ package net.cellcloud.cell;
 
 import java.io.File;
 import java.io.IOException;
+import java.net.InetSocketAddress;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLClassLoader;
@@ -319,9 +320,9 @@ public final class Application {
 					Logger.i(this.getClass(), "nucleus.httpd = " + config.httpd);
 
 					// talk config
-					NodeList talks = el.getElementsByTagName("talk");
-					if (talks.getLength() > 0) {
-						Element elTalk = (Element) talks.item(0);
+					NodeList nlTalk = el.getElementsByTagName("talk");
+					if (nlTalk.getLength() > 0) {
+						Element elTalk = (Element) nlTalk.item(0);
 						// port
 						nl = elTalk.getElementsByTagName("port");
 						if (nl.getLength() > 0) {
@@ -417,7 +418,51 @@ public final class Application {
 								Logger.i(this.getClass(), "nucleus.talk.ssl.password = " + config.talk.keyStorePassword);
 							}
 						}
-					}
+					} // # end talk config
+
+					// gateway config
+					NodeList nlGateway = el.getElementsByTagName("gateway");
+					if (nlGateway.getLength() > 0) {
+						Element elGateway = (Element) nlGateway.item(0);
+						// routing
+						nl = elGateway.getElementsByTagName("routing");
+						if (nl.getLength() > 0) {
+							Element elRouting = (Element) nl.item(0);
+							config.gateway.routingRule = elRouting.getTextContent().trim();
+							Logger.i(this.getClass(), "nucleus.gateway.routingRule = " + config.gateway.routingRule);
+						}
+						// cellets
+						nl = elGateway.getElementsByTagName("cellet");
+						if (nl.getLength() > 0) {
+							config.gateway.celletIdentifiers = new ArrayList<String>(nl.getLength());
+							for (int i = 0, size = nl.getLength(); i < size; ++i) {
+								Element elCellet = (Element) nl.item(i);
+								config.gateway.celletIdentifiers.add(elCellet.getTextContent().trim());
+							}
+							Logger.i(this.getClass(), "nucleus.gateway.cellets = " + config.gateway.celletIdentifiers.toString());
+						}
+						// slaves
+						nl = elGateway.getElementsByTagName("slave");
+						if (nl.getLength() > 0) {
+							config.gateway.slaveAddressList = new ArrayList<InetSocketAddress>(nl.getLength());
+							for (int i = 0, size = nl.getLength(); i < size; ++i) {
+								Element elSlave = (Element) nl.item(i);
+								NodeList nlHost = elSlave.getElementsByTagName("host");
+								NodeList nlPort = elSlave.getElementsByTagName("port");
+								if (nlHost.getLength() > 0 && nlPort.getLength() > 0) {
+									String host = nlHost.item(0).getTextContent().trim();
+									int port = Integer.parseInt(nlPort.item(0).getTextContent().trim());
+									InetSocketAddress address = new InetSocketAddress(host, port);
+									config.gateway.slaveAddressList.add(address);
+								}
+							}
+							Logger.i(this.getClass(), "nucleus.gateway.slaves = " + config.gateway.slaveAddressList.toString());
+						}
+
+						// 强制转为网关角色
+						config.role = Role.GATEWAY;
+						Logger.i(this.getClass(), "Cell work as GATEWAY");
+					} // # end gateway config
 				}
 
 				// 读取 adapter

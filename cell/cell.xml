@@ -34,10 +34,23 @@
 
 		<!-- 网关配置 -->
 		<gateway>
-		    <routing></routing>
+		    <!-- 配置网关使用的路由规则，可填写：Hash 或 Balance -->
+		    <routing>Hash</routing>
+		    <!-- 网关下位机支持的的 cellet identifier 清单 -->
+		    <cellets>
+		        <cellet>Dummy</cellet>
+		        <cellet>Broadcast</cellet>
+		    </cellets>
+		    <!-- 网关管理的下位机配置 -->
 		    <slaves>
-		        <slave></slave>
-		        <slave></slave>
+		        <slave>
+		            <host>192.168.1.121</host>
+		            <port>7000</port>
+		        </slave>
+		        <slave>
+		            <host>192.168.1.122</host>
+		            <port>7000</port>
+		        </slave>
 		    </slaves>
 		</gateway>
 	</nucleus>

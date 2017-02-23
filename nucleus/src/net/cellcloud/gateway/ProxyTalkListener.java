@@ -72,11 +72,16 @@ public class ProxyTalkListener implements TalkListener, SpeakerProxyListener {
 	public void failed(String tag, TalkServiceFailure failure) {
 		Logger.d(this.getClass(), "failed: " + failure.getHost() + ":" + failure.getPort());
 
-		if (failure.getCode() == TalkFailureCode.PROXY_FAILED) {
+		if (TalkFailureCode.PROXY_FAILED == failure.getCode()) {
+			Logger.e(this.getClass(), "Request slave cellet failed: " + failure.getHost() + ":" + failure.getPort());
 			synchronized (this.slave.kernel) {
 				this.slave.kernel.notifyAll();
 			}
 			return;
+		}
+
+		if (TalkFailureCode.NOT_FOUND == failure.getCode()) {
+			Logger.e(this.getClass(), failure.getDescription() + ": " + failure.getHost() + ":" + failure.getPort());
 		}
 
 		this.gateway.removeOnlineSlave(this.slave);

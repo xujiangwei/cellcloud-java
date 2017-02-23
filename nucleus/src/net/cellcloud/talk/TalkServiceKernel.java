@@ -1453,8 +1453,7 @@ public final class TalkServiceKernel implements Service, SpeakerDelegate {
 		Cellet cellet = null;
 		if (this.nucleusContext.role == Role.GATEWAY) {
 			GatewayService gateway = Nucleus.getInstance().getGatewayService();
-			gateway.updateRouting(session, tag, identifier);
-			cellet = gateway.getCellet(identifier);
+			cellet = gateway.updateRouting(session, tag, identifier);
 		}
 		else {
 			cellet = Nucleus.getInstance().getCellet(identifier, this.nucleusContext);

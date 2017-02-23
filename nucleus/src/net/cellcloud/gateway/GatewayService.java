@@ -62,6 +62,8 @@ public class GatewayService implements Service {
 
 	private ConcurrentHashMap<String, CelletSandbox> sandboxes;
 
+	private boolean hashRouting = true;
+
 	private ArrayList<Slave> slaves;
 	private Vector<Slave> onlineSlaves;
 
@@ -88,8 +90,22 @@ public class GatewayService implements Service {
 		this.slaves.add(slave);
 	}
 
+	public void removeSlave(Slave slave) {
+		this.slaves.remove(slave);
+		this.onlineSlaves.remove(slave);
+	}
+
 	public void setTalkServiceKernel(TalkServiceKernel kernel) {
 		this.serverKernel = kernel;
+	}
+
+	public void setRoutingRule(String rule) {
+		if (rule.equalsIgnoreCase("Hash")) {
+			this.hashRouting = true;
+		}
+		else {
+			this.hashRouting = false;
+		}
 	}
 
 	@Override
@@ -114,6 +130,10 @@ public class GatewayService implements Service {
 				// 设置代理监听器
 				slave.kernel.getSpeaker(slave.celletIdentifiers.get(0)).setProxyListener(slave.listener);
 			}
+			else {
+				Logger.e(this.getClass(), "Call cellets failed: " + slave.address.getHostString() + ":"
+						+ slave.address.getPort() + " - " + slave.celletIdentifiers.toString());
+			}
 
 			Logger.i(this.getClass(), "Gateway slave: " + slave.address.getHostString() + ":" + slave.address.getPort());
 		}
@@ -137,7 +157,7 @@ public class GatewayService implements Service {
 		this.executor.shutdown();
 	}
 
-	public synchronized Cellet getCellet(String identifier) {
+	protected synchronized Cellet getCellet(String identifier) {
 		PuppetCellet cellet = this.proxyCelletMap.get(identifier);
 		if (null == cellet) {
 			cellet = this.createCellet(identifier);
@@ -160,14 +180,41 @@ public class GatewayService implements Service {
 		return this.sandboxes.get(identifier);
 	}
 
-	public void updateRouting(Session session, String tag, String identifier) {
-		// 计算当前 Session 路由的目标 Slave
-		// 计算远端主机地址字符串形式 Hash 值，然后进行取模，以模数作为索引分配 Slave
-		int mod = Math.abs(session.getAddress().getHostString().hashCode()) % this.onlineSlaves.size();
-		Slave slave = this.onlineSlaves.get(mod);
+	public Cellet updateRouting(Session session, String tag, String identifier) {
+		if (this.onlineSlaves.isEmpty()) {
+			Logger.e(this.getClass(), "No online slave to working.");
+			return null;
+		}
 
-		// 更新路由器表
+		// 计算当前 Session 路由
+		Slave slave = null;
+		if (this.hashRouting) {
+			// 计算远端主机地址字符串形式 Hash 值，然后进行取模，以模数作为索引分配 Slave
+			int mod = Math.abs(session.getAddress().getHostString().hashCode()) % this.onlineSlaves.size();
+			slave = this.onlineSlaves.get(mod);
+		}
+		else {
+			// 查找通信链路数量最小的下位机
+			int value = Integer.MAX_VALUE;
+			for (int i = 0, size = this.onlineSlaves.size(); i < size; ++i) {
+				Slave candidate = this.onlineSlaves.get(i);
+				if (candidate.numSessions() < value) {
+					value = candidate.numSessions();
+					slave = candidate;
+				}
+			}
+		}
+
+		if (null == slave) {
+			Logger.e(this.getClass(), "Can NOT find slave for " + session.getAddress().getHostString() + ":" + session.getAddress().getPort());
+			return null;
+		}
+
+		// 更新路由表
 		this.routingTable.update(session, tag, slave, identifier);
+
+		// 添加目标
+		slave.addSession(tag, session);
 
 		JSONObject proxy = new JSONObject();
 		try {
@@ -190,6 +237,8 @@ public class GatewayService implements Service {
 				Logger.log(this.getClass(), e, LogLevel.WARNING);
 			}
 		}
+
+		return this.getCellet(identifier);
 	}
 
 	/**
@@ -214,6 +263,7 @@ public class GatewayService implements Service {
 	protected void removeOnlineSlave(Slave slave) {
 		slave.state = SlaveState.Offline;
 		this.onlineSlaves.remove(slave);
+		slave.clear();
 	}
 
 	private PuppetCellet createCellet(String identifier) {
@@ -233,12 +283,32 @@ public class GatewayService implements Service {
 		public ProxyTalkListener listener;
 		public SlaveState state = SlaveState.Unknown;
 
+		private ConcurrentHashMap<String, Session> runtimeSessions;
+
 		public Slave(InetSocketAddress address, List<String> celletIdentifiers) {
 			this.kernel = new TalkServiceKernel(null);
 			this.address = address;
 			this.celletIdentifiers = new ArrayList<String>(celletIdentifiers);
 			this.listener = new ProxyTalkListener(GatewayService.this, this);
 			this.kernel.addListener(this.listener);
+
+			this.runtimeSessions = new ConcurrentHashMap<String, Session>();
+		}
+
+		public void addSession(String tag, Session session) {
+			this.runtimeSessions.put(tag, session);
+		}
+
+		public void removeSession(String tag) {
+			this.runtimeSessions.remove(tag);
+		}
+
+		public int numSessions() {
+			return this.runtimeSessions.size();
+		}
+
+		public void clear() {
+			this.runtimeSessions.clear();
 		}
 	}
 
