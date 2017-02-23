@@ -28,6 +28,7 @@ package net.cellcloud.core;
 
 import java.io.File;
 import java.io.IOException;
+import java.net.InetSocketAddress;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLClassLoader;
@@ -195,7 +196,7 @@ public final class Nucleus {
 	/**
 	 * 创建实例。
 	 * 
-	 * @param config
+	 * @param config 配置文件。
 	 * @return
 	 * @throws SingletonException
 	 */
@@ -242,6 +243,15 @@ public final class Nucleus {
 		return this.talkService;
 	}
 
+	/**
+	 * 获得网关服务。
+	 * 
+	 * @return
+	 */
+	public GatewayService getGatewayService() {
+		return this.gatewayService;
+	}
+
 	/** 启动内核。
 	 * 
 	 * @return 如果返回 <code>true</code> 表示启动成功，否则表示启动失败。
@@ -256,6 +266,9 @@ public final class Nucleus {
 
 		// 启动时钟
 		Clock.start();
+
+		// 设置角色
+		this.context.role = this.config.role;
 
 		if (this.config.role == Role.NODE || this.config.role == Role.GATEWAY) {
 			// 角色：节点或网关
@@ -328,10 +341,10 @@ public final class Nucleus {
 
 				// 启动 Talk Service
 				if (this.talkService.startup()) {
-					Logger.i(Nucleus.class, "Starting talk service success.");
+					Logger.i(Nucleus.class, "Starting talk service (" + this.config.talk.port + ") success.");
 				}
 				else {
-					Logger.e(Nucleus.class, "Starting talk service failure.");
+					Logger.e(Nucleus.class, "Starting talk service (" + this.config.talk.port + ") failure.");
 					return false;
 				}
 			}
@@ -387,7 +400,22 @@ public final class Nucleus {
 
 			// 如果是网关节点，启动网关服务
 			if (Role.GATEWAY == this.config.role) {
-				this.gatewayService = new GatewayService();
+				if (null == this.sandboxes) {
+					this.sandboxes = new ConcurrentHashMap<String, CelletSandbox>();
+				}
+
+				this.gatewayService = new GatewayService(this.sandboxes);
+
+				// 配置
+				if (null != this.config.gateway.slaveAddressList
+					&& null != this.config.gateway.celletIdentifiers) {
+					for (InetSocketAddress address : this.config.gateway.slaveAddressList) {
+						this.gatewayService.addSlave(address, this.config.gateway.celletIdentifiers);
+					}
+				}
+
+				// 设置 talk kernel
+				this.gatewayService.setTalkServiceKernel(this.context.talkServiceKernel);
 
 				if (this.gatewayService.startup()) {
 					Logger.i(Nucleus.class, "Starting gateway service success.");
@@ -578,6 +606,7 @@ public final class Nucleus {
 
 		// 判断是否是使用自定义的沙箱进行检查
 		if (cellet.getFeature() != sandbox.feature || !sandbox.isSealed()) {
+			Logger.w(this.getClass(), "Sandbox feature does NOT match.");
 			return false;
 		}
 
@@ -585,8 +614,10 @@ public final class Nucleus {
 		if (null != sb && sandbox == sb) {
 			return true;
 		}
-
-		return false;
+		else {
+			Logger.w(this.getClass(), "Sandbox instance does NOT match.");
+			return false;
+		}
 	}
 
 	/** 返回指定实例名的适配器。

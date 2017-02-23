@@ -26,64 +26,60 @@ THE SOFTWARE.
 
 package net.cellcloud.gateway;
 
-import java.util.Vector;
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map.Entry;
 import java.util.concurrent.ConcurrentHashMap;
 
-import net.cellcloud.common.Session;
-import net.cellcloud.gateway.GatewayService.Slave;
-
 /**
- * 代理服务路由表。
+ * 用于记录上位主机与终端之间的连接关系的上位链路。
  * 
  * @author Ambrose Xu
  *
  */
-public class RoutingTable {
+public class Hostlink {
 
-	private ConcurrentHashMap<Long, Record> sessionRecordMap;
+	private ConcurrentHashMap<String, String> targetMapProxyTag;
 
-	public RoutingTable() {
-		this.sessionRecordMap = new ConcurrentHashMap<Long, Record>();
+	public Hostlink() {
+		this.targetMapProxyTag = new ConcurrentHashMap<String, String>();
 	}
 
-	public void update(Session session, String tag, Slave slave, String identifier) {
-		Record record = this.sessionRecordMap.get(session.getId());
-		if (null == record) {
-			record = new Record();
-			record.session = session;
-			record.tag = tag;
-			record.slave = slave;
-			this.sessionRecordMap.put(session.getId(), record);
+	public void addLink(String targetTag, String proxyTag) {
+		this.targetMapProxyTag.put(targetTag, proxyTag);
+	}
+
+	public void removeLink(String targetTag) {
+		this.targetMapProxyTag.remove(targetTag);
+	}
+
+	/**
+	 * 用目标终端检索上位主机的标签，即查询对应的代理的标签。
+	 * 
+	 * @param targetTag
+	 * @return
+	 */
+	public String searchHost(String targetTag) {
+		return this.targetMapProxyTag.get(targetTag);
+	}
+
+	/**
+	 * 列举出指定代理的下位主机标签。
+	 * 
+	 * @param proxyTag
+	 * @return
+	 */
+	public List<String> listLinkedTag(String proxyTag) {
+		ArrayList<String> list = new ArrayList<String>();
+		Iterator<Entry<String, String>> iter = this.targetMapProxyTag.entrySet().iterator();
+		while (iter.hasNext()) {
+			Entry<String, String> e = iter.next();
+			if (e.getValue().equals(proxyTag)) {
+				list.add(e.getKey());
+			}
 		}
-
-		if (!record.runtimeIdentifiers.contains(identifier)) {
-			record.runtimeIdentifiers.add(identifier);
-		}
-	}
-
-	public Record remove(Session session) {
-		return this.sessionRecordMap.remove(session.getId());
-	}
-
-	public Slave querySlave(Session session) {
-		Record record = this.sessionRecordMap.get(session.getId());
-		if (null != record) {
-			return record.slave;
-		}
-
-		return null;
-	}
-
-	public void clear() {
-		this.sessionRecordMap.clear();
-	}
-
-	public class Record {
-		public Session session;
-		public String tag;
-		public Slave slave;
-		public Vector<String> runtimeIdentifiers = new Vector<String>();
-		public long timestamp = System.currentTimeMillis();
+		return list;
 	}
 
 }

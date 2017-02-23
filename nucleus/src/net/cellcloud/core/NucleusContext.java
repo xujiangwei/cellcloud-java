@@ -26,11 +26,17 @@ THE SOFTWARE.
 
 package net.cellcloud.core;
 
+import net.cellcloud.talk.TalkServiceKernel;
+
 /** 内核上下文。
  * 
  * @author Jiangwei Xu
  */
 public final class NucleusContext {
+
+	public Role role;
+
+	public TalkServiceKernel talkServiceKernel;
 
 	protected NucleusContext() {
 	}

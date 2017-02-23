@@ -141,4 +141,20 @@ public final class TalkDefinition {
 			return false;
 		}
 	}
+
+	/**
+	 * 判断是否是 PROXY 包。
+	 * 
+	 * @param ptg
+	 * @return
+	 */
+	public static boolean isProxy(final byte[] ptg) {
+		if (ptg[2] == TPT_PROXY[2] && ptg[3] == TPT_PROXY[3]) {
+			return true;
+		}
+		else {
+			return false;
+		}
+	}
+
 }

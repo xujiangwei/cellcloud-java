@@ -31,6 +31,15 @@
 				<password>cellcloud</password>
 			</ssl>
 		</talk>
+
+		<!-- 网关配置 -->
+		<gateway>
+		    <routing></routing>
+		    <slaves>
+		        <slave></slave>
+		        <slave></slave>
+		    </slaves>
+		</gateway>
 	</nucleus>
 
 	<!-- 适配器配置 -->

@@ -62,6 +62,7 @@ public final class HttpDialogueHandler extends AbstractJSONHandler implements Ca
 
 	public static final String Tag = "tag";
 	public static final String Identifier = "identifier";
+	public static final String Note = "note";
 	public static final String Primitive = "primitive";
 	public static final String Primitives = "primitives";
 	public static final String Queue = "queue";

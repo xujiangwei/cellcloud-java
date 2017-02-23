@@ -36,8 +36,8 @@ import net.cellcloud.core.Nucleus;
 import net.cellcloud.talk.TalkCapacity;
 import net.cellcloud.talk.TalkDefinition;
 import net.cellcloud.talk.TalkServiceKernel;
-import net.cellcloud.talk.TalkTracker;
 import net.cellcloud.talk.TalkServiceKernel.Certificate;
+import net.cellcloud.talk.TalkTracker;
 import net.cellcloud.util.Utils;
 
 /**
@@ -114,16 +114,8 @@ public final class ServerQuickCommand extends ServerCommand {
 
 				if (null != tracker) {
 					request = true;
-
+					// 设置 Cellet 的 identifier
 					identifiers[i - 3] = identifier;
-
-//					Cellet cellet = tracker.getCellet(Utils.bytes2String(identifier));
-					// 成功码
-//					packet.appendSubsegment(TalkDefinition.SC_SUCCESS);
-					// Cellet识别串
-//					packet.appendSubsegment(identifier);
-					// Cellet版本
-//					packet.appendSubsegment(Utils.string2Bytes(cellet.getFeature().getVersion().toString()));
 				}
 			}
 

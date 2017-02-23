@@ -38,6 +38,7 @@ import net.cellcloud.talk.command.ServerCheckCommand;
 import net.cellcloud.talk.command.ServerConsultCommand;
 import net.cellcloud.talk.command.ServerDialogueCommand;
 import net.cellcloud.talk.command.ServerHeartbeatCommand;
+import net.cellcloud.talk.command.ServerProxyCommand;
 import net.cellcloud.talk.command.ServerQuickCommand;
 import net.cellcloud.talk.command.ServerRequestCommand;
 
@@ -53,6 +54,7 @@ public final class TalkAcceptorHandler implements MessageHandler {
 	private LinkedList<ServerDialogueCommand> dialogueCmdQueue;
 	private LinkedList<ServerHeartbeatCommand> heartbeatCmdQueue;
 	private LinkedList<ServerQuickCommand> quickCmdQueue;
+	private LinkedList<ServerProxyCommand> proxyCmdQueue;
 
 	/**
 	 * 构造函数。
@@ -62,6 +64,7 @@ public final class TalkAcceptorHandler implements MessageHandler {
 		this.dialogueCmdQueue = new LinkedList<ServerDialogueCommand>();
 		this.heartbeatCmdQueue = new LinkedList<ServerHeartbeatCommand>();
 		this.quickCmdQueue = new LinkedList<ServerQuickCommand>();
+		this.proxyCmdQueue = new LinkedList<ServerProxyCommand>();
 	}
 
 	@Override
@@ -106,7 +109,14 @@ public final class TalkAcceptorHandler implements MessageHandler {
 
 	@Override
 	public void messageSent(Session session, Message message) {
-		// Nothing
+		// 通知互斥体，唤醒设置加密线程
+		Object mutex = session.getAttribute("mutex");
+		if (null != mutex) {
+			session.removeAttribute("mutex");
+			synchronized (mutex) {
+				mutex.notifyAll();
+			}
+		}
 	}
 
 	@Override
@@ -140,6 +150,15 @@ public final class TalkAcceptorHandler implements MessageHandler {
 				ServerQuickCommand cmd = borrowQuickCommand(session, packet);
 				cmd.execute();
 				returnQuickCommand(cmd);
+			} catch (Exception e) {
+				Logger.log(TalkAcceptorHandler.class, e, LogLevel.ERROR);
+			}
+		}
+		else if (TalkDefinition.isProxy(tag)) {
+			try {
+				ServerProxyCommand cmd = borrowProxyCommand(session, packet);
+				cmd.execute();
+				returnProxyCommand(cmd);
 			} catch (Exception e) {
 				Logger.log(TalkAcceptorHandler.class, e, LogLevel.ERROR);
 			}
@@ -251,6 +270,33 @@ public final class TalkAcceptorHandler implements MessageHandler {
 			cmd.packet = null;
 
 			this.quickCmdQueue.offer(cmd);
+		}
+	}
+
+	private ServerProxyCommand borrowProxyCommand(Session session, Packet packet) {
+		synchronized (this.proxyCmdQueue) {
+			ServerProxyCommand cmd = null;
+
+			if (this.proxyCmdQueue.size() <= 1) {
+				cmd = new ServerProxyCommand(this.kernel);
+			}
+			else {
+				cmd = this.proxyCmdQueue.poll();
+			}
+
+			cmd.session = session;
+			cmd.packet = packet;
+
+			return cmd;
+		}
+	}
+
+	private void returnProxyCommand(ServerProxyCommand cmd) {
+		synchronized (this.proxyCmdQueue) {
+			cmd.session = null;
+			cmd.packet = null;
+
+			this.proxyCmdQueue.offer(cmd);
 		}
 	}
 

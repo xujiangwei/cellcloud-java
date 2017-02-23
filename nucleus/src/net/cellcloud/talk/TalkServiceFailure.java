@@ -41,12 +41,17 @@ public final class TalkServiceFailure {
 	private String sourceDescription = "";
 	private ArrayList<String> sourceCelletIdentifiers = new ArrayList<String>(2);
 
-	public TalkServiceFailure(TalkFailureCode code, Class<?> clazz) {
-		construct(code, clazz);
+	private String host;
+	private int port;
+
+	public TalkServiceFailure(TalkFailureCode code, Class<?> clazz, String host, int port) {
+		construct(code, clazz, host, port);
 	}
 
-	private void construct(TalkFailureCode code, Class<?> clazz) {
+	private void construct(TalkFailureCode code, Class<?> clazz, String host, int port) {
 		this.code = code;
+		this.host = host;
+		this.port = port;
 		this.reason = "Error in " + clazz.getName();
 
 		if (code == TalkFailureCode.NOT_FOUND)
@@ -62,11 +67,19 @@ public final class TalkServiceFailure {
 		else if (code == TalkFailureCode.RETRY_END)
 			this.description = "Auto retry end";
 		else
-			this.description = "Unknown failure";
+			this.description = "No failure description";
 	}
 
 	public TalkFailureCode getCode() {
 		return this.code;
+	}
+
+	public String getHost() {
+		return this.host;
+	}
+
+	public int getPort() {
+		return this.port;
 	}
 
 	public String getReason() {
@@ -98,4 +111,5 @@ public final class TalkServiceFailure {
 			this.sourceCelletIdentifiers.add(identifier);
 		}
 	}
+
 }

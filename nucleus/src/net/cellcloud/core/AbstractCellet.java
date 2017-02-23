@@ -2,7 +2,7 @@
 -----------------------------------------------------------------------------
 This source file is part of Cell Cloud.
 
-Copyright (c) 2009-2012 Cell Cloud Team (www.cellcloud.net)
+Copyright (c) 2009-2017 Cell Cloud Team (www.cellcloud.net)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -28,38 +28,63 @@ package net.cellcloud.core;
 
 import net.cellcloud.talk.Primitive;
 
-/** 抽象 Cellet 单元。
+/**
+ * 抽象 Cellet 单元。
  * 
  * @author Jiangwei Xu
  */
 public abstract class AbstractCellet {
 
+	/**
+	 * 构造函数。
+	 */
 	public AbstractCellet() {
 	}
 
-	/** Cellet 激活时调用该方法。
+	/**
+	 * 激活 Cellet 。内核启动 Cellet 时调用该方法。
 	 */
 	public abstract void activate();
 
-	/** Cellet 销毁时调用该方法。
+	/**
+	 * 销毁 Cellet 。内核关闭 Cellet 时调用该方法。
 	 */
 	public abstract void deactivate();
 
-	/** Talk 会话回调。
+	/**
+	 * Talk 会话回调。当收到来自 Talk 服务的数据原语时调用该方法。
 	 * 
 	 * @param tag 对端的内核标签。
+	 * @param primitive 收到的原语数据。
 	 */
-	public abstract void dialogue(final String tag, final Primitive primitive);
+	public abstract void dialogue(String tag, Primitive primitive);
 
-	/** 当消费者连接服务时回调此方法。
+	/**
+	 * 当消费端连接服务时回调此方法。
 	 * 
 	 * @param tag 对端的内核标签。
 	 */
-	public abstract void contacted(final String tag);
+	public abstract void contacted(String tag);
 
-	/** 当消费者退出服务时回调此方法。
+	/**
+	 * 当消费端退出服务时回调此方法。
 	 * 
 	 * @param tag 对端的内核标签。
 	 */
-	public abstract void quitted(final String tag);
+	public abstract void quitted(String tag);
+
+	/**
+	 * 当代理服务连接时回调此方法。
+	 * 
+	 * @param tag 对端的内核标签。
+	 */
+	public abstract void proxyContacted(String tag);
+
+	/**
+	 * 当代理服务退出时回调此方法。
+	 * 
+	 * @param tag 对端的内核标签。
+	 */
+	public abstract void proxyQuitted(String tag);
+
 }

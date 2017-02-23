@@ -34,18 +34,21 @@ import net.cellcloud.exception.CelletSandboxException;
  */
 public final class CelletSandbox {
 
-	private Boolean sealed = false;
+	private volatile boolean sealed = false;
 	protected CelletFeature feature;
 
-	protected CelletSandbox(CelletFeature feature) {
+	public CelletSandbox(CelletFeature feature) {
 		this.feature = feature;
 	}
 
 	/** 封闭沙箱，返回唯一验证码。
 	 */
-	protected void sealOff(CelletFeature feature)
-		throws CelletSandboxException {
-		if (this.sealed.booleanValue() || this.feature != feature) {
+	public void sealOff(CelletFeature feature) throws CelletSandboxException {
+		if (this.sealed) {
+			return;
+		}
+
+		if (this.feature != feature) {
 			throw new CelletSandboxException("Repeat seal off sandbox");
 		}
 
@@ -53,6 +56,6 @@ public final class CelletSandbox {
 	}
 
 	protected boolean isSealed() {
-		return this.sealed.booleanValue();
+		return this.sealed;
 	}
 }

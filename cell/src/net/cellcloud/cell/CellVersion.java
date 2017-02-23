@@ -35,8 +35,8 @@ import net.cellcloud.Version;
 public final class CellVersion {
 
 	public final static int MAJOR = 1;
-	public final static int MINOR = 5;
-	public final static int REVISION = 5;
+	public final static int MINOR = 6;
+	public final static int REVISION = 0;
 
 	public static void main(String[] args) {
 		StringBuilder buf = new StringBuilder();
@@ -64,7 +64,7 @@ public final class CellVersion {
 		buf.append("| |_| _|| |_| |_   | |_| |_| | | | | | |\n");
 		buf.append("|___|___|___|___|  |___|___|___|___|___/\n\n");
 
-		buf.append("Copyright (c) 2009,2016 Cell Cloud Team, www.cellcloud.net\n");
+		buf.append("Copyright (c) 2009,2017 Cell Cloud Team, www.cellcloud.net\n");
 		buf.append("-----------------------------------------------------------------------");
 
 		System.out.println(buf);

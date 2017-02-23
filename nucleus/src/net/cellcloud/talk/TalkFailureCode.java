@@ -46,6 +46,9 @@ public enum TalkFailureCode {
 	/** 会话网络断开。*/
 	NETWORK_NOT_AVAILABLE(2100),
 
+	/** 代理错误。 */
+	PROXY_FAILED(3000),
+
 	/** 数据异常。
 	 * @note 此错误不触发自动重连。
 	 */

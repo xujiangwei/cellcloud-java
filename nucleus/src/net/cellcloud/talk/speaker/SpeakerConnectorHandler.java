@@ -123,19 +123,22 @@ public final class SpeakerConnectorHandler implements MessageHandler {
 		if (errorCode == MessageErrorCode.CONNECT_TIMEOUT
 			|| errorCode == MessageErrorCode.CONNECT_FAILED) {
 			// 一般性连接错误
-			TalkServiceFailure failure = new TalkServiceFailure(TalkFailureCode.CALL_FAILED, this.getClass());
+			TalkServiceFailure failure = new TalkServiceFailure(TalkFailureCode.CALL_FAILED
+					, this.getClass(), this.speaker.getAddress().getHostString(), this.speaker.getAddress().getPort());
 			failure.setSourceDescription("Attempt to connect to host timed out");
 			failure.setSourceCelletIdentifiers(this.speaker.getIdentifiers());
 			this.speaker.fireFailed(failure);
 		}
 		else if (errorCode == MessageErrorCode.WRITE_OUTOFBOUNDS) {
 			// 数据错误
-			TalkServiceFailure failure = new TalkServiceFailure(TalkFailureCode.INCORRECT_DATA, this.getClass());
+			TalkServiceFailure failure = new TalkServiceFailure(TalkFailureCode.INCORRECT_DATA
+					, this.getClass(), this.speaker.getAddress().getHostString(), this.speaker.getAddress().getPort());
 			failure.setSourceCelletIdentifiers(this.speaker.getIdentifiers());
 			this.speaker.fireFailed(failure);
 		}
 		else {
-			TalkServiceFailure failure = new TalkServiceFailure(TalkFailureCode.NETWORK_NOT_AVAILABLE, this.getClass());
+			TalkServiceFailure failure = new TalkServiceFailure(TalkFailureCode.NETWORK_NOT_AVAILABLE
+					, this.getClass(), this.speaker.getAddress().getHostString(), this.speaker.getAddress().getPort());
 			failure.setSourceDescription("Network is not available, error : " + errorCode);
 			failure.setSourceCelletIdentifiers(this.speaker.getIdentifiers());
 			this.speaker.fireFailed(failure);
@@ -154,6 +157,10 @@ public final class SpeakerConnectorHandler implements MessageHandler {
 		else if (TalkDefinition.TPT_QUICK[2] == tag[2]
 			&& TalkDefinition.TPT_QUICK[3] == tag[3]) {
 			this.speaker.doQuick(packet, session);
+		}
+		else if (TalkDefinition.TPT_PROXY[2] == tag[2]
+			&& TalkDefinition.TPT_PROXY[3] == tag[3]) {
+			this.speaker.doProxy(packet, session);
 		}
 		else if (TalkDefinition.TPT_REQUEST[2] == tag[2]
 			&& TalkDefinition.TPT_REQUEST[3] == tag[3]) {

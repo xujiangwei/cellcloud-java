@@ -46,8 +46,11 @@ public final class TalkServiceDaemon extends Thread {
 	protected boolean running = false;
 	private long tickTime = 0;
 
-	public TalkServiceDaemon() {
+	private TalkServiceKernel kernel;
+
+	public TalkServiceDaemon(TalkServiceKernel kernel) {
 		super("TalkServiceDaemon");
+		this.kernel = kernel;
 	}
 
 	/** 返回周期时间点。
@@ -62,8 +65,6 @@ public final class TalkServiceDaemon extends Thread {
 		this.spinning = true;
 
 		LinkedList<Speaker> speakerList = new LinkedList<Speaker>();
-
-		TalkServiceKernel service = TalkService.getInstance().kernel;
 
 		int heartbeatCount = 0;
 
@@ -81,8 +82,8 @@ public final class TalkServiceDaemon extends Thread {
 			if (heartbeatCount % 600 == 0) {
 				try {
 					// HTTP 客户端管理，每 60 秒一次计数
-					if (null != service.httpSpeakers) {
-						for (HttpSpeaker speaker : service.httpSpeakers) {
+					if (null != kernel.httpSpeakers) {
+						for (HttpSpeaker speaker : kernel.httpSpeakers) {
 							speaker.tick();
 						}
 					}
@@ -95,10 +96,10 @@ public final class TalkServiceDaemon extends Thread {
 			if (heartbeatCount % 600 == 0) {
 				try {
 					// 检查 HTTP Session
-					service.checkHttpSessionHeartbeat();
+					kernel.checkHttpSessionHeartbeat();
 
 					// 检查 Session
-					service.checkSessionHeartbeat();
+					kernel.checkSessionHeartbeat();
 				} catch (Exception e) {
 					Logger.log(this.getClass(), e, LogLevel.ERROR);
 				}
@@ -107,9 +108,9 @@ public final class TalkServiceDaemon extends Thread {
 			// 5 分钟周期处理
 			if (heartbeatCount % 3000 == 0) {
 				try {
-					if (null != service.speakers) {
-						synchronized (service.speakers) {
-							for (Speaker speaker : service.speakers) {
+					if (null != kernel.speakers) {
+						synchronized (kernel.speakers) {
+							for (Speaker speaker : kernel.speakers) {
 								if (speaker.heartbeat()) {
 									Logger.i(TalkServiceDaemon.class, "Speaker heartbeat to " + speaker.getAddress().getHostString()
 											+ ":" + speaker.getAddress().getPort());
@@ -123,10 +124,10 @@ public final class TalkServiceDaemon extends Thread {
 			}
 
 			// 检查丢失连接的 Speaker
-			if (null != service.speakers && heartbeatCount % 10 == 0) {
+			if (null != kernel.speakers && heartbeatCount % 10 == 0) {
 				try {
-					synchronized (service.speakers) {
-						for (Speaker speaker : service.speakers) {
+					synchronized (kernel.speakers) {
+						for (Speaker speaker : kernel.speakers) {
 							if (speaker.lost
 								&& null != speaker.capacity
 								&& speaker.capacity.retryAttempts > 0) {
@@ -200,7 +201,7 @@ public final class TalkServiceDaemon extends Thread {
 
 			try {
 				// 处理未识别 Session
-				service.processUnidentifiedSessions(this.tickTime);
+				kernel.processUnidentifiedSessions(this.tickTime);
 			} catch (Exception e) {
 				Logger.log(this.getClass(), e, LogLevel.ERROR);
 			}
@@ -217,21 +218,21 @@ public final class TalkServiceDaemon extends Thread {
 		} while (this.spinning);
 
 		// 关闭所有 Speaker
-		if (null != service.speakers) {
-			synchronized (service.speakers) {
-				for (Speaker speaker : service.speakers) {
+		if (null != kernel.speakers) {
+			synchronized (kernel.speakers) {
+				for (Speaker speaker : kernel.speakers) {
 					speaker.hangUp();
 				}
-				service.speakers.clear();
+				kernel.speakers.clear();
 			}
 		}
-		if (null != service.httpSpeakers) {
-			Iterator<HttpSpeaker> iter = service.httpSpeakers.iterator();
+		if (null != kernel.httpSpeakers) {
+			Iterator<HttpSpeaker> iter = kernel.httpSpeakers.iterator();
 			while (iter.hasNext()) {
 				HttpSpeaker speaker = iter.next();
 				speaker.hangUp();
 			}
-			service.httpSpeakers.clear();
+			kernel.httpSpeakers.clear();
 		}
 
 		// 关闭所有工厂

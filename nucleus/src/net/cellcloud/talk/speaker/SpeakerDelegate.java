@@ -62,4 +62,5 @@ public interface SpeakerDelegate {
 	 * @param failure
 	 */
 	public void onFailed(Speakable speaker, TalkServiceFailure failure);
+
 }

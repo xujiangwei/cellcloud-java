@@ -35,14 +35,18 @@ import net.cellcloud.talk.TalkService;
 import net.cellcloud.talk.dialect.Dialect;
 
 /**
- * Cellet 管理单元。
+ * Cellet 单元。
+ * 
+ * 每个 Cellet 是 Nucleus 管理的基础通信单元。
  * 
  * @author Ambrose Xu
  * 
  */
 public abstract class Cellet extends AbstractCellet {
 
+	/** 特性描述。 */
 	private CelletFeature feature;
+	/** 沙盒。 */
 	private CelletSandbox sandbox;
 
 	/**
@@ -52,7 +56,10 @@ public abstract class Cellet extends AbstractCellet {
 		super();
 	}
 
-	/** 构造函数。
+	/**
+	 * 构造函数。
+	 * 
+	 * @param feature 指定 Cellet 的特性。
 	 */
 	public Cellet(CelletFeature feature) {
 		super();
@@ -60,7 +67,10 @@ public abstract class Cellet extends AbstractCellet {
 		this.sandbox = new CelletSandbox(feature);
 	}
 
-	/** 返回 Cellet 的特性描述。
+	/**
+	 * 获得 Cellet 的特性描述。
+	 * 
+	 * @return 返回 Cellet 的特性描述。
 	 */
 	public CelletFeature getFeature() {
 		return this.feature;
@@ -68,23 +78,33 @@ public abstract class Cellet extends AbstractCellet {
 
 	/**
 	 * 设置 Cellet 特性描述。
+	 * 
 	 * @param feature
 	 */
-	public synchronized void setFeature(CelletFeature feature) {
+	public void setFeature(CelletFeature feature) {
 		if (null == this.feature) {
 			this.feature = feature;
 			this.sandbox = new CelletSandbox(feature);
 		}
 	}
 
-	/** 发送原语到消费端进行会话。
+	/**
+	 * 发送原语到消费端进行会话。
+	 * 
+	 * @param targetTag 指定消费端标签。
+	 * @param primitive 指定需发送的原语实例。
 	 */
-	public boolean talk(final String targetTag, final Primitive primitive) {
+	public boolean talk(String targetTag, Primitive primitive) {
 		return TalkService.getInstance().notice(targetTag, primitive, this, this.sandbox);
 	}
-	/** 发送方言到消费端进行会话。
+
+	/**
+	 * 发送方言到消费端进行会话。
+	 * 
+	 * @param targetTag 指定消费端标签。
+	 * @param dialect 指定需发送的方言实例。
 	 */
-	public boolean talk(final String targetTag, final Dialect dialect) {
+	public boolean talk(String targetTag, Dialect dialect) {
 		return TalkService.getInstance().notice(targetTag, dialect, this, this.sandbox);
 	}
 
@@ -94,24 +114,32 @@ public abstract class Cellet extends AbstractCellet {
 	 * @param targetTag
 	 * @return
 	 */
-	public boolean hangUp(final String targetTag) {
+	public boolean hangUp(String targetTag) {
 		return TalkService.getInstance().kick(targetTag, this, this.sandbox);
 	}
 
 	/**
 	 * 返回服务器当前的会话者清单。
+	 * 
 	 * @return
 	 */
 	protected Set<String> getTalkerList() {
 		return TalkService.getInstance().getTalkerList();
 	}
 
-	/** 进行激活前准备。
+	/**
+	 * 进行激活前准备。
 	 */
 	protected final void prepare() {
 		Nucleus.getInstance().prepareCellet(this, this.sandbox);
 	}
 
+	/**
+	 * 获得指定实例名的适配器。
+	 * 
+	 * @param instanceName 指定适配器实例名。
+	 * @return 返回指定实例名的适配器实例。
+	 */
 	public RelationNucleusAdapter getAdapter(String instanceName) {
 		Adapter adapter = Nucleus.getInstance().getAdapter(instanceName);
 		if (null != adapter) {
@@ -122,26 +150,42 @@ public abstract class Cellet extends AbstractCellet {
 	}
 
 	/**
-	 * @copydoc AbstractCellet::dialogue(String,String)
+	 * {@inheritDoc}
 	 */
 	@Override
-	public void dialogue(final String tag, final Primitive primitive) {
+	public void dialogue(String tag, Primitive primitive) {
 		// Nothing
 	}
 
 	/**
-	 * @copydoc AbstractCellet::contacted(String)
+	 * {@inheritDoc}
 	 */
 	@Override
-	public void contacted(final String tag) {
+	public void contacted(String tag) {
 		// Nothing
 	}
 
 	/**
-	 * @copydoc AbstractCellet::quitted(String)
+	 * {@inheritDoc}
 	 */
 	@Override
-	public void quitted(final String tag) {
+	public void quitted(String tag) {
+		// Nothing
+	}
+
+	/**
+	 * {@inheritDoc}
+	 */
+	@Override
+	public void proxyContacted(String tag) {
+		// Nothing
+	}
+
+	/**
+	 * {@inheritDoc}
+	 */
+	@Override
+	public void proxyQuitted(String tag) {
 		// Nothing
 	}
 

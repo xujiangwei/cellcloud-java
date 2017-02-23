@@ -2,7 +2,7 @@
 -----------------------------------------------------------------------------
 This source file is part of Cell Cloud.
 
-Copyright (c) 2009-2013 Cell Cloud Team (www.cellcloud.net)
+Copyright (c) 2009-2017 Cell Cloud Team (www.cellcloud.net)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -24,41 +24,16 @@ THE SOFTWARE.
 -----------------------------------------------------------------------------
 */
 
-package net.cellcloud;
+package net.cellcloud.talk.speaker;
 
-/** 程序版本描述。
- * 
- * @author Jiangwei Xu
- */
-public final class Version {
+import net.cellcloud.talk.Primitive;
 
-	/// 主版本号
-	public static final int MAJOR = 1;
+import org.json.JSONObject;
 
-	/// 副版本号
-	public static final int MINOR = 6;
+public interface SpeakerProxyListener {
 
-	/// 修订号
-	public static final int REVISION = 0;
+	public void onProxyDialogue(String tag, String celletIdentifier, Primitive primitive);
 
-	/// 版本名
-	public static final String NAME = "Xi";
-
-	/// 版本串号
-	public static final int VERSION_NUMBER = 150;
-
-	/// 是否调试模式
-	public static boolean DEBUG = true;
-
-	private Version() {
-	}
-
-	public static String getNumbers() {
-		StringBuilder buf = new StringBuilder();
-		buf.append(MAJOR).append(".");
-		buf.append(MINOR).append(".");
-		buf.append(REVISION);
-		return buf.toString();
-	}
+	public void onProxy(Speaker speaker, JSONObject data);
 
 }

@@ -73,16 +73,14 @@ public final class TalkSessionContext {
 		this.trackerList.add(tracker);
 
 		this.endpoint = new Endpoint(tag, Role.CONSUMER,
-				session.getAddress().getHostName(), session.getAddress().getPort());
+				session.getAddress().getHostString(), session.getAddress().getPort());
 	}
 
 	/** 返回 Session 会话列表。
 	 * @return
 	 */
 	public List<Session> getSessions() {
-		synchronized (this.sessions) {
-			return this.sessions;
-		}
+		return this.sessions;
 	}
 
 	public long getSessionHeartbeat(Session session) {

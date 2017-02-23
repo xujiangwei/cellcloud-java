@@ -27,34 +27,44 @@ THE SOFTWARE.
 package net.cellcloud.core;
 
 import java.net.InetSocketAddress;
+import java.util.ArrayList;
 import java.util.List;
 
-/** 内核参数配置描述。
+/**
+ * 内核参数配置描述。
  * 
- * @author Jiangwei Xu
+ * @author Ambrose Xu
+ * 
  */
 public final class NucleusConfig {
 
-	/// 自定义内核标签
+	/** 内核标签。 */
 	public String tag = null;
 
-	/// 角色
+	/** 内核的工作角色。 */
 	public Role role = Role.NODE;
 
-	/// 设备
+	/** 内核运行的设备类型。 */
 	public Device device = Device.SERVER;
 
-	/// 是否启用 HTTP 服务器
+	/** 是否启用 HTTP 服务器。 */
 	public boolean httpd = true;
 
-	/// Talk Service 配置
+	/** Talk Service 配置。 */
 	public TalkConfig talk;
 
-	/// 集群配置
+	/** Gateway Service 配置。 */
+	public GatewayConfig gateway;
+
+	/** 集群配置。 */
 	public ClusterConfig cluster;
 
+	/**
+	 * 构造函数。
+	 */
 	public NucleusConfig() {
 		this.talk = new TalkConfig();
+		this.gateway = new GatewayConfig();
 		this.cluster = new ClusterConfig();
 	}
 
@@ -62,41 +72,42 @@ public final class NucleusConfig {
 	 * 会话服务器配置项。
 	 */
 	public final class TalkConfig {
-		/// 是否启用 Talk 服务
+		/** 是否启用 Talk 服务。 */
 		public boolean enabled = true;
 
-		/// Talk 服务端口
+		/** 服务端口。 */
 		public int port = 7000;
 
-		/// Block 设置
+		/** 服务器使用的每个会话的 Block 区块大小。 */
 		public int block = 65536;
 
-		/// 最大连接数
+		/** 最大连接数。 */
 		public int maxConnections = 5000;
 
-		/// 工作线程数
+		/** 工作线程数。 */
 		public int numWorkerThreads = 8;
 
-		/// 是否使用 HTTP 服务
+		/** 是否使用 HTTP 服务。 */
 		public boolean httpEnabled = true;
 
-		/// HTTP 服务端口号
+		/** HTTP 服务端口号。 */
 		public int httpPort = 7070;
 
-		/// HTTPS 服务端口号
+		/** HTTPS 服务端口号。 */
 		public int httpsPort = 7080;
 
-		/// HTTP 连接队列长度
+		/** HTTP 连接队列长度。 */
 		public int httpQueueSize = 2000;
 
-		/// HTTP 服务会话超时时间，默认 5 分钟
+		/** HTTP 服务会话超时时间，单位：毫秒，默认 5 分钟。 */
 		public long httpSessionTimeout = 5L * 60L * 1000L;
 
-		/// JKS
+		/** JKS 文件路径。 */
 		public String keystore = "/nucleus.jks";
 
-		/// SSL Password
+		/** JKS 相关的 Password 。 */
 		public String keyStorePassword = null;
+		/** JKS 相关的 Password 。 */
 		public String keyManagerPassword = null;
 
 		private TalkConfig() {
@@ -104,28 +115,44 @@ public final class NucleusConfig {
 	}
 
 	/**
+	 * 网关服务配置项。
+	 */
+	public final class GatewayConfig {
+
+		/** 下位机地址列表。 */
+		public List<InetSocketAddress> slaveAddressList = new ArrayList<InetSocketAddress>();
+
+		/** 代理的 Cellet 识别串列表。 */
+		public List<String> celletIdentifiers = new ArrayList<String>();
+
+		private GatewayConfig() {
+		}
+	}
+
+	/**
 	 * 集群配置项。
 	 */
 	public final class ClusterConfig {
-		/// 是否启用集群
+		/** 是否启用集群。 */
 		public boolean enabled = false;
 
-		/// 集群绑定主机名
+		/** 集群绑定主机名或地址。 */
 		public String host = "127.0.0.1";
 
-		/// 集群服务首选端口
+		/** 集群服务首选端口。 */
 		public int preferredPort = 11099;
 
-		/// 虚拟节点数量
+		/** 虚拟节点数量。 */
 		public int numVNode = 3;
 
-		/// 集群地址表
+		/** 集群地址表。 */
 		public List<InetSocketAddress> addressList = null;
 
-		/// 是否自动扫描地址
+		/** 是否自动扫描地址。 */
 		public boolean autoScan = false;
 
 		private ClusterConfig() {
 		}
 	}
+
 }

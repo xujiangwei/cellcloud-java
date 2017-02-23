@@ -36,6 +36,7 @@ import java.util.TimerTask;
 
 import net.cellcloud.Version;
 import net.cellcloud.common.Cryptology;
+import net.cellcloud.common.LogLevel;
 import net.cellcloud.common.Logger;
 import net.cellcloud.common.Message;
 import net.cellcloud.common.NonblockingConnector;
@@ -53,6 +54,9 @@ import net.cellcloud.talk.TalkServiceFailure;
 import net.cellcloud.talk.stuff.StuffVersion;
 import net.cellcloud.util.Utils;
 
+import org.json.JSONException;
+import org.json.JSONObject;
+
 /**
  * 对话者。
  * 
@@ -65,6 +69,7 @@ public class Speaker implements Speakable {
 
 	private InetSocketAddress address;
 	private SpeakerDelegate delegate;
+	private SpeakerProxyListener proxyListener;
 	private NonblockingConnector connector;
 	private int block;
 
@@ -183,53 +188,6 @@ public class Speaker implements Speakable {
 		return ret;
 	}
 
-	/** 挂起服务。
-	 */
-//	@Override
-//	public void suspend(long duration) {
-//		if (this.state == SpeakerState.CALLED) {
-//			// 包格式：内核标签|有效时长
-//
-//			Packet packet = new Packet(TalkDefinition.TPT_SUSPEND, 5, 1, 0);
-//			packet.appendSubsegment(this.nucleusTag);
-//			packet.appendSubsegment(Utils.string2Bytes(Long.toString(duration)));
-//
-//			byte[] data = Packet.pack(packet);
-//			if (null != data) {
-//				// 发送数据
-//				Message message = new Message(data);
-//				this.connector.write(message);
-//
-//				// 更新状态
-//				this.state = SpeakerState.SUSPENDED;
-//			}
-//		}
-//	}
-
-	/** 恢复服务。
-	 */
-//	@Override
-//	public void resume(long startTime) {
-//		if (this.state == SpeakerState.SUSPENDED
-//			|| this.state == SpeakerState.CALLED) {
-//			// 包格式：内核标签|需要恢复的原语起始时间戳
-//
-//			Packet packet = new Packet(TalkDefinition.TPT_RESUME, 6, 1, 0);
-//			packet.appendSubsegment(this.nucleusTag);
-//			packet.appendSubsegment(Utils.string2Bytes(Long.toString(startTime)));
-//
-//			byte[] data = Packet.pack(packet);
-//			if (null != data) {
-//				// 发送数据
-//				Message message = new Message(data);
-//				this.connector.write(message);
-//
-//				// 恢复状态
-//				this.state = SpeakerState.CALLED;
-//			}
-//		}
-//	}
-
 	/** 挂断与 Cellet 的服务。
 	 */
 	@Override
@@ -293,11 +251,25 @@ public class Speaker implements Speakable {
 	}
 
 	/**
+	 * 透传指定的数据。
+	 * 
+	 * @param data
+	 */
+	public void pass(byte[] data) {
+		Message message = new Message(data);
+		this.connector.write(message);
+	}
+
+	/**
 	 * 重置睡眠间隔。
 	 * @param sleepInterval
 	 */
 	public void resetSleepInterval(long sleepInterval) {
 		this.connector.resetSleepInterval(sleepInterval);
+	}
+
+	public void setProxyListener(SpeakerProxyListener listener) {
+		this.proxyListener = listener;
 	}
 
 	/**
@@ -334,7 +306,7 @@ public class Speaker implements Speakable {
 		// 判断是否为异常网络中断
 		if (SpeakerState.CALLING == this.state) {
 			TalkServiceFailure failure = new TalkServiceFailure(TalkFailureCode.CALL_FAILED
-					, this.getClass());
+					, this.getClass(), this.address.getHostString(), this.address.getPort());
 			failure.setSourceDescription("No network device");
 			failure.setSourceCelletIdentifiers(this.identifierList);
 			this.fireFailed(failure);
@@ -344,7 +316,7 @@ public class Speaker implements Speakable {
 		}
 		else if (SpeakerState.CALLED == this.state) {
 			TalkServiceFailure failure = new TalkServiceFailure(TalkFailureCode.TALK_LOST
-					, this.getClass());
+					, this.getClass(), this.address.getHostString(), this.address.getPort());
 			failure.setSourceDescription("Network fault, connection closed");
 			failure.setSourceCelletIdentifiers(this.identifierList);
 			this.fireFailed(failure);
@@ -353,7 +325,8 @@ public class Speaker implements Speakable {
 			this.lost = true;
 		}
 		else {
-			TalkServiceFailure failure = new TalkServiceFailure(TalkFailureCode.NETWORK_NOT_AVAILABLE, this.getClass());
+			TalkServiceFailure failure = new TalkServiceFailure(TalkFailureCode.NETWORK_NOT_AVAILABLE
+					, this.getClass(), this.address.getHostString(), this.address.getPort());
 			failure.setSourceDescription("Session has closed");
 			failure.setSourceCelletIdentifiers(this.identifierList);
 			this.fireFailed(failure);
@@ -406,18 +379,13 @@ public class Speaker implements Speakable {
 					delegate.onContacted(Speaker.this, cid);
 				}
 
-				(new Thread(new Runnable() {
-					@Override
-					public void run() {
-						if (null != contactedTimer) {
-							contactedTimer.cancel();
-							contactedTimer.purge();
-							contactedTimer = null;
-						}
-					}
-				})).start();
+				if (null != contactedTimer) {
+					contactedTimer.cancel();
+					contactedTimer.purge();
+					contactedTimer = null;
+				}
 			}
-		}, 300);
+		}, 100L);
 	}
 
 	private void fireQuitted(String celletIdentifier) {
@@ -436,14 +404,6 @@ public class Speaker implements Speakable {
 		}
 	}
 
-//	private void fireSuspended(long timestamp, int mode) {
-//		this.delegate.onSuspended(this, timestamp, mode);
-//	}
-
-//	protected void fireResumed(long timestamp, Primitive primitive) {
-//		this.delegate.onResumed(this, timestamp, primitive);
-//	}
-
 	protected void fireFailed(TalkServiceFailure failure) {
 		if (failure.getCode() == TalkFailureCode.NOT_FOUND
 			|| failure.getCode() == TalkFailureCode.INCORRECT_DATA
@@ -458,7 +418,8 @@ public class Speaker implements Speakable {
 	}
 
 	public void fireRetryEnd() {
-		TalkServiceFailure failure = new TalkServiceFailure(TalkFailureCode.RETRY_END, this.getClass());
+		TalkServiceFailure failure = new TalkServiceFailure(TalkFailureCode.RETRY_END
+				, this.getClass(), this.address.getHostString(), this.address.getPort());
 		failure.setSourceCelletIdentifiers(this.identifierList);
 		this.fireFailed(failure);
 	}
@@ -495,7 +456,7 @@ public class Speaker implements Speakable {
 		// 兼容性处理
 		StuffVersion version = CompatibilityHelper.match(Version.VERSION_NUMBER);
 		if (version == StuffVersion.V2) {
-			this.capacity.resetVersion(2);
+			this.capacity.resetVersion(3);
 		}
 
 		// 包格式：源标签|能力描述序列化数据
@@ -598,7 +559,8 @@ public class Speaker implements Speakable {
 			this.state = SpeakerState.HANGUP;
 
 			// 回调事件
-			TalkServiceFailure failure = new TalkServiceFailure(TalkFailureCode.NOT_FOUND, Speaker.class);
+			TalkServiceFailure failure = new TalkServiceFailure(TalkFailureCode.NOT_FOUND, Speaker.class,
+					this.address.getHostString(), this.address.getPort());
 			failure.setSourceCelletIdentifiers(this.identifierList);
 			this.fireFailed(failure);
 
@@ -617,6 +579,15 @@ public class Speaker implements Speakable {
 		Primitive primitive = new Primitive(this.remoteTag);
 		primitive.setCelletIdentifier(celletIdentifier);
 		primitive.read(stream);
+
+		if (packet.getSubsegmentCount() == 3) {
+			// 来自代理的对话
+			String tag = Utils.bytes2String(packet.getSubsegment(2));
+			if (null != this.proxyListener) {
+				this.proxyListener.onProxyDialogue(tag, celletIdentifier, primitive);
+			}
+			return;
+		}
 
 		this.fireDialogue(celletIdentifier, primitive);
 	}
@@ -640,7 +611,7 @@ public class Speaker implements Speakable {
 		// 兼容性处理
 		StuffVersion version = CompatibilityHelper.match(Version.VERSION_NUMBER);
 		if (version == StuffVersion.V2) {
-			this.capacity.resetVersion(2);
+			this.capacity.resetVersion(3);
 		}
 
 		// 包格式：明文|源标签|能力描述序列化数据|CelletIdentifiers
@@ -710,7 +681,40 @@ public class Speaker implements Speakable {
 			this.state = SpeakerState.HANGUP;
 
 			// 回调事件
-			TalkServiceFailure failure = new TalkServiceFailure(TalkFailureCode.NOT_FOUND, Speaker.class);
+			TalkServiceFailure failure = new TalkServiceFailure(TalkFailureCode.NOT_FOUND
+					, Speaker.class, this.address.getHostString(), this.address.getPort());
+			failure.setSourceCelletIdentifiers(this.identifierList);
+			this.fireFailed(failure);
+		}
+	}
+
+	protected void doProxy(Packet packet, Session session) {
+		// 包格式：状态码|数据JSON
+
+		byte[] code = packet.getSubsegment(0);
+		if (code[0] == TalkDefinition.SC_SUCCESS[0]
+			&& code[1] == TalkDefinition.SC_SUCCESS[1]
+			&& code[2] == TalkDefinition.SC_SUCCESS[2]
+			&& code[3] == TalkDefinition.SC_SUCCESS[3]) {
+
+			byte[] data = packet.getSubsegment(1);
+
+			JSONObject json = null;
+			try {
+				json = new JSONObject(Utils.bytes2String(data));
+			} catch (JSONException e) {
+				Logger.log(this.getClass(), e, LogLevel.ERROR);
+			}
+
+			// 回调事件
+			if (null != this.proxyListener) {
+				this.proxyListener.onProxy(this, json);
+			}
+		}
+		else {
+			// 回调错误事件
+			TalkServiceFailure failure = new TalkServiceFailure(TalkFailureCode.PROXY_FAILED
+					, Speaker.class, this.address.getHostString(), this.address.getPort());
 			failure.setSourceCelletIdentifiers(this.identifierList);
 			this.fireFailed(failure);
 		}

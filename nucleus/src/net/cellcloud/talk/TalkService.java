@@ -4,7 +4,6 @@ import java.net.InetSocketAddress;
 import java.util.List;
 import java.util.Set;
 
-import net.cellcloud.common.MessageInterceptor;
 import net.cellcloud.common.Service;
 import net.cellcloud.core.Cellet;
 import net.cellcloud.core.CelletSandbox;
@@ -13,7 +12,10 @@ import net.cellcloud.core.NucleusContext;
 import net.cellcloud.exception.InvalidException;
 import net.cellcloud.exception.SingletonException;
 import net.cellcloud.http.CapsuleHolder;
+import net.cellcloud.talk.dialect.ActionDialectFactory;
+import net.cellcloud.talk.dialect.ChunkDialectFactory;
 import net.cellcloud.talk.dialect.Dialect;
+import net.cellcloud.talk.dialect.DialectEnumerator;
 
 /**
  * 会话服务。
@@ -32,6 +34,10 @@ public class TalkService implements Service {
 			TalkService.instance = this;
 
 			this.kernel = new TalkServiceKernel(nucleusContext);
+
+			// 添加默认方言工厂
+			DialectEnumerator.getInstance().addFactory(new ActionDialectFactory(this.kernel.executor));
+			DialectEnumerator.getInstance().addFactory(new ChunkDialectFactory(this.kernel.executor));
 		}
 		else {
 			throw new SingletonException(TalkServiceKernel.class.getName());
@@ -196,10 +202,6 @@ public class TalkService implements Service {
 
 	public void removeListener(TalkListener listener) {
 		this.kernel.removeListener(listener);
-	}
-
-	public void setInterceptor(MessageInterceptor interceptor) {
-		this.kernel.setInterceptor(interceptor);
 	}
 
 }
