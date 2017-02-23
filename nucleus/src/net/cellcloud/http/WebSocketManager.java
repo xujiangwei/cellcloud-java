@@ -27,6 +27,7 @@ THE SOFTWARE.
 package net.cellcloud.http;
 
 import net.cellcloud.common.Message;
+import net.cellcloud.common.MessageInterceptor;
 
 /**
  * 
@@ -54,4 +55,11 @@ public interface WebSocketManager {
 	 * @param session
 	 */
 	public void close(WebSocketSession session);
+
+	/**
+	 * 
+	 * @param interceptor
+	 */
+	public void setInterceptor(MessageInterceptor interceptor);
+
 }

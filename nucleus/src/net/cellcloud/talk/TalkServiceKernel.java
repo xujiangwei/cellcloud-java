@@ -318,6 +318,9 @@ public final class TalkServiceKernel implements Service, SpeakerDelegate {
 			}
 		}
 
+		// 数据写间隔
+		this.acceptor.setEachSessionWriteInterval(20L);
+
 		return succeeded;
 	}
 
@@ -1270,6 +1273,13 @@ public final class TalkServiceKernel implements Service, SpeakerDelegate {
 	 */
 	public void setInterceptor(MessageInterceptor interceptor) {
 		this.acceptor.setInterceptor(interceptor);
+
+		if (null != this.wsManager) {
+			this.wsManager.setInterceptor(interceptor);
+		}
+		if (null != this.wssManager) {
+			this.wssManager.setInterceptor(interceptor);
+		}
 	}
 
 	/** 开启 Session 。

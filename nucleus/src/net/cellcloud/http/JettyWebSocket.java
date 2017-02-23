@@ -34,6 +34,7 @@ import net.cellcloud.common.Logger;
 import net.cellcloud.common.Message;
 import net.cellcloud.common.MessageErrorCode;
 import net.cellcloud.common.MessageHandler;
+import net.cellcloud.common.MessageInterceptor;
 
 import org.eclipse.jetty.websocket.api.Session;
 import org.eclipse.jetty.websocket.api.annotations.OnWebSocketClose;
@@ -50,6 +51,8 @@ import org.eclipse.jetty.websocket.api.annotations.WebSocket;
 public final class JettyWebSocket implements WebSocketManager {
 
 	private MessageHandler handler;
+	private MessageInterceptor interceptor;
+
 	private LinkedList<Session> sessions;
 	private LinkedList<WebSocketSession> wsSessions;
 
@@ -62,6 +65,11 @@ public final class JettyWebSocket implements WebSocketManager {
 		this.handler = handler;
 		this.sessions = new LinkedList<Session>();
 		this.wsSessions = new LinkedList<WebSocketSession>();
+	}
+
+	@Override
+	public void setInterceptor(MessageInterceptor interceptor) {
+		this.interceptor = interceptor;
 	}
 
 	public int numSessions() {
@@ -120,7 +128,11 @@ public final class JettyWebSocket implements WebSocketManager {
 
 		if (null != this.handler) {
 			Message message = new Message(text.getBytes(Charset.forName("UTF-8")));
-			this.handler.messageReceived(wsSession, message);
+
+			// 判断是否拦截
+			if (false == (null != this.interceptor && this.interceptor.interceptMessage(wsSession, message))) {
+				this.handler.messageReceived(wsSession, message);
+			}
 		}
 
 		/*
@@ -162,8 +174,13 @@ public final class JettyWebSocket implements WebSocketManager {
 		}
 
 		if (null != this.handler) {
-			this.handler.sessionCreated(wsSession);
-			this.handler.sessionOpened(wsSession);
+			if (false == (null != this.interceptor && this.interceptor.interceptCreating(wsSession))) {
+				this.handler.sessionCreated(wsSession);
+			}
+
+			if (false == (null != this.interceptor && this.interceptor.interceptOpening(wsSession))) {
+				this.handler.sessionOpened(wsSession);
+			}
 		}
 	}
 
@@ -193,8 +210,13 @@ public final class JettyWebSocket implements WebSocketManager {
 		}
 
 		if (null != this.handler) {
-			this.handler.sessionClosed(wsSession);
-			this.handler.sessionDestroyed(wsSession);
+			if (false == (null != this.interceptor && this.interceptor.interceptClosing(wsSession))) {
+				this.handler.sessionClosed(wsSession);
+			}
+
+			if (false == (null != this.interceptor && this.interceptor.interceptDestroying(wsSession))) {
+				this.handler.sessionDestroyed(wsSession);
+			}
 		}
 	}
 
@@ -212,7 +234,9 @@ public final class JettyWebSocket implements WebSocketManager {
 		}
 
 		if (null != this.handler) {
-			this.handler.errorOccurred(MessageErrorCode.SOCKET_FAILED, wsSession);
+			if (false == (null != this.interceptor && this.interceptor.interceptError(wsSession, MessageErrorCode.SOCKET_FAILED))) {
+				this.handler.errorOccurred(MessageErrorCode.SOCKET_FAILED, wsSession);
+			}
 		}
 	}
 
