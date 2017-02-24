@@ -26,22 +26,27 @@ THE SOFTWARE.
 
 package net.cellcloud.core;
 
-/** 内核工作角色定义。
+/**
+ * 内核工作角色定义。
  * 
  * @author Ambrose xu
+ * 
  */
 public enum Role {
 
-	/// 计算。
-	/// 内核启动标准的 Talk 服务和 Cellet 管理器。
+	/**
+	 * 节点角色。内核启动 Talk 服务和 Cellet 管理器。
+	 */
 	NODE,
 
-	/// 网关。
-	/// 内核启动标准的 Talk 服务并启动网关模式。
+	/**
+	 * 网关角色。内核启动 Talk 服务和网关模式。
+	 */
 	GATEWAY,
 
-	/// 消费。
-	/// 内存启动 Talk 会话机制。
+	/**
+	 * 消费客户端角色。
+	 */
 	CONSUMER
 
 }

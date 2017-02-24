@@ -2,7 +2,7 @@
 -----------------------------------------------------------------------------
 This source file is part of Cell Cloud.
 
-Copyright (c) 2009-2016 Cell Cloud Team (www.cellcloud.net)
+Copyright (c) 2009-2017 Cell Cloud Team (www.cellcloud.net)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -33,29 +33,41 @@ import net.cellcloud.talk.TalkSnapshoot;
 /**
  * 内核快照。
  * 
- * @author Jiangwei Xu
+ * @author Ambrose Xu
+ * 
  */
 public final class NucleusSnapshoot {
 
+	/** 内核标签。 */
 	public String tag;
 
-	// 快照时间戳
+	/** 本次快照的时间戳。 */
 	public long timestamp;
 
+	/** JVM 最大可用内存。 */
 	public long maxMemory;
 
+	/** JVM 已使用的系统内存。 */
 	public long totalMemory;
 
+	/** JVM 空闲的系统内存。 */
 	public long freeMemory;
 
+	/** 内核启动时间。 */
 	public long systemStartTime;
 
+	/** 截止本次快照生成时内核运行的时长，单位：毫秒。 */
 	public long systemDuration;
 
+	/** 内核的 Cellet 列表。 */
 	public List<String> celletList;
 
+	/** Talk 服务快照。 */
 	public TalkSnapshoot talk;
 
+	/**
+	 * 构造函数。
+	 */
 	protected NucleusSnapshoot() {
 		this.timestamp = System.currentTimeMillis();
 		this.maxMemory = Runtime.getRuntime().maxMemory();

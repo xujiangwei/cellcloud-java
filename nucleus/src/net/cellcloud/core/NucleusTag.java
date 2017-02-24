@@ -28,36 +28,50 @@ package net.cellcloud.core;
 
 import java.util.UUID;
 
-/** 内核标签。
+/**
+ * 内核标签。
  * 
- * @author Jiangwei Xu
+ * @author Ambrose Xu
+ * 
  */
 public final class NucleusTag {
 
+	/** UUID 描述。 */
 	private UUID uuid;
+	/** 标签的字符串格式。 */
 	private String strFormat;
 
-	/** 构造函数。生成随机标签。
+	/**
+	 * 构造函数。
+	 * 生成随机标签。
 	 */
 	public NucleusTag() {
 		this.uuid = UUID.randomUUID();
 		this.strFormat = this.uuid.toString();
 	}
 
-	/** 构造函数。根据标签字符串生成。
+	/**
+	 * 构造函数。
+	 * 根据标签字符串生成。
+	 * 
+	 * @param value 指定字符串形式的标签。
 	 */
 	public NucleusTag(String value) {
 		this.uuid = UUID.fromString(value);
 		this.strFormat = value;
 	}
 
-	/** 返回字符串格式。
+	/**
+	 * 获得标签的字符串形式。
+	 * 
+	 * @return 返回字符串形式的标签。
 	 */
 	public String asString() {
 		return this.strFormat;
 	}
 
-	/** 返回字符串格式。
+	/**
+	 * 返回标签的字符串形式。
 	 */
 	@Override
 	public String toString() {

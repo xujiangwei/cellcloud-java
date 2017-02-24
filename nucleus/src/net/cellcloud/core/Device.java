@@ -26,22 +26,24 @@ THE SOFTWARE.
 
 package net.cellcloud.core;
 
-/** 设备平台。
+/**
+ * 设备平台。
  *
  * @author Ambrose Xu
+ *
  */
 public enum Device {
 
-	/// 移动设备
+	/** 移动设备。 */
 	MOBILE,
 
-	/// 平板设备
+	/** 平板设备。 */
 	TABLET,
 
-	/// 桌面设备
+	/** 桌面设备。 */
 	DESKTOP,
 
-	/// 服务器
+	/** 服务器。 */
 	SERVER
 
 }

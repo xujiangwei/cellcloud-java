@@ -2,7 +2,7 @@
 -----------------------------------------------------------------------------
 This source file is part of Cell Cloud.
 
-Copyright (c) 2009-2013 Cell Cloud Team (www.cellcloud.net)
+Copyright (c) 2009-2017 Cell Cloud Team (www.cellcloud.net)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -26,17 +26,39 @@ THE SOFTWARE.
 
 package net.cellcloud.core;
 
-/** Cellet 版本描述类。
+/**
+ * Cellet 版本描述类。
  * 
- * @author Jiangwei Xu
+ * @author Ambrose Xu
+ * 
  */
 public class CelletVersion {
 
+	/** 主版本号。 */
 	private int major;
+	/** 副版本号。 */
 	private int minor;
+	/** 修订号。 */
 	private int revision;
 
-	/** 构造函数。
+	/**
+	 * 构造函数。
+	 * 
+	 * @param major 指定主版本号。
+	 * @param minor 指定副版本号。
+	 */
+	public CelletVersion(int major, int minor) {
+		this.major = major;
+		this.minor = minor;
+		this.revision = 0;
+	}
+
+	/**
+	 * 构造函数。
+	 * 
+	 * @param major 指定主版本号。
+	 * @param major 指定副版本号。
+	 * @param revision 指定修订号。
 	 */
 	public CelletVersion(int major, int minor, int revision) {
 		this.major = major;
@@ -44,25 +66,29 @@ public class CelletVersion {
 		this.revision = revision;
 	}
 
-	/** 主版本号。
+	/**
+	 * 获得主版本号。
 	 */
 	public int getMajor() {
 		return this.major;
 	}
 
-	/** 副版本号。
+	/**
+	 * 获得副版本号。
 	 */
 	public int getMinor() {
 		return this.minor;
 	}
 
-	/** 修订号。
+	/**
+	 * 获得修订号。
 	 */
 	public int getRevision() {
 		return this.revision;
 	}
 
-	/** 返回字符串格式的版本信息。
+	/**
+	 * 返回字符串格式的版本信息。
 	 */
 	@Override
 	public String toString() {
@@ -76,4 +102,5 @@ public class CelletVersion {
 		builder = null;
 		return ret;
 	}
+
 }

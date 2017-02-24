@@ -2,7 +2,7 @@
 -----------------------------------------------------------------------------
 This source file is part of Cell Cloud.
 
-Copyright (c) 2009-2012 Cell Cloud Team (www.cellcloud.net)
+Copyright (c) 2009-2017 Cell Cloud Team (www.cellcloud.net)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -40,25 +40,33 @@ import net.cellcloud.core.Endpoint;
 import net.cellcloud.core.Nucleus;
 import net.cellcloud.core.Role;
 
-/** 集群节点。
+/**
+ * 集群节点。
  * 
- * @author Jiangwei Xu
+ * @author Ambrose Xu
+ * 
  */
 public class ClusterNode extends Endpoint implements Comparable<ClusterNode> {
 
-	// 节点散列码
+	/** 节点散列码。 */
 	private long hashCode;
 
-	// 物理节点下的虚拟节点
+	/** 物理节点包含的虚拟节点。 */
 	private TreeMap<Long, ClusterVirtualNode> ownVirtualNodes;
-	// 物理兄弟节点
+	/** 物理兄弟节点。 */
 	private TreeMap<Long, ClusterNode> brotherNodes;
 
-	// 虚节点散列码表
+	/** 虚节点散列码表。 */
 	private Long[] virtualNodeHashCodes;
+	/** 虚拟节点的散列码对应的节点实例。 */
 	private HashMap<Long, ClusterVirtualNode> virtualNodes;
 
-	/** 构造函数。
+	/**
+	 * 构造函数。
+	 * 
+	 * @param hashCode 指定节点散列码。
+	 * @param address 指定本机地址。
+	 * @param numVNode 指定包含虚拟节点数量。
 	 */
 	public ClusterNode(long hashCode, InetSocketAddress address, int numVNode) {
 		super(Nucleus.getInstance().getTag(), Role.NODE, address.getHostString(), address.getPort());
@@ -77,7 +85,12 @@ public class ClusterNode extends Endpoint implements Comparable<ClusterNode> {
 		}
 	}
 
-	/** 构造函数。
+	/**
+	 * 构造函数。
+	 * 
+	 * @param hashCode 指定节点散列码。
+	 * @param address 指定本机地址。
+	 * @param vnodeHashList 指定虚拟节点的散列码。
 	 */
 	public ClusterNode(long hashCode, InetSocketAddress address, List<Long> vnodeHashList) {
 		super(Nucleus.getInstance().getTag(), Role.NODE, address.getHostString(), address.getPort());
@@ -95,13 +108,20 @@ public class ClusterNode extends Endpoint implements Comparable<ClusterNode> {
 		}
 	}
 
-	/** 节点 Hash 值。
+	/**
+	 * 获得节点散列码。
+	 * 
+	 * @return 返回节点散列码。
 	 */
 	public final long getHashCode() {
 		return this.hashCode;
 	}
 
-	/** 判断是否是兄弟节点。
+	/**
+	 * 判断是否是兄弟节点。
+	 * 
+	 * @param hashCode 指定待判断的散列码。
+	 * @return 如果是兄弟节点返回 <code>true</code> ，否则返回 <code>false</code> 。
 	 */
 	public boolean isBrotherNode(long hashCode) {
 		synchronized (this) {
@@ -109,7 +129,10 @@ public class ClusterNode extends Endpoint implements Comparable<ClusterNode> {
 		}
 	}
 
-	/** 添加兄弟节点。
+	/**
+	 * 添加兄弟节点。
+	 * 
+	 * @param brother 指定需添加的兄弟节点。
 	 */
 	public void addBrother(ClusterNode brother) {
 		synchronized (this) {
@@ -122,7 +145,10 @@ public class ClusterNode extends Endpoint implements Comparable<ClusterNode> {
 		}
 	}
 
-	/** 返回自己的虚拟节点。
+	/**
+	 * 获得自己包含的虚拟节点。
+	 * 
+	 * @return 返回自己包含的虚拟节点的原始容器。
 	 */
 	public Collection<ClusterVirtualNode> getOwnVirtualNodes() {
 		synchronized (this) {
@@ -130,20 +156,34 @@ public class ClusterNode extends Endpoint implements Comparable<ClusterNode> {
 		}
 	}
 
-	/** 是否包含指定散列码的虚拟节点。
+	/**
+	 * 是否包含指定散列码的虚拟节点。
+	 * 
+	 * @param hashCode 指定散列码。
+	 * @return 如果包含返回 <code>true</code> 。
 	 */
 	public boolean containsOwnVirtualNode(long hashCode) {
 		synchronized (this) {
 			return (null != this.ownVirtualNodes) ? this.ownVirtualNodes.containsKey(hashCode) : false;
 		}
 	}
+	/**
+	 * 是否包含指定散列码的虚拟节点。
+	 * 
+	 * @param hashCode 指定散列码。
+	 * @return 如果包含返回 <code>true</code> 。
+	 */
 	public boolean containsOwnVirtualNode(Long hashCode) {
 		synchronized (this) {
 			return (null != this.ownVirtualNodes) ? this.ownVirtualNodes.containsKey(hashCode) : false;
 		}
 	}
 
-	/** 返回自己的虚拟节点。
+	/**
+	 * 获得包含的指定散列码的虚拟节点
+	 * 
+	 * @param hashCode 指定散列码。
+	 * @return 如果找到节点返回节点实例，否则返回 <code>null</code> 值。
 	 */
 	public ClusterVirtualNode getOwnVirtualNode(long hashCode) {
 		synchronized (this) {
@@ -151,7 +191,8 @@ public class ClusterNode extends Endpoint implements Comparable<ClusterNode> {
 		}
 	}
 
-	/** 清空所有兄弟节点和虚拟节点。
+	/**
+	 * 清空所有兄弟节点和虚拟节点。
 	 */
 	public void clearup() {
 		synchronized (this) {
@@ -172,7 +213,10 @@ public class ClusterNode extends Endpoint implements Comparable<ClusterNode> {
 		}
 	}
 
-	/** 返回所有已知的虚节点散列码列表。
+	/**
+	 * 获得整个集群里已知的虚节点散列码列表。
+	 * 
+	 * @return 返回整个集群里已知的虚节点散列码列表。
 	 */
 	public Long[] getVirtualNodeHashList() {
 		synchronized (this) {
@@ -180,7 +224,11 @@ public class ClusterNode extends Endpoint implements Comparable<ClusterNode> {
 		}
 	}
 
-	/** 返回虚拟节点。
+	/**
+	 * 获得整个集群里指定散列码的虚拟节点。
+	 * 
+	 * @param nodeHash 指定节点散列码。
+	 * @return 如果找到返回节点实例，否则返回 <code>null</code> 值。
 	 */
 	public ClusterVirtualNode getVirtualNode(Long nodeHash) {
 		synchronized (this) {
@@ -188,7 +236,11 @@ public class ClusterNode extends Endpoint implements Comparable<ClusterNode> {
 		}
 	}
 
-	/** 根据指定 Hash 返回最优节点的 Hash 。
+	/**
+	 * 根据指定散列码返回最优虚拟节点的散列码。
+	 * 
+	 * @param hash 指定需计算的散列码。
+	 * @return 返回被选中的虚拟节点的散列码。
 	 */
 	public Long findVNodeHash(long hash) {
 		synchronized (this) {
@@ -201,7 +253,11 @@ public class ClusterNode extends Endpoint implements Comparable<ClusterNode> {
 		}
 	}
 
-	/** 根据指定 Hash 返回最优虚节点。
+	/**
+	 * 根据指定散列码返回最优虚拟节点。
+	 * 
+	 * @param hash 指定需计算的散列码。
+	 * @return 返回被选中的虚拟节点。
 	 */
 	protected ClusterVirtualNode selectVNode(long hash) {
 		Long vhash = this.findVNodeHash(hash);
@@ -220,7 +276,8 @@ public class ClusterNode extends Endpoint implements Comparable<ClusterNode> {
 		}
 	}
 
-	/** 用二分搜索查找指定 Key 值最佳插入点。
+	/**
+	 * 用二分搜索查找指定 Key 值最佳插入点。
 	 * 按照数据环方式递归遍历列表，按照自然数增序找到指定 Key 的插入位置。
 	 */
 	private int doBinarySearchHash(int low, int high, Long key, Long[] source) {
@@ -278,6 +335,9 @@ public class ClusterNode extends Endpoint implements Comparable<ClusterNode> {
 		return false;
 	}
 
+	/**
+	 * 将当前的虚拟节点按照散列算法插入到表中。
+	 */
 	private void updateVNodeHash() {
 		ArrayList<Long> list = new ArrayList<Long>();
 
@@ -325,4 +385,5 @@ public class ClusterNode extends Endpoint implements Comparable<ClusterNode> {
 
 		list = null;
 	}
+
 }

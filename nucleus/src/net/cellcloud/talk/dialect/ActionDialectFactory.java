@@ -87,11 +87,6 @@ public final class ActionDialectFactory extends DialectFactory {
 			this.dialects.clear();
 			this.delegates.clear();
 		}
-
-		if (null != this.executor) {
-			this.executor.shutdown();
-			this.executor = null;
-		}
 	}
 
 	@Override

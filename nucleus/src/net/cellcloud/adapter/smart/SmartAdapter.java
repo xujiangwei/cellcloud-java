@@ -81,7 +81,7 @@ public class SmartAdapter extends RelationNucleusAdapter {
 	private final int maxListSize = 10000;
 
 	/**
-	 * 构造器。
+	 * 构造函数。
 	 * 
 	 * @param instanceName 指定该适配器的实例名。
 	 */

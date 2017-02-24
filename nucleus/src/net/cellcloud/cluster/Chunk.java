@@ -43,7 +43,7 @@ public class Chunk {
 	private int length;
 
 	/**
-	 * 构造器。
+	 * 构造函数。
 	 * 指定块标签和数据构建数据块。
 	 * 
 	 * @param label 指定标签。
@@ -56,7 +56,7 @@ public class Chunk {
 	}
 
 	/**
-	 * 构造器。
+	 * 构造函数。
 	 * 指定块标签和数据构建数据块。
 	 * 
 	 * @param label 指定标签。

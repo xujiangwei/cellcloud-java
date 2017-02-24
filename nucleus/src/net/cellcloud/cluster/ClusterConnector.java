@@ -75,7 +75,7 @@ public final class ClusterConnector extends Observable implements MessageHandler
 	private ConcurrentHashMap<Long, ProtocolMonitor> monitors;
 
 	/**
-	 * 构造器。
+	 * 构造函数。
 	 * 
 	 * @param address 指定待连接地址。
 	 * @param hashCode 指定目标节点的 Hash 值。

@@ -58,23 +58,37 @@ import org.json.JSONObject;
  */
 public class GatewayService implements Service {
 
+	/** 线程池执行器。 */
 	private ExecutorService executor;
 
+	/** 傀儡 Cellet 对应的沙盒。键为 Cellet 的标识。 */
 	private ConcurrentHashMap<String, CelletSandbox> sandboxes;
 
+	/** 是否使用散列码路由算法。 */
 	private boolean hashRouting = true;
 
+	/** 下位机列表。 */
 	private ArrayList<Slave> slaves;
+	/** 在线的下位机列表。 */
 	private Vector<Slave> onlineSlaves;
 
+	/** 路由表。 */
 	private RoutingTable routingTable;
 
+	/** 代理访问。代理访问通过拦截数据包的方式依据路由表信息来转发数据包。 */
 	private ProxyForwarder forwarder;
 
-	private ConcurrentHashMap<String, PuppetCellet> proxyCelletMap;
+	/** 傀儡 Cellet 映射。 */
+	private ConcurrentHashMap<String, PuppetCellet> puppetCelletMap;
 
+	/** 当前服务器的会话核心。 */
 	protected TalkServiceKernel serverKernel;
 
+	/**
+	 * 构造函数。
+	 * 
+	 * @param sandboxes 与内核共享的沙盒映射。
+	 */
 	public GatewayService(ConcurrentHashMap<String, CelletSandbox> sandboxes) {
 		this.executor = Executors.newCachedThreadPool();
 		this.sandboxes = sandboxes;
@@ -82,23 +96,52 @@ public class GatewayService implements Service {
 		this.onlineSlaves = new Vector<Slave>();
 		this.routingTable = new RoutingTable();
 		this.forwarder = new ProxyForwarder(this.routingTable, this.executor);
-		this.proxyCelletMap = new ConcurrentHashMap<String, PuppetCellet>();
+		this.puppetCelletMap = new ConcurrentHashMap<String, PuppetCellet>();
 	}
 
+	/**
+	 * 添加下位机。
+	 * 
+	 * @param address 指定下位机的访问地址。
+	 * @param celletIdentifiers 指定需要代理的下位机上的 Cellet 标识清单。
+	 */
 	public void addSlave(InetSocketAddress address, List<String> celletIdentifiers) {
 		Slave slave = new Slave(address, celletIdentifiers);
 		this.slaves.add(slave);
 	}
 
+	/**
+	 * 移除下位机。
+	 * 
+	 * @param slave 指定需移除的下位机。
+	 */
 	public void removeSlave(Slave slave) {
 		this.slaves.remove(slave);
-		this.onlineSlaves.remove(slave);
+
+		// 移除在线的下位机
+		if (this.onlineSlaves.remove(slave)) {
+			slave.kernel.shutdown();
+			this.routingTable.remove(slave);
+		}
 	}
 
+	/**
+	 * 设置 Talk 服务核心。
+	 * 
+	 * @param kernel 指定 Talk 服务核心。
+	 */
 	public void setTalkServiceKernel(TalkServiceKernel kernel) {
 		this.serverKernel = kernel;
 	}
 
+	/**
+	 * 设置路由规则。
+	 * <p>
+	 * 支持的规则有 "Hash" 和 "Balance" 两种。
+	 * "Hash" 规则通过计算终端的散列码建立路由，"Balance" 规则通过平衡每个下位机的连接数建立路由。
+	 * 
+	 * @param rule 指定规则。
+	 */
 	public void setRoutingRule(String rule) {
 		if (rule.equalsIgnoreCase("Hash")) {
 			this.hashRouting = true;
@@ -108,6 +151,9 @@ public class GatewayService implements Service {
 		}
 	}
 
+	/**
+	 * {@inheritDoc}
+	 */
 	@Override
 	public boolean startup() {
 		if (this.slaves.isEmpty()) {
@@ -129,18 +175,26 @@ public class GatewayService implements Service {
 			if (slave.kernel.call(slave.celletIdentifiers, slave.address, capacity)) {
 				// 设置代理监听器
 				slave.kernel.getSpeaker(slave.celletIdentifiers.get(0)).setProxyListener(slave.listener);
+
+				// 创建对应的 Cellet 傀儡
+				for (String identifier : slave.celletIdentifiers) {
+					this.getCellet(identifier);
+				}
+
+				Logger.i(this.getClass(), "Gateway slave: " + slave.address.getHostString() + ":" + slave.address.getPort());
 			}
 			else {
 				Logger.e(this.getClass(), "Call cellets failed: " + slave.address.getHostString() + ":"
 						+ slave.address.getPort() + " - " + slave.celletIdentifiers.toString());
 			}
-
-			Logger.i(this.getClass(), "Gateway slave: " + slave.address.getHostString() + ":" + slave.address.getPort());
 		}
 
 		return true;
 	}
 
+	/**
+	 * {@inheritDoc}
+	 */
 	@Override
 	public void shutdown() {
 		for (int i = 0; i < this.slaves.size(); ++i) {
@@ -152,13 +206,19 @@ public class GatewayService implements Service {
 		this.slaves.clear();
 		this.onlineSlaves.clear();
 		this.routingTable.clear();
-		this.proxyCelletMap.clear();
+		this.puppetCelletMap.clear();
 
 		this.executor.shutdown();
 	}
 
-	protected synchronized Cellet getCellet(String identifier) {
-		PuppetCellet cellet = this.proxyCelletMap.get(identifier);
+	/**
+	 * 获得指定标识的 Cellet 。
+	 * 
+	 * @param identifier 指定 Cellet 的标识。
+	 * @return 返回 Cellet 实例。
+	 */
+	protected Cellet getCellet(String identifier) {
+		PuppetCellet cellet = this.puppetCelletMap.get(identifier);
 		if (null == cellet) {
 			cellet = this.createCellet(identifier);
 			// 创建沙箱
@@ -170,16 +230,32 @@ public class GatewayService implements Service {
 			}
 			this.sandboxes.put(identifier, sandbox);
 			// 添加 Cellet
-			this.proxyCelletMap.put(identifier.toString(), cellet);
+			this.puppetCelletMap.put(identifier.toString(), cellet);
+
+			Logger.i(this.getClass(), "Create puppet cellet: " + identifier);
 		}
 
 		return cellet;
 	}
 
+	/**
+	 * 获得指定 Cellet 标识的沙盒。
+	 * 
+	 * @param identifier 指定 Cellet 标识。
+	 * @return 返回 Cellet 对应的沙盒。
+	 */
 	protected CelletSandbox getSandbox(String identifier) {
 		return this.sandboxes.get(identifier);
 	}
 
+	/**
+	 * 更新路由信息。
+	 * 
+	 * @param session 指定需更新的会话。
+	 * @param tag 指定会话对应的内核标签。
+	 * @param identifier 指定该会话需要访问的 Cellet 标识。
+	 * @return 返回指定 Cellet 标识的 Cellet 实例。
+	 */
 	public Cellet updateRouting(Session session, String tag, String identifier) {
 		if (this.onlineSlaves.isEmpty()) {
 			Logger.e(this.getClass(), "No online slave to working.");
@@ -244,7 +320,7 @@ public class GatewayService implements Service {
 	/**
 	 * 添加在线工作的下位节点。
 	 * 
-	 * @param slave
+	 * @param slave 指定需添加的下位机。
 	 */
 	protected void addOnlineSlave(Slave slave) {
 		if (this.onlineSlaves.contains(slave)) {
@@ -258,7 +334,7 @@ public class GatewayService implements Service {
 	/**
 	 * 移除在线工作的下位节点。
 	 * 
-	 * @param slave
+	 * @param slave 指定需移除的下位机。
 	 */
 	protected void removeOnlineSlave(Slave slave) {
 		slave.state = SlaveState.Offline;
@@ -266,6 +342,12 @@ public class GatewayService implements Service {
 		slave.clear();
 	}
 
+	/**
+	 * 创建指定标识的傀儡 Cellet 。
+	 * 
+	 * @param identifier 指定标识。
+	 * @return 返回 Cellet 实例。
+	 */
 	private PuppetCellet createCellet(String identifier) {
 		CelletVersion version = new CelletVersion(1, 0, 0);
 		PuppetCellet cellet = new PuppetCellet(new CelletFeature(identifier.toString(), version));
@@ -277,14 +359,26 @@ public class GatewayService implements Service {
 	 */
 	public class Slave {
 
+		/** 下位机使用的 Talk 核心。 */
 		public TalkServiceKernel kernel;
+		/** 下位机的目标地址。 */
 		public InetSocketAddress address;
+		/** 目标 Cellet 列表。 */
 		public ArrayList<String> celletIdentifiers;
+		/** Talk 监听器。 */
 		public ProxyTalkListener listener;
+		/** 状态。 */
 		public SlaveState state = SlaveState.Unknown;
 
+		/** 下位机运行时会话列表。键为会话对应的内核标签。 */
 		private ConcurrentHashMap<String, Session> runtimeSessions;
 
+		/**
+		 * 构造函数。
+		 * 
+		 * @param address 指定目标地址。
+		 * @param celletIdentifiers 指定需要请求的 Cellet 清单。
+		 */
 		public Slave(InetSocketAddress address, List<String> celletIdentifiers) {
 			this.kernel = new TalkServiceKernel(null);
 			this.address = address;
@@ -295,6 +389,12 @@ public class GatewayService implements Service {
 			this.runtimeSessions = new ConcurrentHashMap<String, Session>();
 		}
 
+		/**
+		 * 添加被管理的会话。
+		 * 
+		 * @param tag 指定会话的内核标签。
+		 * @param session 指定会话实例。
+		 */
 		public void addSession(String tag, Session session) {
 			this.runtimeSessions.put(tag, session);
 		}

@@ -64,23 +64,31 @@ import net.cellcloud.util.Utils;
  */
 public final class ClusterNetwork extends Observable implements Service, MessageHandler {
 
+	/** 物理节点网络访问主机名或地址。 */
 	private String hostname = "127.0.0.1";
+	/** 物理节点网络访问端口。 */
 	private int port = 11099;
+	/** 线程池。 */
 	private ExecutorService executor;
 
+	/** 非阻塞接收器。 */
 	private NonblockingAcceptor acceptor;
+	/** 数据缓冲区大小。 */
 	private final int bufferSize = 8192;
 
+	/** 是否中断本地网络。 */
 	private boolean interrupted = false;
-	// 是否正在扫描可用地址
+	/** 是否正在扫描可用地址。 */
 	private boolean scanReachable = false;
 
 	private ConcurrentHashMap<Long, Queue<byte[]>> sessionMessageCache;
 
 	/**
-	 * 构造器。
+	 * 构造函数。
 	 * 
-	 * 
+	 * @param hostname 指定本机访问名或地址。
+	 * @param preferredPort 指定本地优先监听端口。
+	 * @param executor 指定线程池执行器。
 	 */
 	public ClusterNetwork(String hostname, int preferredPort, ExecutorService executor) {
 		this.hostname = hostname;
@@ -89,6 +97,9 @@ public final class ClusterNetwork extends Observable implements Service, Message
 		this.sessionMessageCache = new ConcurrentHashMap<Long, Queue<byte[]>>();
 	}
 
+	/**
+	 * {@inheritDoc}
+	 */
 	@Override
 	public boolean startup() {
 		if (null != this.acceptor) {
@@ -118,6 +129,9 @@ public final class ClusterNetwork extends Observable implements Service, Message
 		return true;
 	}
 
+	/**
+	 * {@inheritDoc}
+	 */
 	@Override
 	public void shutdown() {
 		this.interrupted = true;
@@ -131,14 +145,18 @@ public final class ClusterNetwork extends Observable implements Service, Message
 	}
 
 	/**
-	 * 返回绑定地址。
+	 * 获得绑定地址。
+	 * 
+	 * @return 返回绑定地址。
 	 */
 	public InetSocketAddress getBindAddress() {
 		return this.acceptor.getBindAddress();
 	}
 
 	/**
-	 * 返回监听端口。
+	 * 获得监听端口。
+	 * 
+	 * @return 返回监听端口。
 	 */
 	public int getPort() {
 		return this.port;
@@ -146,6 +164,9 @@ public final class ClusterNetwork extends Observable implements Service, Message
 
 	/**
 	 * 阻塞模式检测可用的端口号。
+	 * 
+	 * @param port 指定起始检测端口。
+	 * @return 返回本机可用的端口号。
 	 */
 	private int detectUsablePort(int port) {
 		ServerSocket socket = null;
@@ -234,7 +255,11 @@ public final class ClusterNetwork extends Observable implements Service, Message
 		// Nothing
 	}
 
-	/** 处理解析后的数据。
+	/**
+	 * 处理解析后的数据。
+	 * 
+	 * @param session
+	 * @param buffer
 	 */
 	private void process(Session session, ByteBuffer buffer) {
 		byte[] bytes = new byte[buffer.limit()];
@@ -309,7 +334,10 @@ public final class ClusterNetwork extends Observable implements Service, Message
 		}
 	}
 
-	/** 分发协议。
+	/**
+	 * 分发协议。将协议通知观察者。
+	 * 
+	 * @param protocol 指定协议。
 	 */
 	private void distribute(ClusterProtocol protocol) {
 		this.setChanged();
@@ -317,7 +345,11 @@ public final class ClusterNetwork extends Observable implements Service, Message
 		this.clearChanged();
 	}
 
-	/** 处理消息。
+	/**
+	 * 处理消息。
+	 * 
+	 * @param session
+	 * @param message
 	 */
 	private ByteBuffer parseMessage(Session session, Message message) {
 		byte[] data = message.get();
@@ -362,6 +394,11 @@ public final class ClusterNetwork extends Observable implements Service, Message
 		}
 	}
 
+	/**
+	 * 清空指定会话的消息队列。
+	 * 
+	 * @param session 指定待清空的会话。
+	 */
 	private void clearMessage(Session session) {
 		Queue<byte[]> queue = this.sessionMessageCache.get(session.getId());
 		if (null != queue) {
@@ -370,7 +407,10 @@ public final class ClusterNetwork extends Observable implements Service, Message
 		}
 	}
 
-	/** 扫描可用地址。
+	/**
+	 * 扫描网段内可用的 IP 地址。
+	 * 
+	 * @return 返回 IP 地址列表。
 	 */
 	private List<InetAddress> scanReachableAddress() {
 		ArrayList<InetAddress> result = new ArrayList<InetAddress>();
@@ -460,4 +500,5 @@ public final class ClusterNetwork extends Observable implements Service, Message
 
 		return result;
 	}
+
 }

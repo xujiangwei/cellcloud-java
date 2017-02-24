@@ -61,7 +61,7 @@ public class Feedback {
 	private ConcurrentHashMap<Endpoint, AtomicInteger> negativeMap;
 
 	/**
-	 * 构造器。
+	 * 构造函数。
 	 * 
 	 * @param keyword 指定关联的关键字。
 	 */

@@ -31,7 +31,8 @@ import net.cellcloud.talk.Primitive;
 /**
  * 抽象 Cellet 单元。
  * 
- * @author Jiangwei Xu
+ * @author Ambrose Xu
+ * 
  */
 public abstract class AbstractCellet {
 

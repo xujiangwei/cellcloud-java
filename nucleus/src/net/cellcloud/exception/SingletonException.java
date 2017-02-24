@@ -2,7 +2,7 @@
 -----------------------------------------------------------------------------
 This source file is part of Cell Cloud.
 
-Copyright (c) 2009-2012 Cell Cloud Team (www.cellcloud.net)
+Copyright (c) 2009-2017 Cell Cloud Team (www.cellcloud.net)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -26,15 +26,15 @@ THE SOFTWARE.
 
 package net.cellcloud.exception;
 
-/** 单例异常。
+/**
+ * 单例异常。
  * 
- * @author Jiangwei Xu
+ * @author Ambrose Xu
+ * 
  */
 public final class SingletonException extends Exception {
 
-	/**
-	 */
-	private static final long serialVersionUID = 971580953548687836L;
+	private static final long serialVersionUID = 1L;
 
 	private String className;
 
@@ -46,4 +46,5 @@ public final class SingletonException extends Exception {
 	public String getMessage() {
 		return "Singleton object don't duplicate instance : " + this.className;
 	}
+
 }

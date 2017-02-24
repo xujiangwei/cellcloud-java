@@ -2,7 +2,7 @@
 -----------------------------------------------------------------------------
 This source file is part of Cell Cloud.
 
-Copyright (c) 2009-2012 Cell Cloud Team (www.cellcloud.net)
+Copyright (c) 2009-2017 Cell Cloud Team (www.cellcloud.net)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -26,15 +26,18 @@ THE SOFTWARE.
 
 package net.cellcloud.exception;
 
-/** 沙盒异常。
+/**
+ * 沙盒异常。
  * 
- * @author Jiangwei Xu
+ * @author Ambrose Xu
+ * 
  */
 public final class CelletSandboxException extends Exception {
 
-	private static final long serialVersionUID = 2867593842476104763L;
+	private static final long serialVersionUID = 1L;
 
 	public CelletSandboxException(String message) {
 		super(message);
 	}
+
 }

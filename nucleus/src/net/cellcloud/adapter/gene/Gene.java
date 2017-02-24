@@ -69,7 +69,7 @@ public class Gene {
 	public final static String EOP = "EOP";
 
 	/**
-	 * 构造器。
+	 * 构造函数。
 	 * 
 	 * @param name 指定数据名。
 	 */
@@ -78,7 +78,7 @@ public class Gene {
 	}
 
 	/**
-	 * 构造器。
+	 * 构造函数。
 	 * 
 	 * @param name 指定数据名
 	 * @param payload 指定数据负载内容。

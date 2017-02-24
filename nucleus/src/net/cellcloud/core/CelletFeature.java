@@ -2,7 +2,7 @@
 -----------------------------------------------------------------------------
 This source file is part of Cell Cloud.
 
-Copyright (c) 2009-2012 Cell Cloud Team (www.cellcloud.net)
+Copyright (c) 2009-2017 Cell Cloud Team (www.cellcloud.net)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -26,33 +26,53 @@ THE SOFTWARE.
 
 package net.cellcloud.core;
 
-/** Cellet 特性描述。
+/**
+ * Cellet 特性描述。
  * 
- * @author Jiangwei Xu
+ * @author Ambrose Xu
+ * 
  */
 public final class CelletFeature {
 
-	/// 服务标识
+	/**
+	 * 服务标识。内核识别 Cellet 的唯一标识。
+	 */
 	private String identifier;
+
+	/**
+	 * 版本描述。
+	 */
 	private CelletVersion version;
 
-	/** 构造函数。
+	/**
+	 * 构造函数。
+	 * 
+	 * @param identifier 指定标识。
+	 * @param version 指定版本。
 	 */
 	public CelletFeature(String identifier, CelletVersion version) {
 		this.identifier = identifier;
 		this.version = version;
 	}
 
-	/** 返回 Cellet 服务标识。
+	/**
+	 * 获得 Cellet 服务标识。
+	 * 
 	 * 服务标识唯一标识网络中的 Cellet 服务集群。
+	 * 
+	 * @return 返回字符串形式的标识。
 	 */
 	public String getIdentifier() {
 		return this.identifier;
 	}
 
-	/** 返回 Cellet 版本。
+	/**
+	 * 获得 Cellet 版本。
+	 * 
+	 * @return 返回 Cellet 版本。
 	 */
 	public CelletVersion getVersion() {
 		return this.version;
 	}
+
 }

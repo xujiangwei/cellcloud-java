@@ -68,7 +68,7 @@ public abstract class ClusterProtocol {
 	private Map<String, Object> prop;
 
 	/**
-	 * 构造器。
+	 * 构造函数。
 	 * 
 	 * @param name 指定协议名构建协议。
 	 */
@@ -78,7 +78,7 @@ public abstract class ClusterProtocol {
 	}
 
 	/**
-	 * 构造器。
+	 * 构造函数。
 	 * 
 	 * @param name 指定协议名构建协议。
 	 * @param prop 指定协议属性。

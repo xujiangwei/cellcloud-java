@@ -26,6 +26,7 @@ THE SOFTWARE.
 
 package net.cellcloud.gateway;
 
+import java.util.Iterator;
 import java.util.Vector;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -63,6 +64,16 @@ public class RoutingTable {
 
 	public Record remove(Session session) {
 		return this.sessionRecordMap.remove(session.getId());
+	}
+
+	public void remove(Slave slave) {
+		Iterator<Record> iter = this.sessionRecordMap.values().iterator();
+		while (iter.hasNext()) {
+			Record record = iter.next();
+			if (record.slave == slave) {
+				iter.remove();
+			}
+		}
 	}
 
 	public Slave querySlave(Session session) {

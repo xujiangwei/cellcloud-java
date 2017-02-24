@@ -176,7 +176,7 @@ public abstract class RelationNucleusAdapter implements Adapter {
 	private final static String sHeartbeat = "CellCloudHeartbeat";
 
 	/**
-	 * 构造器。
+	 * 构造函数。
 	 * 构建指定名称的适配器。
 	 * 
 	 * @param name 指定适配器的名称。
@@ -895,7 +895,7 @@ public abstract class RelationNucleusAdapter implements Adapter {
 		private String socketString;
 
 		/**
-		 * 构造器。
+		 * 构造函数。
 		 * 
 		 * @param socket 指定 Socket 句柄。
 		 */
@@ -1105,7 +1105,7 @@ public abstract class RelationNucleusAdapter implements Adapter {
 	private class QuotaCallback implements QuotaCalculatorCallback {
 
 		/**
-		 * 构造器。
+		 * 构造函数。
 		 */
 		public QuotaCallback() {
 		}

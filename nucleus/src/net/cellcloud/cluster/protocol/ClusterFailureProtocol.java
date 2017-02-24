@@ -49,7 +49,7 @@ public class ClusterFailureProtocol extends ClusterProtocol {
 	protected ClusterProtocol protocol;
 
 	/**
-	 * 构造器。
+	 * 构造函数。
 	 * 
 	 * @param failure
 	 * @param protocol

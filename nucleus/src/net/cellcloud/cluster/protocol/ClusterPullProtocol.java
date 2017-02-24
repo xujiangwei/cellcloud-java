@@ -66,7 +66,7 @@ public class ClusterPullProtocol extends ClusterProtocol {
 	private Chunk chunk = null;
 
 	/**
-	 * 构造器。
+	 * 构造函数。
 	 * 
 	 * @param targetHash 指定目标虚拟节点 Hash 值。
 	 * @param chunkLabel 指定拉取数据的标签。
@@ -78,7 +78,7 @@ public class ClusterPullProtocol extends ClusterProtocol {
 	}
 
 	/**
-	 * 构造器。
+	 * 构造函数。
 	 * 
 	 * @param prop 指定协议的参数映射。
 	 */

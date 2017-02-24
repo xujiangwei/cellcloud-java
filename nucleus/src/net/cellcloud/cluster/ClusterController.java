@@ -35,6 +35,7 @@ import java.util.Observer;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutorService;
 
 import net.cellcloud.cluster.protocol.ClusterDiscoveringProtocol;
 import net.cellcloud.cluster.protocol.ClusterFailureProtocol;
@@ -60,7 +61,7 @@ public final class ClusterController implements Service, Observer {
 	/** 定时任务定时器。 */
 	private Timer timer;
 	/** 滑窗算法执行器。 */
-	protected SlidingWindowExecutor executor;
+	protected ExecutorService executor;
 
 	/** 集群地址列表。 */
 	private ArrayList<InetSocketAddress> addressList;
@@ -81,7 +82,7 @@ public final class ClusterController implements Service, Observer {
 	public boolean autoScanNetwork = false;
 
 	/**
-	 * 构造器。
+	 * 构造函数。
 	 * 
 	 * @param hostname 指定本机名。
 	 * @param preferredPort 指定优先使用的端口。
@@ -529,7 +530,7 @@ public final class ClusterController implements Service, Observer {
 		else if (protocol instanceof ClusterFailureProtocol) {
 			// 故障处理
 			this.closeAndDestroyConnector(connector);
-			// TODO
+			// TODO 故障处理，将故障节点移除
 		}
 	}
 

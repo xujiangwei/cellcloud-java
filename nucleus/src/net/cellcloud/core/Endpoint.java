@@ -2,7 +2,7 @@
 -----------------------------------------------------------------------------
 This source file is part of Cell Cloud.
 
-Copyright (c) 2009-2012 Cell Cloud Team (www.cellcloud.net)
+Copyright (c) 2009-2017 Cell Cloud Team (www.cellcloud.net)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -26,29 +26,36 @@ THE SOFTWARE.
 
 package net.cellcloud.core;
 
-
-/** 终端节点。
+/**
+ * 终端节点。
  * 
- * @author Jiangwei Xu
+ * @author Ambrose Xu
+ * 
  */
 public class Endpoint {
 
+	/** 访问地址。 */
 	private String host;
+	/** 访问端口。 */
 	private int port;
 
+	/** 终端的内核标签。 */
 	private NucleusTag tag;
+	/** 终端的角色。 */
 	private Role role;
 
 	private int hashCode = 0;
 
-	/** 构造函数。
+	/**
+	 * 构造函数。
 	 */
 	public Endpoint(String host, int port) {
 		this.host = host;
 		this.port = port;
 	}
 
-	/** 构造函数。
+	/**
+	 * 构造函数。
 	 */
 	public Endpoint(String tag, Role role, String host, int port) {
 		this.tag = new NucleusTag(tag);
@@ -57,7 +64,8 @@ public class Endpoint {
 		this.port = port;
 	}
 
-	/** 构造函数。
+	/**
+	 * 构造函数。
 	 */
 	public Endpoint(NucleusTag tag, Role role, String host, int port) {
 		this.tag = tag;
@@ -66,30 +74,47 @@ public class Endpoint {
 		this.port = port;
 	}
 
-	/** 返回访问地址。
+	/**
+	 * 获得访问地址。
+	 * 
+	 * @return 返回访问地址。
 	 */
 	public String getHost() {
 		return this.host;
 	}
 
-	/** 返回访问端口。
+	/**
+	 * 获得访问端口。
+	 * 
+	 * @return 返回访问端口。
 	 */
 	public int getPort() {
 		return this.port;
 	}
 
-	/** 返回终端标签。
+	/**
+	 * 获得终端标签。
+	 * 
+	 * @return 返回终端的内核标签。
 	 */
 	public NucleusTag getTag() {
 		return this.tag;
 	}
 
-	/** 返回终端角色。
+	/**
+	 * 获得终端角色。
+	 * 
+	 * @return 返回终端角色。
 	 */
 	public Role getRole() {
 		return this.role;
 	}
 
+	/**
+	 * 设置终端的内核标签。
+	 * 
+	 * @param tag 指定内核标签。
+	 */
 	public void setTag(NucleusTag tag) {
 		this.tag = tag;
 	}

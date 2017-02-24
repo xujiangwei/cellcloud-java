@@ -39,6 +39,7 @@ import java.util.Vector;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentSkipListSet;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 import net.cellcloud.common.Cryptology;
 import net.cellcloud.common.LogLevel;
@@ -84,7 +85,6 @@ import net.cellcloud.talk.speaker.Speaker;
 import net.cellcloud.talk.speaker.SpeakerDelegate;
 import net.cellcloud.talk.stuff.PrimitiveSerializer;
 import net.cellcloud.talk.stuff.StuffVersion;
-import net.cellcloud.util.CachedQueueExecutor;
 import net.cellcloud.util.Clock;
 import net.cellcloud.util.Utils;
 
@@ -174,7 +174,7 @@ public final class TalkServiceKernel implements Service, SpeakerDelegate {
 	 */
 	public TalkServiceKernel(NucleusContext nucleusContext) {
 		if (null != nucleusContext) {
-			nucleusContext.talkServiceKernel = this;
+			nucleusContext.talkKernel = this;
 			this.nucleusContext = nucleusContext;
 		}
 
@@ -196,7 +196,7 @@ public final class TalkServiceKernel implements Service, SpeakerDelegate {
 		this.httpSessionTimeout = 30L * 60L * 1000L;
 
 		// 创建执行器
-		this.executor = CachedQueueExecutor.newCachedQueueThreadPool(8);
+		this.executor = Executors.newCachedThreadPool();
 
 		this.callbackListener = DialectEnumerator.getInstance();
 		this.delegate = DialectEnumerator.getInstance();

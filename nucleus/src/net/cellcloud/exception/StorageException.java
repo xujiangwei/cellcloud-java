@@ -2,7 +2,7 @@
 -----------------------------------------------------------------------------
 This source file is part of Cell Cloud.
 
-Copyright (c) 2009-2012 Cell Cloud Team (www.cellcloud.net)
+Copyright (c) 2009-2017 Cell Cloud Team (www.cellcloud.net)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -26,15 +26,18 @@ THE SOFTWARE.
 
 package net.cellcloud.exception;
 
-/** 存储器异常。
+/**
+ * 存储器异常。
  * 
- * @author Jiangwei Xu
+ * @author Ambrose Xu
+ * 
  */
 public class StorageException extends Exception {
 
-	private static final long serialVersionUID = 5477926015926056716L;
+	private static final long serialVersionUID = 1L;
 
 	public StorageException(String message) {
 		super(message);
 	}
+
 }

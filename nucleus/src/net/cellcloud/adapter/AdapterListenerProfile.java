@@ -51,7 +51,7 @@ public class AdapterListenerProfile {
 	public String instanceName;
 
 	/**
-	 * 构造器。
+	 * 构造函数。
 	 * 
 	 * @param listener 指定适配器监听器。
 	 * @param instanceName 指定监听器对应的适配器实例名。

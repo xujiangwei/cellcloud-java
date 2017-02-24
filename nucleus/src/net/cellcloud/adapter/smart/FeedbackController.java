@@ -81,7 +81,7 @@ public class FeedbackController extends TimerTask {
 	private Timer timer;
 
 	/**
-	 * 构造器。
+	 * 构造函数。
 	 */
 	public FeedbackController() {
 		this.feedbackMap = new ConcurrentHashMap<String, Feedback>();

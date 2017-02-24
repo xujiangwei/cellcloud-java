@@ -166,7 +166,7 @@ public final class Nucleus {
 	private ArrayList<AdapterListenerProfile> tempAdapterListeners = null;
 
 	/**
-	 * 构造器。
+	 * 构造函数。
 	 * 
 	 * @param config 指定配置信息。
 	 */
@@ -198,7 +198,7 @@ public final class Nucleus {
 	 * 创建实例。
 	 * 
 	 * @param config 配置文件。
-	 * @return
+	 * @return 返回内核对象实例。
 	 * @throws SingletonException
 	 */
 	public static Nucleus createInstance(NucleusConfig config)
@@ -206,39 +206,55 @@ public final class Nucleus {
 		return new Nucleus(config);
 	}
 
-	/** 返回单例。
+	/**
+	 * 获得内核的实例。
 	 *
-	 * @return
+	 * @return 返回内核的实例。
 	 */
 	public static Nucleus getInstance() {
 		return Nucleus.instance;
 	}
 
-	/** 返回内核标签。
+	/**
+	 * 获得内核标签。
+	 * 
+	 * @return 返回内核标签。
 	 */
 	public NucleusTag getTag() {
 		return this.tag;
 	}
 
-	/** 返回内核标签。
+	/**
+	 * 获得字符串形式的内核标签。
+	 * 
+	 * @return 返回内核标签的字符串形式。
 	 */
 	public String getTagAsString() {
 		return this.tag.asString();
 	}
 
-	/** 返回配置信息实例。
+	/**
+	 * 获得配置信息。
+	 * 
+	 * @return 返回配置信息实例。
 	 */
 	public NucleusConfig getConfig() {
 		return this.config;
 	}
 
-	/** 返回集群控制器实例。
+	/**
+	 * 获得集群控制器。
+	 * 
+	 * @return 返回集群控制器实例。
 	 */
 	public ClusterController getClusterController() {
 		return this.clusterController;
 	}
 
-	/** 返回 Talk Service 实例。
+	/**
+	 * 获得 Talk 服务。
+	 * 
+	 * @return 返回 Talk 服务实例。
 	 */
 	public TalkService getTalkService() {
 		return this.talkService;
@@ -247,13 +263,14 @@ public final class Nucleus {
 	/**
 	 * 获得网关服务。
 	 * 
-	 * @return
+	 * @return 返回网关服务实例。
 	 */
 	public GatewayService getGatewayService() {
 		return this.gatewayService;
 	}
 
-	/** 启动内核。
+	/**
+	 * 启动内核。
 	 * 
 	 * @return 如果返回 <code>true</code> 表示启动成功，否则表示启动失败。
 	 */
@@ -419,7 +436,7 @@ public final class Nucleus {
 				}
 
 				// 设置 talk kernel
-				this.gatewayService.setTalkServiceKernel(this.context.talkServiceKernel);
+				this.gatewayService.setTalkServiceKernel(this.context.talkKernel);
 
 				if (this.gatewayService.startup()) {
 					Logger.i(Nucleus.class, "Starting gateway service success.");
@@ -450,7 +467,8 @@ public final class Nucleus {
 		return true;
 	}
 
-	/** 关停内核。
+	/**
+	 * 关停内核，停止所有服务。
 	 */
 	public void shutdown() {
 		if (!this.working.get()) {
@@ -504,11 +522,12 @@ public final class Nucleus {
 		Clock.stop();
 	}
 
-	/** 返回注册在该内核上的指定的 Cellet 。
+	/**
+	 * 获得注册在该内核上的指定的 Cellet 。
 	 * 
-	 * @param identifier
-	 * @param context
-	 * @return
+	 * @param identifier 指定 Cellet 标识。
+	 * @param context 指定内核上下文。
+	 * @return 返回 Cellet 实例。
 	 */
 	public Cellet getCellet(String identifier, NucleusContext context) {
 		if (null == this.cellets) {
@@ -522,10 +541,11 @@ public final class Nucleus {
 		return null;
 	}
 
-	/** 返回注册在该内核上的指定的 Cellet 。
+	/**
+	 * 获得注册在该内核上的指定的 Cellet 。
 	 * 
-	 * @param identifier
-	 * @return
+	 * @param identifier 指定 Cellet 标识。
+	 * @return 返回 Cellet 实例。
 	 */
 	public Cellet getCellet(String identifier) {
 		if (null == this.cellets) {
@@ -535,10 +555,11 @@ public final class Nucleus {
 		return this.cellets.get(identifier);
 	}
 
-	/** 载入 Cellet JAR 包信息。
+	/**
+	 * 载入 Cellet JAR 包信息。
 	 * 
-	 * @param jarFile
-	 * @param classes
+	 * @param jarFile 指定 Jar 文件名。
+	 * @param classes 指定实现 Cellet 的完整类名列表。
 	 */
 	public void prepareCelletJar(String jarFile, List<String> classes) {
 		if (null == this.celletJarClasses) {
@@ -548,10 +569,11 @@ public final class Nucleus {
 		this.celletJarClasses.put(jarFile, classes);
 	}
 
-	/** 载入 Cellet class 路径信息。
+	/**
+	 * 载入 Cellet class 路径信息。
 	 * 
-	 * @param path
-	 * @param classes
+	 * @param path 指定 Class 文件所在的目录。
+	 * @param classes 指定实现 Cellet 的完整类名列表。
 	 */
 	public void prepareCelletPath(String path, List<String> classes) {
 		if (null == this.celletPathClasses) {
@@ -561,9 +583,10 @@ public final class Nucleus {
 		this.celletPathClasses.put(path, classes);
 	}
 
-	/** 注册 Cellet 。
+	/**
+	 * 向内核注册 Cellet 。
 	 * 
-	 * @param cellet
+	 * @param cellet 指定需注册的 Cellet 。
 	 */
 	public void registerCellet(Cellet cellet) {
 		if (null == this.cellets) {
@@ -573,9 +596,10 @@ public final class Nucleus {
 		this.cellets.put(cellet.getFeature().getIdentifier(), cellet);
 	}
 
-	/** 注销 Cellet 。
+	/**
+	 * 从内核注销 Cellet 。
 	 * 
-	 * @param cellet
+	 * @param cellet 指定需注销的 Cellet 。
 	 */
 	public void unregisterCellet(Cellet cellet) {
 		if (null == this.cellets) {
@@ -585,9 +609,10 @@ public final class Nucleus {
 		this.cellets.remove(cellet.getFeature().getIdentifier());
 	}
 
-	/** 返回所有 Cellet 的 Feature 列表。
+	/**
+	 * 获得所有 Cellet 的 Feature 列表。
 	 *
-	 * @return
+	 * @return 返回所有 Cellet 的 Feature 列表。
 	 */
 	public List<CelletFeature> getCelletFeatures() {
 		if (null == this.cellets) {
@@ -601,9 +626,13 @@ public final class Nucleus {
 		return list;
 	}
 
-	/** 查询并返回内核上下文。
+	/**
+	 * 校验 Cellet 与沙盒是否匹配。
+	 * 
+	 * @param cellet 指定 Cellet 。
+	 * @param sandbox 指定沙盒。
 	 */
-	public boolean checkSandbox(final Cellet cellet, final CelletSandbox sandbox) {
+	public boolean checkSandbox(Cellet cellet, CelletSandbox sandbox) {
 		if (null == this.sandboxes) {
 			return false;
 		}
@@ -624,9 +653,11 @@ public final class Nucleus {
 		}
 	}
 
-	/** 返回指定实例名的适配器。
+	/**
+	 * 获得指定实例名的适配器。
 	 * 
 	 * @param instanceName
+	 * @return 返回实例名的适配器。
 	 */
 	public Adapter getAdapter(String instanceName) {
 		if (null != this.adapters) {
@@ -636,9 +667,11 @@ public final class Nucleus {
 		return null;
 	}
 
-	/** 添加适配器。支持热拔插。
+	/**
+	 * 添加适配器。
+	 * 支持热拔插。
 	 * 
-	 * @param adapter
+	 * @param adapter 指定需添加的适配器。
 	 */
 	public void addAdapter(Adapter adapter) {
 		if (null == this.adapters) {
@@ -652,9 +685,11 @@ public final class Nucleus {
 		}
 	}
 
-	/** 移除适配器。支持热拔插。
+	/**
+	 * 移除适配器。
+	 * 支持热拔插。
 	 * 
-	 * @param adapter
+	 * @param adapter 指定需移除的适配器。
 	 */
 	public void removeAdapter(Adapter adapter) {
 		if (null == this.adapters) {
@@ -668,9 +703,10 @@ public final class Nucleus {
 		}
 	}
 
-	/** 返回内核实时快照。
+	/**
+	 * 获得内核实时快照。
 	 * 
-	 * @return
+	 * @return 返回内核快照实例。
 	 */
 	public NucleusSnapshoot snapshoot() {
 		NucleusSnapshoot snapshoot = new NucleusSnapshoot();
@@ -690,12 +726,13 @@ public final class Nucleus {
 		return snapshoot;
 	}
 
-	/** 为启动 Cellet 进行准备操作。
+	/**
+	 * 为启动 Cellet 进行准备操作。
 	 * 
-	 * @param cellet
-	 * @param sandbox
+	 * @param cellet 指定 Cellet 。
+	 * @param sandbox 指定 Cellet 对应的沙盒。
 	 */
-	protected synchronized void prepareCellet(Cellet cellet, CelletSandbox sandbox) {
+	protected void prepareCellet(Cellet cellet, CelletSandbox sandbox) {
 		if (null == this.sandboxes) {
 			this.sandboxes = new ConcurrentHashMap<String, CelletSandbox>();
 		}
@@ -715,7 +752,8 @@ public final class Nucleus {
 		}
 	}
 
-	/** 加载外部 Jar 文件，实例化 Cellet
+	/**
+	 * 加载外部 Jar 文件，实例化 Cellet 。
 	 */
 	private void loadExternalJar() {
 		if (null == this.celletJarClasses) {
@@ -830,7 +868,8 @@ public final class Nucleus {
 		}
 	}
 
-	/** 加载外部 class 路径，实例化 Cellet
+	/**
+	 * 加载外部 class 文件路径，实例化 Cellet 。
 	 */
 	private void loadExternalPath() {
 		if (null == this.celletPathClasses) {
@@ -952,6 +991,11 @@ public final class Nucleus {
 		}
 	}
 
+	/**
+	 * 分析指定的类文件。对注解进行分析并执行相关逻辑。
+	 * 
+	 * @param clazz 指定类的实例。
+	 */
 	private void analyzeClass(Class<?> clazz) {
 		if (null == this.tempAdapterListeners) {
 			this.tempAdapterListeners = new ArrayList<AdapterListenerProfile>();
@@ -963,7 +1007,8 @@ public final class Nucleus {
 		}
 	}
 
-	/** 启动所有 Cellets
+	/**
+	 * 启动所有 Cellet 。
 	 */
 	private void activateCellets() {
 		if (null != this.cellets && !this.cellets.isEmpty()) {
@@ -983,7 +1028,8 @@ public final class Nucleus {
 		}
 	}
 
-	/** 停止所有 Cellets
+	/**
+	 * 停止所有 Cellet 。
 	 */
 	private void deactivateCellets() {
 		if (null != this.cellets && !this.cellets.isEmpty()) {
@@ -997,4 +1043,5 @@ public final class Nucleus {
 			}
 		}
 	}
+
 }

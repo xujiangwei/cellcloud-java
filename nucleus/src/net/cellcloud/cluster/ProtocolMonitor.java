@@ -2,7 +2,7 @@
 -----------------------------------------------------------------------------
 This source file is part of Cell Cloud.
 
-Copyright (c) 2009-2013 Cell Cloud Team (www.cellcloud.net)
+Copyright (c) 2009-2017 Cell Cloud Team (www.cellcloud.net)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -27,21 +27,32 @@ THE SOFTWARE.
 package net.cellcloud.cluster;
 
 import net.cellcloud.cluster.protocol.ClusterProtocol;
+import net.cellcloud.util.Clock;
 
-/** 协议执行监视器。
+/**
+ * 协议执行监视器。
  * 
- * @author Jiangwei Xu
+ * @author Ambrose Xu
+ * 
  */
 public final class ProtocolMonitor {
 
+	/** 协议。 */
 	protected ClusterProtocol protocol;
+	/** 时间戳。 */
 	protected long timestamp;
 
+	/** 关联的数据块。 */
 	protected Chunk chunk = null;
 
+	/**
+	 * 构造函数。
+	 * 
+	 * @param protocol 指定协议。
+	 */
 	public ProtocolMonitor(ClusterProtocol protocol) {
 		this.protocol = protocol;
-		this.timestamp = System.currentTimeMillis();
+		this.timestamp = Clock.currentTimeMillis();
 	}
 
 }

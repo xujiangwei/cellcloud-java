@@ -2,7 +2,7 @@
 -----------------------------------------------------------------------------
 This source file is part of Cell Cloud.
 
-Copyright (c) 2009-2012 Cell Cloud Team (www.cellcloud.net)
+Copyright (c) 2009-2017 Cell Cloud Team (www.cellcloud.net)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -28,20 +28,33 @@ package net.cellcloud.core;
 
 import net.cellcloud.exception.CelletSandboxException;
 
-/** Celle 沙箱。
+/**
+ * Celle 沙箱。
  * 
- * @author Jiangwei Xu
+ * @author Ambrose Xu
+ * 
  */
 public final class CelletSandbox {
 
+	/** 是否封闭。封闭后才能被内核正确识别。 */
 	private volatile boolean sealed = false;
+
+	/** Cellet 特性。 */
 	protected CelletFeature feature;
 
+	/**
+	 * 构造函数。
+	 * 
+	 * @param feature 指定被管理的 Cellet 特性。
+	 */
 	public CelletSandbox(CelletFeature feature) {
 		this.feature = feature;
 	}
 
-	/** 封闭沙箱，返回唯一验证码。
+	/**
+	 * 封闭沙箱。
+	 * 
+	 * @param feature 指定验证用的特性。
 	 */
 	public void sealOff(CelletFeature feature) throws CelletSandboxException {
 		if (this.sealed) {
@@ -55,7 +68,13 @@ public final class CelletSandbox {
 		this.sealed = true;
 	}
 
+	/**
+	 * 是否被正确封闭。
+	 * 
+	 * @return 返回是否被正确封闭。
+	 */
 	protected boolean isSealed() {
 		return this.sealed;
 	}
+
 }
