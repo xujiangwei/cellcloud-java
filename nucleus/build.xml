@@ -58,6 +58,7 @@
 		<copy todir="${bin.dir}/debug/">
 			<fileset dir="${src.dir}/">
 				<include name="nucleus.jks" />
+				<include name="logging.properties" />
 			</fileset>
 		</copy>
 		<echo message="Packing the class files..." />
@@ -79,6 +80,7 @@
 		<copy todir="${bin.dir}/release/">
 			<fileset dir="${src.dir}/">
 				<include name="nucleus.jks" />
+				<include name="logging.properties" />
 			</fileset>
 		</copy>
 		<echo message="Packing the class files..." />

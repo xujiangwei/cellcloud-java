@@ -55,7 +55,7 @@ public class WebSocketMessageHandler implements MessageHandler {
 
 	protected final static String TALK_PACKET_TAG = "tpt";
 	protected final static String TALK_PACKET_VERSION = "ver";
-	protected final static String TALK_PACKET = "packet";
+	public final static String TALK_PACKET = "packet";
 
 	protected final static String TPT_INTERROGATE = "interrogate";
 	protected final static String TPT_CHECK = "check";

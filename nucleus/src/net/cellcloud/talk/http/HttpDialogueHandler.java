@@ -69,9 +69,15 @@ public final class HttpDialogueHandler extends AbstractJSONHandler implements Ca
 
 	private TalkServiceKernel talkServiceKernel;
 
+	private HttpInterceptable interceptor;
+
 	public HttpDialogueHandler(TalkServiceKernel service) {
 		super();
 		this.talkServiceKernel = service;
+	}
+
+	public void setInterceptor(HttpInterceptable interceptor) {
+		this.interceptor = interceptor;
 	}
 
 	@Override
@@ -99,11 +105,14 @@ public final class HttpDialogueHandler extends AbstractJSONHandler implements Ca
 				// 解析原语
 				Primitive primitive = new Primitive(speakerTag);
 				PrimitiveSerializer.read(primitive, primitiveJSON);
-				// 处理原语
-				this.talkServiceKernel.processDialogue(session, speakerTag, celletIdentifier, primitive);
+
+				if (false == (null != this.interceptor && this.interceptor.intercept(session, speakerTag, celletIdentifier, primitive))) {
+					// 处理原语
+					this.talkServiceKernel.processDialogue(session, speakerTag, celletIdentifier, primitive);
+				}
 
 				// 响应
-				// FIXME 2014/10/03 修改为直接携带回数据
+				// 携带回队列里的数据
 				JSONObject responseData = new JSONObject();
 
 				// 获取消息队列

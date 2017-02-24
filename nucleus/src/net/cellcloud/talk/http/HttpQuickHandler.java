@@ -107,6 +107,10 @@ public class HttpQuickHandler extends AbstractJSONHandler implements CapsuleHold
 							if (null != tracker) {
 								requestState = true;
 							}
+							else {
+								requestState = false;
+								break;
+							}
 						}
 
 						JSONObject responseData = new JSONObject();

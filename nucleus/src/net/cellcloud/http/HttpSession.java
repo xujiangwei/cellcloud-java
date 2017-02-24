@@ -83,6 +83,7 @@ public class HttpSession extends Session {
 	 * 返回会话时间戳。
 	 * @return
 	 */
+	@Override
 	public long getTimestamp() {
 		return this.timestamp;
 	}
@@ -122,4 +123,5 @@ public class HttpSession extends Session {
 	public final Queue<Message> getQueue() {
 		return this.queue;
 	}
+
 }

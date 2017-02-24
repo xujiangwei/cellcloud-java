@@ -28,6 +28,7 @@ package net.cellcloud.core;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.InetSocketAddress;
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -62,7 +63,7 @@ import net.cellcloud.util.Clock;
  */
 public final class Nucleus {
 
-	/* 用于测试的配置文件管理
+	// 用于测试的配置文件管理
 	static {
 		// 读取日志配置文件
 		ClassLoader cl = Nucleus.class.getClassLoader();
@@ -90,7 +91,7 @@ public final class Nucleus {
 		} catch (IOException e) {
 			// Nothing
 		}
-    }*/
+    }
 
 	private static Nucleus instance = null;
 

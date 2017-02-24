@@ -74,6 +74,7 @@ import net.cellcloud.talk.dialect.DialectEnumerator;
 import net.cellcloud.talk.http.HttpCheckHandler;
 import net.cellcloud.talk.http.HttpDialogueHandler;
 import net.cellcloud.talk.http.HttpHeartbeatHandler;
+import net.cellcloud.talk.http.HttpInterceptable;
 import net.cellcloud.talk.http.HttpInterrogationHandler;
 import net.cellcloud.talk.http.HttpQuickHandler;
 import net.cellcloud.talk.http.HttpRequestHandler;
@@ -1271,7 +1272,7 @@ public final class TalkServiceKernel implements Service, SpeakerDelegate {
 	 * 
 	 * @param interceptor 指定消息数据拦截器。
 	 */
-	public void setInterceptor(MessageInterceptor interceptor) {
+	public void setInterceptor(MessageInterceptor interceptor, HttpInterceptable httpInterceptable) {
 		this.acceptor.setInterceptor(interceptor);
 
 		if (null != this.wsManager) {
@@ -1279,6 +1280,18 @@ public final class TalkServiceKernel implements Service, SpeakerDelegate {
 		}
 		if (null != this.wssManager) {
 			this.wssManager.setInterceptor(interceptor);
+		}
+
+		if (null != httpInterceptable && null != this.httpSessionManager) {
+			HttpCapsule cap = HttpService.getInstance().getCapsule("ts");
+			List<CapsuleHolder> list = cap.getHolders();
+			for (CapsuleHolder ch : list) {
+				if (ch instanceof HttpDialogueHandler) {
+					HttpDialogueHandler handler = (HttpDialogueHandler) ch;
+					handler.setInterceptor(httpInterceptable);
+					break;
+				}
+			}
 		}
 	}
 

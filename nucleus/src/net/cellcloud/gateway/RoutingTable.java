@@ -74,6 +74,15 @@ public class RoutingTable {
 		return null;
 	}
 
+	public String queryTag(Session session) {
+		Record record = this.sessionRecordMap.get(session.getId());
+		if (null != record) {
+			return record.tag;
+		}
+
+		return null;
+	}
+
 	public void clear() {
 		this.sessionRecordMap.clear();
 	}

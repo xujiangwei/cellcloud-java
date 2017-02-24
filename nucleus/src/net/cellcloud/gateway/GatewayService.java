@@ -115,7 +115,7 @@ public class GatewayService implements Service {
 		}
 
 		// 设置消息拦截器
-		this.serverKernel.setInterceptor(this.forwarder);
+		this.serverKernel.setInterceptor(this.forwarder, this.forwarder);
 
 		// 初始化 Call
 		for (int i = 0; i < this.slaves.size(); ++i) {
@@ -147,7 +147,7 @@ public class GatewayService implements Service {
 			this.slaves.get(i).kernel.stopDaemon();
 		}
 
-		this.serverKernel.setInterceptor(null);
+		this.serverKernel.setInterceptor(null, null);
 
 		this.slaves.clear();
 		this.onlineSlaves.clear();
