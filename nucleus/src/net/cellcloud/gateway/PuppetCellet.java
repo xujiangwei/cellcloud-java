@@ -29,8 +29,17 @@ package net.cellcloud.gateway;
 import net.cellcloud.core.Cellet;
 import net.cellcloud.core.CelletFeature;
 
+/**
+ * 用于模拟被代理的 Cellet 类。
+ * 
+ * @author Ambrose Xu
+ *
+ */
 public class PuppetCellet extends Cellet {
 
+	/**
+	 * 构造函数。
+	 */
 	public PuppetCellet(CelletFeature feature) {
 		super(feature);
 	}

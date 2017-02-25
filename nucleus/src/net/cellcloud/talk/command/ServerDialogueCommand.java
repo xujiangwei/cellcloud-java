@@ -36,17 +36,23 @@ import net.cellcloud.talk.TalkServiceKernel;
 import net.cellcloud.util.Utils;
 
 /**
+ * Talk Dialogue Command
  * 
- * Dialogue Command
+ * @author Ambrose Xu
  * 
- * @author Jiangwei Xu
  */
 public final class ServerDialogueCommand extends ServerCommand {
 
+	/**
+	 * 构造函数。
+	 */
 	public ServerDialogueCommand(TalkServiceKernel service) {
 		super(service, null, null);
 	}
 
+	/**
+	 * 构造函数。
+	 */
 	public ServerDialogueCommand(TalkServiceKernel service, Session session, Packet packet) {
 		super(service, session, packet);
 	}

@@ -38,11 +38,25 @@ import net.cellcloud.talk.speaker.SpeakerProxyListener;
 
 import org.json.JSONObject;
 
+/**
+ * 代理端使用的 Talk 监听器实现。
+ * 
+ * @author Ambrose Xu
+ *
+ */
 public class ProxyTalkListener implements TalkListener, SpeakerProxyListener {
 
+	/** 网关服务。 */
 	private GatewayService gateway;
+	/** 此监听器对应的下位机。 */
 	private Slave slave;
 
+	/**
+	 * 构造函数。
+	 * 
+	 * @param gateway 指定网关服务。
+	 * @param slave 指定下位机。
+	 */
 	public ProxyTalkListener(GatewayService gateway, Slave slave) {
 		this.gateway = gateway;
 		this.slave = slave;
@@ -58,6 +72,7 @@ public class ProxyTalkListener implements TalkListener, SpeakerProxyListener {
 	public void contacted(String identifier, String tag) {
 		Logger.d(this.getClass(), "contacted: " + identifier);
 
+		// 连接下位机，添加为在线
 		this.gateway.addOnlineSlave(this.slave);
 	}
 
@@ -65,6 +80,7 @@ public class ProxyTalkListener implements TalkListener, SpeakerProxyListener {
 	public void quitted(String identifier, String tag) {
 		Logger.d(this.getClass(), "quitted: " + identifier);
 
+		// 断开下位机，从在线移除
 		this.gateway.removeOnlineSlave(this.slave);
 	}
 
@@ -84,6 +100,7 @@ public class ProxyTalkListener implements TalkListener, SpeakerProxyListener {
 			Logger.e(this.getClass(), failure.getDescription() + ": " + failure.getHost() + ":" + failure.getPort());
 		}
 
+		// 移除此下位机
 		this.gateway.removeOnlineSlave(this.slave);
 	}
 
@@ -110,7 +127,7 @@ public class ProxyTalkListener implements TalkListener, SpeakerProxyListener {
 		// 操控 Cellet 发送数据
 		boolean ret = this.gateway.serverKernel.notice(targetTag, primitive, cellet, this.gateway.getSandbox(celletIdentifier));
 		if (!ret) {
-			Logger.w(this.getClass(), "Talk kernel notici failed, target:'" + targetTag + "', cellet:'" + celletIdentifier + "'");
+			Logger.w(this.getClass(), "Talk kernel notice failed, target:'" + targetTag + "', cellet:'" + celletIdentifier + "'");
 		}
 	}
 

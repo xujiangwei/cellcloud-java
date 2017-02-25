@@ -2,7 +2,7 @@
 -----------------------------------------------------------------------------
 This source file is part of Cell Cloud.
 
-Copyright (c) 2009-2016 Cell Cloud Team (www.cellcloud.net)
+Copyright (c) 2009-2017 Cell Cloud Team (www.cellcloud.net)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -26,33 +26,36 @@ THE SOFTWARE.
 
 package net.cellcloud.talk.dialect;
 
-/** 区块方言监听器。
+/**
+ * 区块方言监听器。
  * 
- * @author Jiangwei Xu
+ * @author Ambrose Xu
+ * 
  */
 public interface ChunkListener {
 
 	/**
 	 * 区块数据正在处理时回调。
 	 * 
-	 * @param target
-	 * @param chunkDialect
+	 * @param target 识别目标描述。
+	 * @param chunkDialect 区块方言。
 	 */
 	public void onProgress(String target, ChunkDialect chunkDialect);
 
 	/**
 	 * 区块数据处理完成时回调。
 	 * 
-	 * @param target
-	 * @param chunkDialect
+	 * @param target 识别目标描述。
+	 * @param chunkDialect 区块方言。
 	 */
 	public void onCompleted(String target, ChunkDialect chunkDialect);
 
 	/**
 	 * 区块数据处理失败时回调。
 	 * 
-	 * @param target
-	 * @param chunkDialect
+	 * @param target 识别目标描述。
+	 * @param chunkDialect 区块方言。
 	 */
 	public void onFailed(String target, ChunkDialect chunkDialect);
+
 }

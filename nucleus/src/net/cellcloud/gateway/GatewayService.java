@@ -120,7 +120,10 @@ public class GatewayService implements Service {
 
 		// 移除在线的下位机
 		if (this.onlineSlaves.remove(slave)) {
-			slave.kernel.shutdown();
+			synchronized (slave.kernel) {
+				slave.kernel.notifyAll();
+			}
+			slave.kernel.stopDaemon();
 			this.routingTable.remove(slave);
 		}
 	}
@@ -198,7 +201,11 @@ public class GatewayService implements Service {
 	@Override
 	public void shutdown() {
 		for (int i = 0; i < this.slaves.size(); ++i) {
-			this.slaves.get(i).kernel.stopDaemon();
+			Slave slave = this.slaves.get(i);
+			synchronized (slave.kernel) {
+				slave.kernel.notifyAll();
+			}
+			slave.kernel.stopDaemon();
 		}
 
 		this.serverKernel.setInterceptor(null, null);
@@ -338,7 +345,17 @@ public class GatewayService implements Service {
 	 */
 	protected void removeOnlineSlave(Slave slave) {
 		slave.state = SlaveState.Offline;
-		this.onlineSlaves.remove(slave);
+
+		if (this.onlineSlaves.remove(slave)) {
+			synchronized (slave.kernel) {
+				slave.kernel.notifyAll();
+			}
+
+			// 从路由表里删除
+			int num = this.routingTable.remove(slave);
+			Logger.i(this.getClass(), "Remove " + num + " records from routing table which slave " + slave.address.toString());
+		}
+
 		slave.clear();
 	}
 
@@ -399,27 +416,50 @@ public class GatewayService implements Service {
 			this.runtimeSessions.put(tag, session);
 		}
 
+		/**
+		 * 删除已管理的会话。
+		 * 
+		 * @param tag 指定会话的内核标签。
+		 */
 		public void removeSession(String tag) {
 			this.runtimeSessions.remove(tag);
 		}
 
+		/**
+		 * 获得已管理会话的数量。
+		 * 
+		 * @return 返回会话数量。
+		 */
 		public int numSessions() {
 			return this.runtimeSessions.size();
 		}
 
+		/**
+		 * 清空所有会话数据。
+		 */
 		public void clear() {
 			this.runtimeSessions.clear();
 		}
+
 	}
 
 	/**
 	 * 下位机状态。
 	 */
 	public enum SlaveState {
+		/**
+		 * 在线状态。
+		 */
 		Online,
 
+		/**
+		 * 离线状态。
+		 */
 		Offline,
 
+		/**
+		 * 未知状态。
+		 */
 		Unknown
 	}
 

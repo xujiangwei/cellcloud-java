@@ -2,7 +2,7 @@
 -----------------------------------------------------------------------------
 This source file is part of Cell Cloud.
 
-Copyright (c) 2009-2012 Cell Cloud Team (www.cellcloud.net)
+Copyright (c) 2009-2017 Cell Cloud Team (www.cellcloud.net)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -38,12 +38,17 @@ import net.cellcloud.talk.TalkServiceKernel;
 import net.cellcloud.talk.TalkServiceKernel.Certificate;
 import net.cellcloud.util.Utils;
 
-/** Talk check command
+/**
+ * Talk check command
  * 
- * @author Jiangwei Xu
+ * @author Ambrose Xu
+ * 
  */
 public final class ServerCheckCommand extends ServerCommand {
 
+	/**
+	 * 构造函数。
+	 */
 	public ServerCheckCommand(TalkServiceKernel service, Session session, Packet packet) {
 		super(service, session, packet);
 	}
@@ -100,9 +105,8 @@ public final class ServerCheckCommand extends ServerCommand {
 			this.service.rejectSession(this.session);
 		}
 
-		if (Logger.isDebugLevel()) {
-			Logger.d(ServerCheckCommand.class, log.toString());
-		}
+		Logger.d(ServerCheckCommand.class, log.toString());
 		log = null;
 	}
+
 }

@@ -258,7 +258,7 @@ public final class Packet {
 	}
 
 	/** 解包。 */
-	public static Packet unpack(byte[] data) {
+	public static Packet unpack(byte[] data) throws NumberFormatException {
 		int datalen = data.length;
 		if (datalen < PSL_TAG + PSL_VERSION + PSL_SN + PSL_BODY_LENGTH) {
 			return null;

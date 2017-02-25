@@ -139,7 +139,7 @@ public final class Application {
 		// 加载内核配置
 		if (null != this.configFile) {
 			info = this.loadConfig(this.configFile, config);
-			if (info.jarCelletMap.isEmpty() && info.pathCelletMap.isEmpty()) {
+			if (info.jarCelletMap.isEmpty() && info.pathCelletMap.isEmpty() && config.role == Role.NODE) {
 				// 没有 Cellet 服务被找到
 				Logger.w(Application.class, "Can NOT find cellet in config file!");
 			}
@@ -418,7 +418,7 @@ public final class Application {
 								Logger.i(this.getClass(), "nucleus.talk.ssl.password = " + config.talk.keyStorePassword);
 							}
 						}
-					} // # end talk config
+					} // #end talk config
 
 					// gateway config
 					NodeList nlGateway = el.getElementsByTagName("gateway");
@@ -461,8 +461,21 @@ public final class Application {
 
 						// 强制转为网关角色
 						config.role = Role.GATEWAY;
-						Logger.i(this.getClass(), "Cell work as GATEWAY");
-					} // # end gateway config
+						Logger.i(this.getClass(), "Cell is GATEWAY role.");
+					} // #end gateway config
+
+					// log config
+					NodeList nlLog = el.getElementsByTagName("log");
+					if (nlLog.getLength() > 0) {
+						Element elLog = (Element) nlLog.item(0);
+						nl = elLog.getElementsByTagName("level");
+						if (nl.getLength() > 0) {
+							Element elLevel = (Element) nl.item(0);
+							String level = elLevel.getTextContent().trim();
+							Logger.i(this.getClass(), "nucleus.log.level = " + level);
+							this.setLogLevel(level);
+						}
+					} // #end log config
 				}
 
 				// 读取 adapter
@@ -598,6 +611,21 @@ public final class Application {
 		}
 
 		return ret;
+	}
+
+	private void setLogLevel(String config) {
+		if (config.equalsIgnoreCase("DEBUG")) {
+			LogManager.getInstance().setLevel(LogLevel.DEBUG);
+		}
+		else if (config.equalsIgnoreCase("INFO")) {
+			LogManager.getInstance().setLevel(LogLevel.INFO);
+		}
+		else if (config.equalsIgnoreCase("WARNING")) {
+			LogManager.getInstance().setLevel(LogLevel.WARNING);
+		}
+		else if (config.equalsIgnoreCase("ERROR")) {
+			LogManager.getInstance().setLevel(LogLevel.ERROR);
+		}
 	}
 
 	/** 加载所有库文件

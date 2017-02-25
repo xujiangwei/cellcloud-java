@@ -34,33 +34,41 @@
 
 		<!-- 网关配置 -->
 		<gateway>
-		    <!-- 配置网关使用的路由规则，可填写：Hash 或 Balance -->
-		    <routing>Hash</routing>
-		    <!-- 网关下位机支持的的 cellet identifier 清单 -->
-		    <cellets>
-		        <cellet>Dummy</cellet>
-		        <cellet>Broadcast</cellet>
-		    </cellets>
-		    <!-- 网关管理的下位机配置 -->
-		    <slaves>
-		        <slave>
-		            <host>192.168.1.121</host>
-		            <port>7000</port>
-		        </slave>
-		        <slave>
-		            <host>192.168.1.122</host>
-		            <port>7000</port>
-		        </slave>
-		    </slaves>
+			<!-- 配置网关使用的路由规则，可填写：Hash 或 Balance -->
+			<routing>Hash</routing>
+
+			<!-- 网关下位机支持的的 cellet identifier 清单 -->
+			<cellets>
+				<cellet>Dummy</cellet>
+				<cellet>Broadcast</cellet>
+			</cellets>
+
+			<!-- 网关管理的下位机配置 -->
+			<slaves>
+				<slave>
+					<host>192.168.1.121</host>
+					<port>7000</port>
+				</slave>
+				<slave>
+					<host>192.168.1.122</host>
+					<port>7000</port>
+				</slave>
+			</slaves>
 		</gateway>
+
+		<!-- 日志配置 -->
+		<log>
+			<!-- 日志等级 -->
+			<level>INFO</level>
+		</log>
 	</nucleus>
 
 	<!-- 适配器配置 -->
 	<adapters>
 		<adapter name="SmartAdapter" instance="message">
-		    <!-- 适配器使用的主机地址（注：该地址不是监听地址） -->
-		    <host>192.168.0.197</host>
-		    <!-- 适配器监听端口 -->
+			<!-- 适配器使用的主机地址（注：该地址不是监听地址） -->
+			<host>192.168.0.197</host>
+			<!-- 适配器监听端口 -->
 			<port>9813</port>
 			<!-- 上行数据流量配额，单位：B/S -->
 			<quota>102400</quota>

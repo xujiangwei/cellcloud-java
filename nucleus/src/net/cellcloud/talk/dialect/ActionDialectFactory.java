@@ -2,7 +2,7 @@
 -----------------------------------------------------------------------------
 This source file is part of Cell Cloud.
 
-Copyright (c) 2009-2012 Cell Cloud Team (www.cellcloud.net)
+Copyright (c) 2009-2017 Cell Cloud Team (www.cellcloud.net)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -34,20 +34,38 @@ import net.cellcloud.common.LogLevel;
 import net.cellcloud.common.Logger;
 import net.cellcloud.core.Cellet;
 
-/** 动作方言工厂。
+/**
+ * 动作方言工厂。
  * 
- * @author Jiangwei Xu
+ * @author Ambrose Xu
+ * 
  */
 public final class ActionDialectFactory extends DialectFactory {
 
+	/**
+	 * 方言元数据。
+	 */
 	private DialectMetaData metaData;
 
+	/**
+	 * 线程池执行器。
+	 */
 	private ExecutorService executor;
+
+	/** 最大线程数。 */
 	private int maxThreadNum;
+	/** 当前活跃的线程计数。 */
 	private AtomicInteger threadCount;
+	/** 当前待处理方言列表。 */
 	private LinkedList<ActionDialect> dialects;
+	/** 当前待处理方言的委派列表。 */
 	private LinkedList<ActionDelegate> delegates;
 
+	/**
+	 * 构造函数。
+	 * 
+	 * @param executor 指定线程池执行器。
+	 */
 	public ActionDialectFactory(ExecutorService executor) {
 		this.metaData = new DialectMetaData(ActionDialect.DIALECT_NAME, "Action Dialect");
 		this.executor = executor;
@@ -57,30 +75,54 @@ public final class ActionDialectFactory extends DialectFactory {
 		this.delegates = new LinkedList<ActionDelegate>();
 	}
 
+	/**
+	 * 获得当前活跃线程数量。
+	 * 
+	 * @return 返回当前正在工作的线程数量。
+	 */
 	public int getThreadCounts() {
 		return this.threadCount.get();
 	}
 
+	/**
+	 * 获得最大线程数量。
+	 * 
+	 * @return 返回工厂允许最大并发线程数量。
+	 */
 	public int getMaxThreadCounts() {
 		return this.maxThreadNum;
 	}
 
+	/**
+	 * 获得待处理的动作方言数量。
+	 * 
+	 * @return 返回待处理数量。
+	 */
 	public int getPendingNum() {
 		synchronized (this.metaData) {
 			return this.dialects.size();
 		}
 	}
 
+	/**
+	 * {@inheritDoc}
+	 */
 	@Override
 	public DialectMetaData getMetaData() {
 		return this.metaData;
 	}
 
+	/**
+	 * {@inheritDoc}
+	 */
 	@Override
 	public Dialect create(String tracker) {
 		return new ActionDialect(tracker);
 	}
 
+	/**
+	 * {@inheritDoc}
+	 */
 	@Override
 	public void shutdown() {
 		synchronized (this.metaData) {
@@ -89,29 +131,46 @@ public final class ActionDialectFactory extends DialectFactory {
 		}
 	}
 
+	/**
+	 * {@inheritDoc}
+	 */
 	@Override
 	protected boolean onTalk(String identifier, Dialect dialect) {
+		// 不截获
 		return true;
 	}
 
+	/**
+	 * {@inheritDoc}
+	 */
 	@Override
 	protected boolean onDialogue(String identifier, Dialect dialect) {
+		// 不截获
 		return true;
 	}
 
+	/**
+	 * {@inheritDoc}
+	 */
 	@Override
 	protected boolean onTalk(Cellet cellet, String targetTag, Dialect dialect) {
+		// 不截获
 		return true;
 	}
 
+	/**
+	 * {@inheritDoc}
+	 */
 	@Override
 	protected boolean onDialogue(Cellet cellet, String sourceTag, Dialect dialect) {
+		// 不截获
 		return true;
 	}
 
-	/** 执行动作。
+	/**
+	 * 执行动作。
 	 */
-	protected void doAction(final ActionDialect dialect, final ActionDelegate delegate) {
+	protected void doAction(ActionDialect dialect, ActionDelegate delegate) {
 		synchronized (this.metaData) {
 			this.dialects.add(dialect);
 			this.delegates.add(delegate);
@@ -159,4 +218,5 @@ public final class ActionDialectFactory extends DialectFactory {
 			});
 		}
 	}
+
 }

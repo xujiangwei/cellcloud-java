@@ -2,7 +2,7 @@
 -----------------------------------------------------------------------------
 This source file is part of Cell Cloud.
 
-Copyright (c) 2009-2016 Cell Cloud Team (www.cellcloud.net)
+Copyright (c) 2009-2017 Cell Cloud Team (www.cellcloud.net)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -29,9 +29,11 @@ package net.cellcloud.talk.dialect;
 import net.cellcloud.core.Cellet;
 import net.cellcloud.talk.Primitive;
 
-/** 原语方言。
+/**
+ * 原语方言。
  * 
- * @author Jiangwei Xu
+ * @author Ambrose Xu
+ * 
  */
 public abstract class Dialect {
 

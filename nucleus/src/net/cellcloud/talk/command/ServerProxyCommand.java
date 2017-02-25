@@ -36,16 +36,24 @@ import net.cellcloud.util.Utils;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-/** Talk request cellet command
+/**
+ * Talk proxy command
  * 
- * @author Jiangwei Xu
+ * @author Ambrose Xu
+ * 
  */
 public final class ServerProxyCommand extends ServerCommand {
 
+	/**
+	 * 构造函数。
+	 */
 	public ServerProxyCommand(TalkServiceKernel service) {
 		super(service, null, null);
 	}
 
+	/**
+	 * 构造函数。
+	 */
 	public ServerProxyCommand(TalkServiceKernel service, Session session, Packet packet) {
 		super(service, session, packet);
 	}

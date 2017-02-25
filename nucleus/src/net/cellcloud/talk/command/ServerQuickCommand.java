@@ -43,14 +43,21 @@ import net.cellcloud.util.Utils;
 /**
  * Talk quick command
  * 
- * @author Jiangwei Xu
+ * @author Ambrose Xu
+ * 
  */
 public final class ServerQuickCommand extends ServerCommand {
 
+	/**
+	 * 构造函数。
+	 */
 	public ServerQuickCommand(TalkServiceKernel service) {
 		super(service, null, null);
 	}
 
+	/**
+	 * 构造函数。
+	 */
 	public ServerQuickCommand(TalkServiceKernel service, Session session, Packet packet) {
 		super(service, session, packet);
 	}
@@ -159,9 +166,7 @@ public final class ServerQuickCommand extends ServerCommand {
 			this.service.rejectSession(this.session);
 		}
 
-		if (Logger.isDebugLevel()) {
-			Logger.d(ServerQuickCommand.class, log.toString());
-		}
+		Logger.d(ServerQuickCommand.class, log.toString());
 		log = null;
 	}
 

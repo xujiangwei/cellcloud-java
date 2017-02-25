@@ -40,16 +40,34 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public class Hostlink {
 
+	/**
+	 * 上位机（网关机）代理的会话标签对应的上位机标签。
+	 * 键是被代理的终端标签，值是上位网关标签。
+	 */
 	private ConcurrentHashMap<String, String> targetMapProxyTag;
 
+	/**
+	 * 构造函数。
+	 */
 	public Hostlink() {
 		this.targetMapProxyTag = new ConcurrentHashMap<String, String>();
 	}
 
+	/**
+	 * 添加上位链路信息。
+	 * 
+	 * @param targetTag 指定被上位机代理的标签。
+	 * @param proxyTag 指定上位机的标签。
+	 */
 	public void addLink(String targetTag, String proxyTag) {
 		this.targetMapProxyTag.put(targetTag, proxyTag);
 	}
 
+	/**
+	 * 删除上位链路信息。
+	 * 
+	 * @param targetTag 指定被上位机代理的标签。
+	 */
 	public void removeLink(String targetTag) {
 		this.targetMapProxyTag.remove(targetTag);
 	}
@@ -57,18 +75,18 @@ public class Hostlink {
 	/**
 	 * 用目标终端检索上位主机的标签，即查询对应的代理的标签。
 	 * 
-	 * @param targetTag
-	 * @return
+	 * @param targetTag 指定被上位机代理的标签。
+	 * @return 返回上位机标签。
 	 */
 	public String searchHost(String targetTag) {
 		return this.targetMapProxyTag.get(targetTag);
 	}
 
 	/**
-	 * 列举出指定代理的下位主机标签。
+	 * 列举出指定上位机里被代理的所有标签。
 	 * 
-	 * @param proxyTag
-	 * @return
+	 * @param proxyTag 指定上位机标签。
+	 * @return 返回存储被代理终端标签的数组。
 	 */
 	public List<String> listLinkedTag(String proxyTag) {
 		ArrayList<String> list = new ArrayList<String>();

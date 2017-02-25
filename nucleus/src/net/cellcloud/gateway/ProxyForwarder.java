@@ -55,6 +55,14 @@ import net.cellcloud.util.Utils;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+/**
+ * 代理访问实现类。
+ * 
+ * 用于将连接到网关上的终端数据拦截并进行路由转发到下位机。
+ * 
+ * @author Ambrose Xu
+ *
+ */
 public class ProxyForwarder implements MessageInterceptor, HttpInterceptable {
 
 	private final static byte WS_TPT_DIALOGUE_1 = 'd';
@@ -66,33 +74,53 @@ public class ProxyForwarder implements MessageInterceptor, HttpInterceptable {
 	private final static byte WS_TPT_DIALOGUE_7 = 'u';
 	private final static byte WS_TPT_DIALOGUE_8 = 'e';
 
+	/** 与网关服务共享的路由表。 */
 	private RoutingTable routingTable;
 
+	/** 线程池执行器。 */
 	private ExecutorService executor;
 
+	/**
+	 * 构造函数。
+	 * 
+	 * @param routingTable 路由表。
+	 * @param executor 线程执行器。
+	 */
 	public ProxyForwarder(RoutingTable routingTable, ExecutorService executor) {
 		this.routingTable = routingTable;
 		this.executor = executor;
 	}
 
+	/**
+	 * {@inheritDoc}
+	 */
 	@Override
 	public boolean interceptCreating(Session session) {
 		// Nothing
 		return false;
 	}
 
+	/**
+	 * {@inheritDoc}
+	 */
 	@Override
 	public boolean interceptDestroying(Session session) {
 		// Nothing
 		return false;
 	}
 
+	/**
+	 * {@inheritDoc}
+	 */
 	@Override
 	public boolean interceptOpening(Session session) {
 		// Nothing
 		return false;
 	}
 
+	/**
+	 * {@inheritDoc}
+	 */
 	@Override
 	public boolean interceptClosing(final Session session) {
 		this.executor.execute(new Runnable() {
@@ -104,13 +132,13 @@ public class ProxyForwarder implements MessageInterceptor, HttpInterceptable {
 					// 移除路由信息
 					Record record = routingTable.remove(session);
 
-					for (int i = 0; i < record.runtimeIdentifiers.size(); ++i) {
+					for (int i = 0; i < record.identifiers.size(); ++i) {
 						JSONObject proxy = new JSONObject();
 						try {
 							proxy.put("proxy", Nucleus.getInstance().getTagAsString());
 							proxy.put("sid", session.getId().longValue());
 							proxy.put("tag", record.tag);
-							proxy.put("identifier", record.runtimeIdentifiers.get(i));
+							proxy.put("identifier", record.identifiers.get(i));
 							proxy.put("active", false);
 						} catch (JSONException e) {
 							Logger.log(ProxyForwarder.class, e, LogLevel.WARNING);
@@ -129,6 +157,9 @@ public class ProxyForwarder implements MessageInterceptor, HttpInterceptable {
 		return false;
 	}
 
+	/**
+	 * {@inheritDoc}
+	 */
 	@Override
 	public boolean interceptMessage(final Session session, Message message) {
 		final byte[] data = message.get();
@@ -236,12 +267,18 @@ public class ProxyForwarder implements MessageInterceptor, HttpInterceptable {
 		return false;
 	}
 
+	/**
+	 * {@inheritDoc}
+	 */
 	@Override
 	public boolean interceptError(Session session, int errorCode) {
 		// Nothing
 		return false;
 	}
 
+	/**
+	 * {@inheritDoc}
+	 */
 	@Override
 	public boolean intercept(final HttpSession session, final String speakerTag, final String celletIdentifier, final Primitive primitive) {
 		this.executor.execute(new Runnable() {
@@ -280,11 +317,11 @@ public class ProxyForwarder implements MessageInterceptor, HttpInterceptable {
 	}
 
 	/**
-	 * 将 JSON 格式转数据包。
+	 * 将 JSON 格式的数据包转标准数据包。
 	 * 
-	 * @param json
-	 * @param speakerTag
-	 * @return
+	 * @param json 指定需转换的 JSON 格式数据包。
+	 * @param speakerTag 指定该数据包的源标签。
+	 * @return 返回转换后的数据包。如果转换失败返回 <code>null</code> 值。
 	 */
 	private Packet convert(JSONObject json, String speakerTag) {
 		try {

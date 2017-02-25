@@ -33,17 +33,20 @@ import net.cellcloud.talk.TalkServiceKernel;
 /**
  * Talk heartbeat command
  * 
- * @author Jiangwei Xu
+ * @author Ambrose Xu
+ * 
  */
 public final class ServerHeartbeatCommand extends ServerCommand {
 
-	/** 构造函数。
+	/**
+	 * 构造函数。
 	 */
 	public ServerHeartbeatCommand(TalkServiceKernel service) {
 		super(service, null, null);
 	}
 
-	/** 构造函数。
+	/**
+	 * 构造函数。
 	 */
 	public ServerHeartbeatCommand(TalkServiceKernel service, Session session, Packet packet) {
 		super(service, session, packet);
