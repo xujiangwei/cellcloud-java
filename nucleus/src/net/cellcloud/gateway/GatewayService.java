@@ -44,6 +44,10 @@ import net.cellcloud.core.CelletSandbox;
 import net.cellcloud.core.CelletVersion;
 import net.cellcloud.core.Nucleus;
 import net.cellcloud.exception.CelletSandboxException;
+import net.cellcloud.http.CapsuleHolder;
+import net.cellcloud.http.CookieSessionManager;
+import net.cellcloud.http.HttpCapsule;
+import net.cellcloud.http.HttpService;
 import net.cellcloud.talk.TalkCapacity;
 import net.cellcloud.talk.TalkServiceKernel;
 
@@ -84,6 +88,9 @@ public class GatewayService implements Service {
 	/** 当前服务器的会话核心。 */
 	protected TalkServiceKernel serverKernel;
 
+	/** HTTP 代理。 */
+	private ConcurrentHashMap<String, HttpProxy> httpProxies;
+
 	/**
 	 * 构造函数。
 	 * 
@@ -97,16 +104,19 @@ public class GatewayService implements Service {
 		this.routingTable = new RoutingTable();
 		this.forwarder = new ProxyForwarder(this.routingTable, this.executor);
 		this.puppetCelletMap = new ConcurrentHashMap<String, PuppetCellet>();
+		this.httpProxies = new ConcurrentHashMap<String, HttpProxy>();
 	}
 
 	/**
 	 * 添加下位机。
 	 * 
-	 * @param address 指定下位机的访问地址。
+	 * @param host 指定下位机的访问地址。
+	 * @param port 指定下位机的访问端口。
+	 * @param httpPort 指定下位机的 HTTP 端口。
 	 * @param celletIdentifiers 指定需要代理的下位机上的 Cellet 标识清单。
 	 */
-	public void addSlave(InetSocketAddress address, List<String> celletIdentifiers) {
-		Slave slave = new Slave(address, celletIdentifiers);
+	public void addSlave(String host, int port, int httpPort, List<String> celletIdentifiers) {
+		Slave slave = new Slave(host, port, httpPort, celletIdentifiers);
 		this.slaves.add(slave);
 	}
 
@@ -155,12 +165,47 @@ public class GatewayService implements Service {
 	}
 
 	/**
+	 * 添加指定 URI 代理。
+	 * 
+	 * @param uri 指定 HTTP URI 。
+	 */
+	public void addHttpProxy(String uri) {
+		HttpProxy proxy = this.httpProxies.get(uri);
+		if (null == proxy) {
+			proxy = new HttpProxy(uri, this.routingTable);
+			this.httpProxies.put(uri, proxy);
+		}
+	}
+
+	/**
+	 * 删除指定 URI 代理。
+	 * 
+	 * @param uri 指定 HTTP URI 。
+	 */
+	public void removeHttpProxy(String uri) {
+		this.httpProxies.remove(uri);
+	}
+
+	/**
 	 * {@inheritDoc}
 	 */
 	@Override
 	public boolean startup() {
 		if (this.slaves.isEmpty()) {
 			return false;
+		}
+
+		// 设置 HTTP 代理
+		if (!this.httpProxies.isEmpty() && null != HttpService.getInstance()) {
+			HttpCapsule capsule = new HttpCapsule("gw");
+			CookieSessionManager sessionMgr = new CookieSessionManager();
+			capsule.setSessionManager(sessionMgr);
+
+			for (CapsuleHolder holder : this.httpProxies.values()) {
+				capsule.addHolder(holder);
+			}
+
+			HttpService.getInstance().addCapsule(capsule);
 		}
 
 		// 设置消息拦截器
@@ -378,8 +423,14 @@ public class GatewayService implements Service {
 
 		/** 下位机使用的 Talk 核心。 */
 		public TalkServiceKernel kernel;
-		/** 下位机的目标地址。 */
+		/** 下位机的目标主机地址。 */
 		public InetSocketAddress address;
+		/** 下位机的目标主机名。 */
+		public String host;
+		/** 下位机的端口。 */
+		public int port;
+		/** 下位机对应的 HTTP 端口。 */
+		public int httpPort;
 		/** 目标 Cellet 列表。 */
 		public ArrayList<String> celletIdentifiers;
 		/** Talk 监听器。 */
@@ -396,9 +447,12 @@ public class GatewayService implements Service {
 		 * @param address 指定目标地址。
 		 * @param celletIdentifiers 指定需要请求的 Cellet 清单。
 		 */
-		public Slave(InetSocketAddress address, List<String> celletIdentifiers) {
+		public Slave(String host, int port, int httpPort, List<String> celletIdentifiers) {
 			this.kernel = new TalkServiceKernel(null);
-			this.address = address;
+			this.address = new InetSocketAddress(host, port);
+			this.host = host;
+			this.port = port;
+			this.httpPort = httpPort;
 			this.celletIdentifiers = new ArrayList<String>(celletIdentifiers);
 			this.listener = new ProxyTalkListener(GatewayService.this, this);
 			this.kernel.addListener(this.listener);

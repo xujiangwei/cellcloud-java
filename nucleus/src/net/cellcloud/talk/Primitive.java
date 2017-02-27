@@ -352,7 +352,7 @@ public class Primitive {
 	/** 将原语数据写入序列化流。
 	*/
 	public ByteArrayOutputStream write() {
-		ByteArrayOutputStream stream = new ByteArrayOutputStream();
+		ByteArrayOutputStream stream = new ByteArrayOutputStream(256);
 		PrimitiveSerializer.write(stream, this);
 		return stream;
 	}

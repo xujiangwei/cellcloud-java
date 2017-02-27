@@ -47,10 +47,16 @@ public class RoutingTable {
 	private ConcurrentHashMap<Long, Record> sessionRecordMap;
 
 	/**
+	 * 终端地址对应的下位机映射。
+	 */
+	private ConcurrentHashMap<String, Slave> addressMap;
+
+	/**
 	 * 构造函数。
 	 */
 	public RoutingTable() {
 		this.sessionRecordMap = new ConcurrentHashMap<Long, Record>();
+		this.addressMap = new ConcurrentHashMap<String, Slave>();
 	}
 
 	/**
@@ -69,6 +75,8 @@ public class RoutingTable {
 			record.tag = tag;
 			record.slave = slave;
 			this.sessionRecordMap.put(session.getId(), record);
+
+			this.addressMap.put(session.getAddress().getHostString().toString(), slave);
 		}
 
 		if (!record.identifiers.contains(identifier)) {
@@ -83,6 +91,7 @@ public class RoutingTable {
 	 * @return 如果移除成功返回对应的记录。
 	 */
 	public Record remove(Session session) {
+		this.addressMap.remove(session.getAddress().getHostString());
 		return this.sessionRecordMap.remove(session.getId());
 	}
 
@@ -100,6 +109,12 @@ public class RoutingTable {
 			if (record.slave == slave) {
 				iter.remove();
 				++num;
+			}
+		}
+		Iterator<Slave> siter = this.addressMap.values().iterator();
+		while (siter.hasNext()) {
+			if (siter.next() == slave) {
+				siter.remove();
 			}
 		}
 		return num;
@@ -133,6 +148,16 @@ public class RoutingTable {
 		}
 
 		return null;
+	}
+
+	/**
+	 * 通过地址查询对应的下位机。
+	 * 
+	 * @param remoteAddress 指定需查询的终端地址。
+	 * @return 返回下位机。
+	 */
+	public Slave querySlaveByAddress(String remoteAddress) {
+		return this.addressMap.get(remoteAddress);
 	}
 
 	/**

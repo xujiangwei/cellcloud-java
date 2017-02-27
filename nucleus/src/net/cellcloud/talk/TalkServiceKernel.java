@@ -1744,10 +1744,10 @@ public final class TalkServiceKernel implements Service, SpeakerDelegate {
 
 	/** 更新 Session tick time 。
 	 */
-	public void updateSessionHeartbeat(Session session) {
+	public boolean updateSessionHeartbeat(Session session) {
 		String tag = this.sessionTagMap.get(session.getId());
 		if (null == tag) {
-			return;
+			return false;
 		}
 
 		TalkSessionContext ctx = this.tagContexts.get(tag);
@@ -1758,7 +1758,11 @@ public final class TalkServiceKernel implements Service, SpeakerDelegate {
 				Logger.d(this.getClass(), "Talk service heartbeat from " + session.getAddress().getAddress().getHostAddress()
 						+ ":" + session.getAddress().getPort());
 			}
+
+			return true;
 		}
+
+		return false;
 	}
 
 	/** 返回时间点。

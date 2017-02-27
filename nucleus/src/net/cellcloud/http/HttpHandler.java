@@ -50,6 +50,8 @@ public abstract class HttpHandler implements Handler {
 	private Server server;
 	private SessionManager sessionManager;
 
+	private HttpFilter filter;
+
 	public HttpHandler() {
 		super();
 	}
@@ -70,9 +72,20 @@ public abstract class HttpHandler implements Handler {
 		this.sessionManager = sessionManager;
 	}
 
+	protected void setFilter(HttpFilter filter) {
+		this.filter = filter;
+	}
+
 	@Override
 	public void handle(String target, Request baseRequest, HttpServletRequest request, HttpServletResponse response)
 			throws IOException, ServletException {
+		// 尝试调用过滤器
+		if (null != this.filter && this.filter.doFilter(target, baseRequest, request, response)) {
+			// 已处理
+			baseRequest.setHandled(true);
+			return;
+		}
+
 		HttpRequest httpRequest = new HttpRequest(request, this.sessionManager);
 		HttpResponse httpResponse = new HttpResponse(response);
 

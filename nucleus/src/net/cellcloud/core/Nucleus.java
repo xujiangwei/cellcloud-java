@@ -29,7 +29,6 @@ package net.cellcloud.core;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.InetSocketAddress;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLClassLoader;
@@ -401,21 +400,6 @@ public final class Nucleus {
 				this.tempAdapterListeners = null;
 			}
 
-			// 启动 HTTP Service
-			if (null != this.httpService) {
-				// 尝试启动扩展模块
-				if (this.config.talk.enabled) {
-					this.talkService.startExtendHolder();
-				}
-
-				if (this.httpService.startup()) {
-					Logger.i(Nucleus.class, "Starting http service success.");
-				}
-				else {
-					Logger.i(Nucleus.class, "Starting http service failure.");
-				}
-			}
-
 			// 如果是网关节点，启动网关服务
 			if (Role.GATEWAY == this.config.role) {
 				if (null == this.sandboxes) {
@@ -424,14 +408,28 @@ public final class Nucleus {
 
 				this.gatewayService = new GatewayService(this.sandboxes);
 
+				// 配置 HTTP 代理
+				if (null != this.config.gateway.httpURIList) {
+					for (String uri : this.config.gateway.httpURIList) {
+						this.gatewayService.addHttpProxy(uri);
+					}
+				}
+
 				// 配置路由算法
 				this.gatewayService.setRoutingRule(this.config.gateway.routingRule);
 
 				// 配置下位机
-				if (null != this.config.gateway.slaveAddressList
+				if (null != this.config.gateway.slaveHostList && null != this.config.gateway.slavePortList
 					&& null != this.config.gateway.celletIdentifiers) {
-					for (InetSocketAddress address : this.config.gateway.slaveAddressList) {
-						this.gatewayService.addSlave(address, this.config.gateway.celletIdentifiers);
+					for (int i = 0, size = this.config.gateway.slaveHostList.size(); i < size; ++i) {
+						String host = this.config.gateway.slaveHostList.get(i);
+						int port = this.config.gateway.slavePortList.get(i).intValue();
+						int httpPort = (null != this.config.gateway.slaveHttpPortList)
+								? this.config.gateway.slaveHttpPortList.get(i) : 0;
+						if (0 == httpPort) {
+							Logger.w(this.getClass(), "Gatewary slave '" + host + ":" + port + "' can NOT config HTTP port");
+						}
+						this.gatewayService.addSlave(host, port, httpPort, this.config.gateway.celletIdentifiers);
 					}
 				}
 
@@ -444,6 +442,21 @@ public final class Nucleus {
 				else {
 					this.gatewayService = null;
 					Logger.i(Nucleus.class, "Starting gateway service failure.");
+				}
+			}
+
+			// 启动 HTTP Service
+			if (null != this.httpService) {
+				// 尝试启动扩展模块
+				if (this.config.talk.enabled) {
+					this.talkService.startExtendHolder();
+				}
+
+				if (this.httpService.startup()) {
+					Logger.i(Nucleus.class, "Starting http service success.");
+				}
+				else {
+					Logger.i(Nucleus.class, "Starting http service failure.");
 				}
 			}
 		}

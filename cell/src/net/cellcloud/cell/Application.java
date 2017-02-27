@@ -28,7 +28,6 @@ package net.cellcloud.cell;
 
 import java.io.File;
 import java.io.IOException;
-import java.net.InetSocketAddress;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLClassLoader;
@@ -444,7 +443,8 @@ public final class Application {
 						// slaves
 						nl = elGateway.getElementsByTagName("slave");
 						if (nl.getLength() > 0) {
-							config.gateway.slaveAddressList = new ArrayList<InetSocketAddress>(nl.getLength());
+							config.gateway.slaveHostList = new ArrayList<String>(nl.getLength());
+							config.gateway.slavePortList = new ArrayList<Integer>(nl.getLength());
 							for (int i = 0, size = nl.getLength(); i < size; ++i) {
 								Element elSlave = (Element) nl.item(i);
 								NodeList nlHost = elSlave.getElementsByTagName("host");
@@ -452,11 +452,11 @@ public final class Application {
 								if (nlHost.getLength() > 0 && nlPort.getLength() > 0) {
 									String host = nlHost.item(0).getTextContent().trim();
 									int port = Integer.parseInt(nlPort.item(0).getTextContent().trim());
-									InetSocketAddress address = new InetSocketAddress(host, port);
-									config.gateway.slaveAddressList.add(address);
+									config.gateway.slaveHostList.add(host);
+									config.gateway.slavePortList.add(port);
+									Logger.i(this.getClass(), "nucleus.gateway.slave = " + host + ":" + port);
 								}
 							}
-							Logger.i(this.getClass(), "nucleus.gateway.slaves = " + config.gateway.slaveAddressList.toString());
 						}
 
 						// 强制转为网关角色

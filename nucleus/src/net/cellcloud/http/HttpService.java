@@ -88,8 +88,7 @@ public final class HttpService implements Service {
 	 * @param context
 	 * @throws SingletonException
 	 */
-	public HttpService(NucleusContext context)
-			throws SingletonException {
+	public HttpService(NucleusContext context) throws SingletonException {
 		if (null == HttpService.instance) {
 			HttpService.instance = this;
 

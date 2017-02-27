@@ -24,45 +24,18 @@ THE SOFTWARE.
 -----------------------------------------------------------------------------
 */
 
-package net.cellcloud.talk.command;
+package net.cellcloud.http;
 
-import net.cellcloud.common.Message;
-import net.cellcloud.common.Packet;
-import net.cellcloud.common.Session;
-import net.cellcloud.talk.TalkDefinition;
-import net.cellcloud.talk.TalkServiceKernel;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 
-/**
- * Talk heartbeat command
- * 
- * @author Ambrose Xu
- * 
- */
-public final class ServerHeartbeatCommand extends ServerCommand {
+import org.eclipse.jetty.server.Request;
 
-	/**
-	 * 构造函数。
-	 */
-	public ServerHeartbeatCommand(TalkServiceKernel service) {
-		super(service, null, null);
+public abstract class HttpFilter {
+
+	public HttpFilter() {
 	}
 
-	/**
-	 * 构造函数。
-	 */
-	public ServerHeartbeatCommand(TalkServiceKernel service, Session session, Packet packet) {
-		super(service, session, packet);
-	}
-
-	@Override
-	public void execute() {
-		// 更新时间戳成功，回送心跳包
-		if (this.service.updateSessionHeartbeat(this.session)) {
-			Packet packet = new Packet(TalkDefinition.TPT_HEARTBEAT, 9, 1, 0);
-			byte[] data = Packet.pack(packet);
-			Message message = new Message(data);
-			this.session.write(message);
-		}
-	}
+	public abstract boolean doFilter(String target, Request baseRequest, HttpServletRequest request, HttpServletResponse response);
 
 }

@@ -36,6 +36,7 @@ import net.cellcloud.common.Session;
 import net.cellcloud.talk.TalkDefinition;
 import net.cellcloud.talk.TalkFailureCode;
 import net.cellcloud.talk.TalkServiceFailure;
+import net.cellcloud.util.Clock;
 import net.cellcloud.util.Utils;
 
 /** Speaker 连接处理器。
@@ -153,6 +154,10 @@ public final class SpeakerConnectorHandler implements MessageHandler {
 		if (TalkDefinition.TPT_DIALOGUE[2] == tag[2]
 			&& TalkDefinition.TPT_DIALOGUE[3] == tag[3]) {
 			this.speaker.doDialogue(packet, session);
+		}
+		else if (TalkDefinition.TPT_HEARTBEAT[2] == tag[2]
+			&& TalkDefinition.TPT_HEARTBEAT[3] == tag[3]) {
+			this.speaker.heartbeatTime = Clock.currentTimeMillis();
 		}
 		else if (TalkDefinition.TPT_QUICK[2] == tag[2]
 			&& TalkDefinition.TPT_QUICK[3] == tag[3]) {

@@ -118,13 +118,23 @@ public final class NucleusConfig {
 	 */
 	public final class GatewayConfig {
 
+		/** 网关路由规则。 */
 		public String routingRule = "Hash";
 
 		/** 下位机地址列表。 */
-		public List<InetSocketAddress> slaveAddressList = null;
+		public List<String> slaveHostList = null;
+
+		/** 下位机端口列表。 */
+		public List<Integer> slavePortList = null;
+
+		/** 下位机对应的 HTTP 端口列表。 */
+		public List<Integer> slaveHttpPortList = null;
 
 		/** 代理的 Cellet 识别串列表。 */
 		public List<String> celletIdentifiers = null;
+
+		/** 代理的 HTTP 请求的 URI 。 */
+		public List<String> httpURIList = null;
 
 		private GatewayConfig() {
 		}

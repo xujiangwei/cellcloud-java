@@ -37,15 +37,21 @@ import net.cellcloud.talk.Primitive;
  */
 public abstract class Dialect {
 
+	/** 方言名称。 */
 	private String name;
+	/** 方言 Tracker 。 */
 	protected String tracker;
+	/** 方言的源标签。 */
 	protected String tag;
+	/** 关联的 Cellet 标识。 */
 	protected String celletIdentifier;
+	/** 关联的 Cellet 。 */
 	protected Cellet cellet;
 
 	/**
 	 * 构造函数。
-	 * @param name
+	 * 
+	 * @param name 指定方言名。
 	 */
 	public Dialect(String name) {
 		this.name = name;
@@ -54,8 +60,9 @@ public abstract class Dialect {
 
 	/**
 	 * 构造函数。
-	 * @param name
-	 * @param tracker
+	 * 
+	 * @param name 指定方言名。
+	 * @param tracker 指定 Tracker 串。
 	 */
 	public Dialect(String name, String tracker) {
 		this.name = name;

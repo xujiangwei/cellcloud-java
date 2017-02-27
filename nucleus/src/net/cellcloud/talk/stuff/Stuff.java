@@ -133,7 +133,7 @@ public abstract class Stuff {
 		TransformerFactory tf = TransformerFactory.newInstance();
 		Transformer t = tf.newTransformer();
 		t.setOutputProperty("encoding", "UTF-8");
-		ByteArrayOutputStream bos = new ByteArrayOutputStream();
+		ByteArrayOutputStream bos = new ByteArrayOutputStream(128);
 		t.transform(new DOMSource(doc), new StreamResult(bos));
 
 		this.value = bos.toString().getBytes(Charset.forName("UTF-8"));

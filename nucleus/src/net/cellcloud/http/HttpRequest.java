@@ -140,7 +140,7 @@ public class HttpRequest {
 		}
 
 		try {
-			this.dataStream = new ByteArrayOutputStream();
+			this.dataStream = new ByteArrayOutputStream(1024);
 			InputStream is = this.request.getInputStream();
 			if (null != is) {
 				byte[] buffer = new byte[1024];

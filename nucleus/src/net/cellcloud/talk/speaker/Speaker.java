@@ -92,6 +92,8 @@ public class Speaker implements Speakable {
 
 	private Timer contactedTimer = null;
 
+	protected long heartbeatTime = 0;
+
 	/** 构造函数。
 	 */
 	public Speaker(InetSocketAddress address, SpeakerDelegate delegate, int block) {
