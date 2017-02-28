@@ -47,35 +47,54 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 /**
- * 快速握手服务句柄。
+ * 基于 HTTP 协议的快速握手处理器。
  * 
- * @author Jiangwei Xu
+ * @author Ambrose Xu
  *
  */
 public class HttpQuickHandler extends AbstractJSONHandler implements CapsuleHolder {
 
+	/** 用于 JSON 数据的明文键。 */
 	public static final String Plaintext = "plaintext";
+	/** 用于 JSON 数据的标签键。 */
 	public static final String Tag = "tag";
+	/** 用于 JSON 数据的 Cellet 标识列表键。 */
 	public static final String Identifiers = "identifiers";
+	/** 用于 JSON 数据的错误信息键。 */
 	public static final String Error = "error";
 
+	/** Talk 服务核心。 */
 	private TalkServiceKernel talkServiceKernel;
 
+	/**
+	 * 构造函数。
+	 * 
+	 * @param talkServiceKernel 指定 Talk 服务核心。
+	 */
 	public HttpQuickHandler(TalkServiceKernel talkServiceKernel) {
 		super();
 		this.talkServiceKernel = talkServiceKernel;
 	}
 
+	/**
+	 * {@inheritDoc}
+	 */
 	@Override
 	public String getPathSpec() {
 		return "/talk/quick";
 	}
 
+	/**
+	 * {@inheritDoc}
+	 */
 	@Override
 	public HttpHandler getHttpHandler() {
 		return this;
 	}
 
+	/**
+	 * {@inheritDoc}
+	 */
 	@Override
 	protected void doPost(HttpRequest request, HttpResponse response)
 			throws IOException {
@@ -141,6 +160,9 @@ public class HttpQuickHandler extends AbstractJSONHandler implements CapsuleHold
 		}
 	}
 
+	/**
+	 * {@inheritDoc}
+	 */
 	@Override
 	protected void doOptions(HttpRequest request, HttpResponse response)
 			throws IOException {

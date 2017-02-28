@@ -58,43 +58,65 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 /**
- * 对话者。
+ * 原语对话者。
  * 
- * @author Jiangwei Xu
+ * @author Ambrose Xu
  *
  */
 public class Speaker implements Speakable {
 
+	/** 内核标签。 */
 	private byte[] nucleusTag;
 
+	/** 访问地址。 */
 	private InetSocketAddress address;
+	/** 对话者事件委派。 */
 	private SpeakerDelegate delegate;
+	/** 对话代理监听器。 */
 	private SpeakerProxyListener proxyListener;
+	/** 用于建立连接的非阻塞连接器。 */
 	private NonblockingConnector connector;
+	/** 数据缓存区大小。 */
 	private int block;
 
+	/** 此对话者请求的 Cellet 标识清单。 */
 	private List<String> identifierList;
 
+	/** 对话者协商的能力描述。 */
 	public TalkCapacity capacity = null;
 
+	/** 从服务器获得密钥。 */
 	private byte[] secretKey = null;
 
+	/** 服务器端的内核标签。 */
 	protected String remoteTag  = null;
 
+	/** 是否已经验证成功，成功与服务器握手。 */
 	private boolean authenticated = false;
+	/** 状态。 */
 	private volatile int state = SpeakerState.HANGUP;
 
-	// 是否需要重新连接
+	/** 是否需要重新连接。 */
 	public boolean lost = false;
+	/** 上一次重连的时间戳。 */
 	public long retryTimestamp = 0;
+	/** 重连次数。 */
 	public int retryCounts = 0;
+	/** 是否已经达到最大重连次数，重连结束。 */
 	public boolean retryEnd = false;
 
+	/** 协议握手超时控制定时器。 */
 	private Timer contactedTimer = null;
 
+	/** 最近一次心跳时间戳。 */
 	protected long heartbeatTime = 0;
 
-	/** 构造函数。
+	/**
+	 * 构造函数。
+	 * 
+	 * @param address 指定访问地址。
+	 * @param delegate 指定事件委派。
+	 * @param block 指定缓存区大小。
 	 */
 	public Speaker(InetSocketAddress address, SpeakerDelegate delegate, int block) {
 		this.nucleusTag = Nucleus.getInstance().getTagAsString().getBytes();
@@ -104,7 +126,13 @@ public class Speaker implements Speakable {
 		this.identifierList = new ArrayList<String>(2);
 	}
 
-	/** 构造函数。
+	/**
+	 * 构造函数。
+	 * 
+	 * @param address 指定访问地址。
+	 * @param delegate 指定事件委派。
+	 * @param block 指定缓存区大小。
+	 * @param capacity 指定协商能力。
 	 */
 	public Speaker(InetSocketAddress address, SpeakerDelegate delegate, int block, TalkCapacity capacity) {
 		this.nucleusTag = Nucleus.getInstance().getTagAsString().getBytes();
@@ -115,25 +143,33 @@ public class Speaker implements Speakable {
 		this.identifierList = new ArrayList<String>(2);
 	}
 
-	/** 返回 Cellet Identifier 列表。
+	/**
+	 * {@inheritDoc}
 	 */
 	@Override
 	public List<String> getIdentifiers() {
 		return this.identifierList;
 	}
 
+	/**
+	 * {@inheritDoc}
+	 */
 	@Override
 	public String getRemoteTag() {
 		return this.remoteTag;
 	}
 
-	/** 返回连接地址。
+	/**
+	 * 获得连接地址。
+	 * 
+	 * @return 返回连接地址。
 	 */
 	public InetSocketAddress getAddress() {
 		return this.address;
 	}
 
-	/** 向指定地址发起请求 Cellet 服务。
+	/**
+	 * {@inheritDoc}
 	 */
 	@Override
 	public synchronized boolean call(List<String> identifiers) {
@@ -190,7 +226,8 @@ public class Speaker implements Speakable {
 		return ret;
 	}
 
-	/** 挂断与 Cellet 的服务。
+	/**
+	 * {@inheritDoc}
 	 */
 	@Override
 	public synchronized void hangUp() {
@@ -212,7 +249,8 @@ public class Speaker implements Speakable {
 		this.identifierList.clear();
 	}
 
-	/** 向 Cellet 发送原语数据。
+	/**
+	 * {@inheritDoc}
 	 */
 	@Override
 	public synchronized boolean speak(String identifier, Primitive primitive) {
@@ -245,17 +283,18 @@ public class Speaker implements Speakable {
 		return true;
 	}
 
-	/** 是否已经与 Cellet 建立服务。
+	/**
+	 * {@inheritDoc}
 	 */
 	@Override
 	public boolean isCalled() {
-		return this.state == SpeakerState.CALLED;
+		return (this.state == SpeakerState.CALLED && this.connector.isConnected());
 	}
 
 	/**
 	 * 透传指定的数据。
 	 * 
-	 * @param data
+	 * @param data 指定需透传的数据。
 	 */
 	public void pass(byte[] data) {
 		Message message = new Message(data);
@@ -263,13 +302,19 @@ public class Speaker implements Speakable {
 	}
 
 	/**
-	 * 重置睡眠间隔。
-	 * @param sleepInterval
+	 * 重置连接器睡眠间隔。
+	 * 
+	 * @param sleepInterval 指定新的时间间隔，单位：毫秒。
 	 */
 	public void resetSleepInterval(long sleepInterval) {
 		this.connector.resetSleepInterval(sleepInterval);
 	}
 
+	/**
+	 * 设置代理监听器。
+	 * 
+	 * @param listener 指定代理监听器实例。
+	 */
 	public void setProxyListener(SpeakerProxyListener listener) {
 		this.proxyListener = listener;
 	}

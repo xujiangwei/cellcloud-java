@@ -2,7 +2,7 @@
 -----------------------------------------------------------------------------
 This source file is part of Cell Cloud.
 
-Copyright (c) 2009-2014 Cell Cloud Team (www.cellcloud.net)
+Copyright (c) 2009-2017 Cell Cloud Team (www.cellcloud.net)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -53,43 +53,70 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 /**
- * HTTP 协议的对话处理器。
+ * 基于 HTTP 协议的对话处理器。
  * 
- * @author Jiangwei Xu
+ * @author Ambrose Xu
  *
  */
 public final class HttpDialogueHandler extends AbstractJSONHandler implements CapsuleHolder {
 
+	/** 用于 JSON 数据的标签键。 */
 	public static final String Tag = "tag";
+	/** 用于 JSON 数据的标识键。 */
 	public static final String Identifier = "identifier";
+	/** 用于 JSON 数据的注记键。 */
 	public static final String Note = "note";
+	/** 用于 JSON 数据的原语键。 */
 	public static final String Primitive = "primitive";
+	/** 用于 JSON 数据的原语列表键。 */
 	public static final String Primitives = "primitives";
+	/** 用于 JSON 数据的队列键。 */
 	public static final String Queue = "queue";
 
+	/** Talk 服务核心。 */
 	private TalkServiceKernel talkServiceKernel;
 
+	/** HTTP 数据拦截器。 */
 	private HttpInterceptable interceptor;
 
-	public HttpDialogueHandler(TalkServiceKernel service) {
+	/**
+	 * 构造函数。
+	 * 
+	 * @param talkServiceKernel 指定 Talk 服务核心。
+	 */
+	public HttpDialogueHandler(TalkServiceKernel talkServiceKernel) {
 		super();
-		this.talkServiceKernel = service;
+		this.talkServiceKernel = talkServiceKernel;
 	}
 
+	/**
+	 * 设置数据拦截器。
+	 * 
+	 * @param interceptor 指定拦截器实现。
+	 */
 	public void setInterceptor(HttpInterceptable interceptor) {
 		this.interceptor = interceptor;
 	}
 
+	/**
+	 * {@inheritDoc}
+	 */
 	@Override
 	public String getPathSpec() {
 		return "/talk/dialogue";
 	}
 
+	/**
+	 * {@inheritDoc}
+	 */
 	@Override
 	public HttpHandler getHttpHandler() {
 		return this;
 	}
 
+	/**
+	 * {@inheritDoc}
+	 */
 	@Override
 	protected void doPost(HttpRequest request, HttpResponse response)
 		throws IOException {
@@ -163,6 +190,9 @@ public final class HttpDialogueHandler extends AbstractJSONHandler implements Ca
 		}
 	}
 
+	/**
+	 * {@inheritDoc}
+	 */
 	@Override
 	protected void doOptions(HttpRequest request, HttpResponse response)
 			throws IOException {
@@ -173,8 +203,10 @@ public final class HttpDialogueHandler extends AbstractJSONHandler implements Ca
 
 	/**
 	 * 将原语队列转为 JSON 数组。
-	 * @param queue
-	 * @return
+	 * 
+	 * @param identifiers 指定目标 Cellet 的标识清单。
+	 * @param list 指定需转换的原语列表。
+	 * @return 返回转换后的 JSON 数组。
 	 */
 	private JSONArray convert(ArrayList<String> identifiers, ArrayList<Primitive> list) {
 		JSONArray ret = new JSONArray();
@@ -200,4 +232,5 @@ public final class HttpDialogueHandler extends AbstractJSONHandler implements Ca
 
 		return ret;
 	}
+
 }

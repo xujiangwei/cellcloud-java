@@ -2,7 +2,7 @@
 -----------------------------------------------------------------------------
 This source file is part of Cell Cloud.
 
-Copyright (c) 2009-2013 Cell Cloud Team (www.cellcloud.net)
+Copyright (c) 2009-2017 Cell Cloud Team (www.cellcloud.net)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -44,34 +44,52 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 /**
- * 接入校验。
+ * 基于 HTTP 协议的接入校验处理器。
  * 
- * @author Jiangwei Xu
+ * @author Ambrose Xu
  *
  */
 public final class HttpCheckHandler extends AbstractJSONHandler implements CapsuleHolder {
 
+	/** 用于 JSON 数据的明文键。 */
 	public static final String Plaintext = "plaintext";
+	/** 用于 JSON 数据的标签键。 */
 	public static final String Tag = "tag";
+	/** 用于 JSON 数据的错误信息键。 */
 	public static final String Error = "error";
 
+	/** Talk 服务核心。 */
 	private TalkServiceKernel talkServiceKernel;
 
+	/**
+	 * 构造函数。
+	 * 
+	 * @param talkServiceKernel 指定 Talk 服务核心。
+	 */
 	public HttpCheckHandler(TalkServiceKernel talkServiceKernel) {
 		super();
 		this.talkServiceKernel = talkServiceKernel;
 	}
 
+	/**
+	 * {@inheritDoc}
+	 */
 	@Override
 	public String getPathSpec() {
 		return "/talk/check";
 	}
 
+	/**
+	 * {@inheritDoc}
+	 */
 	@Override
 	public HttpHandler getHttpHandler() {
 		return this;
 	}
 
+	/**
+	 * {@inheritDoc}
+	 */
 	@Override
 	protected void doPost(HttpRequest request, HttpResponse response)
 		throws IOException {
@@ -115,6 +133,9 @@ public final class HttpCheckHandler extends AbstractJSONHandler implements Capsu
 		}
 	}
 
+	/**
+	 * {@inheritDoc}
+	 */
 	@Override
 	protected void doOptions(HttpRequest request, HttpResponse response)
 			throws IOException {

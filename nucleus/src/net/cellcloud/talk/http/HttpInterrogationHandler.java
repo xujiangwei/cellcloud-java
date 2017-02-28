@@ -2,7 +2,7 @@
 -----------------------------------------------------------------------------
 This source file is part of Cell Cloud.
 
-Copyright (c) 2009-2013 Cell Cloud Team (www.cellcloud.net)
+Copyright (c) 2009-2017 Cell Cloud Team (www.cellcloud.net)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -43,34 +43,52 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 /**
- * 会话询问。
+ * 基于 HTTP 协议的会话询问处理器。
  * 
  * @author Jiangwei Xu
  *
  */
 public final class HttpInterrogationHandler extends AbstractJSONHandler implements CapsuleHolder {
 
+	/** 用于 JSON 数据的密文键。 */
 	public static final String Ciphertext = "ciphertext";
+	/** 用于 JSON 数据的密钥键。 */
 	public static final String Key = "key";
+	/** 用于 JSON 数据的版本描述键。 */
 	public static final String Version = "ver";
 
+	/** Talk 服务核心。 */
 	private TalkServiceKernel talkServiceKernel;
 
+	/**
+	 * 构造函数。
+	 * 
+	 * @param talkServiceKernel 指定 Talk 服务核心。
+	 */
 	public HttpInterrogationHandler(TalkServiceKernel talkServiceKernel) {
 		super();
 		this.talkServiceKernel = talkServiceKernel;
 	}
 
+	/**
+	 * {@inheritDoc}
+	 */
 	@Override
 	public String getPathSpec() {
 		return "/talk/int";
 	}
 
+	/**
+	 * {@inheritDoc}
+	 */
 	@Override
 	public HttpHandler getHttpHandler() {
 		return this;
 	}
 
+	/**
+	 * {@inheritDoc}
+	 */
 	@Override
 	protected void doGet(HttpRequest request, HttpResponse response)
 			throws IOException {
@@ -102,12 +120,18 @@ public final class HttpInterrogationHandler extends AbstractJSONHandler implemen
 		}
 	}
 
+	/**
+	 * {@inheritDoc}
+	 */
 	@Override
 	protected void doPost(HttpRequest request, HttpResponse response)
 			throws IOException {
 		this.doGet(request, response);
 	}
 
+	/**
+	 * {@inheritDoc}
+	 */
 	@Override
 	protected void doOptions(HttpRequest request, HttpResponse response)
 			throws IOException {
@@ -115,4 +139,5 @@ public final class HttpInterrogationHandler extends AbstractJSONHandler implemen
 		response.setHeader("Access-Control-Allow-Methods", "POST, GET");
 		response.setHeader("Access-Control-Allow-Origin", "*");
 	}
+
 }

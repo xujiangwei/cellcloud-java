@@ -2,7 +2,7 @@
 -----------------------------------------------------------------------------
 This source file is part of Cell Cloud.
 
-Copyright (c) 2009-2014 Cell Cloud Team (www.cellcloud.net)
+Copyright (c) 2009-2017 Cell Cloud Team (www.cellcloud.net)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -57,44 +57,63 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 /**
- * 基于 HTTP 的对话者。
+ * 基于 HTTP 协议的对话者。
  * 
- * @author Jiangwei Xu
+ * @author Ambrose Xu
  *
  */
 public class HttpSpeaker implements Speakable {
 
+	/** 请求握手验证的 URI */
 	private static final String URI_INTERROGATION = "/talk/int";
+	/** 验证的 URI */
 	private static final String URI_CHECK = "/talk/check";
+	/** 请求 Cellet 的 URI */
 	private static final String URI_REQUEST = "/talk/request";
+	/** 会话数据发送 URI */
 	private static final String URI_DIALOGUE = "/talk/dialogue";
+	/** 心跳 URI */
 	private static final String URI_HEARTBEAT = "/talk/hb";
-	// TODO HTTP 增加 hang up 接口
-//	private static final String URI_HANGUP = "/talk/hangup";
 
+	/** 对话者事件委派。 */
 	private SpeakerDelegate delegate;
+
+	/** 当前状态。 */
 	private volatile int state = SpeakerState.HANGUP;
 
+	/** 当前请求的 Cellet 标识列表。 */
 	private ArrayList<String> identifierList;
+	/** 当前访问地址。 */
 	private InetSocketAddress address;
+	/** 使用的 HTTP 客户端。 */
 	private HttpClient client;
 
+	/** 当前请求的全局 Cookie 。 */
 	private String cookie;
 
-	/// 服务器的 Tag
+	/** 服务器的 Tag 。 */
 	private String remoteTag;
 
-	/// 心跳控制计数
+	/** 心跳控制计数。 */
 	private int hbTick;
-	/// 心跳计数周期
+	/** 心跳计数周期。 */
 	private int hbPeriod;
-	/// 心跳失败累计次数
+	/** 心跳失败累计次数。 */
 	private int hbFailedCounts;
-	/// 最大心跳失败次数
+	/** 最大心跳失败次数。 */
 	private int hbMaxFailed;
 
+	/** 线程执行器。 */
 	private ExecutorService executor;
 
+	/**
+	 * 构造函数。
+	 * 
+	 * @param address 指定访问地址。
+	 * @param delegate 指定事件委派。
+	 * @param heartbeatPeriod 指定心跳周期。
+	 * @param executor 指定线程执行器。
+	 */
 	public HttpSpeaker(InetSocketAddress address, SpeakerDelegate delegate, int heartbeatPeriod, ExecutorService executor) {
 		this.address = address;
 		this.delegate = delegate;
@@ -108,16 +127,25 @@ public class HttpSpeaker implements Speakable {
 		this.executor = executor;
 	}
 
+	/**
+	 * {@inheritDoc}
+	 */
 	@Override
 	public List<String> getIdentifiers() {
 		return this.identifierList;
 	}
 
+	/**
+	 * {@inheritDoc}
+	 */
 	@Override
 	public String getRemoteTag() {
 		return this.remoteTag;
 	}
 
+	/**
+	 * {@inheritDoc}
+	 */
 	@Override
 	public boolean call(List<String> identifiers) {
 		if (SpeakerState.CALLING == this.state) {
@@ -202,9 +230,18 @@ public class HttpSpeaker implements Speakable {
 		return false;
 	}
 
+	/**
+	 * {@inheritDoc}
+	 */
 	@Override
 	public void hangUp() {
-		this.stopClient();
+		// TODO 发送 Hang up 请求
+
+		try {
+			this.client.stop();
+		} catch (Exception e) {
+			Logger.log(HttpSpeaker.class, e, LogLevel.DEBUG);
+		}
 
 		if (this.state != SpeakerState.HANGUP) {
 			this.state = SpeakerState.HANGUP;
@@ -215,6 +252,9 @@ public class HttpSpeaker implements Speakable {
 		}
 	}
 
+	/**
+	 * {@inheritDoc}
+	 */
 	@Override
 	public boolean speak(String celletIdentifier, Primitive primitive) {
 		if (this.state != SpeakerState.CALLED
@@ -284,6 +324,9 @@ public class HttpSpeaker implements Speakable {
 		return true;
 	}
 
+	/**
+	 * {@inheritDoc}
+	 */
 	@Override
 	public boolean isCalled() {
 		return (this.state == SpeakerState.CALLED);
@@ -317,14 +360,9 @@ public class HttpSpeaker implements Speakable {
 		}
 	}
 
-	private void stopClient() {
-		try {
-			this.client.stop();
-		} catch (Exception e) {
-			Logger.log(HttpSpeaker.class, e, LogLevel.DEBUG);
-		}
-	}
-
+	/**
+	 * 发送心跳数据。
+	 */
 	private void requestHeartbeat() {
 		// 拼装 URL
 		StringBuilder url = new StringBuilder("http://");
@@ -371,7 +409,10 @@ public class HttpSpeaker implements Speakable {
 	}
 
 	/**
-	 * 请求 Check 。
+	 * 发送 Check 数据。
+	 * 
+	 * @param ciphertext 指定服务器发来的密文。
+	 * @param key 指定密钥。
 	 */
 	private void requestCheck(byte[] ciphertext, byte[] key) {
 		if (null == this.address) {
@@ -439,7 +480,7 @@ public class HttpSpeaker implements Speakable {
 	}
 
 	/**
-	 * 请求 Cellet 。
+	 * 发送请求 Cellet 数据。
 	 */
 	private void requestCellets() {
 		// 拼装 URL
@@ -492,6 +533,12 @@ public class HttpSpeaker implements Speakable {
 		}
 	}
 
+	/**
+	 * 执行会话处理。
+	 * 
+	 * @param data 指定接收到的 JSON 数据。
+	 * @throws JSONException
+	 */
 	private void doDialogue(JSONObject data) throws JSONException {
 		String identifier = data.getString(HttpDialogueHandler.Identifier);
 		JSONObject primData = data.getJSONObject(HttpDialogueHandler.Primitive);
@@ -503,26 +550,48 @@ public class HttpSpeaker implements Speakable {
 		this.fireDialogue(identifier, primitive);
 	}
 
+	/**
+	 * 触发接收到对话数据回调。
+	 * 
+	 * @param celletIdentifier 指定触发的 Cellet 标识。
+	 * @param primitive 指定接收到的原语数据。
+	 */
 	private void fireDialogue(String celletIdentifier, Primitive primitive) {
 		this.delegate.onDialogue(this, celletIdentifier, primitive);
 	}
 
+	/**
+	 * 触发接通服务回调。
+	 * 
+	 * @param celletIdentifier 指定接通服务的 Cellet 标识。
+	 */
 	private void fireContacted(String celletIdentifier) {
 		this.delegate.onContacted(this, celletIdentifier);
 	}
 
+	/**
+	 * 触发退出服务回调。
+	 * 
+	 * @param celletIdentifier 指定退出服务的 Cellet 标识。
+	 */
 	private void fireQuitted(String celletIdentifier) {
 		this.delegate.onQuitted(this, celletIdentifier);
 	}
 
+	/**
+	 * 触发发生错误回调。
+	 * 
+	 * @param failure 指定会话服务错误。
+	 */
 	private void fireFailed(TalkServiceFailure failure) {
 		this.delegate.onFailed(this, failure);
 	}
 
 	/**
-	 * 读 HTTP 返回内容数据。
-	 * @param content
-	 * @return
+	 * 读取 HTTP 返回的数据内容。
+	 * 
+	 * @param content 指定待读取分析的数据数组。
+	 * @return 返回数据的 JSON 形式。
 	 * @throws JSONException
 	 */
 	private JSONObject readContent(byte[] content) throws JSONException {
@@ -536,4 +605,5 @@ public class HttpSpeaker implements Speakable {
 
 		return ret;
 	}
+
 }

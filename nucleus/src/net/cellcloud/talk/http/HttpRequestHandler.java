@@ -45,40 +45,53 @@ import net.cellcloud.talk.TalkServiceKernel;
 import net.cellcloud.talk.TalkTracker;
 
 /**
- * 请求 Cellet 服务句柄。
+ * 基于 HTTP 协议的 Cellet 请求处理器。
  * 
- * @author Jiangwei Xu
+ * @author Ambrose Xu
  *
  */
 public final class HttpRequestHandler extends AbstractJSONHandler implements CapsuleHolder {
 
+	/** 用于 JSON 数据的 Cellet 标识键。 */
 	public static final String Identifier = "identifier";
+	/** 用于 JSON 数据的标签键。 */
 	public static final String Tag = "tag";
+	/** 用于 JSON 数据的版本信息键。 */
 	public static final String Version = "version";
+	/** 用于 JSON 数据的错误信息键。 */
 	public static final String Error = "error";
 
+	/** Talk 服务核心。 */
 	private TalkServiceKernel talkServiceKernel;
 
+	/**
+	 * 构造函数。
+	 * 
+	 * @param talkServiceKernel 指定 Talk 服务核心。
+	 */
 	public HttpRequestHandler(TalkServiceKernel talkServiceKernel) {
 		super();
 		this.talkServiceKernel = talkServiceKernel;
 	}
 
+	/**
+	 * {@inheritDoc}
+	 */
 	@Override
 	public String getPathSpec() {
 		return "/talk/request";
 	}
 
+	/**
+	 * {@inheritDoc}
+	 */
 	@Override
 	public HttpHandler getHttpHandler() {
 		return this;
 	}
 
 	/**
-	 * 返回数据：
-	 * tag
-	 * identifier
-	 * version
+	 * {@inheritDoc}
 	 */
 	@Override
 	protected void doPost(HttpRequest request, HttpResponse response)
@@ -119,12 +132,18 @@ public final class HttpRequestHandler extends AbstractJSONHandler implements Cap
 		}
 	}
 
+	/**
+	 * {@inheritDoc}
+	 */
 	@Override
 	protected void doGet(HttpRequest request, HttpResponse response)
 			throws IOException {
 		this.doPost(request, response);
 	}
 
+	/**
+	 * {@inheritDoc}
+	 */
 	@Override
 	protected void doOptions(HttpRequest request, HttpResponse response)
 			throws IOException {
@@ -132,4 +151,5 @@ public final class HttpRequestHandler extends AbstractJSONHandler implements Cap
 		response.setHeader("Access-Control-Allow-Methods", "POST, GET");
 		response.setHeader("Access-Control-Allow-Origin", "*");
 	}
+
 }

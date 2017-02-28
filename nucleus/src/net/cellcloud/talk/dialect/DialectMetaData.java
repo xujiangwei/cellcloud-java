@@ -2,7 +2,7 @@
 -----------------------------------------------------------------------------
 This source file is part of Cell Cloud.
 
-Copyright (c) 2009-2012 Cell Cloud Team (www.cellcloud.net)
+Copyright (c) 2009-2017 Cell Cloud Team (www.cellcloud.net)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -26,20 +26,33 @@ THE SOFTWARE.
 
 package net.cellcloud.talk.dialect;
 
-/** 方言元数据。
+/**
+ * 方言元数据。
  * 
- * @author Jiangwei Xu
+ * @author Ambrose Xu
+ * 
  */
 public final class DialectMetaData {
 
-	/// 标识方言的唯一字符串标识符。
+	/**
+	 * 标识方言的唯一字符串标识符。
+	 */
 	protected String name;
 
-	/// 方言文本描述。
+	/**
+	 * 方言文本描述。
+	 */
 	protected String description;
 
-	public DialectMetaData(final String name, final String description) {
+	/**
+	 * 构造函数。
+	 * 
+	 * @param name 指定方言名。
+	 * @param description 指定方言的描述信息。
+	 */
+	public DialectMetaData(String name, String description) {
 		this.name = name;
 		this.description = description;
 	}
+
 }

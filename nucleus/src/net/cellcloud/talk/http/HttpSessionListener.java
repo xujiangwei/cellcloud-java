@@ -2,7 +2,7 @@
 -----------------------------------------------------------------------------
 This source file is part of Cell Cloud.
 
-Copyright (c) 2009-2013 Cell Cloud Team (www.cellcloud.net)
+Copyright (c) 2009-2017 Cell Cloud Team (www.cellcloud.net)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -33,22 +33,34 @@ import net.cellcloud.talk.TalkServiceKernel;
 /**
  * HTTP 会话监听器。
  * 
- * @author Jiangwei Xu
+ * @author Ambrose Xu
  *
  */
 public class HttpSessionListener implements SessionListener {
 
+	/** Talk 服务核心。 */
 	private TalkServiceKernel talkServiceKernel;
 
+	/**
+	 * 构造函数。
+	 * 
+	 * @param talkServiceKernel 指定 Talk 服务核心。
+	 */
 	public HttpSessionListener(TalkServiceKernel talkServiceKernel) {
 		this.talkServiceKernel = talkServiceKernel;
 	}
 
+	/**
+	 * {@inheritDoc}
+	 */
 	@Override
 	public void onCreate(HttpSession session) {
 		// Nothing
 	}
 
+	/**
+	 * {@inheritDoc}
+	 */
 	@Override
 	public void onDestroy(HttpSession session) {
 		this.talkServiceKernel.closeSession(session);

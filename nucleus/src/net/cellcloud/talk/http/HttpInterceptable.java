@@ -29,8 +29,23 @@ package net.cellcloud.talk.http;
 import net.cellcloud.http.HttpSession;
 import net.cellcloud.talk.Primitive;
 
+/**
+ * HTTP 消息拦截器接口。
+ * 
+ * @author Ambrose Xu
+ *
+ */
 public interface HttpInterceptable {
 
+	/**
+	 * 当 HTTP 协议处理器接收到 HTTP 请求后，调用此方法判断是否要将此请求拦截，拦截后不再回调默认事件。
+	 * 
+	 * @param session 当前 HTTP Session 。
+	 * @param speakerTag 源会话器的内核标签。
+	 * @param celletIdentifier 目标 Cellet 标识。
+	 * @param primitive 接收到的原语数据。
+	 * @return 如果拦截此数据返回 <code>true</code> 。
+	 */
 	public boolean intercept(HttpSession session, String speakerTag, String celletIdentifier, Primitive primitive);
 
 }
