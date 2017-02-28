@@ -358,6 +358,9 @@ public final class Nucleus {
 
 				// 启动 Talk Service
 				if (this.talkService.startup()) {
+					// 配置运行时参数
+					this.talkService.setMaxWorkerBandwidth(this.config.talk.maxWorkerBandwidth);
+
 					Logger.i(Nucleus.class, "Starting talk service (" + this.config.talk.port + ") success.");
 				}
 				else {

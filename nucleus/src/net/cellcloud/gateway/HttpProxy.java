@@ -26,31 +26,33 @@ THE SOFTWARE.
 
 package net.cellcloud.gateway;
 
-import java.io.BufferedReader;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.net.URLConnection;
-import java.nio.charset.Charset;
+import java.util.Enumeration;
+import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import net.cellcloud.Version;
+import org.eclipse.jetty.http.HttpMethod;
+
+import net.cellcloud.common.Logger;
 import net.cellcloud.gateway.GatewayService.Slave;
 import net.cellcloud.http.CapsuleHolder;
 import net.cellcloud.http.HttpHandler;
 import net.cellcloud.http.HttpRequest;
 import net.cellcloud.http.HttpResponse;
 
-import org.json.JSONObject;
-
 /**
+ * HTTP 协议代理。
  * 
  * @author Ambrose Xu
  *
@@ -63,13 +65,13 @@ public class HttpProxy extends HttpHandler implements CapsuleHolder {
 
 	public final static int BUFF_SIZE = 4096;
 
-	private RoutingTable routingTable;
+	private GatewayService gateway;
 	private String pathSpec;
 
-	public HttpProxy(String pathSpec, RoutingTable routingTable) {
+	public HttpProxy(String pathSpec, GatewayService gateway) {
 		super();
 		this.pathSpec = pathSpec;
-		this.routingTable = routingTable;
+		this.gateway = gateway;
 	}
 
 	@Override
@@ -85,55 +87,109 @@ public class HttpProxy extends HttpHandler implements CapsuleHolder {
 	@Override
 	protected void doGet(HttpRequest request, HttpResponse response) throws IOException {
 		String remoteAddress = request.getRemoteAddr().getHostString();
-		Slave slave = this.routingTable.querySlaveByAddress(remoteAddress);
+		Slave slave = this.gateway.refreshHttpRouting(remoteAddress);
 		if (null == slave) {
+			Logger.w(this.getClass(), "Proxy '" + this.pathSpec + "' has no slave: " + remoteAddress);
 			return;
 		}
 
-		this.proxy("GET", slave.address.getHostString(), slave.httpPort, request, response);
+		this.proxy(HttpMethod.GET.asString(), slave.address.getHostString(), slave.httpPort, request, response);
 	}
 
 	@Override
 	protected void doPost(HttpRequest request, HttpResponse response) throws IOException {
+		String remoteAddress = request.getRemoteAddr().getHostString();
+		Slave slave = this.gateway.refreshHttpRouting(remoteAddress);
+		if (null == slave) {
+			Logger.w(this.getClass(), "Proxy '" + this.pathSpec + "' has no slave: " + remoteAddress);
+			return;
+		}
+
+		this.proxy(HttpMethod.POST.asString(), slave.address.getHostString(), slave.httpPort, request, response);
 	}
 
 	@Override
 	protected void doOptions(HttpRequest request, HttpResponse response) throws IOException {
+		String remoteAddress = request.getRemoteAddr().getHostString();
+		Slave slave = this.gateway.refreshHttpRouting(remoteAddress);
+		if (null == slave) {
+			Logger.w(this.getClass(), "Proxy '" + this.pathSpec + "' has no slave: " + remoteAddress);
+			return;
+		}
+
+		this.proxy(HttpMethod.OPTIONS.asString(), slave.address.getHostString(), slave.httpPort, request, response);
 	}
 
 	@Override
 	protected void doPut(HttpRequest request, HttpResponse response) throws IOException {
+		String remoteAddress = request.getRemoteAddr().getHostString();
+		Slave slave = this.gateway.refreshHttpRouting(remoteAddress);
+		if (null == slave) {
+			Logger.w(this.getClass(), "Proxy '" + this.pathSpec + "' has no slave: " + remoteAddress);
+			return;
+		}
+
+		this.proxy(HttpMethod.PUT.asString(), slave.address.getHostString(), slave.httpPort, request, response);
 	}
 
 	@Override
 	protected void doDelete(HttpRequest request, HttpResponse response) throws IOException {
+		String remoteAddress = request.getRemoteAddr().getHostString();
+		Slave slave = this.gateway.refreshHttpRouting(remoteAddress);
+		if (null == slave) {
+			Logger.w(this.getClass(), "Proxy '" + this.pathSpec + "' has no slave: " + remoteAddress);
+			return;
+		}
+
+		this.proxy(HttpMethod.DELETE.asString(), slave.address.getHostString(), slave.httpPort, request, response);
 	}
 
-	private void proxy(String method, String host, int port, HttpRequest httpRequest, HttpResponse httpResponse)
-			throws IOException {
+	private void proxy(String method, String host, int port, HttpRequest httpRequest, HttpResponse httpResponse) throws IOException {
 		HttpServletRequest request = httpRequest.getServletRequest();
 		HttpServletResponse response = httpResponse.getServletResponse();
+
+		// 创建头数据
+		HashMap<String, String> headers = new HashMap<String, String>();
+		Enumeration<String> iter = request.getHeaderNames();
+		while (iter.hasMoreElements()) {
+			String header = iter.nextElement();
+			headers.put(header, request.getHeader(header));
+		}
 
 		// 生成 URL
 		StringBuilder url = new StringBuilder("http://");
 		url.append(host).append(":").append(port);
 		url.append(this.pathSpec);
 
-		// 进行 HTTP 访问
-		ByteArrayOutputStream result = new ByteArrayOutputStream(1024);
-		int status = this.request(method, url.toString(), request.getParameterMap(), result);
+		// HTTP 请求
+		HashMap<String, String> responseHeaders = new HashMap<String, String>();
+		ByteArrayOutputStream responseStream = new ByteArrayOutputStream(1024);
+		int status = 200;
+		if (method.equalsIgnoreCase("POST") || request.getInputStream().available() > 1) {
+			status = this.request(method, url.toString(), headers, request.getParameterMap(), request.getInputStream(),
+				responseHeaders, responseStream);
+		}
+		else {
+			status = this.request(method, url.toString(), headers, request.getParameterMap(),
+				responseHeaders, responseStream);
+		}
 
 		// 设置状态码
 		response.setStatus(status);
-		response.setCharacterEncoding(CHARSET);
-		response.getOutputStream().write(result.toByteArray());
+		// 设置响应头
+		for (Entry<String, String> e : responseHeaders.entrySet()) {
+			response.setHeader(e.getKey(), e.getValue());
+		}
+		response.getOutputStream().write(responseStream.toByteArray());
 
-		result.close();
-		result = null;
+		responseStream.close();
+		responseStream = null;
+		responseHeaders = null;
 	}
 
-	private int request(String method, String URL,
-			Map<String, String[]> parameters, ByteArrayOutputStream result) throws IOException {
+	private int request(String method, String URL, Map<String, String> headers, Map<String, String[]> parameters,
+			Map<String, String> responseHeaders, OutputStream responseStream) throws IOException {
+		// 生成 URL
 		StringBuilder urlString = new StringBuilder(URL);
 		if (null != parameters && !parameters.isEmpty()) {
 			urlString.append("?");
@@ -152,9 +208,9 @@ public class HttpProxy extends HttpHandler implements CapsuleHolder {
 		HttpURLConnection httpURLConnection = (HttpURLConnection) connection;
 		httpURLConnection.setConnectTimeout(TIMEOUT);
 		httpURLConnection.setRequestMethod(method);
-		httpURLConnection.setRequestProperty("Accept-Charset", CHARSET);
-		httpURLConnection.setRequestProperty("User-Agent", "Nucleus/" + Version.getNumbers());
-		httpURLConnection.setRequestProperty("Version", "1.1");
+		for (Entry<String, String> e : headers.entrySet()) {
+			httpURLConnection.setRequestProperty(e.getKey(), e.getValue());
+		}
 
 		// 连接
 		httpURLConnection.connect();
@@ -162,16 +218,16 @@ public class HttpProxy extends HttpHandler implements CapsuleHolder {
 		// 状态码
 		int responseCode = httpURLConnection.getResponseCode();
 
+		// 读取数据
 		InputStream inputStream = null;
-
 		try {
 			inputStream = httpURLConnection.getInputStream();
 			byte[] buf = new byte[BUFF_SIZE];
 			int length = 0;
 			while ((length = inputStream.read(buf)) > 0) {
-				result.write(buf, 0, length);
+				responseStream.write(buf, 0, length);
 			}
-			result.flush();
+			responseStream.flush();
 		} catch (IOException e) {
 			throw e;
 		} finally {
@@ -186,39 +242,55 @@ public class HttpProxy extends HttpHandler implements CapsuleHolder {
 
 		urlString = null;
 
+		Map<String, List<String>> headersFields = httpURLConnection.getHeaderFields();
+		for (Entry<String, List<String>> e : headersFields.entrySet()) {
+			String key = e.getKey();
+			List<String> values = e.getValue();
+			if (null != key && null != values && !values.isEmpty()) {
+				responseHeaders.put(key, values.get(0));
+			}
+		}
+
 		return responseCode;
 	}
 
-	/**
-	 * POST 请求。
-	 * 
-	 * @param urlString
-	 * @param data
-	 * @param result
-	 * @return
-	 * @throws IOException
-	 */
-	private int requestWithPost(String urlString, JSONObject data, StringBuilder result) throws IOException {
-		URL url = new URL(urlString);
+	private int request(String method, String URL, Map<String, String> headers, Map<String, String[]> parameters, InputStream dataStream,
+			Map<String, String> responseHeaders, OutputStream responseStream) throws IOException {
+		// 生成 URL
+		StringBuilder urlString = new StringBuilder(URL);
+		if (null != parameters && !parameters.isEmpty()) {
+			urlString.append("?");
+			for (Map.Entry<String, String[]> e : parameters.entrySet()) {
+				String key = e.getKey();
+				String[] values = e.getValue();
+				for (String value : values) {
+					urlString.append(key).append("=").append(value).append("&");
+				}
+			}
+			urlString.delete(urlString.length() - 1, urlString.length());
+		}
+
+		URL url = new URL(URL);
 		URLConnection connection = url.openConnection();
 		HttpURLConnection httpURLConnection = (HttpURLConnection) connection;
 
 		httpURLConnection.setDoOutput(true);
 		httpURLConnection.setDoInput(true);
 		httpURLConnection.setConnectTimeout(TIMEOUT);
-		httpURLConnection.setRequestMethod("POST");
-		httpURLConnection.setRequestProperty("Accept-Charset", CHARSET);
-		httpURLConnection.setRequestProperty("Content-Type", "application/json");
-		httpURLConnection.setRequestProperty("Connection", "Keep-Alive");
-		httpURLConnection.setRequestProperty("User-Agent", "Nucleus/" + Version.getNumbers());
-		httpURLConnection.setRequestProperty("Version", "1.0");
+		httpURLConnection.setRequestMethod(method);
+		for (Entry<String, String> e : headers.entrySet()) {
+			httpURLConnection.setRequestProperty(e.getKey(), e.getValue());
+		}
 
-		String dataString = data.toString();
-
+		// 写入数据
 		OutputStream outputStream = null;
 		try {
 			outputStream = httpURLConnection.getOutputStream();
-			outputStream.write(dataString.getBytes(Charset.forName("UTF-8")));
+			byte[] buf = new byte[BUFF_SIZE];
+			int length = 0;
+			while ((length = dataStream.read(buf)) > 0) {
+				outputStream.write(buf, 0, length);
+			}
 			outputStream.flush();
 		} catch (IOException e) {
 			throw e;
@@ -232,33 +304,43 @@ public class HttpProxy extends HttpHandler implements CapsuleHolder {
 			}
 		}
 
+		// 获得响应码
 		int responseCode = httpURLConnection.getResponseCode();
 
-		InputStreamReader inputStreamReader = null;
-		BufferedReader reader = null;
-
+		// 读取数据
+		InputStream inputStream = null;
 		try {
-			inputStreamReader = new InputStreamReader(httpURLConnection.getInputStream());
-			reader = new BufferedReader(inputStreamReader);
-			String line = null;
-			while ((line = reader.readLine()) != null) {
-				result.append(line);
+			inputStream = httpURLConnection.getInputStream();
+			byte[] buf = new byte[BUFF_SIZE];
+			int length = 0;
+			while ((length = inputStream.read(buf)) > 0) {
+				responseStream.write(buf, 0, length);
 			}
+			responseStream.flush();
 		} catch (IOException e) {
 			throw e;
 		} finally {
 			try {
-				if (null != reader) {
-					reader.close();
-				}
-				if (null != inputStreamReader) {
-					inputStreamReader.close();
+				if (null != inputStream) {
+					inputStream.close();
 				}
 			} catch (IOException e) {
 				// Nothing
 			}
 		}
 
+		urlString = null;
+
+		Map<String, List<String>> headersFields = httpURLConnection.getHeaderFields();
+		for (Entry<String, List<String>> e : headersFields.entrySet()) {
+			String key = e.getKey();
+			List<String> values = e.getValue();
+			if (null != key && null != values && !values.isEmpty()) {
+				responseHeaders.put(key, values.get(0));
+			}
+		}
+
 		return responseCode;
 	}
+
 }

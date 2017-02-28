@@ -13,12 +13,14 @@
 		<talk>
 			<!-- 服务使用的端口号 -->
 			<port>7000</port>
-			<!-- 每个连接的最大缓存块大小 -->
+			<!-- 每个连接的最大缓存块大小，单位：字节 -->
 			<block>65536</block>
 			<!-- 服务允许的最大连接数 -->
 			<connections>5000</connections>
 			<!-- 服务使用的工作器线程数 -->
 			<workers>8</workers>
+			<!-- 每个工作器的允许的最大带宽，单位：字节/秒 -->
+			<bandwidth>2097152</bandwidth>
 			<!-- 服务 HTTP 配置 -->
 			<http>
 				<enabled>true</enabled>
@@ -48,12 +50,20 @@
 				<slave>
 					<host>192.168.1.121</host>
 					<port>7000</port>
+					<http-port>7070</http-port>
 				</slave>
 				<slave>
 					<host>192.168.1.122</host>
 					<port>7000</port>
+					<http-port>7070</http-port>
 				</slave>
 			</slaves>
+
+			<!-- 网关代理的 HTTP URI 清单 -->
+			<http>
+			    <uri>/message/get/</uri>
+			    <uri>/message/history/</uri>
+			</http>
 		</gateway>
 
 		<!-- 日志配置 -->

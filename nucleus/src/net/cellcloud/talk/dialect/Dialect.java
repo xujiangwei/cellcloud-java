@@ -69,59 +69,89 @@ public abstract class Dialect {
 		this.tracker = tracker;
 	}
 
-	/** 返回方言名。
+	/**
+	 * 获得方言名。
+	 * 
+	 * @return 返回方言名。
 	 */
 	public final String getName() {
 		return this.name;
 	}
 
-	/** 返回方言追踪名。
+	/**
+	 * 获得方言 Tracker 。
+	 * 
+	 * @return 返回方言 Tracker 串。
 	 */
 	public final String getTracker() {
 		return this.tracker;
 	}
 
-	/** 设置源标签。
+	/**
+	 * 设置源标签。
+	 * 
+	 * @param tag 指定设置的标签。
 	 */
-	public final void setOwnerTag(final String tag) {
+	public final void setOwnerTag(String tag) {
 		this.tag = tag;
 	}
 
-	/** 返回源标签。
+	/**
+	 * 获得源标签。
+	 * 
+	 * @return 返回源标签。
 	 */
 	public final String getOwnerTag() {
 		return this.tag;
 	}
 
-	/** 设置 Cellet 标识。
+	/**
+	 * 设置 Cellet 标识。
+	 * 
+	 * @param identifier 指定 Cellet 标识。
 	 */
-	public final void setCelletIdentifier(final String identifier) {
+	public final void setCelletIdentifier(String identifier) {
 		this.celletIdentifier = identifier;
 	}
 
-	/** 返回 Cellet 标识。
+	/** 获得 Cellet 标识。
+	 * 
+	 * @return 返回 Cellet 标识。
 	 */
 	public final String getCelletIdentifier() {
 		return this.celletIdentifier;
 	}
 
-	/** 设置 Cellet 。
+	/**
+	 * 设置 Cellet 。
+	 * 
+	 * @param cellet 指定 Cellet 实例。
 	 */
 	public final void setCellet(Cellet cellet) {
 		this.cellet = cellet;
 	}
 
-	/** 返回 Cellet 。
+	/**
+	 * 获得关联的 Cellet 。
+	 * 
+	 * @return 返回 Cellet 。
 	 */
 	public final Cellet getCellet() {
 		return this.cellet;
 	}
 
-	/** 翻译原语为方言。
+	/**
+	 * 将原语翻译为方言。
+	 * 
+	 * @return 返回翻译后的原语。
 	 */
 	abstract public Primitive translate();
 
-	/** 从原语构建方言。
+	/**
+	 * 将方言译为原语。
+	 * 
+	 * @param primitive 指定翻译后的原语。
 	 */
 	abstract public void build(Primitive primitive);
+
 }

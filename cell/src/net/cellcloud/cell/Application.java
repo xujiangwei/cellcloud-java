@@ -310,58 +310,95 @@ public final class Application {
 					// tag
 					NodeList nl = el.getElementsByTagName("tag");
 					if (nl.getLength() > 0) {
-						config.tag = nl.item(0).getTextContent().toString();
-						Logger.i(this.getClass(), "nucleus.tag = " + config.tag);
+						config.tag = nl.item(0).getTextContent().toString().trim();
+						Logger.i(this.getClass(), "[*] nucleus.tag = " + config.tag);
 					}
 
 					// httpd
-					config.httpd = Boolean.parseBoolean(el.getElementsByTagName("httpd").item(0).getTextContent());
-					Logger.i(this.getClass(), "nucleus.httpd = " + config.httpd);
+					nl = el.getElementsByTagName("httpd");
+					if (nl.getLength() > 0) {
+						config.httpd = Boolean.parseBoolean(nl.item(0).getTextContent().trim());
+						Logger.i(this.getClass(), "[*] nucleus.httpd = " + config.httpd);
+					}
+					else {
+						Logger.i(this.getClass(), "[-] nucleus.httpd = " + config.httpd);
+					}
 
 					// talk config
 					NodeList nlTalk = el.getElementsByTagName("talk");
 					if (nlTalk.getLength() > 0) {
 						Element elTalk = (Element) nlTalk.item(0);
+
 						// port
 						nl = elTalk.getElementsByTagName("port");
 						if (nl.getLength() > 0) {
 							try {
-								config.talk.port = Integer.parseInt(nl.item(0).getTextContent());
-								Logger.i(this.getClass(), "nucleus.talk.port = " + config.talk.port);
+								config.talk.port = Integer.parseInt(nl.item(0).getTextContent().trim());
+								Logger.i(this.getClass(), "[*] nucleus.talk.port = " + config.talk.port);
 							} catch (NumberFormatException e) {
 								Logger.log(this.getClass(), e, LogLevel.WARNING);
 							}
 						}
+						else {
+							Logger.i(this.getClass(), "[-] nucleus.talk.port = " + config.talk.port);
+						}
+
 						// block
 						nl = elTalk.getElementsByTagName("block");
 						if (nl.getLength() > 0) {
 							try {
-								config.talk.block = Integer.parseInt(nl.item(0).getTextContent());
-								Logger.i(this.getClass(), "nucleus.talk.block = " + config.talk.block);
+								config.talk.block = Integer.parseInt(nl.item(0).getTextContent().trim());
+								Logger.i(this.getClass(), "[*] nucleus.talk.block = " + config.talk.block);
 							} catch (NumberFormatException e) {
 								Logger.log(this.getClass(), e, LogLevel.WARNING);
 							}
 						}
+						else {
+							Logger.i(this.getClass(), "[-] nucleus.talk.block = " + config.talk.block);
+						}
+
 						// connections
 						nl = elTalk.getElementsByTagName("connections");
 						if (nl.getLength() > 0) {
 							try {
-								config.talk.maxConnections = Integer.parseInt(nl.item(0).getTextContent());
-								Logger.i(this.getClass(), "nucleus.talk.connections = " + config.talk.maxConnections);
+								config.talk.maxConnections = Integer.parseInt(nl.item(0).getTextContent().trim());
+								Logger.i(this.getClass(), "[*] nucleus.talk.connections = " + config.talk.maxConnections);
 							} catch (NumberFormatException e) {
 								Logger.log(this.getClass(), e, LogLevel.WARNING);
 							}
 						}
+						else {
+							Logger.i(this.getClass(), "[-] nucleus.talk.connections = " + config.talk.maxConnections);
+						}
+
 						// workers
 						nl = elTalk.getElementsByTagName("workers");
 						if (nl.getLength() > 0) {
 							try {
-								config.talk.numWorkerThreads = Integer.parseInt(nl.item(0).getTextContent());
-								Logger.i(this.getClass(), "nucleus.talk.numWorkerThreads = " + config.talk.numWorkerThreads);
+								config.talk.numWorkerThreads = Integer.parseInt(nl.item(0).getTextContent().trim());
+								Logger.i(this.getClass(), "[*] nucleus.talk.numWorkerThreads = " + config.talk.numWorkerThreads);
 							} catch (NumberFormatException e) {
 								Logger.log(this.getClass(), e, LogLevel.WARNING);
 							}
 						}
+						else {
+							Logger.i(this.getClass(), "[-] nucleus.talk.numWorkerThreads = " + config.talk.numWorkerThreads);
+						}
+
+						// bandwidth
+						nl = elTalk.getElementsByTagName("bandwidth");
+						if (nl.getLength() > 0) {
+							try {
+								config.talk.maxWorkerBandwidth = Integer.parseInt(nl.item(0).getTextContent().trim());
+								Logger.i(this.getClass(), "[*] nucleus.talk.maxWorkerBandwidth = " + config.talk.maxWorkerBandwidth);
+							} catch (NumberFormatException e) {
+								Logger.log(this.getClass(), e, LogLevel.WARNING);
+							}
+						}
+						else {
+							Logger.i(this.getClass(), "[-] nucleus.talk.maxWorkerBandwidth = " + config.talk.maxWorkerBandwidth);
+						}
+
 						// http
 						nl = elTalk.getElementsByTagName("http");
 						if (nl.getLength() > 0) {
@@ -370,34 +407,47 @@ public final class Application {
 							// http enabled
 							nl = elHttp.getElementsByTagName("enabled");
 							if (nl.getLength() > 0) {
-								config.talk.httpEnabled = Boolean.parseBoolean(nl.item(0).getTextContent());
-								Logger.i(this.getClass(), "nucleus.talk.http.enabled = " + config.talk.httpEnabled);
+								config.talk.httpEnabled = Boolean.parseBoolean(nl.item(0).getTextContent().trim());
+								Logger.i(this.getClass(), "[*] nucleus.talk.http.enabled = " + config.talk.httpEnabled);
 							}
+							else {
+								Logger.i(this.getClass(), "[-] nucleus.talk.http.enabled = " + config.talk.httpEnabled);
+							}
+
 							// http port
 							nl = elHttp.getElementsByTagName("port");
 							if (nl.getLength() > 0) {
 								try {
-									config.talk.httpPort = Integer.parseInt(nl.item(0).getTextContent());
-									Logger.i(this.getClass(), "nucleus.talk.http.port = " + config.talk.httpPort);
+									config.talk.httpPort = Integer.parseInt(nl.item(0).getTextContent().trim());
+									Logger.i(this.getClass(), "[*] nucleus.talk.http.port = " + config.talk.httpPort);
 								} catch (NumberFormatException e) {
 									Logger.log(this.getClass(), e, LogLevel.WARNING);
 								}
 
 								// 自动推演 https port
 								config.talk.httpsPort = config.talk.httpPort + 10;
-								Logger.i(this.getClass(), "nucleus.talk.https.port = " + config.talk.httpsPort);
+								Logger.i(this.getClass(), "[*] nucleus.talk.https.port = " + config.talk.httpsPort);
 							}
+							else {
+								Logger.i(this.getClass(), "[-] nucleus.talk.http.port = " + config.talk.httpPort);
+								Logger.i(this.getClass(), "[-] nucleus.talk.https.port = " + config.talk.httpsPort);
+							}
+
 							// http queue size
 							nl = elHttp.getElementsByTagName("queue");
 							if (nl.getLength() > 0) {
 								try {
-									config.talk.httpQueueSize = Integer.parseInt(nl.item(0).getTextContent());
-									Logger.i(this.getClass(), "nucleus.talk.http.queue = " + config.talk.httpQueueSize);
+									config.talk.httpQueueSize = Integer.parseInt(nl.item(0).getTextContent().trim());
+									Logger.i(this.getClass(), "[*] nucleus.talk.http.queue = " + config.talk.httpQueueSize);
 								} catch (NumberFormatException e) {
 									Logger.log(this.getClass(), e, LogLevel.WARNING);
 								}
 							}
+							else {
+								Logger.i(this.getClass(), "[-] nucleus.talk.http.queue = " + config.talk.httpQueueSize);
+							}
 						}
+
 						// ssl
 						nl = elTalk.getElementsByTagName("ssl");
 						if (nl.getLength() > 0) {
@@ -406,16 +456,20 @@ public final class Application {
 							// keystore
 							nl = elSsl.getElementsByTagName("keystore");
 							if (nl.getLength() > 0) {
-								config.talk.keystore = nl.item(0).getTextContent().toString();
-								Logger.i(this.getClass(), "nucleus.talk.ssl.keystore = " + config.talk.keystore);
+								config.talk.keystore = nl.item(0).getTextContent().trim();
+								Logger.i(this.getClass(), "[*] nucleus.talk.ssl.keystore = " + config.talk.keystore);
 							}
 							// password
 							nl = elSsl.getElementsByTagName("password");
 							if (nl.getLength() > 0) {
-								config.talk.keyStorePassword = nl.item(0).getTextContent().toString();
+								config.talk.keyStorePassword = nl.item(0).getTextContent().trim();
 								config.talk.keyManagerPassword = config.talk.keyStorePassword;
-								Logger.i(this.getClass(), "nucleus.talk.ssl.password = " + config.talk.keyStorePassword);
+								Logger.i(this.getClass(), "[*] nucleus.talk.ssl.password = " + config.talk.keyStorePassword);
 							}
+						}
+						else {
+							Logger.i(this.getClass(), "[-] nucleus.talk.ssl.keystore = null");
+							Logger.i(this.getClass(), "[-] nucleus.talk.ssl.password = null");
 						}
 					} // #end talk config
 
@@ -423,13 +477,18 @@ public final class Application {
 					NodeList nlGateway = el.getElementsByTagName("gateway");
 					if (nlGateway.getLength() > 0) {
 						Element elGateway = (Element) nlGateway.item(0);
+
 						// routing
 						nl = elGateway.getElementsByTagName("routing");
 						if (nl.getLength() > 0) {
 							Element elRouting = (Element) nl.item(0);
 							config.gateway.routingRule = elRouting.getTextContent().trim();
-							Logger.i(this.getClass(), "nucleus.gateway.routingRule = " + config.gateway.routingRule);
+							Logger.i(this.getClass(), "[*] nucleus.gateway.routingRule = " + config.gateway.routingRule);
 						}
+						else {
+							Logger.i(this.getClass(), "[-] nucleus.gateway.routingRule = " + config.gateway.routingRule);
+						}
+
 						// cellets
 						nl = elGateway.getElementsByTagName("cellet");
 						if (nl.getLength() > 0) {
@@ -438,30 +497,56 @@ public final class Application {
 								Element elCellet = (Element) nl.item(i);
 								config.gateway.celletIdentifiers.add(elCellet.getTextContent().trim());
 							}
-							Logger.i(this.getClass(), "nucleus.gateway.cellets = " + config.gateway.celletIdentifiers.toString());
+							Logger.i(this.getClass(), "[*] nucleus.gateway.cellets = " + config.gateway.celletIdentifiers.toString());
 						}
+						else {
+							Logger.i(this.getClass(), "[-] nucleus.gateway.cellets = null");
+						}
+
 						// slaves
 						nl = elGateway.getElementsByTagName("slave");
 						if (nl.getLength() > 0) {
 							config.gateway.slaveHostList = new ArrayList<String>(nl.getLength());
 							config.gateway.slavePortList = new ArrayList<Integer>(nl.getLength());
+							config.gateway.slaveHttpPortList = new ArrayList<Integer>(nl.getLength());
 							for (int i = 0, size = nl.getLength(); i < size; ++i) {
 								Element elSlave = (Element) nl.item(i);
 								NodeList nlHost = elSlave.getElementsByTagName("host");
 								NodeList nlPort = elSlave.getElementsByTagName("port");
+								NodeList nlHttpPort = elSlave.getElementsByTagName("http-port");
 								if (nlHost.getLength() > 0 && nlPort.getLength() > 0) {
 									String host = nlHost.item(0).getTextContent().trim();
 									int port = Integer.parseInt(nlPort.item(0).getTextContent().trim());
+									int httpPort = nlHttpPort.getLength() > 0 ? 
+											Integer.parseInt(nlHttpPort.item(0).getTextContent().trim()) : 0;
 									config.gateway.slaveHostList.add(host);
 									config.gateway.slavePortList.add(port);
-									Logger.i(this.getClass(), "nucleus.gateway.slave = " + host + ":" + port);
+									config.gateway.slaveHttpPortList.add(httpPort);
+									Logger.i(this.getClass(), "[*] nucleus.gateway.slave = " + host + ":" + port + "," + httpPort);
 								}
 							}
+						}
+						else {
+							Logger.i(this.getClass(), "[-] nucleus.gateway.slave = null");
+						}
+
+						// http uri
+						nl = elGateway.getElementsByTagName("uri");
+						if (nl.getLength() > 0) {
+							config.gateway.httpURIList = new ArrayList<String>(nl.getLength());
+							for (int i = 0; i < nl.getLength(); ++i) {
+								String uri = nl.item(0).getTextContent().trim();
+								config.gateway.httpURIList.add(uri);
+								Logger.i(this.getClass(), "[*] nucleus.gateway.http.uri = " + uri);
+							}
+						}
+						else {
+							Logger.i(this.getClass(), "[-] nucleus.gateway.http.uri = null");
 						}
 
 						// 强制转为网关角色
 						config.role = Role.GATEWAY;
-						Logger.i(this.getClass(), "Cell is GATEWAY role.");
+//						Logger.d(this.getClass(), "Cell is GATEWAY role.");
 					} // #end gateway config
 
 					// log config
@@ -472,8 +557,11 @@ public final class Application {
 						if (nl.getLength() > 0) {
 							Element elLevel = (Element) nl.item(0);
 							String level = elLevel.getTextContent().trim();
-							Logger.i(this.getClass(), "nucleus.log.level = " + level);
+							Logger.i(this.getClass(), "[*] nucleus.log.level = " + level);
 							this.setLogLevel(level);
+						}
+						else {
+							Logger.i(this.getClass(), "[-] nucleus.log.level = " + this.getLogLevel());
 						}
 					} // #end log config
 				}
@@ -625,6 +713,25 @@ public final class Application {
 		}
 		else if (config.equalsIgnoreCase("ERROR")) {
 			LogManager.getInstance().setLevel(LogLevel.ERROR);
+		}
+	}
+
+	private String getLogLevel() {
+		byte level = LogManager.getInstance().getLevel();
+		if (level == LogLevel.DEBUG) {
+			return "DEBUG";
+		}
+		else if (level == LogLevel.INFO) {
+			return "INFO";
+		}
+		else if (level == LogLevel.WARNING) {
+			return "WARNING";
+		}
+		else if (level == LogLevel.ERROR) {
+			return "ERROR";
+		}
+		else {
+			return "";
 		}
 	}
 

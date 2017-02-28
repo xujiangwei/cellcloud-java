@@ -315,7 +315,7 @@ public final class TalkServiceKernel implements Service, SpeakerDelegate {
 		if (null == this.fss) {
 			this.fss = new FlashSocketSecurity();
 			if (!this.fss.startup()) {
-				Logger.e(TalkServiceKernel.class, "Start Flash socket security policy failed.");
+				Logger.w(TalkServiceKernel.class, "Start Flash socket security policy failed.");
 			}
 		}
 
@@ -485,7 +485,7 @@ public final class TalkServiceKernel implements Service, SpeakerDelegate {
 		return (null != this.acceptor) ? this.acceptor.getEachSessionWriteInterval() : -1;
 	}
 
-	public void setSessionTransmissionQuota(int quotaInBytesPerSecond) {
+	public void setWorkerTransmissionQuota(int quotaInBytesPerSecond) {
 		if (null == this.acceptor) {
 			return;
 		}
@@ -493,7 +493,7 @@ public final class TalkServiceKernel implements Service, SpeakerDelegate {
 		this.acceptor.setTransmissionQuota(quotaInBytesPerSecond);
 	}
 
-	public int getSessionTransmissionQuota() {
+	public int getWorkerTransmissionQuota() {
 		return (null != this.acceptor) ? this.acceptor.getTransmissionQuota() : -1;
 	}
 

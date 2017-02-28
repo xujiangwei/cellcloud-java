@@ -81,6 +81,10 @@ public class TalkService implements Service {
 		this.kernel.setWorkerThreadNum(num);
 	}
 
+	public void setMaxWorkerBandwidth(int bandwidthInBytesPerSecond) {
+		this.kernel.setWorkerTransmissionQuota(bandwidthInBytesPerSecond);
+	}
+
 	public void httpEnabled(boolean enabled) throws InvalidException {
 		this.kernel.httpEnabled(enabled);
 	}

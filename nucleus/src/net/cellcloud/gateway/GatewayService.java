@@ -172,7 +172,7 @@ public class GatewayService implements Service {
 	public void addHttpProxy(String uri) {
 		HttpProxy proxy = this.httpProxies.get(uri);
 		if (null == proxy) {
-			proxy = new HttpProxy(uri, this.routingTable);
+			proxy = new HttpProxy(uri, this);
 			this.httpProxies.put(uri, proxy);
 		}
 	}
@@ -197,6 +197,7 @@ public class GatewayService implements Service {
 
 		// 设置 HTTP 代理
 		if (!this.httpProxies.isEmpty() && null != HttpService.getInstance()) {
+			// 创建 HTTP 服务
 			HttpCapsule capsule = new HttpCapsule("gw");
 			CookieSessionManager sessionMgr = new CookieSessionManager();
 			capsule.setSessionManager(sessionMgr);
@@ -298,6 +299,17 @@ public class GatewayService implements Service {
 	 */
 	protected CelletSandbox getSandbox(String identifier) {
 		return this.sandboxes.get(identifier);
+	}
+
+	public Slave refreshHttpRouting(String remoteAddress) {
+		Slave slave = this.routingTable.querySlaveByAddress(remoteAddress);
+		if (null == slave) {
+			// 没有对应的规则
+			int mod = Math.abs(remoteAddress.hashCode()) % this.onlineSlaves.size();
+			slave = this.onlineSlaves.get(mod);
+			this.routingTable.updateAddress(remoteAddress, slave);
+		}
+		return slave;
 	}
 
 	/**

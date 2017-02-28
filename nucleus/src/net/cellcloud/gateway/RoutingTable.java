@@ -161,6 +161,16 @@ public class RoutingTable {
 	}
 
 	/**
+	 * 更新地址对应的下位机。
+	 * 
+	 * @param address 指定地址。
+	 * @param slave 指定下位机。
+	 */
+	public void updateAddress(String address, Slave slave) {
+		this.addressMap.put(address, slave);
+	}
+
+	/**
 	 * 清空当前路由表。
 	 */
 	public void clear() {

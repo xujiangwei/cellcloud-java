@@ -77,7 +77,7 @@ public final class NucleusConfig {
 		/** 服务端口。 */
 		public int port = 7000;
 
-		/** 服务器使用的每个会话的 Block 区块大小。 */
+		/** 服务器使用的每个会话的 Block 区块大小。单位：字节。 */
 		public int block = 65536;
 
 		/** 最大连接数。 */
@@ -85,6 +85,9 @@ public final class NucleusConfig {
 
 		/** 工作线程数。 */
 		public int numWorkerThreads = 8;
+
+		/** 每个工作线程的允许使用的最大带宽。单位：字节/秒。 */
+		public int maxWorkerBandwidth = 2 * 1024 * 1024;
 
 		/** 是否使用 HTTP 服务。 */
 		public boolean httpEnabled = true;
