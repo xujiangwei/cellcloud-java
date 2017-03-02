@@ -38,13 +38,23 @@ import net.cellcloud.common.LogLevel;
 import net.cellcloud.common.Logger;
 import net.cellcloud.common.Service;
 
+/**
+ * 用于授权 Flash Socket 访问的辅助服务。
+ * 
+ * @author Ambrose Xu
+ *
+ */
 public final class FlashSocketSecurity implements Service {
 
 	private ServerSocket socket;
 	private boolean stopped;
 
+	/** 保存访问策略的描述文件内容。 */
 	private StringBuilder policy;
 
+	/**
+	 * 构造函数。
+	 */
 	public FlashSocketSecurity() {
 		this.stopped = false;
 
@@ -53,6 +63,9 @@ public final class FlashSocketSecurity implements Service {
 		this.policy.append("</cross-domain-policy>\0");
 	}
 
+	/**
+	 * {@inheritDoc}
+	 */
 	@Override
 	public boolean startup() {
 		try {
@@ -119,6 +132,9 @@ public final class FlashSocketSecurity implements Service {
 		return true;
 	}
 
+	/**
+	 * {@inheritDoc}
+	 */
 	@Override
 	public void shutdown() {
 		this.stopped = true;
@@ -139,4 +155,5 @@ public final class FlashSocketSecurity implements Service {
 			}
 		}
 	}
+
 }

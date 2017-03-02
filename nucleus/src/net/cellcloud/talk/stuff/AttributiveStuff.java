@@ -2,7 +2,7 @@
 -----------------------------------------------------------------------------
 This source file is part of Cell Cloud.
 
-Copyright (c) 2009-2013 Cell Cloud Team (www.cellcloud.net)
+Copyright (c) 2009-2017 Cell Cloud Team (www.cellcloud.net)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -26,71 +26,111 @@ THE SOFTWARE.
 
 package net.cellcloud.talk.stuff;
 
-import javax.xml.transform.TransformerConfigurationException;
 import javax.xml.transform.TransformerException;
 
 import org.json.JSONObject;
 import org.w3c.dom.Document;
 
-/** 定语语素。
+/**
+ * 定语语素。
  * 
- * @author Jiangwei Xu
+ * @author Ambrose Xu
+ * 
  */
 public final class AttributiveStuff extends Stuff {
 
-	/** 构造函数。 */
+	/**
+	 * 构造函数。
+	 */
 	protected AttributiveStuff() {
 		super(StuffType.ATTRIBUTIVE);
 	}
 
-	/** 构造函数。 */
+	/**
+	 * 构造函数。
+	 * 
+	 * @param value 指定语义为二进制的数据。
+	 */
 	public AttributiveStuff(byte[] value) {
 		super(StuffType.ATTRIBUTIVE, value);
 	}
 
-	/** 构造函数。 */
+	/**
+	 * 构造函数。
+	 * 
+	 * @param value 指定语义为字符串的数据。
+	 */
 	public AttributiveStuff(String value) {
 		super(StuffType.ATTRIBUTIVE, value);
 	}
 
-	/** 构造函数。 */
+	/**
+	 * 构造函数。
+	 * 
+	 * @param value 指定语义为整数的数据。
+	 */
 	public AttributiveStuff(int value) {
 		super(StuffType.ATTRIBUTIVE, value);
 	}
 
-	/** 构造函数。 */
+	/**
+	 * 构造函数。
+	 * 
+	 * @param value 指定语义为长整数的数据。
+	 */
 	public AttributiveStuff(long value) {
 		super(StuffType.ATTRIBUTIVE, value);
 	}
 
-	/** 构造函数。 */
+	/**
+	 * 构造函数。
+	 * 
+	 * @param value 指定语义为浮点数的数据。
+	 */
 	public AttributiveStuff(float value) {
 		super(StuffType.ATTRIBUTIVE, value);
 	}
 
-	/** 构造函数。 */
+	/**
+	 * 构造函数。
+	 * 
+	 * @param value 指定语义为双精浮点数的数据。
+	 */
 	public AttributiveStuff(double value) {
 		super(StuffType.ATTRIBUTIVE, value);
 	}
 
-	/** 构造函数。 */
+	/**
+	 * 构造函数。
+	 * 
+	 * @param value 指定语义为布尔值的数据。
+	 */
 	public AttributiveStuff(boolean value) {
 		super(StuffType.ATTRIBUTIVE, value);
 	}
 
-	/** 构造函数。 */
+	/**
+	 * 构造函数。
+	 * 
+	 * @param value 指定语义为 JSON 类型的数据。
+	 */
 	public AttributiveStuff(JSONObject value) {
 		super(StuffType.ATTRIBUTIVE, value);
 	}
 
-	/** 构造函数。 
-	 * @throws TransformerException 
-	 * @throws TransformerConfigurationException
+	/**
+	 * 构造函数。 
+	 * 
+	 * @param value 指定语义为 XML 类型的数据。
+	 * @throws TransformerException
 	 */
 	public AttributiveStuff(Document value) throws TransformerException {
 		super(StuffType.ATTRIBUTIVE, value);
 	}
 
+	/**
+	 * {@inheritDoc}
+	 */
 	@Override
 	public void clone(Stuff target) {
 		if (target.getType() == StuffType.ATTRIBUTIVE) {
@@ -98,4 +138,5 @@ public final class AttributiveStuff extends Stuff {
 			target.setLiteralBase(this.literalBase);
 		}
 	}
+
 }

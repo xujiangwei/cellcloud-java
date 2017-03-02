@@ -2,7 +2,7 @@
 -----------------------------------------------------------------------------
 This source file is part of Cell Cloud.
 
-Copyright (c) 2009-2012 Cell Cloud Team (www.cellcloud.net)
+Copyright (c) 2009-2017 Cell Cloud Team (www.cellcloud.net)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -26,19 +26,27 @@ THE SOFTWARE.
 
 package net.cellcloud.talk;
 
-/** 对话者状态。
+/**
+ * 对话者状态。
  * 
- * @author Jiangwei Xu
+ * @author Ambrose Xu
+ * 
  */
 public final class SpeakerState {
 
-	/** 无对话。 */
+	/**
+	 * 无对话或对话已经关闭。
+	 */
 	public final static int HANGUP = 1;
 
-	/** 正在请求服务。 */
+	/**
+	 * 正在请求服务。
+	 */
 	public final static int CALLING = 2;
 
-	/** 已经请求服务。 */
+	/**
+	 * 已经请求服务。
+	 */
 	public final static int CALLED = 3;
 
 }

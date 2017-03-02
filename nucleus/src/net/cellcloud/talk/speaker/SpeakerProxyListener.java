@@ -30,10 +30,29 @@ import net.cellcloud.talk.Primitive;
 
 import org.json.JSONObject;
 
+/**
+ * 标准协议对话者代理监听器。
+ * 
+ * @author Ambrose Xu
+ *
+ */
 public interface SpeakerProxyListener {
 
+	/**
+	 * 当收到来自被代理节点的对话原语时此函数被调用。
+	 * 
+	 * @param tag 代理节点指定的目标终端的内核标签。
+	 * @param celletIdentifier 此原语的 Cellet 标签。
+	 * @param primitive 原语数据。
+	 */
 	public void onProxyDialogue(String tag, String celletIdentifier, Primitive primitive);
 
+	/**
+	 * 当收到被代理节点发来的协商代理数据时此函数被调用。
+	 * 
+	 * @param speaker 与此次协商相关的对话者。
+	 * @param data 代理协议的数据包。
+	 */
 	public void onProxy(Speaker speaker, JSONObject data);
 
 }

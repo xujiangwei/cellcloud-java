@@ -328,14 +328,22 @@ public class Speaker implements Speakable {
 		this.retryEnd = false;
 	}
 
-	/** 记录服务端 Tag */
+	/**
+	 * 记录服务端标签。
+	 * 
+	 * @param tag 指定服务端标签。
+	 */
 	protected void recordTag(String tag) {
 		this.remoteTag = tag;
 		// 标记为已验证
 		this.authenticated = true;
 	}
 
-	/** 发送心跳。 */
+	/**
+	 * 发送心跳。
+	 * 
+	 * @return 数据成功写入发送队列返回 <code>true</code> 。
+	 */
 	public boolean heartbeat() {
 		if (this.authenticated && !this.lost && this.connector.isConnected()) {
 			Packet packet = new Packet(TalkDefinition.TPT_HEARTBEAT, 9, 1, 0);
@@ -349,6 +357,9 @@ public class Speaker implements Speakable {
 		}
 	}
 
+	/**
+	 * 通知会话被关闭，更新内部状态。
+	 */
 	protected void notifySessionClosed() {
 		// 判断是否为异常网络中断
 		if (SpeakerState.CALLING == this.state) {
@@ -391,10 +402,21 @@ public class Speaker implements Speakable {
 		}
 	}
 
+	/**
+	 * 触发 Dialogue 回调。
+	 * 
+	 * @param celletIdentifier 指定 Cellet 标识。
+	 * @param primitive 指定接收到的原语数据。
+	 */
 	protected void fireDialogue(String celletIdentifier, Primitive primitive) {
 		this.delegate.onDialogue(this, celletIdentifier, primitive);
 	}
 
+	/**
+	 * 触发 Contacted 回调。
+	 * 
+	 * @param celletIdentifier 指定 Cellet 标识。
+	 */
 	private synchronized void fireContacted(String celletIdentifier) {
 		if (null == this.contactedTimer) {
 			this.contactedTimer = new Timer("SpeakerContactedTimer");
@@ -435,6 +457,11 @@ public class Speaker implements Speakable {
 		}, 100L);
 	}
 
+	/**
+	 * 触发 Quitted 回调。
+	 * 
+	 * @param celletIdentifier 指定 Cellet 标识。
+	 */
 	private void fireQuitted(String celletIdentifier) {
 		if (null != this.contactedTimer) {
 			this.contactedTimer.cancel();
@@ -451,6 +478,11 @@ public class Speaker implements Speakable {
 		}
 	}
 
+	/**
+	 * 触发 Failed 回调。
+	 * 
+	 * @param failure 指定会话服务错误描述。
+	 */
 	protected void fireFailed(TalkServiceFailure failure) {
 		if (failure.getCode() == TalkFailureCode.NOT_FOUND
 			|| failure.getCode() == TalkFailureCode.INCORRECT_DATA
@@ -464,6 +496,9 @@ public class Speaker implements Speakable {
 		}
 	}
 
+	/**
+	 * 触发重试连接结束。
+	 */
 	public void fireRetryEnd() {
 		TalkServiceFailure failure = new TalkServiceFailure(TalkFailureCode.RETRY_END
 				, this.getClass(), this.address.getHostString(), this.address.getPort());
@@ -471,7 +506,13 @@ public class Speaker implements Speakable {
 		this.fireFailed(failure);
 	}
 
-	protected void requestCheck(Packet packet, Session session) {
+	/**
+	 * 应答 Check 校验数据进行握手。
+	 * 
+	 * @param packet 指定接收到的 INTERROGATE 包。
+	 * @param session 指定会话。
+	 */
+	protected void respondCheck(Packet packet, Session session) {
 		// 包格式：密文|密钥
 
 		byte[] ciphertext = packet.getSubsegment(0);
@@ -494,7 +535,10 @@ public class Speaker implements Speakable {
 		session.write(message);
 	}
 
-	protected void requestConsult() {
+	/**
+	 * 应答能力协商。
+	 */
+	protected void respondConsult() {
 		// 协商能力
 		if (null == this.capacity) {
 			this.capacity = new TalkCapacity();
@@ -518,6 +562,11 @@ public class Speaker implements Speakable {
 		}
 	}
 
+	/**
+	 * 请求 Cellet 服务。
+	 * 
+	 * @param session 指定会话。
+	 */
 	protected void requestCellets(Session session) {
 		// 包格式：Cellet标识串|标签
 
@@ -533,11 +582,17 @@ public class Speaker implements Speakable {
 			try {
 				Thread.sleep(5L);
 			} catch (InterruptedException e) {
-				e.printStackTrace();
+				// Nothing
 			}
 		}
 	}
 
+	/**
+	 * 执行协商操作。
+	 * 
+	 * @param packet 指定服务器发送过来的协商数据包。
+	 * @param session 指定会话。
+	 */
 	protected void doConsult(Packet packet, Session session) {
 		// 包格式：源标签(即自己的内核标签)|能力描述序列化串
 
@@ -552,7 +607,7 @@ public class Speaker implements Speakable {
 		}
 		else {
 			this.capacity.secure = newCapacity.secure;
-			this.capacity.retryAttempts = newCapacity.retryAttempts;
+			this.capacity.retry = newCapacity.retry;
 			this.capacity.retryDelay = newCapacity.retryDelay;
 		}
 
@@ -562,8 +617,8 @@ public class Speaker implements Speakable {
 			buf.append(this.remoteTag);
 			buf.append("' : secure=");
 			buf.append(this.capacity.secure);
-			buf.append(" attempts=");
-			buf.append(this.capacity.retryAttempts);
+			buf.append(" retry=");
+			buf.append(this.capacity.retry);
 			buf.append(" delay=");
 			buf.append(this.capacity.retryDelay);
 
@@ -573,6 +628,12 @@ public class Speaker implements Speakable {
 		}
 	}
 
+	/**
+	 * 执行来自服务器的请求 Cellet 应答。
+	 * 
+	 * @param packet 指定来自服务器的请求应答包。
+	 * @param session 指定会话。
+	 */
 	protected void doRequest(Packet packet, Session session) {
 		// 包格式：
 		// 成功：请求方标签|成功码|Cellet识别串|Cellet版本
@@ -615,6 +676,12 @@ public class Speaker implements Speakable {
 		}
 	}
 
+	/**
+	 * 执行来自服务器的对话数据包。
+	 * 
+	 * @param packet 指定来自服务器的数据包。
+	 * @param session 指定会话。
+	 */
 	protected void doDialogue(Packet packet, Session session) {
 		// 包格式：序列化的原语|Cellet
 
@@ -639,7 +706,13 @@ public class Speaker implements Speakable {
 		this.fireDialogue(celletIdentifier, primitive);
 	}
 
-	protected void requestQuick(Packet packet, Session session) {
+	/**
+	 * 以快速握手方式应答服务器的握手询问。
+	 * 
+	 * @param packet 指定来自服务的询问包。
+	 * @param session 指定会话。
+	 */
+	protected void respondQuick(Packet packet, Session session) {
 		byte[] ciphertext = packet.getSubsegment(0);
 		byte[] key = packet.getSubsegment(1);
 
@@ -679,6 +752,12 @@ public class Speaker implements Speakable {
 		response = null;
 	}
 
+	/**
+	 * 执行来自服务器的快速握手应答。
+	 * 
+	 * @param packet 指定来自服务器的快速握手回包。
+	 * @param session 指定会话。
+	 */
 	protected void doQuick(Packet packet, Session session) {
 		// 包格式：状态码|源标签|能力描述序列化数据|CelletIdentifiers
 
@@ -699,7 +778,7 @@ public class Speaker implements Speakable {
 				}
 				else {
 					this.capacity.secure = newCapacity.secure;
-					this.capacity.retryAttempts = newCapacity.retryAttempts;
+					this.capacity.retry = newCapacity.retry;
 					this.capacity.retryDelay = newCapacity.retryDelay;
 				}
 			}
@@ -735,6 +814,12 @@ public class Speaker implements Speakable {
 		}
 	}
 
+	/**
+	 * 执行来自网关的代理回包。
+	 * 
+	 * @param packet 指定代理数据包。
+	 * @param session 指定会话。
+	 */
 	protected void doProxy(Packet packet, Session session) {
 		// 包格式：状态码|数据JSON
 

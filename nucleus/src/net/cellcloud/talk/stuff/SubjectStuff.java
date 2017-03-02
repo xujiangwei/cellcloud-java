@@ -2,7 +2,7 @@
 -----------------------------------------------------------------------------
 This source file is part of Cell Cloud.
 
-Copyright (c) 2009-2013 Cell Cloud Team (www.cellcloud.net)
+Copyright (c) 2009-2017 Cell Cloud Team (www.cellcloud.net)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -26,71 +26,111 @@ THE SOFTWARE.
 
 package net.cellcloud.talk.stuff;
 
-import javax.xml.transform.TransformerConfigurationException;
 import javax.xml.transform.TransformerException;
 
 import org.json.JSONObject;
 import org.w3c.dom.Document;
 
-/** 主语语素。
+/**
+ * 主语语素。
  * 
- * @author Jiangwei Xu
+ * @author Ambrose Xu
+ * 
  */
 public final class SubjectStuff extends Stuff {
 
-	/** 构造函数。 */
+	/**
+	 * 构造函数。
+	 */
 	protected SubjectStuff() {
 		super(StuffType.SUBJECT);
 	}
 
-	/** 构造函数。 */
+	/**
+	 * 构造函数。
+	 * 
+	 * @param value 指定语义为二进制的数据。
+	 */
 	public SubjectStuff(byte[] value) {
 		super(StuffType.SUBJECT, value);
 	}
 
-	/** 构造函数。 */
+	/**
+	 * 构造函数。
+	 * 
+	 * @param value 指定语义为字符串的数据。
+	 */
 	public SubjectStuff(String value) {
 		super(StuffType.SUBJECT, value);
 	}
 
-	/** 构造函数。 */
+	/**
+	 * 构造函数。
+	 * 
+	 * @param value 指定语义为整数的数据。
+	 */
 	public SubjectStuff(int value) {
 		super(StuffType.SUBJECT, value);
 	}
 
-	/** 构造函数。 */
+	/**
+	 * 构造函数。
+	 * 
+	 * @param value 指定语义为长整数的数据。
+	 */
 	public SubjectStuff(long value) {
 		super(StuffType.SUBJECT, value);
 	}
 
-	/** 构造函数。 */
+	/**
+	 * 构造函数。
+	 * 
+	 * @param value 指定语义为浮点数的数据。
+	 */
 	public SubjectStuff(float value) {
 		super(StuffType.SUBJECT, value);
 	}
 
-	/** 构造函数。 */
+	/**
+	 * 构造函数。
+	 * 
+	 * @param value 指定语义为双精浮点数的数据。
+	 */
 	public SubjectStuff(double value) {
 		super(StuffType.SUBJECT, value);
 	}
 
-	/** 构造函数。 */
+	/**
+	 * 构造函数。
+	 * 
+	 * @param value 指定语义为布尔值的数据。
+	 */
 	public SubjectStuff(boolean value) {
 		super(StuffType.SUBJECT, value);
 	}
 
-	/** 构造函数。 */
+	/**
+	 * 构造函数。
+	 * 
+	 * @param value 指定语义为 JSON 类型的数据。
+	 */
 	public SubjectStuff(JSONObject value) {
 		super(StuffType.SUBJECT, value);
 	}
 
-	/** 构造函数。 
-	 * @throws TransformerException 
-	 * @throws TransformerConfigurationException
+	/**
+	 * 构造函数。 
+	 * 
+	 * @param value 指定语义为 XML 类型的数据。
+	 * @throws TransformerException
 	 */
 	public SubjectStuff(Document value) throws TransformerException {
 		super(StuffType.SUBJECT, value);
 	}
 
+	/**
+	 * {@inheritDoc}
+	 */
 	@Override
 	public void clone(Stuff target) {
 		if (target.getType() == StuffType.SUBJECT) {
@@ -98,4 +138,5 @@ public final class SubjectStuff extends Stuff {
 			target.setLiteralBase(this.literalBase);
 		}
 	}
+
 }

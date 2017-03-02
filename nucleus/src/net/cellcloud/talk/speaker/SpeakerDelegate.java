@@ -2,7 +2,7 @@
 -----------------------------------------------------------------------------
 This source file is part of Cell Cloud.
 
-Copyright (c) 2009-2013 Cell Cloud Team (www.cellcloud.net)
+Copyright (c) 2009-2017 Cell Cloud Team (www.cellcloud.net)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -31,35 +31,43 @@ import net.cellcloud.talk.Speakable;
 import net.cellcloud.talk.TalkServiceFailure;
 
 /**
- * Speaker 事件委派。
+ * 对话者的事件委派。
  * 
- * @author Jiangwei Xu
+ * @author Ambrose Xu
+ * 
  */
 public interface SpeakerDelegate {
 
 	/**
-	 * Dialogue
-	 * @param speaker
-	 * @param primitive
+	 * 当收到来自服务器的原语时此函数被调用。
+	 * 
+	 * @param speaker 接收到数据的对话者实例。
+	 * @param celletIdentifier 数据源的 Cellet 标识。
+	 * @param primitive 接收到的原语。
 	 */
 	public void onDialogue(Speakable speaker, String celletIdentifier, Primitive primitive);
 
 	/**
+	 * 当对话者与 Cellet 建立起连接时此函数被调用。
 	 * 
-	 * @param speaker
+	 * @param speaker 建立服务连接的对话者实例。
+	 * @param celletIdentifier Cellet 标识。
 	 */
 	public void onContacted(Speakable speaker, String celletIdentifier);
 
 	/**
+	 * 当对话者断开与 Cellet 的服务连接时此函数被调用。
 	 * 
-	 * @param speaker
+	 * @param speaker 断开服务连接的对话者实例。
+	 * @param celletIdentifier Cellet 标识。
 	 */
 	public void onQuitted(Speakable speaker, String celletIdentifier);
 
 	/**
+	 * 当对话者在服务时发生错误时此函数被调用。
 	 * 
-	 * @param speaker
-	 * @param failure
+	 * @param speaker 发生错误的对话者实例。
+	 * @param failure 发生的错误信息。
 	 */
 	public void onFailed(Speakable speaker, TalkServiceFailure failure);
 

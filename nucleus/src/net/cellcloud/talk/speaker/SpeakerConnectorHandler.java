@@ -2,7 +2,7 @@
 -----------------------------------------------------------------------------
 This source file is part of Cell Cloud.
 
-Copyright (c) 2009-2016 Cell Cloud Team (www.cellcloud.net)
+Copyright (c) 2009-2017 Cell Cloud Team (www.cellcloud.net)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -39,22 +39,28 @@ import net.cellcloud.talk.TalkServiceFailure;
 import net.cellcloud.util.Clock;
 import net.cellcloud.util.Utils;
 
-/** Speaker 连接处理器。
+/**
+ * 对话者连接处理器。
  * 
- * @author Jiangwei Xu
+ * @author Ambrose Xu
+ * 
  */
 public final class SpeakerConnectorHandler implements MessageHandler {
 
+	/**
+	 * 关联的对话者。
+	 */
 	private Speaker speaker;
 
-	/** 构造函数。
+	/**
+	 * 构造函数。
 	 */
 	public SpeakerConnectorHandler(Speaker speaker) {
 		this.speaker = speaker;
 	}
 
 	/**
-	 * @copydoc MessageHandler::sessionCreated(Session)
+	 * {@inheritDoc}
 	 */
 	@Override
 	public void sessionCreated(Session session) {
@@ -62,7 +68,7 @@ public final class SpeakerConnectorHandler implements MessageHandler {
 	}
 
 	/**
-	 * @copydoc MessageHandler::sessionDestroyed(Session)
+	 * {@inheritDoc}
 	 */
 	@Override
 	public void sessionDestroyed(Session session) {
@@ -70,7 +76,7 @@ public final class SpeakerConnectorHandler implements MessageHandler {
 	}
 
 	/**
-	 * @copydoc MessageHandler::sessionOpened(Session)
+	 * {@inheritDoc}
 	 */
 	@Override
 	public void sessionOpened(Session session) {
@@ -78,7 +84,7 @@ public final class SpeakerConnectorHandler implements MessageHandler {
 	}
 
 	/**
-	 * @copydoc MessageHandler::sessionClosed(Session)
+	 * {@inheritDoc}
 	 */
 	@Override
 	public void sessionClosed(Session session) {
@@ -86,7 +92,7 @@ public final class SpeakerConnectorHandler implements MessageHandler {
 	}
 
 	/**
-	 * @copydoc MessageHandler::messageReceived(Session, Message)
+	 * {@inheritDoc}
 	 */
 	@Override
 	public void messageReceived(Session session, Message message) {
@@ -95,7 +101,7 @@ public final class SpeakerConnectorHandler implements MessageHandler {
 			Packet packet = Packet.unpack(message.get());
 			if (null != packet) {
 				// 解析数据包
-				interpret(session, packet);
+				process(session, packet);
 			}
 		} catch (NumberFormatException e) {
 			Logger.log(this.getClass(), e, LogLevel.WARNING);
@@ -105,7 +111,7 @@ public final class SpeakerConnectorHandler implements MessageHandler {
 	}
 
 	/**
-	 * @copydoc MessageHandler::messageSent(Session, Message)
+	 * {@inheritDoc}
 	 */
 	@Override
 	public void messageSent(Session session, Message message) {
@@ -113,7 +119,7 @@ public final class SpeakerConnectorHandler implements MessageHandler {
 	}
 
 	/**
-	 * @copydoc MessageHandler::errorOccurred(int, Session)
+	 * {@inheritDoc}
 	 */
 	@Override
 	public void errorOccurred(int errorCode, Session session) {
@@ -146,7 +152,13 @@ public final class SpeakerConnectorHandler implements MessageHandler {
 		}
 	}
 
-	private void interpret(Session session, Packet packet) {
+	/**
+	 * 进行数据处理。
+	 * 
+	 * @param session 指定数据相关的会话。
+	 * @param packet 指定数据包。
+	 */
+	private void process(Session session, Packet packet) {
 		// 处理包
 
 		byte[] tag = packet.getTag();
@@ -187,19 +199,19 @@ public final class SpeakerConnectorHandler implements MessageHandler {
 			byte[] rtag = packet.getSubsegment(1);
 			this.speaker.recordTag(Utils.bytes2String(rtag));
 
-			// 请求进行协商
-			this.speaker.requestConsult();
+			// 进行协商
+			this.speaker.respondConsult();
 		}
 		else if (TalkDefinition.TPT_INTERROGATE[2] == tag[2]
 			&& TalkDefinition.TPT_INTERROGATE[3] == tag[3]) {
 
 			if (packet.getMajorVersion() == 1 && packet.getMinorVersion() == 1) {
 				// 使用 QUICK 进行握手
-				this.speaker.requestQuick(packet, session);
+				this.speaker.respondQuick(packet, session);
 			}
 			else {
-				// 请求进行校验会话
-				this.speaker.requestCheck(packet, session);
+				// 进行校验会话
+				this.speaker.respondCheck(packet, session);
 			}
 
 			// 重置重试参数
@@ -210,4 +222,5 @@ public final class SpeakerConnectorHandler implements MessageHandler {
 			}
 		}
 	}
+
 }

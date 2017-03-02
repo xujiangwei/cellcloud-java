@@ -2,7 +2,7 @@
 -----------------------------------------------------------------------------
 This source file is part of Cell Cloud.
 
-Copyright (c) 2009-2013 Cell Cloud Team (www.cellcloud.net)
+Copyright (c) 2009-2017 Cell Cloud Team (www.cellcloud.net)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -26,53 +26,67 @@ THE SOFTWARE.
 
 package net.cellcloud.talk.stuff;
 
-/** 变量字面意义。
+/**
+ * 变量字面意义。
  * 
- * @author Jiangwei Xu
+ * @author Ambrose Xu
+ * 
  */
 public enum LiteralBase {
 
-	/** 字符串型。
+	/**
+	 * 字符串型。
 	 */
 	STRING,
 
-	/** 整数型。
+	/**
+	 * 整数型。
 	 */
 	INT,
 
-	/** 无符号整数型。
+	/**
+	 * 无符号整数型。
 	 */
 	UINT,
 
-	/** 长整数型。
+	/**
+	 * 长整数型。
 	 */
 	LONG,
 
-	/** 无符号长整型。
+	/**
+	 * 无符号长整型。
 	 */
 	ULONG,
 
-	/** 浮点型。
+	/**
+	 * 浮点型。
 	 */
 	FLOAT,
 
-	/** 双精浮点型。
+	/**
+	 * 双精浮点型。
 	 */
 	DOUBLE,
 
-	/** 布尔型。
+	/**
+	 * 布尔型。
 	 */
 	BOOL,
 
-	/** JSON 类型。
+	/**
+	 * JSON 类型。
 	 */
 	JSON,
 
-	/** 二进制类型。
+	/**
+	 * 二进制类型。
 	 */
 	BIN,
 
-	/** XML 类型。
+	/**
+	 * XML 类型。
 	 */
 	XML
+
 }

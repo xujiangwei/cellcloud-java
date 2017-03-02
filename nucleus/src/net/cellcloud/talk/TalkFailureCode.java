@@ -2,7 +2,7 @@
 -----------------------------------------------------------------------------
 This source file is part of Cell Cloud.
 
-Copyright (c) 2009-2014 Cell Cloud Team (www.cellcloud.net)
+Copyright (c) 2009-2017 Cell Cloud Team (www.cellcloud.net)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -26,46 +26,71 @@ THE SOFTWARE.
 
 package net.cellcloud.talk;
 
-/** 会话故障码。
+/**
+ * 会话故障码。
  * 
- * @author Jiangwei Xu
+ * @author Ambrose Xu
+ * 
  */
 public enum TalkFailureCode {
 
-	/** 未找到指定的 Cellet 。
-	 * @note 此错误不触发自动重连。
+	/**
+	 * 未找到指定的 Cellet 。
+	 * 此错误不触发自动重连。
 	 */
 	NOT_FOUND(1000),
 
-	/** Call 请求失败。 */
+	/**
+	 * Call 请求失败。
+	 */
 	CALL_FAILED(1100),
 
-	/** 会话连接被断开。 */
+	/**
+	 * 会话连接被断开。
+	 */
 	TALK_LOST(2000),
 
-	/** 会话网络断开。*/
+	/**
+	 * 会话网络断开。
+	 */
 	NETWORK_NOT_AVAILABLE(2100),
 
-	/** 代理错误。 */
+	/**
+	 * 代理错误。
+	 */
 	PROXY_FAILED(3000),
 
-	/** 数据异常。
-	 * @note 此错误不触发自动重连。
+	/**
+	 * 数据异常。
+	 * 此错误不触发自动重连。
 	 */
 	INCORRECT_DATA(4000),
 
-	/** 重试次数达到上限，重试结束。
-	 * @note 此错误不触发自动重连。
+	/**
+	 * 重试次数达到上限，重试结束。
+	 * 此错误不触发自动重连。
 	 */
 	RETRY_END(4100);
 
+	/** 错误码。 */
 	private int code;
 
+	/**
+	 * 构造函数。
+	 * 
+	 * @param code 指定错误码。
+	 */
 	private TalkFailureCode(int code) {
 		this.code = code;
 	}
 
+	/**
+	 * 获得此错误的错误码。
+	 * 
+	 * @return 返回错误码。
+	 */
 	public int getCode() {
 		return this.code;
 	}
+
 }

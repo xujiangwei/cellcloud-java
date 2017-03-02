@@ -2,7 +2,7 @@
 -----------------------------------------------------------------------------
 This source file is part of Cell Cloud.
 
-Copyright (c) 2009-2013 Cell Cloud Team (www.cellcloud.net)
+Copyright (c) 2009-2017 Cell Cloud Team (www.cellcloud.net)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -43,21 +43,28 @@ import net.cellcloud.talk.command.ServerQuickCommand;
 import net.cellcloud.talk.command.ServerRequestCommand;
 
 /**
- * Talk 服务器网络数据处理句柄。
+ * Talk 服务器网络数据处理器。
  * 
  * @author Ambrose Xu
  * 
  */
 public final class TalkAcceptorHandler implements MessageHandler {
 
+	/** 会话服务核心。 */
 	private TalkServiceKernel kernel;
+	/** 用于优化内存操作的对话命令队列。 */
 	private LinkedList<ServerDialogueCommand> dialogueCmdQueue;
+	/** 用于优化内存操作的心跳命令队列。 */
 	private LinkedList<ServerHeartbeatCommand> heartbeatCmdQueue;
+	/** 用于优化内存操作的快速握手命令队列。 */
 	private LinkedList<ServerQuickCommand> quickCmdQueue;
+	/** 用于优化内存操作的代理命令队列。 */
 	private LinkedList<ServerProxyCommand> proxyCmdQueue;
 
 	/**
 	 * 构造函数。
+	 * 
+	 * @param talkServiceKernel 指定服务核心对象。
 	 */
 	protected TalkAcceptorHandler(TalkServiceKernel talkServiceKernel) {
 		this.kernel = talkServiceKernel;
@@ -67,26 +74,41 @@ public final class TalkAcceptorHandler implements MessageHandler {
 		this.proxyCmdQueue = new LinkedList<ServerProxyCommand>();
 	}
 
+	/**
+	 * {@inheritDoc}
+	 */
 	@Override
 	public void sessionCreated(Session session) {
 		// Nothing
 	}
 
+	/**
+	 * {@inheritDoc}
+	 */
 	@Override
 	public void sessionDestroyed(Session session) {
 		this.kernel.closeSession(session);
 	}
 
+	/**
+	 * {@inheritDoc}
+	 */
 	@Override
 	public void sessionOpened(Session session) {
 		this.kernel.openSession(session);
 	}
 
+	/**
+	 * {@inheritDoc}
+	 */
 	@Override
 	public void sessionClosed(Session session) {
 		this.kernel.closeSession(session);
 	}
 
+	/**
+	 * {@inheritDoc}
+	 */
 	@Override
 	public void messageReceived(final Session session, final Message message) {
 		byte[] data = message.get();
@@ -96,7 +118,7 @@ public final class TalkAcceptorHandler implements MessageHandler {
 				this.kernel.executor.execute(new Runnable() {
 					@Override
 					public void run() {
-						interpret(session, packet);
+						process(session, packet);
 					}
 				});
 			}
@@ -107,6 +129,9 @@ public final class TalkAcceptorHandler implements MessageHandler {
 		}
 	}
 
+	/**
+	 * {@inheritDoc}
+	 */
 	@Override
 	public void messageSent(Session session, Message message) {
 		// 通知互斥体，唤醒设置加密线程
@@ -119,12 +144,21 @@ public final class TalkAcceptorHandler implements MessageHandler {
 		}
 	}
 
+	/**
+	 * {@inheritDoc}
+	 */
 	@Override
 	public void errorOccurred(int errorCode, Session session) {
 		Logger.d(this.getClass(), "Network error: " + errorCode + ", session: " + session.getAddress().getHostString());
 	}
 
-	private void interpret(Session session, Packet packet) {
+	/**
+	 * 进行包分析并处理数据。
+	 * 
+	 * @param session 指定数据关联的会话上下文。
+	 * @param packet 指定数据包。
+	 */
+	private void process(Session session, Packet packet) {
 		byte[] tag = packet.getTag();
 
 		if (TalkDefinition.isDialogue(tag)) {
@@ -192,6 +226,13 @@ public final class TalkAcceptorHandler implements MessageHandler {
 		}
 	}
 
+	/**
+	 * 借出对话命令。
+	 * 
+	 * @param session 指定关联会话上下文。
+	 * @param packet 指定关联的数据包。
+	 * @return 返回服务器对话命令。
+	 */
 	private ServerDialogueCommand borrowDialogueCommand(Session session, Packet packet) {
 		synchronized (this.dialogueCmdQueue) {
 			ServerDialogueCommand cmd = null;
@@ -210,6 +251,11 @@ public final class TalkAcceptorHandler implements MessageHandler {
 		}
 	}
 
+	/**
+	 * 归还对话命令。
+	 * 
+	 * @param cmd 指定需归还的服务器对话命令。
+	 */
 	private void returnDialogueCommand(ServerDialogueCommand cmd) {
 		synchronized (this.dialogueCmdQueue) {
 			cmd.session = null;
@@ -219,6 +265,13 @@ public final class TalkAcceptorHandler implements MessageHandler {
 		}
 	}
 
+	/**
+	 * 借出心跳命令。
+	 * 
+	 * @param session 指定关联会话上下文。
+	 * @param packet 指定关联的数据包。
+	 * @return 返回服务器心跳命令。
+	 */
 	private ServerHeartbeatCommand borrowHeartbeatCommand(Session session, Packet packet) {
 		synchronized (this.heartbeatCmdQueue) {
 			ServerHeartbeatCommand cmd = null;
@@ -237,6 +290,11 @@ public final class TalkAcceptorHandler implements MessageHandler {
 		}
 	}
 
+	/**
+	 * 归还心跳命令。
+	 * 
+	 * @param cmd 指定需归还的服务器心跳命令。
+	 */
 	private void returnHeartbeatCommand(ServerHeartbeatCommand cmd) {
 		synchronized (this.heartbeatCmdQueue) {
 			cmd.session = null;
@@ -246,6 +304,13 @@ public final class TalkAcceptorHandler implements MessageHandler {
 		}
 	}
 
+	/**
+	 * 借出快速握手命令。
+	 * 
+	 * @param session 指定关联会话上下文。
+	 * @param packet 指定关联的数据包。
+	 * @return 返回服务器快速握手命令。
+	 */
 	private ServerQuickCommand borrowQuickCommand(Session session, Packet packet) {
 		synchronized (this.quickCmdQueue) {
 			ServerQuickCommand cmd = null;
@@ -264,6 +329,11 @@ public final class TalkAcceptorHandler implements MessageHandler {
 		}
 	}
 
+	/**
+	 * 归还快速握手命令。
+	 * 
+	 * @param cmd 指定需归还的服务器快速握手命令。
+	 */
 	private void returnQuickCommand(ServerQuickCommand cmd) {
 		synchronized (this.quickCmdQueue) {
 			cmd.session = null;
@@ -273,6 +343,13 @@ public final class TalkAcceptorHandler implements MessageHandler {
 		}
 	}
 
+	/**
+	 * 借出代理命令。
+	 * 
+	 * @param session 指定关联会话上下文。
+	 * @param packet 指定关联的数据包。
+	 * @return 返回服务器代理命令。
+	 */
 	private ServerProxyCommand borrowProxyCommand(Session session, Packet packet) {
 		synchronized (this.proxyCmdQueue) {
 			ServerProxyCommand cmd = null;
@@ -291,6 +368,11 @@ public final class TalkAcceptorHandler implements MessageHandler {
 		}
 	}
 
+	/**
+	 * 归还代理命令。
+	 * 
+	 * @param cmd 指定需归还的服务器代理命令。
+	 */
 	private void returnProxyCommand(ServerProxyCommand cmd) {
 		synchronized (this.proxyCmdQueue) {
 			cmd.session = null;

@@ -46,7 +46,7 @@ public final class TalkCapacity {
 	public boolean secure = false;
 
 	/** 重复尝试连接的次数。 */
-	public int retryAttempts = 0;
+	public int retry = 0;
 	/** 两次连接中间隔时间，单位：毫秒。 */
 	public long retryDelay = 5000L;
 
@@ -62,40 +62,40 @@ public final class TalkCapacity {
 	/**
 	 * 构造函数。
 	 * 
-	 * @param retryAttempts
-	 * @param retryDelay
+	 * @param retry 指定自动重连次数。
+	 * @param retryDelay 指定自动重连延迟时间。
 	 */
-	public TalkCapacity(int retryAttempts, long retryDelay) {
-		this(false, retryAttempts, retryDelay);
+	public TalkCapacity(int retry, long retryDelay) {
+		this(false, retry, retryDelay);
 	}
 
 	/**
 	 * 构造函数。
 	 * 
-	 * @param secure
-	 * @param retryAttempts
-	 * @param retryDelay
+	 * @param secure 指定是否使用加密传输。
+	 * @param retry 指定自动重连次数。
+	 * @param retryDelay 指定自动重连延迟时间。
 	 */
-	public TalkCapacity(boolean secure, int retryAttempts, long retryDelay) {
-		this(secure, retryAttempts, retryDelay, false);
+	public TalkCapacity(boolean secure, int retry, long retryDelay) {
+		this(secure, retry, retryDelay, false);
 	}
 
 	/**
 	 * 构造函数。
 	 * 
-	 * @param secure
-	 * @param retryAttempts
-	 * @param retryDelay
-	 * @param proxy
+	 * @param secure 指定是否使用加密传输。
+	 * @param retry 指定自动重连次数。
+	 * @param retryDelay 指定自动重连延迟时间。
+	 * @param proxy 指定是否是代理模式。
 	 */
-	public TalkCapacity(boolean secure, int retryAttempts, long retryDelay, boolean proxy) {
+	public TalkCapacity(boolean secure, int retry, long retryDelay, boolean proxy) {
 		this.secure = secure;
-		this.retryAttempts = retryAttempts;
+		this.retry = retry;
 		this.retryDelay = retryDelay;
 		this.proxy = proxy;
 
-		if (this.retryAttempts == Integer.MAX_VALUE) {
-			this.retryAttempts -= 1;
+		if (this.retry == Integer.MAX_VALUE) {
+			this.retry -= 1;
 		}
 	}
 
@@ -130,14 +130,14 @@ public final class TalkCapacity {
 	 * @param capacity 指定 TalkCapacity 实例。
 	 * @return 返回序列化结果。
 	 */
-	public final static byte[] serialize(TalkCapacity capacity) {
+	public static byte[] serialize(TalkCapacity capacity) {
 		StringBuilder buf = new StringBuilder();
 		if (capacity.version == 1) {
 			buf.append(1);
 			buf.append("|");
 			buf.append(capacity.secure ? "Y" : "N");
 			buf.append("|");
-			buf.append(capacity.retryAttempts);
+			buf.append(capacity.retry);
 			buf.append("|");
 			buf.append(capacity.retryDelay);
 		}
@@ -146,7 +146,7 @@ public final class TalkCapacity {
 			buf.append("|");
 			buf.append(capacity.secure ? "Y" : "N");
 			buf.append("|");
-			buf.append(capacity.retryAttempts);
+			buf.append(capacity.retry);
 			buf.append("|");
 			buf.append(capacity.retryDelay);
 			buf.append("|");
@@ -157,7 +157,7 @@ public final class TalkCapacity {
 			buf.append("|");
 			buf.append(capacity.secure ? "Y" : "N");
 			buf.append("|");
-			buf.append(capacity.retryAttempts);
+			buf.append(capacity.retry);
 			buf.append("|");
 			buf.append(capacity.retryDelay);
 			buf.append("|");
@@ -178,7 +178,7 @@ public final class TalkCapacity {
 	 * @param bytes 指定待反序列化的数据。
 	 * @return 返回 TalkCapacity 实例。
 	 */
-	public final static TalkCapacity deserialize(byte[] bytes) {
+	public static TalkCapacity deserialize(byte[] bytes) {
 		String str = new String(bytes, Charset.forName("UTF-8"));
 		String[] array = str.split("\\|");
 		if (array.length < 4) {
@@ -190,18 +190,18 @@ public final class TalkCapacity {
 		cap.version = Integer.parseInt(array[0]);
 		if (cap.version == 1) {
 			cap.secure = array[1].equalsIgnoreCase("Y") ? true : false;
-			cap.retryAttempts = Integer.parseInt(array[2]);
+			cap.retry = Integer.parseInt(array[2]);
 			cap.retryDelay = Integer.parseInt(array[3]);
 		}
 		else if (cap.version == 2) {
 			cap.secure = array[1].equalsIgnoreCase("Y") ? true : false;
-			cap.retryAttempts = Integer.parseInt(array[2]);
+			cap.retry = Integer.parseInt(array[2]);
 			cap.retryDelay = Integer.parseInt(array[3]);
 			cap.versionNumber = Integer.parseInt(array[4]);
 		}
 		else if (cap.version == 3) {
 			cap.secure = array[1].equalsIgnoreCase("Y") ? true : false;
-			cap.retryAttempts = Integer.parseInt(array[2]);
+			cap.retry = Integer.parseInt(array[2]);
 			cap.retryDelay = Integer.parseInt(array[3]);
 			cap.proxy = array[4].equalsIgnoreCase("Y") ? true : false;
 			cap.versionNumber = Integer.parseInt(array[5]);
@@ -210,7 +210,7 @@ public final class TalkCapacity {
 			// 尝试兼容未知版本号
 			try {
 				cap.secure = array[1].equalsIgnoreCase("Y") ? true : false;
-				cap.retryAttempts = Integer.parseInt(array[2]);
+				cap.retry = Integer.parseInt(array[2]);
 				cap.retryDelay = Integer.parseInt(array[3]);
 			} catch (Exception e) {
 				// Nothing

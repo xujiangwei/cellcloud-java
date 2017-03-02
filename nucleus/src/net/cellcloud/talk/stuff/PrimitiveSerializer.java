@@ -2,7 +2,7 @@
 -----------------------------------------------------------------------------
 This source file is part of Cell Cloud.
 
-Copyright (c) 2009-2016 Cell Cloud Team (www.cellcloud.net)
+Copyright (c) 2009-2017 Cell Cloud Team (www.cellcloud.net)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -45,9 +45,11 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-/** 原语序列化器。
+/**
+ * 原语序列化器。
  * 
- * @author Jiangwei Xu
+ * @author Ambrose Xu
+ * 
  */
 public final class PrimitiveSerializer {
 
@@ -116,12 +118,17 @@ public final class PrimitiveSerializer {
 	private static final String JSONKEY_NAME = "name";
 	private static final String JSONKEY_TRACKER = "tracker";
 
+	/** 缓存区大小。 */
 	private static final int BLOCK = 65536;
 
 	private PrimitiveSerializer() {
 	}
 
-	/** 将原语写入数据流。
+	/**
+	 * 将原语写入数据流。
+	 * 
+	 * @param stream 指定需写入数据的输出流。
+	 * @param primitive 指定待操作源原语。
 	 */
 	public static void write(OutputStream stream, Primitive primitive) {
 		/*
@@ -292,7 +299,11 @@ public final class PrimitiveSerializer {
 		}
 	}
 
-	/** 从数据流中读取原语。
+	/**
+	 * 从数据流中读取原语。
+	 * 
+	 * @param primitive 指定需写入数据的目标原语。
+	 * @param stream 指定数据源的输入流。
 	 */
 	public static void read(Primitive primitive, InputStream stream) {
 		/*
@@ -461,7 +472,13 @@ public final class PrimitiveSerializer {
 		}
 	}
 
-	/** 将数据数组解析为语素，并注入原语。
+	/**
+	 * 将数据数组解析为语素，并注入原语。
+	 * 
+	 * @param primitive 指定目标原语。
+	 * @param type 指定语素类型描述。
+	 * @param value 指定数值描述。
+	 * @param literal 指定语素字面义描述。
 	 */
 	private static void injectStuff(Primitive primitive, byte[] type, byte[] value, byte[] literal) {
 		// 字面义
@@ -505,7 +522,12 @@ public final class PrimitiveSerializer {
 		}
 	}
 
-	/** 进行数据内容转义。
+	/**
+	 * 进行数据内容转义。
+	 * 
+	 * @param buf 指定完成转义处理的缓存。
+	 * @param input 指定输入数据。
+	 * @return
 	 */
 	private static int reviseValue(ByteBuffer buf, byte[] input) {
 		int length = 0;
@@ -529,7 +551,11 @@ public final class PrimitiveSerializer {
 		return length;
 	}
 
-	/** 解析字面义。
+	/**
+	 * 解析字面义，将字面义序列化。
+	 * 
+	 * @param literal 指定字面义。
+	 * @return 返回序列化的字面义。
 	 */
 	private static byte[] parseLiteralBase(LiteralBase literal) {
 		if (literal == LiteralBase.STRING) {
@@ -570,7 +596,11 @@ public final class PrimitiveSerializer {
 		}
 	}
 
-	/** 解析字面义。
+	/**
+	 * 解析字面义。将字面义反序列化。
+	 * 
+	 * @param literal 指定序列化形式的字面义。
+	 * @return 返回转义后的字面义枚举对象。
 	 */
 	private static LiteralBase parseLiteralBase(byte[] literal) {
 		if (literal[0] == LITERALBASE_STRING_BYTES[0] && literal[1] == LITERALBASE_STRING_BYTES[1]) {
@@ -611,9 +641,13 @@ public final class PrimitiveSerializer {
 		}
 	}
 
-	/** 反序列化方言
+	/**
+	 * 反序列化方言。
+	 * 
+	 * @param primitive 指定结果原语。
+	 * @param dialectStr 指定方言数据串。
 	 */
-	private static void deserializeDialect(Primitive primitive, final String dialectStr) {
+	private static void deserializeDialect(Primitive primitive, String dialectStr) {
 		String[] sections = dialectStr.split(TOKEN_AT_STR);
 		if (sections.length != 2) {
 			return;
@@ -638,8 +672,10 @@ public final class PrimitiveSerializer {
 
 	/**
 	 * 将原语序列化为 JSON 格式。
-	 * @param output
-	 * @param primitive
+	 * 
+	 * @param output 指定输出数据。
+	 * @param primitive 指定源原语。
+	 * @throws JSONException
 	 */
 	public static void write(JSONObject output, Primitive primitive) throws JSONException {
 		// 版本
@@ -735,8 +771,10 @@ public final class PrimitiveSerializer {
 
 	/**
 	 * 从 JSON 数据里反序列化原语。
-	 * @param primitive
-	 * @param json
+	 * 
+	 * @param output 指定目标原语。
+	 * @param json 指定源 JSON 格式数据。
+	 * @throws JSONException
 	 */
 	public static void read(Primitive output, JSONObject json) throws JSONException {
 		// 解析语素
@@ -799,8 +837,9 @@ public final class PrimitiveSerializer {
 
 	/**
 	 * 写入语素对应的数值。
-	 * @param output
-	 * @param stuff
+	 * 
+	 * @param output 指定接收数据的 JSON 对象。
+	 * @param stuff 指定语素。
 	 * @throws JSONException
 	 */
 	private static void writeValue(JSONObject output, Stuff stuff) throws JSONException {
@@ -852,8 +891,9 @@ public final class PrimitiveSerializer {
 
 	/**
 	 * 读取语素对应的值。
-	 * @param output
-	 * @param json
+	 * 
+	 * @param output 指定接收数据的语素。
+	 * @param json 指定源数据 JSON 对象。
 	 * @throws JSONException
 	 */
 	private static void readValue(Stuff output, JSONObject json) throws JSONException {
@@ -910,4 +950,5 @@ public final class PrimitiveSerializer {
 			Logger.e(PrimitiveSerializer.class, "Don't support XML literal in JSON format.");
 		}
 	}
+
 }

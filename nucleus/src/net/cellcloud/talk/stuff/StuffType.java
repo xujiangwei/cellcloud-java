@@ -2,7 +2,7 @@
 -----------------------------------------------------------------------------
 This source file is part of Cell Cloud.
 
-Copyright (c) 2009-2012 Cell Cloud Team (www.cellcloud.net)
+Copyright (c) 2009-2017 Cell Cloud Team (www.cellcloud.net)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -26,33 +26,60 @@ THE SOFTWARE.
 
 package net.cellcloud.talk.stuff;
 
-/** 语素类型。
+/**
+ * 语素类型。
  * 
- * @author Jiangwei Xu
+ * @author Ambrose Xu
+ * 
  */
 public enum StuffType {
 
-	/** 主语 */
+	/**
+	 * 主语。
+	 */
 	SUBJECT(1),
-	/** 谓语 */
+
+	/**
+	 * 谓语。
+	 */
 	PREDICATE(2),
-	/** 宾语 */
+
+	/**
+	 * 宾语。
+	 */
 	OBJECTIVE(3),
-	/** 定语 */
+
+	/**
+	 * 定语。
+	 */
 	ATTRIBUTIVE(4),
-	/** 状语 */
+
+	/**
+	 * 状语。
+	 */
 	ADVERBIAL(5),
-	/** 补语 */
+
+	/**
+	 * 补语。
+	 */
 	COMPLEMENT(6);
 
+	/**
+	 * 类型编码。
+	 */
 	private int type;
 
 	private StuffType(int type) {
 		this.type = type;
 	}
 
-	/** 返回类型。 */
+	/**
+	 * 获得类型编码。
+	 * 
+	 * @return 返回类型编码。
+	 */
 	public int getType() {
 		return this.type;
 	}
+
 }

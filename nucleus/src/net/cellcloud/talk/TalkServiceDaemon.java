@@ -130,7 +130,7 @@ public final class TalkServiceDaemon extends Thread {
 						for (Speaker speaker : kernel.speakers) {
 							if (speaker.lost
 								&& null != speaker.capacity
-								&& speaker.capacity.retryAttempts > 0) {
+								&& speaker.capacity.retry > 0) {
 								if (speaker.retryTimestamp == 0) {
 									// 建立时间戳
 									speaker.retryTimestamp = this.tickTime;
@@ -138,7 +138,7 @@ public final class TalkServiceDaemon extends Thread {
 								}
 
 								// 判断是否达到最大重试次数
-								if (speaker.retryCounts >= speaker.capacity.retryAttempts) {
+								if (speaker.retryCounts >= speaker.capacity.retry) {
 									if (!speaker.retryEnd) {
 										speaker.retryEnd = true;
 										speaker.fireRetryEnd();

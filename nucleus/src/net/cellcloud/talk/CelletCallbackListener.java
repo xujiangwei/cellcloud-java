@@ -2,7 +2,7 @@
 -----------------------------------------------------------------------------
 This source file is part of Cell Cloud.
 
-Copyright (c) 2009-2015 Cell Cloud Team (www.cellcloud.net)
+Copyright (c) 2009-2017 Cell Cloud Team (www.cellcloud.net)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -30,25 +30,30 @@ import net.cellcloud.core.Cellet;
 import net.cellcloud.talk.dialect.Dialect;
 
 /**
- * @author Jiangwei Xu
+ * Cellet 数据事件回调监听器。
+ * 
+ * @author Ambrose Xu
+ * 
  */
 public interface CelletCallbackListener {
 
 	/**
+	 * 当 Cellet 向终端发送方言时此函数被回调。
 	 * 
-	 * @param cellet
-	 * @param targetTag
-	 * @param dialect
-	 * @return
+	 * @param cellet 发生此事件的 Cellet 。
+	 * @param targetTag 发送目标的标签。
+	 * @param dialect 发送的方言。
+	 * @return 返回 <code>true</code> 表示截获该方言，将不被送入发送队列。
 	 */
 	public boolean doTalk(Cellet cellet, String targetTag, Dialect dialect);
 
 	/**
+	 * 当 Cellet 接收到来自终端的方言时此函数被回调。
 	 * 
-	 * @param cellet
-	 * @param sourceTag
-	 * @param dialect
-	 * @return
+	 * @param cellet 发生此事件的 Cellet 。
+	 * @param sourceTag 源终端的标签。
+	 * @param dialect 接收到的方言。
+	 * @return 返回 <code>true</code> 表示截获该方言，将不调用监听器通知 dialogue 事件发生。
 	 */
 	public boolean doDialogue(Cellet cellet, String sourceTag, Dialect dialect);
 
