@@ -187,11 +187,9 @@ public class DatagramAcceptor extends MessageService implements MessageAcceptor 
 
 		if (null != this.udpWriteQueue) {
 			this.udpWriteQueue.clear();
-			this.udpWriteQueue = null;
 		}
 		if (null != this.udpWriteSessionQueue) {
 			this.udpWriteSessionQueue.clear();
-			this.udpWriteSessionQueue = null;
 		}
 
 		if (null != this.executor) {
