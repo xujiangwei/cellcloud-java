@@ -2,7 +2,7 @@
 -----------------------------------------------------------------------------
 This source file is part of Cell Cloud.
 
-Copyright (c) 2009-2013 Cell Cloud Team (www.cellcloud.net)
+Copyright (c) 2009-2017 Cell Cloud Team (www.cellcloud.net)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -31,27 +31,42 @@ import java.nio.charset.Charset;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 
-/** 加解密库。
+import net.cellcloud.util.Base64;
+import net.cellcloud.util.RC4;
+
+/**
+ * 加解密库。
  * 
- * @author Jiangwei Xu
+ * @author Ambrose Xu
+ * 
  */
 public final class Cryptology {
 
+	/** 单例对象。 */
 	private static final Cryptology instance = new Cryptology();
 
+	/** 十六进制数字。 */
 	private static final char HEX_DIGITS[] = {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
 		'a', 'b', 'c', 'd', 'e', 'f'};
 
 	private Cryptology() {
 	}
 
-	/** 返回加解密库对象的实例。
+	/**
+	 * 获得加解密库对象的实例。
+	 * 
+	 * @return 返回加解密库对象的实例。
 	 */
 	public static Cryptology getInstance() {
 		return instance;
 	}
 
-	/** 简单加密操作。密钥长度为 8 位。
+	/**
+	 * 简单加密操作。密钥长度为 8 位。
+	 * 
+	 * @param plaintext 指定待加密明文。
+	 * @param key 指定密钥。
+	 * @return 返回存储加密后密文的数组。
 	 */
 	public byte[] simpleEncrypt(byte[] plaintext, byte[] key) {
 		if (key.length != 8)
@@ -82,7 +97,12 @@ public final class Cryptology {
 		return out;
 	}
 
-	/** 简单解密操作。密钥长度为 8 位。
+	/**
+	 * 简单解密操作。密钥长度为 8 位。
+	 * 
+	 * @param ciphertext 指定待解密密文。
+	 * @param key 指定密钥。
+	 * @return 返回存储解密后明文的数组。
 	 */
 	public byte[] simpleDecrypt(byte[] ciphertext, byte[] key) {
 		if (key.length != 8)
@@ -113,7 +133,19 @@ public final class Cryptology {
 		return out;
 	}
 
-	/** 快速生成 Hash 编码。
+	public byte[] encryptWithRC4(byte[] plaintext, byte[] key) {
+		return RC4.encrypt(plaintext, key);
+	}
+
+	public byte[] decryptWithRC4(byte[] ciphertext, byte[] key) {
+		return RC4.decrypt(ciphertext, key);
+	}
+
+	/**
+	 * 快速生成散列码。
+	 * 
+	 * @param string 指定待操作的字符串。
+	 * @return 返回散列码。
 	 */
 	public long fastHash(String string) {
 		long h = 0;
@@ -123,7 +155,12 @@ public final class Cryptology {
 		}
 		return h;
 	}
-	/** 快速生成 Hash 编码。
+
+	/**
+	 * 快速生成散列码。
+	 * 
+	 * @param input 指定待操作的字节数组。
+	 * @return 返回散列码。
 	 */
 	public long fastHash(byte[] input) {
 		long h = 0;
@@ -133,7 +170,11 @@ public final class Cryptology {
 		return h;
 	}
 
-	/** 生成 MD5 散列码。
+	/**
+	 * 使用 MD5 算法生成数据摘要。
+	 * 
+	 * @param input 指定待操作的数据数组。
+	 * @return 返回 MD5 算法生成的数据摘要。
 	 */
 	public byte[] hashWithMD5(byte[] input) {
 		byte[] bytes = null;
@@ -146,7 +187,14 @@ public final class Cryptology {
 		}
 		return bytes;
 	}
+
 	/** 生成 MD5 散列码。
+	 */
+	/**
+	 * 使用 MD5 算法生成数据摘要。
+	 * 
+	 * @param input 指定待操作的数据数组。
+	 * @return 返回 MD5 算法生成的数据摘要的字符串形式。
 	 */
 	public String hashWithMD5AsString(byte[] input) {
 		byte[] md5 = this.hashWithMD5(input);
@@ -160,12 +208,21 @@ public final class Cryptology {
 		return new String(str);
 	}
 
-	/** Base64 编码数据。
+	/**
+	 * 使用 Base64 编码数据。
+	 * 
+	 * @param source 指定待操作数据源。
+	 * @return 返回编码后字符串形式的数据。
 	 */
 	public String encodeBase64(byte[] source) {
 		return Base64.encodeBytes(source);
 	}
-	/** Base64 解码数据。
+
+	/**
+	 * 使用 Base64 解码数据。
+	 * 
+	 * @param source 指定待操作数据源。
+	 * @return 返回解码后的原文数据。
 	 */
 	public byte[] decodeBase64(String source) {
 		byte[] result = null;
@@ -177,4 +234,59 @@ public final class Cryptology {
 
 		return result;
 	}
+
+	/*public static void main(String[] args) {
+		String text = "这是一段测试文本，来自 shixinyun.com @ 2016.12.22";
+		byte[] srcText = text.getBytes(Charset.forName("UTF-8"));
+		byte[] key = "abc_091#".getBytes();
+
+		long time = System.currentTimeMillis();
+		for (int i = 0; i < 10; ++i) {
+			byte[] result = Cryptology.getInstance().simpleEncrypt(srcText, key);
+			Cryptology.getInstance().simpleDecrypt(result, key);
+
+			result = Cryptology.getInstance().encryptWithRC4(srcText, key);
+			Cryptology.getInstance().decryptWithRC4(result, key);
+		}
+
+		byte[] ciphertext = null;
+		byte[] plaintext = null;
+
+		long d = System.currentTimeMillis() - time;
+		System.out.println("Warmup: " + d);
+
+		// simple
+
+		time = System.currentTimeMillis();
+		for (int i = 0; i < 10000; ++i) {
+			ciphertext = Cryptology.getInstance().simpleEncrypt(srcText, key);
+		}
+		d = System.currentTimeMillis() - time;
+		System.out.println("simpleEncrypt: " + d + " ms");
+
+		time = System.currentTimeMillis();
+		for (int i = 0; i < 10000; ++i) {
+			plaintext = Cryptology.getInstance().simpleDecrypt(ciphertext, key);
+		}
+		d = System.currentTimeMillis() - time;
+		System.out.println("simpleDecrypt: " + d + " ms");
+		System.out.println("content: " + new String(plaintext, Charset.forName("UTF-8")));
+
+		// RC4
+
+		time = System.currentTimeMillis();
+		for (int i = 0; i < 10000; ++i) {
+			ciphertext = Cryptology.getInstance().encryptWithRC4(srcText, key);
+		}
+		d = System.currentTimeMillis() - time;
+		System.out.println("encryptWithRC4: " + d + " ms");
+
+		time = System.currentTimeMillis();
+		for (int i = 0; i < 10000; ++i) {
+			plaintext = Cryptology.getInstance().decryptWithRC4(ciphertext, key);
+		}
+		d = System.currentTimeMillis() - time;
+		System.out.println("decryptWithRC4: " + d + " ms");
+		System.out.println("content: " + new String(plaintext, Charset.forName("UTF-8")));
+	}*/
 }

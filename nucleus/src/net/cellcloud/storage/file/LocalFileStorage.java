@@ -41,7 +41,7 @@ import net.cellcloud.common.Logger;
 import net.cellcloud.exception.StorageException;
 import net.cellcloud.storage.ResultSet;
 import net.cellcloud.storage.Schema;
-import net.cellcloud.util.Properties;
+import net.cellcloud.util.property.Properties;
 
 /** 本地文件存储器。
  * 

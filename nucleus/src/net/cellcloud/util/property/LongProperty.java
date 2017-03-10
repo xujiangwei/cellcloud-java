@@ -2,7 +2,7 @@
 -----------------------------------------------------------------------------
 This source file is part of Cell Cloud.
 
-Copyright (c) 2009-2012 Cell Cloud Team (www.cellcloud.net)
+Copyright (c) 2009-2017 Cell Cloud Team (www.cellcloud.net)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -24,18 +24,53 @@ THE SOFTWARE.
 -----------------------------------------------------------------------------
 */
 
-package net.cellcloud.storage.file;
+package net.cellcloud.util.property;
 
-import net.cellcloud.util.property.Properties;
-
-/** 本地文件存储器属性集。
+/**
+ * 长整型属性。
  * 
- * @author Jiangwei Xu
+ * @author Ambrose Xu
+ * 
  */
-public final class LocalFileProperties extends Properties {
+public final class LongProperty implements PropertyReference {
 
-	public final static LocalFileProperties DEFAULT = new LocalFileProperties();
+	private String key;
+	private Long value;
 
-	public LocalFileProperties() {
+	/**
+	 * 构造函数。
+	 * 
+	 * @param key 指定键。
+	 * @param value 指定值。
+	 */
+	public LongProperty(String key, long value) {
+		this.key = key;
+		this.value = value;
 	}
+
+	/**
+	 * {@inheritDoc}
+	 */
+	@Override
+	public String getKey() {
+		return this.key;
+	}
+
+	/**
+	 * {@inheritDoc}
+	 */
+	@Override
+	public Object getValue() {
+		return this.value;
+	}
+
+	/**
+	 * 获得长整数类型值。
+	 * 
+	 * @return 返回长整数类型值。
+	 */
+	public long getValueAsLong() {
+		return this.value.longValue();
+	}
+
 }

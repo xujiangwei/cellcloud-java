@@ -26,9 +26,15 @@ THE SOFTWARE.
 
 package net.cellcloud.http;
 
+import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.net.URISyntaxException;
 import java.net.URL;
+import java.security.KeyStore;
+import java.security.KeyStoreException;
+import java.security.NoSuchAlgorithmException;
+import java.security.cert.CertificateException;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
@@ -345,16 +351,26 @@ public final class HttpService implements Service {
 		HttpConnectionFactory httpConnectionFactory = new HttpConnectionFactory(new HttpConfiguration());
 
 		SslContextFactory sslContextFactory = new SslContextFactory();
-		URL url = this.getClass().getResource(jksResource);
 
-		Logger.i(this.getClass(), "HTTPS key store file: " + url.toString());
+		if (jksResource.startsWith("/")) {
+			URL url = this.getClass().getResource(jksResource);
 
-		try {
-			sslContextFactory.setKeyStoreResource(new FileResource(url));
-		} catch (IOException | URISyntaxException exception) {
-			Logger.log(this.getClass(), exception, LogLevel.ERROR);
-			this.httpsServer = null;
-			return false;
+			Logger.i(this.getClass(), "HTTPS key store file: " + url.toString());
+
+			try {
+				sslContextFactory.setKeyStoreResource(new FileResource(url));
+			} catch (IOException | URISyntaxException exception) {
+				Logger.log(this.getClass(), exception, LogLevel.ERROR);
+				this.httpsServer = null;
+				return false;
+			}
+		}
+		else {
+			File file = new File(jksResource);
+			Logger.i(this.getClass(), "HTTPS key store file: " + file.getAbsolutePath());
+			file = null;
+
+			sslContextFactory.setKeyStorePath(jksResource);
 		}
 
 		sslContextFactory.setKeyStorePassword(keyStorePassword);
@@ -391,28 +407,29 @@ public final class HttpService implements Service {
 		this.wssServer = new Server();
 
 		SslContextFactory sslContextFactory = new SslContextFactory();
+
 		try {
-			URL url = this.getClass().getResource(jksResource);
+			if (jksResource.startsWith("/")) {
+				URL url = this.getClass().getResource(jksResource);
+				Logger.i(this.getClass(), "WSS key store file: " + url.toString());
 
-			Logger.i(this.getClass(), "WSS key store file: " + url.toString());
+				sslContextFactory.setKeyStoreResource(new FileResource(url));
+			}
+			else {
+				File file = new File(jksResource);
+				Logger.i(this.getClass(), "WSS key store file: " + file.getAbsolutePath());
 
-			sslContextFactory.setKeyStoreResource(new FileResource(url));
-		} catch (IOException e) {
-			Logger.log(this.getClass(), e, LogLevel.ERROR);
-			this.wssServer = null;
-			this.webSocketSecure = null;
-			return null;
-		} catch (URISyntaxException e) {
-			Logger.log(this.getClass(), e, LogLevel.ERROR);
-			this.wssServer = null;
-			this.webSocketSecure = null;
-			return null;
-		} catch (Exception e) {
+				KeyStore keyStore = KeyStore.getInstance("JKS");
+				keyStore.load(new FileInputStream(file), keyStorePassword.toCharArray());
+				sslContextFactory.setKeyStore(keyStore);
+			}
+		} catch (URISyntaxException | KeyStoreException | NoSuchAlgorithmException | CertificateException | IOException e) {
 			Logger.log(this.getClass(), e, LogLevel.ERROR);
 			this.wssServer = null;
 			this.webSocketSecure = null;
 			return null;
 		}
+
 		sslContextFactory.setKeyStorePassword(keyStorePassword);
 		sslContextFactory.setKeyManagerPassword(keyManagerPassword);
 		SslConnectionFactory sslConnectionFactory = new SslConnectionFactory(sslContextFactory, HttpVersion.HTTP_1_1.asString());

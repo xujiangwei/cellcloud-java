@@ -2,7 +2,7 @@
 -----------------------------------------------------------------------------
 This source file is part of Cell Cloud.
 
-Copyright (c) 2009-2012 Cell Cloud Team (www.cellcloud.net)
+Copyright (c) 2009-2017 Cell Cloud Team (www.cellcloud.net)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -24,33 +24,24 @@ THE SOFTWARE.
 -----------------------------------------------------------------------------
 */
 
-package net.cellcloud.util;
+package net.cellcloud.util.property;
 
-/** 整数型属性。
+/**
+ * 属性参考。
  * 
- * @author Jiangwei Xu
+ * @author Ambrose Xu
+ * 
  */
-public final class IntegerProperty implements PropertyReference {
+public interface PropertyReference {
 
-	private String key;
-	private Integer value;
+	/**
+	 * 返回主键。
+	 */
+	public String getKey();
 
-	public IntegerProperty(String key, int value) {
-		this.key = key;
-		this.value = value;
-	}
+	/**
+	 * 返回数值。
+	 */
+	public Object getValue();
 
-	@Override
-	public String getKey() {
-		return this.key;
-	}
-
-	@Override
-	public Object getValue() {
-		return this.value;
-	}
-
-	public int getValueAsInt() {
-		return this.value.intValue();
-	}
 }

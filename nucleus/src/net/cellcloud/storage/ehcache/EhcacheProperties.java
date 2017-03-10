@@ -26,8 +26,8 @@ THE SOFTWARE.
 
 package net.cellcloud.storage.ehcache;
 
-import net.cellcloud.util.Properties;
-import net.cellcloud.util.StringProperty;
+import net.cellcloud.util.property.Properties;
+import net.cellcloud.util.property.StringProperty;
 
 /** 缓存属性。
  * 

@@ -2,7 +2,7 @@
 -----------------------------------------------------------------------------
 This source file is part of Cell Cloud.
 
-Copyright (c) 2009-2012 Cell Cloud Team (www.cellcloud.net)
+Copyright (c) 2009-2017 Cell Cloud Team (www.cellcloud.net)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -24,18 +24,53 @@ THE SOFTWARE.
 -----------------------------------------------------------------------------
 */
 
-package net.cellcloud.storage.file;
+package net.cellcloud.util.property;
 
-import net.cellcloud.util.property.Properties;
-
-/** 本地文件存储器属性集。
+/**
+ * 布尔型属性。
  * 
- * @author Jiangwei Xu
+ * @author Ambrose Xu
+ * 
  */
-public final class LocalFileProperties extends Properties {
+public final class BooleanProperty implements PropertyReference {
 
-	public final static LocalFileProperties DEFAULT = new LocalFileProperties();
+	private String key;
+	private Boolean value;
 
-	public LocalFileProperties() {
+	/**
+	 * 构造函数。
+	 * 
+	 * @param key 指定键。
+	 * @param value 指定值。
+	 */
+	public BooleanProperty(String key, boolean value) {
+		this.key = key;
+		this.value = value;
 	}
+
+	/**
+	 * {@inheritDoc}
+	 */
+	@Override
+	public String getKey() {
+		return this.key;
+	}
+
+	/**
+	 * {@inheritDoc}
+	 */
+	@Override
+	public Object getValue() {
+		return this.value;
+	}
+
+	/**
+	 * 获得布尔类型值。
+	 * 
+	 * @return 返回布尔类型值。
+	 */
+	public boolean getValueAsBoolean() {
+		return this.value.booleanValue();
+	}
+
 }

@@ -30,8 +30,8 @@ import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.List;
 
-import net.cellcloud.util.ListProperty;
-import net.cellcloud.util.Properties;
+import net.cellcloud.util.property.ListProperty;
+import net.cellcloud.util.property.Properties;
 
 import com.mongodb.ServerAddress;
 

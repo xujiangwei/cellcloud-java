@@ -2,7 +2,7 @@
 -----------------------------------------------------------------------------
 This source file is part of Cell Cloud.
 
-Copyright (c) 2009-2013 Cell Cloud Team (www.cellcloud.net)
+Copyright (c) 2009-2017 Cell Cloud Team (www.cellcloud.net)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -24,29 +24,44 @@ THE SOFTWARE.
 -----------------------------------------------------------------------------
 */
 
-package net.cellcloud.util;
+package net.cellcloud.util.property;
 
-/** 对象引用属性。
+/**
+ * 对象引用属性。
  * 
- * @author Jiangwei Xu
+ * @author Ambrose Xu
+ * 
  */
 public final class ObjectProperty implements PropertyReference {
 
 	private String key;
 	private Object object;
 
+	/**
+	 * 构造函数。
+	 * 
+	 * @param key 指定键。
+	 * @param object 指定值。
+	 */
 	public ObjectProperty(String key, Object object) {
 		this.key = key;
 		this.object = object;
 	}
 
+	/**
+	 * {@inheritDoc}
+	 */
 	@Override
 	public String getKey() {
 		return this.key;
 	}
 
+	/**
+	 * {@inheritDoc}
+	 */
 	@Override
 	public Object getValue() {
 		return this.object;
 	}
+
 }

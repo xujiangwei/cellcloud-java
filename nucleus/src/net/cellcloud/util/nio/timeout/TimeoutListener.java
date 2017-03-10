@@ -2,7 +2,7 @@
 -----------------------------------------------------------------------------
 This source file is part of Cell Cloud.
 
-Copyright (c) 2009-2012 Cell Cloud Team (www.cellcloud.net)
+Copyright (c) 2009-2017 Cell Cloud Team (www.cellcloud.net)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -24,18 +24,27 @@ THE SOFTWARE.
 -----------------------------------------------------------------------------
 */
 
-package net.cellcloud.storage.file;
+package net.cellcloud.util.nio.timeout;
 
-import net.cellcloud.util.property.Properties;
+import net.cellcloud.util.nio.Socket;
 
-/** 本地文件存储器属性集。
- * 
- * @author Jiangwei Xu
+/**
+ * Timeout listeners listen for expired
+ * {@link net.cellcloud.util.nio.timeout.worker.Timeout}s and act upon them.
+ * Only one timeout listener is associated with each
+ * {@link net.cellcloud.util.nio.timeout.worker.Timeout} instance.
  */
-public final class LocalFileProperties extends Properties {
+public interface TimeoutListener {
 
-	public final static LocalFileProperties DEFAULT = new LocalFileProperties();
+	/**
+	 * This method is called from the
+	 * {@link net.cellcloud.util.nio.timeout.worker.Timeout#expired()}
+	 * method, notifying any Timeout Listeners that the Timeout has expired and
+	 * they should act upon it.
+	 * 
+	 * @param socket
+	 *            The SocketIF that just had its Timeout expired
+	 */
+	public void timeoutExpired(Socket socket);
 
-	public LocalFileProperties() {
-	}
 }

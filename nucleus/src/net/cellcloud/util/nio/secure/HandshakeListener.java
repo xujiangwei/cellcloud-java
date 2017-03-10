@@ -2,7 +2,7 @@
 -----------------------------------------------------------------------------
 This source file is part of Cell Cloud.
 
-Copyright (c) 2009-2012 Cell Cloud Team (www.cellcloud.net)
+Copyright (c) 2009-2017 Cell Cloud Team (www.cellcloud.net)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -24,35 +24,29 @@ THE SOFTWARE.
 -----------------------------------------------------------------------------
 */
 
-package net.cellcloud.util;
+package net.cellcloud.util.nio.secure;
 
-import java.util.List;
+import net.cellcloud.util.nio.Socket;
 
-/** 列表属性。
- * 
- * @author Jiangwei Xu
+/**
+ * Handshake listeners listen for {@link javax.net.ssl.SSLEngine} handshake
+ * completions and act upon them. As such, task listeners are only useful for
+ * {@link SecureSocket} implementations. Only one handshake listener is
+ * associated with each {@link SecureSocket} instance.
  */
-public final class ListProperty<T> implements PropertyReference {
+public interface HandshakeListener {
 
-	private String key;
-	private List<T> value;
+	/**
+	 * This method is called from the {@link SecureSocket} once the
+	 * {@link javax.net.ssl.SSLEngine#getHandshakeStatus()} is FINISHED.
+	 * Handshake listeners are notified that they can begin operating in the
+	 * relevant {@link SecureSocket}
+	 * 
+	 * @param socket
+	 *            The Socket that just had its SSL/TLS handshake completed.
+	 * @see SecureSocket
+	 * @see ch.dermitza.securenio.AbstractSelector
+	 */
+	public void handshakeComplete(Socket socket);
 
-	public ListProperty(String key, List<T> value) {
-		this.key = key;
-		this.value = value;
-	}
-
-	@Override
-	public String getKey() {
-		return this.key;
-	}
-
-	@Override
-	public Object getValue() {
-		return this.value;
-	}
-
-	public List<T> getValueAsList() {
-		return this.value;
-	}
 }

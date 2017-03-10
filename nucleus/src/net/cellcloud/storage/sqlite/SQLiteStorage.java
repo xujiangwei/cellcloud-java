@@ -34,7 +34,7 @@ import net.cellcloud.exception.StorageException;
 import net.cellcloud.storage.ResultSet;
 import net.cellcloud.storage.Schema;
 import net.cellcloud.storage.Storage;
-import net.cellcloud.util.Properties;
+import net.cellcloud.util.property.Properties;
 
 import org.tmatesoft.sqljet.core.SqlJetException;
 import org.tmatesoft.sqljet.core.SqlJetTransactionMode;

@@ -1495,60 +1495,47 @@ public final class TalkServiceKernel implements Service, SpeakerDelegate {
 				}
 
 				// 使用互斥体处理
-				Object mutex = null;
-				if (session.hasAttribute("mutex")) {
-					mutex = session.getAttribute("mutex");
-				}
-				else {
-					mutex = new Object();
-					session.addAttribute("mutex", mutex);
-				}
-				synchronized (mutex) {
-					mutex.notifyAll();
-				}
+				if (!session.hasAttribute("mutex")) {
+					session.addAttribute("mutex", new Object());
 
-				Thread thread = new Thread("Mutex-" + tag) {
-					@Override
-					public void run() {
-						Object mutex = session.getAttribute("mutex");
-						if (null != mutex) {
-							synchronized (mutex) {
-								try {
-									mutex.wait(1000L);
-								} catch (InterruptedException e) {
-									Logger.log(this.getClass(), e, LogLevel.ERROR);
-								}
-							}
-						}
-
-						try {
-							Thread.sleep(100L);
-						} catch (InterruptedException e) {
-							Logger.log(this.getClass(), e, LogLevel.ERROR);
-						}
-
-						TalkSessionContext ctx = tagContexts.get(tag);
-						if (null != ctx) {
-							TalkTracker tt = ctx.getTracker(session);
-							TalkCapacity capacity = (null != tt) ? tt.getCapacity() : null;
-							if (null != capacity) {
-								if (capacity.secure && !session.isSecure()) {
-									boolean ret = session.activeSecretKey((byte[]) session.getAttribute("key"));
-									if (ret) {
-										Endpoint ep = ctx.getEndpoint();
-										Logger.i(Speaker.class, "Active secret key for client: " + ep.getHost() + ":" + ep.getPort());
+					// 等待处理线程
+					Thread thread = new Thread("Mutex-" + tag) {
+						@Override
+						public void run() {
+							Object mutex = session.getAttribute("mutex");
+							if (null != mutex) {
+								synchronized (mutex) {
+									try {
+										mutex.wait(1000L);
+									} catch (InterruptedException e) {
+										Logger.log(this.getClass(), e, LogLevel.ERROR);
 									}
 								}
-								else if (!capacity.secure && session.isSecure()) {
-									session.deactiveSecretKey();
+							}
+
+							TalkSessionContext ctx = tagContexts.get(tag);
+							if (null != ctx) {
+								TalkTracker tt = ctx.getTracker(session);
+								TalkCapacity capacity = (null != tt) ? tt.getCapacity() : null;
+								if (null != capacity) {
+									if (capacity.secure && !session.isSecure()) {
+										boolean ret = session.activeSecretKey((byte[]) session.getAttribute("key"));
+										if (ret) {
+											Endpoint ep = ctx.getEndpoint();
+											Logger.i(Speaker.class, "Active secret key for client: " + ep.getHost() + ":" + ep.getPort());
+										}
+									}
+									else if (!capacity.secure && session.isSecure()) {
+										session.deactiveSecretKey();
+									}
 								}
 							}
-						}
 
-						session.removeAttribute("mutex");
-					}
-				};
-				thread.start();
+							session.removeAttribute("mutex");
+						}
+					};
+					thread.start();
+				}
 			}
 
 			// 判断是否是代理

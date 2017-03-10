@@ -2,7 +2,7 @@
 -----------------------------------------------------------------------------
 This source file is part of Cell Cloud.
 
-Copyright (c) 2009-2013 Cell Cloud Team (www.cellcloud.net)
+Copyright (c) 2009-2017 Cell Cloud Team (www.cellcloud.net)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -24,57 +24,91 @@ THE SOFTWARE.
 -----------------------------------------------------------------------------
 */
 
-package net.cellcloud.util;
+package net.cellcloud.util.property;
 
 import java.util.Collection;
 import java.util.concurrent.ConcurrentHashMap;
 
-/** 属性集。
+/**
+ * 属性集。
  * 
- * @author Jiangwei Xu
+ * @author Ambrose Xu
+ * 
  */
 public class Properties {
 
 	private ConcurrentHashMap<String, PropertyReference> properties;
 
+	/**
+	 * 构造函数。
+	 */
 	public Properties() {
 		this.properties = new ConcurrentHashMap<String, PropertyReference>();
 	}
 
-	/** 添加属性。
+	/**
+	 * 添加属性。
+	 * 
+	 * @param property 指定待添加属性。
 	 */
 	public void addProperty(PropertyReference property) {
 		this.properties.put(property.getKey(), property);
 	}
 
-	/** 移除属性。
+	/**
+	 * 移除属性。
+	 * 
+	 * @param key 指定待移除的属性的键。
 	 */
 	public void removeProperty(String key) {
 		this.properties.remove(key);
 	}
 
-	/** 返回属性。
+	/**
+	 * 返回属性。
+	 * 
+	 * @param key 指定属性键。
+	 * @return 返回属性。
 	 */
 	public PropertyReference getProperty(String key) {
 		return this.properties.get(key);
 	}
 
-	/** 更新属性。
+	public boolean getPropertyValue(String key, boolean defaultValue) {
+		PropertyReference ref = this.properties.get(key);
+		if (null == ref || !(ref instanceof BooleanProperty)) {
+			return defaultValue;
+		}
+		return ((BooleanProperty) ref).getValueAsBoolean();
+	}
+
+	/**
+	 * 更新属性。
+	 * 
+	 * @param property 指定待更新的属性。
 	 */
 	public void updateProperty(PropertyReference property) {
 		this.properties.remove(property.getKey());
 		this.properties.put(property.getKey(), property);
 	}
 
-	/** 是否包含指定主键的属性。
+	/**
+	 * 是否包含指定主键的属性。
+	 * 
+	 * @param key 指定键。
+	 * @return 如果包含此键对应的属性返回 <code>true</code> 。
 	 */
 	public boolean hasProperty(String key) {
 		return this.properties.containsKey(key);
 	}
 
-	/** 返回属性集合。
+	/**
+	 * 返回属性集合。
+	 * 
+	 * @return 返回属性集合。
 	 */
 	public Collection<PropertyReference> getPropertyCollection() {
 		return this.properties.values();
 	}
+
 }

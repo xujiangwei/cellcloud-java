@@ -2,7 +2,7 @@
 -----------------------------------------------------------------------------
 This source file is part of Cell Cloud.
 
-Copyright (c) 2009-2012 Cell Cloud Team (www.cellcloud.net)
+Copyright (c) 2009-2017 Cell Cloud Team (www.cellcloud.net)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -24,18 +24,31 @@ THE SOFTWARE.
 -----------------------------------------------------------------------------
 */
 
-package net.cellcloud.storage.file;
+package net.cellcloud.util.nio.packet;
 
-import net.cellcloud.util.property.Properties;
+import java.nio.ByteBuffer;
 
-/** 本地文件存储器属性集。
- * 
- * @author Jiangwei Xu
+/**
+ * A network packet interface, containing required methods to create an
+ * application-level packet, to reconstrust such a packet from raw bytes
+ * received, and to get the contents of this packet as raw bytes.
+ * The implementation specific details are application dependent.
  */
-public final class LocalFileProperties extends Properties {
+public interface Packet {
 
-	public final static LocalFileProperties DEFAULT = new LocalFileProperties();
+	/**
+	 * Reconstruct this Packet from the given ByteBuffer
+	 * 
+	 * @param source
+	 *            The ByteBuffer to reconstruct this Packet from
+	 */
+	public void reconstruct(ByteBuffer source);
 
-	public LocalFileProperties() {
-	}
+	/**
+	 * Get the contents of this Packet as a ByteBuffer
+	 * 
+	 * @return the contents of this Packet as a ByteBuffer
+	 */
+	public ByteBuffer toBytes();
+
 }

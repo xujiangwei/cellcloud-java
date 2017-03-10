@@ -31,7 +31,8 @@ import java.util.List;
 import net.cellcloud.storage.ResultSet;
 import net.cellcloud.storage.Schema;
 import net.cellcloud.storage.Storage;
-import net.cellcloud.util.Properties;
+import net.cellcloud.util.property.Properties;
+
 import com.mongodb.ServerAddress;
 
 /** MongoDB 存储器。

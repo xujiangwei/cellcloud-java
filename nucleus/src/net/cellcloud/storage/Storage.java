@@ -27,7 +27,7 @@ THE SOFTWARE.
 package net.cellcloud.storage;
 
 import net.cellcloud.exception.StorageException;
-import net.cellcloud.util.Properties;
+import net.cellcloud.util.property.Properties;
 
 /** 存储器定义。
  * @author Jiangwei Xu

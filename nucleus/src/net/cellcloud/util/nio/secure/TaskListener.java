@@ -2,7 +2,7 @@
 -----------------------------------------------------------------------------
 This source file is part of Cell Cloud.
 
-Copyright (c) 2009-2012 Cell Cloud Team (www.cellcloud.net)
+Copyright (c) 2009-2017 Cell Cloud Team (www.cellcloud.net)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -24,19 +24,28 @@ THE SOFTWARE.
 -----------------------------------------------------------------------------
 */
 
-package net.cellcloud.util;
+package net.cellcloud.util.nio.secure;
 
-/** 属性参考。
- * 
- * @author Jiangwei Xu
+import net.cellcloud.util.nio.Socket;
+
+/**
+ * Task listeners listen for {@link javax.net.ssl.SSLEngine} task completions
+ * and act upon them. As such, task listeners are only useful for
+ * {@link SecureSocket} implementations. Only one task listener is associated
+ * with each {@link SecureSocket} instance.
  */
-public interface PropertyReference {
+public interface TaskListener {
 
-	/** 返回主键。
+	/**
+	 * This method is called from the {@link TaskWorker} thread once it has
+	 * finished processing all {@link javax.net.ssl.SSLEngine} tasks associated
+	 * with a {@link SecureSocket} instance.
+	 * 
+	 * @param socket
+	 *            The Socket that just had one (or more) SSLEngine task(s)
+	 *            completed
+	 * @see SecureSocket
 	 */
-	public String getKey();
+	public void taskComplete(Socket socket);
 
-	/** 返回数值。
-	 */
-	public Object getValue();
 }

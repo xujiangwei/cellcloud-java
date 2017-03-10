@@ -146,7 +146,7 @@
  * @version 2.3.7
  */
 
-package net.cellcloud.common;
+package net.cellcloud.util;
 
 public class Base64 {
 

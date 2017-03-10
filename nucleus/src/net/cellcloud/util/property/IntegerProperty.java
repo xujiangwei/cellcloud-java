@@ -24,33 +24,53 @@ THE SOFTWARE.
 -----------------------------------------------------------------------------
 */
 
-package net.cellcloud.util;
+package net.cellcloud.util.property;
 
-/** 长整型属性。
+/**
+ * 整数型属性。
  * 
- * @author Jiangwei Xu
+ * @author Ambrose Xu
+ * 
  */
-public final class LongProperty implements PropertyReference {
+public final class IntegerProperty implements PropertyReference {
 
 	private String key;
-	private Long value;
+	private Integer value;
 
-	public LongProperty(String key, long value) {
+	/**
+	 * 构造函数。
+	 * 
+	 * @param key 指定键。
+	 * @param value 指定值。
+	 */
+	public IntegerProperty(String key, int value) {
 		this.key = key;
 		this.value = value;
 	}
 
+	/**
+	 * {@inheritDoc}
+	 */
 	@Override
 	public String getKey() {
 		return this.key;
 	}
 
+	/**
+	 * {@inheritDoc}
+	 */
 	@Override
 	public Object getValue() {
 		return this.value;
 	}
 
-	public long getValueAsLong() {
-		return this.value.longValue();
+	/**
+	 * 获得整数类型值。
+	 * 
+	 * @return 返回整数类型值。
+	 */
+	public int getValueAsInt() {
+		return this.value.intValue();
 	}
+
 }

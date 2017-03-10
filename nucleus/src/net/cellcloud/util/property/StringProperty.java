@@ -2,7 +2,7 @@
 -----------------------------------------------------------------------------
 This source file is part of Cell Cloud.
 
-Copyright (c) 2009-2012 Cell Cloud Team (www.cellcloud.net)
+Copyright (c) 2009-2017 Cell Cloud Team (www.cellcloud.net)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -24,33 +24,53 @@ THE SOFTWARE.
 -----------------------------------------------------------------------------
 */
 
-package net.cellcloud.util;
+package net.cellcloud.util.property;
 
-/** 字符串型属性。
+/**
+ * 字符串型属性。
  * 
- * @author Jiangwei Xu
+ * @author Ambrose Xu
+ * 
  */
 public final class StringProperty implements PropertyReference {
 
 	private String key;
 	private String value;
 
+	/**
+	 * 构造函数。
+	 * 
+	 * @param key 指定键。
+	 * @param object 指定值。
+	 */
 	public StringProperty(String key, String value) {
 		this.key = key;
 		this.value = value;
 	}
 
+	/**
+	 * {@inheritDoc}
+	 */
 	@Override
 	public String getKey() {
 		return this.key;
 	}
 
+	/**
+	 * {@inheritDoc}
+	 */
 	@Override
 	public Object getValue() {
 		return this.value;
 	}
 
+	/**
+	 * 获得字符串类型值。
+	 * 
+	 * @return 返回字符串类型值。
+	 */
 	public String getValueAsString() {
 		return this.value;
 	}
+
 }

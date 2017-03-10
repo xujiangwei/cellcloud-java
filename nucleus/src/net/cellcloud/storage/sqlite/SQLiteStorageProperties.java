@@ -26,8 +26,8 @@ THE SOFTWARE.
 
 package net.cellcloud.storage.sqlite;
 
-import net.cellcloud.util.Properties;
-import net.cellcloud.util.StringProperty;
+import net.cellcloud.util.property.Properties;
+import net.cellcloud.util.property.StringProperty;
 
 /** SQLite 存储器属性配置。
  * 

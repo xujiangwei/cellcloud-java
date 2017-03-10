@@ -2,7 +2,7 @@
 -----------------------------------------------------------------------------
 This source file is part of Cell Cloud.
 
-Copyright (c) 2009-2012 Cell Cloud Team (www.cellcloud.net)
+Copyright (c) 2009-2017 Cell Cloud Team (www.cellcloud.net)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -24,34 +24,55 @@ THE SOFTWARE.
 -----------------------------------------------------------------------------
 */
 
-package net.cellcloud.util;
+package net.cellcloud.util.property;
 
-/** 布尔型属性。
+import java.util.List;
+
+/**
+ * 列表属性。
  * 
- * @author Jiangwei Xu
+ * @author Ambrose Xu
+ * 
  */
-public final class BooleanProperty implements PropertyReference {
+public final class ListProperty<T> implements PropertyReference {
 
 	private String key;
-	private Boolean value;
+	private List<T> value;
 
-	public BooleanProperty(String key, boolean value) {
+	/**
+	 * 构造函数。
+	 * 
+	 * @param key 指定键。
+	 * @param value 指定值。
+	 */
+	public ListProperty(String key, List<T> value) {
 		this.key = key;
 		this.value = value;
 	}
 
+	/**
+	 * {@inheritDoc}
+	 */
 	@Override
 	public String getKey() {
 		return this.key;
 	}
 
+	/**
+	 * {@inheritDoc}
+	 */
 	@Override
 	public Object getValue() {
 		return this.value;
 	}
 
-	/** 返回布尔类型。 */
-	public boolean getValueAsBoolean() {
-		return this.value.booleanValue();
+	/**
+	 * 获得列表类型值。
+	 * 
+	 * @return 返回列表类型值。
+	 */
+	public List<T> getValueAsList() {
+		return this.value;
 	}
+
 }

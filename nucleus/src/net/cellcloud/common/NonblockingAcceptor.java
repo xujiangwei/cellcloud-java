@@ -53,6 +53,8 @@ public class NonblockingAcceptor extends MessageService implements MessageAccept
 	/** 单次写数据块大小限制。 */
 	private int writeLimit = 32768;
 
+	private int backlog = 100000;
+
 	/** 服务器 NIO socket channel */
 	private ServerSocketChannel channel;
 	private Selector selector;
@@ -115,7 +117,7 @@ public class NonblockingAcceptor extends MessageService implements MessageAccept
 			this.selector = Selector.open();
 			this.channel = ServerSocketChannel.open();
 			this.channel.configureBlocking(false);
-			this.channel.socket().bind(address);
+			this.channel.socket().bind(address, this.backlog);
 
 			skey = this.channel.register(this.selector, SelectionKey.OP_ACCEPT);
 
