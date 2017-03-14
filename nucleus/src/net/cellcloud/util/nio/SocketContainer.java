@@ -99,7 +99,7 @@ public class SocketContainer {
 	 * @param key
 	 *            the {@link SelectableChannel} key whose associated value is to
 	 *            be removed from the map
-	 * @return the previous {@link SocketIF} associated with
+	 * @return the previous {@link Socket} associated with
 	 *         {@link SelectableChannel} is mapped, or null if there was no
 	 *         mapping for {@link SelectableChannel}.
 	 */

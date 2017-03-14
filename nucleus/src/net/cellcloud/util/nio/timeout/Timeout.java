@@ -24,10 +24,9 @@ THE SOFTWARE.
 -----------------------------------------------------------------------------
 */
 
-package net.cellcloud.util.nio.timeout.worker;
+package net.cellcloud.util.nio.timeout;
 
 import net.cellcloud.util.nio.Socket;
-import net.cellcloud.util.nio.timeout.TimeoutListener;
 
 /**
  * A timeout implementation to be used with a {@link TimeoutWorker}.

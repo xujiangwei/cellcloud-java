@@ -24,7 +24,7 @@ THE SOFTWARE.
 -----------------------------------------------------------------------------
 */
 
-package net.cellcloud.util.nio.timeout.worker;
+package net.cellcloud.util.nio.timeout;
 
 import net.cellcloud.common.LogLevel;
 import net.cellcloud.common.Logger;
@@ -138,7 +138,9 @@ public class TimeoutWorker implements Runnable {
 	@Override
 	public void run() {
 		Logger.d(this.getClass(), "Initializing...");
+
 		running = true;
+
 		runLoop: while (running) {
 			synchronized (this) {
 				while (timeouts.isEmpty()) {
@@ -215,8 +217,7 @@ public class TimeoutWorker implements Runnable {
 		}
 
 		while (currentTO.isExpired() && !timeouts.isEmpty()) {
-			Logger.d(this.getClass(), "Timeout expired at " + System.currentTimeMillis()
-					+ ", expiring at: " + currentTO.getDelta());
+			Logger.d(this.getClass(), "Timeout expired at " + System.currentTimeMillis() + ", expiring at: " + currentTO.getDelta());
 			currentTO.expired();
 			if (timeouts.remove(currentTO)) {
 				expired++;

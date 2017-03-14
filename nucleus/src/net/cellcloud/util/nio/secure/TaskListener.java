@@ -30,9 +30,9 @@ import net.cellcloud.util.nio.Socket;
 
 /**
  * Task listeners listen for {@link javax.net.ssl.SSLEngine} task completions
- * and act upon them. As such, task listeners are only useful for
- * {@link SecureSocket} implementations. Only one task listener is associated
- * with each {@link SecureSocket} instance.
+ * and act upon them.
+ * As such, task listeners are only useful for {@link SecureSocket} implementations.
+ * Only one task listener is associated with each {@link SecureSocket} instance.
  */
 public interface TaskListener {
 

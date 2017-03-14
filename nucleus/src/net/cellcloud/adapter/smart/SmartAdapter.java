@@ -188,7 +188,7 @@ public class SmartAdapter extends RelationNucleusAdapter {
 	public synchronized void share(String keyword, Dialect dialect) {
 		JSONObject payload = new JSONObject();
 		try {
-			PrimitiveSerializer.write(payload, dialect.translate());
+			PrimitiveSerializer.write(payload, dialect.reconstruct());
 		} catch (JSONException e) {
 			Logger.log(this.getClass(), e, LogLevel.WARNING);
 			return;
@@ -222,7 +222,7 @@ public class SmartAdapter extends RelationNucleusAdapter {
 	public void share(String keyword, Endpoint endpoint, Dialect dialect) {
 		JSONObject payload = new JSONObject();
 		try {
-			PrimitiveSerializer.write(payload, dialect.translate());
+			PrimitiveSerializer.write(payload, dialect.reconstruct());
 		} catch (JSONException e) {
 			Logger.log(this.getClass(), e, LogLevel.WARNING);
 			return;

@@ -145,13 +145,13 @@ public abstract class Dialect {
 	 * 
 	 * @return 返回翻译后的原语。
 	 */
-	abstract public Primitive translate();
+	abstract public Primitive reconstruct();
 
 	/**
 	 * 将方言译为原语。
 	 * 
 	 * @param primitive 指定翻译后的原语。
 	 */
-	abstract public void build(Primitive primitive);
+	abstract public void construct(Primitive primitive);
 
 }

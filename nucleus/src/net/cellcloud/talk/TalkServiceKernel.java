@@ -735,7 +735,7 @@ public final class TalkServiceKernel implements Service, SpeakerDelegate {
 	 */
 	public boolean notice(final String targetTag, final Dialect dialect,
 			final Cellet cellet, final CelletSandbox sandbox) {
-		Primitive primitive = dialect.translate();
+		Primitive primitive = dialect.reconstruct();
 		if (null != primitive) {
 			return this.notice(targetTag, primitive, cellet, sandbox);
 		}
@@ -1005,7 +1005,7 @@ public final class TalkServiceKernel implements Service, SpeakerDelegate {
 			}
 		}
 
-		Primitive primitive = dialect.translate();
+		Primitive primitive = dialect.reconstruct();
 		if (null != primitive) {
 			boolean ret = this.talk(identifier, primitive);
 

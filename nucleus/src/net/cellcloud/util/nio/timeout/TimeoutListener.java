@@ -30,20 +30,20 @@ import net.cellcloud.util.nio.Socket;
 
 /**
  * Timeout listeners listen for expired
- * {@link net.cellcloud.util.nio.timeout.worker.Timeout}s and act upon them.
+ * {@link net.cellcloud.util.nio.timeout.Timeout}s and act upon them.
  * Only one timeout listener is associated with each
- * {@link net.cellcloud.util.nio.timeout.worker.Timeout} instance.
+ * {@link net.cellcloud.util.nio.timeout.Timeout} instance.
  */
 public interface TimeoutListener {
 
 	/**
 	 * This method is called from the
-	 * {@link net.cellcloud.util.nio.timeout.worker.Timeout#expired()}
+	 * {@link net.cellcloud.util.nio.timeout.Timeout#expired()}
 	 * method, notifying any Timeout Listeners that the Timeout has expired and
 	 * they should act upon it.
 	 * 
 	 * @param socket
-	 *            The SocketIF that just had its Timeout expired
+	 *            The Socket that just had its Timeout expired
 	 */
 	public void timeoutExpired(Socket socket);
 

@@ -667,7 +667,7 @@ public final class PrimitiveSerializer {
 		primitive.capture(dialect);
 
 		// 分析数据
-		dialect.build(primitive);
+		dialect.construct(primitive);
 	}
 
 	/**
@@ -827,7 +827,7 @@ public final class PrimitiveSerializer {
 				output.capture(dialect);
 
 				// 构建数据
-				dialect.build(output);
+				dialect.construct(output);
 			}
 			else {
 				Logger.w(PrimitiveSerializer.class, "Can't create '" +  dialectName + "' dialect.");

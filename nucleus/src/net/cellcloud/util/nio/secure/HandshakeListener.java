@@ -30,9 +30,9 @@ import net.cellcloud.util.nio.Socket;
 
 /**
  * Handshake listeners listen for {@link javax.net.ssl.SSLEngine} handshake
- * completions and act upon them. As such, task listeners are only useful for
- * {@link SecureSocket} implementations. Only one handshake listener is
- * associated with each {@link SecureSocket} instance.
+ * completions and act upon them.
+ * As such, task listeners are only useful for {@link SecureSocket} implementations.
+ * Only one handshake listener is associated with each {@link SecureSocket} instance.
  */
 public interface HandshakeListener {
 
@@ -45,7 +45,7 @@ public interface HandshakeListener {
 	 * @param socket
 	 *            The Socket that just had its SSL/TLS handshake completed.
 	 * @see SecureSocket
-	 * @see ch.dermitza.securenio.AbstractSelector
+	 * @see net.cellcloud.util.nio.AbstractSelector
 	 */
 	public void handshakeComplete(Socket socket);
 

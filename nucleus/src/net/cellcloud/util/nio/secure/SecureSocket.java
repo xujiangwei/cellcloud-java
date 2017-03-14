@@ -47,14 +47,14 @@ import javax.net.ssl.SSLSession;
 import net.cellcloud.common.Logger;
 import net.cellcloud.util.nio.Socket;
 import net.cellcloud.util.nio.SocketProperties;
+import net.cellcloud.util.nio.timeout.Timeout;
 import net.cellcloud.util.nio.timeout.TimeoutListener;
-import net.cellcloud.util.nio.timeout.worker.Timeout;
-import net.cellcloud.util.nio.timeout.worker.TimeoutWorker;
+import net.cellcloud.util.nio.timeout.TimeoutWorker;
 
 /**
- * A secure socket implementation of {@link SocketIF}. This class implements all
- * logic required to process SSL/TLS handshaking and encrypt/decrypt data being
- * sent and received through the underlying {@link SocketChannel}.
+ * A secure socket implementation of {@link net.cellcloud.util.nio.Socket}.
+ * This class implements all logic required to process SSL/TLS handshaking
+ * and encrypt/decrypt data being sent and received through the underlying {@link SocketChannel}.
  * <p>
  * Note that this class is declared as final as it should NOT be extended.
  */
@@ -68,9 +68,12 @@ public final class SecureSocket implements Socket {
 	private final ByteBuffer encryptedOut;
 	private final ByteBuffer decryptedIn;
 	private final ByteBuffer decryptedOut;
+
 	private volatile boolean handshakePending = true;
 	private volatile boolean taskPending = false;
+
 	private boolean singleThreaded = false;
+
 	private SSLEngineResult result = null;
 	private final HandshakeListener hsListener;
 	private final TimeoutListener toListener;
@@ -79,9 +82,9 @@ public final class SecureSocket implements Socket {
 	private final Timeout timeout;
 
 	/**
-	 * Create a new instance of a {@link SecureSocket}. This instance has all
-	 * the necessary logic to perform an SSL/TLS handshake and to encrypt and
-	 * decrypt data being sent and received through the underlying
+	 * Create a new instance of a {@link SecureSocket}.
+	 * This instance has all the necessary logic to perform an SSL/TLS handshake
+	 * and to encrypt and decrypt data being sent and received through the underlying
 	 * {@link SocketChannel}.
 	 * 
 	 * @param channel
@@ -90,41 +93,38 @@ public final class SecureSocket implements Socket {
 	 *            The underlying SSLEngine
 	 * @param singleThreaded
 	 *            Whether or not this socket should perform the
-	 *            {@link SSLEngineResult#HandshakeStatus} NEED_TASK in the same
-	 *            thread (true) or in the {@link TaskWorker} thread (false). If
-	 *            set to true, null can be passed for the {@link TaskWorker}
-	 *            instance.
+	 *            {@link SSLEngineResult#getHandshakeStatus()} NEED_TASK in the same
+	 *            thread (true) or in the {@link TaskWorker} thread (false).
+	 *            If set to true, null can be passed for the {@link TaskWorker} instance.
 	 * @param taskWorker
-	 *            The {@link TaskWorker} instance associated with this
-	 *            SecureSocket. Can be null if this socket performs the
-	 *            {@link SSLEngineResult#HandshakeStatus} NEED_TASK in the same
+	 *            The {@link TaskWorker} instance associated with this SecureSocket.
+	 *            Can be null if this socket performs the
+	 *            {@link SSLEngineResult#getHandshakeStatus()} NEED_TASK in the same
 	 *            thread
-	 * @param toWorker
-	 *            The {@link TimeoutWorker} instance associated with this
-	 *            SecureSocket.
+	 * @param timeoutWorker
+	 *            The {@link TimeoutWorker} instance associated with this SecureSocket.
 	 * @param hsListener
-	 *            The {@link HandshakeListener} associated with this
-	 *            SecureSocket. Only one handshake listener is associated per
-	 *            socket, which is usually the {@link AbstractSelector}
-	 *            implementation.
-	 * @param toListener
+	 *            The {@link HandshakeListener} associated with this SecureSocket.
+	 *            Only one handshake listener is associated per socket,
+	 *            which is usually the {@link AbstractSelector} implementation.
+	 * @param timeoutListener
 	 *            The {@link TimeoutListener} associated with this SecureSocket.
 	 *            Only one timeout listener is associated per socket, which is
 	 *            usually the {@link AbstractSelector} implementation.
 	 */
 	public SecureSocket(SocketChannel channel, SSLEngine engine,
 			boolean singleThreaded, TaskWorker taskWorker,
-			TimeoutWorker toWorker, HandshakeListener hsListener,
-			TimeoutListener toListener) {
+			TimeoutWorker timeoutWorker, HandshakeListener hsListener,
+			TimeoutListener timeoutListener) {
 		this.sc = channel;
 		this.engine = engine;
 		this.singleThreaded = singleThreaded;
 		this.taskWorker = taskWorker;
 		this.hsListener = hsListener;
 		// Timeouts
-		this.toWorker = toWorker;
-		this.toListener = toListener;
-		timeout = new Timeout(this, this.toListener, SocketProperties.getTimeoutMS());
+		this.toWorker = timeoutWorker;
+		this.toListener = timeoutListener;
+		this.timeout = new Timeout(this, this.toListener, SocketProperties.getTimeoutMS());
 
 		int appBufSize = engine.getSession().getApplicationBufferSize();
 		int netBufSize = engine.getSession().getPacketBufferSize();
@@ -136,9 +136,9 @@ public final class SecureSocket implements Socket {
 	}
 
 	/**
-	 * Get the associated underlying {@link SSLEngine}. This method is called
-	 * from the {@link TaskWorker} when there are pending SSLEngine tasks to be
-	 * run.
+	 * Get the associated underlying {@link SSLEngine}.
+	 * This method is called from the {@link TaskWorker}
+	 * when there are pending SSLEngine tasks to be run.
 	 * 
 	 * @return the underlying {@link SSLEngine} associated with this socket.
 	 */
@@ -147,9 +147,9 @@ public final class SecureSocket implements Socket {
 	}
 
 	/**
-	 * Invalidate the current {@link SSLSession}. This method could be
-	 * periodically used via a {@link Timeout} to perform SSL/TLS session
-	 * rotation if needed.
+	 * Invalidate the current {@link SSLSession}.
+	 * This method could be periodically used via a {@link Timeout}
+	 * to perform SSL/TLS session rotation if needed.
 	 */
 	@Override
 	public void invalidateSession() {
@@ -159,10 +159,10 @@ public final class SecureSocket implements Socket {
 	}
 
 	/**
-	 * Initialize SSL/TLS handshaking. This method is called from the
-	 * {@link AbstractSelector} thread in two cases: (1) when
-	 * {@link #finishConnect()} is called or (2) when the {@link SSLSession} has
-	 * been previously invalidated.
+	 * Initialize SSL/TLS handshaking.
+	 * This method is called from the {@link AbstractSelector} thread in two cases:
+	 * (1) when {@link #finishConnect()} is called or
+	 * (2) when the {@link SSLSession} has been previously invalidated.
 	 * 
 	 * @throws IOException
 	 *             propagated exceptions from {@link #processHandshake()}
@@ -177,9 +177,9 @@ public final class SecureSocket implements Socket {
 	}
 
 	/**
-	 * Returns the underlying {@link SocketChannel}. This is done in order to
-	 * register the current socket with a {@link Selector}, as only the
-	 * {@link SocketChannel} implementation is allowed to be associated with a
+	 * Returns the underlying {@link SocketChannel}.
+	 * This is done in order to register the current socket with a {@link Selector},
+	 * as only the {@link SocketChannel} implementation is allowed to be associated with a
 	 * {@link Selector}.
 	 * 
 	 * @return the underlying SocketChannel
@@ -226,7 +226,8 @@ public final class SecureSocket implements Socket {
 	@Override
 	public boolean disconnect() throws IOException {
 		boolean ret = sc.finishConnect();
-		if (ret) {// sanity check
+		if (ret) {
+			// sanity check
 			initHandshake();
 		}
 		return ret;
@@ -248,8 +249,7 @@ public final class SecureSocket implements Socket {
 	 *             implementation.
 	 */
 	@Override
-	public SelectionKey register(Selector sel, int ops)
-			throws ClosedChannelException {
+	public SelectionKey register(Selector sel, int ops) throws ClosedChannelException {
 		return sc.register(sel, ops);
 	}
 
@@ -267,8 +267,7 @@ public final class SecureSocket implements Socket {
 	 *             implementation.
 	 */
 	@Override
-	public SelectableChannel configureBlocking(boolean block)
-			throws IOException {
+	public SelectableChannel configureBlocking(boolean block) throws IOException {
 		return sc.configureBlocking(block);
 	}
 
@@ -288,11 +287,12 @@ public final class SecureSocket implements Socket {
 	public void processHandshake() throws IOException {
 		int count;
 		SSLEngineResult.HandshakeStatus status;
-		// At first call of processHandshake(), there is no SSLEngineResult
-		// yet, use the handshakeStatus from the SSLEngine instead
+		// At first call of processHandshake(), there is no SSLEngineResult yet,
+		// use the handshakeStatus from the SSLEngine instead
 		if (result == null) {
 			status = engine.getHandshakeStatus();
-		} else {
+		}
+		else {
 			status = result.getHandshakeStatus();
 		}
 		// process the handshake status
@@ -305,6 +305,7 @@ public final class SecureSocket implements Socket {
 				// Return as handshaking cannot continue
 				return;
 			}
+			break;
 		case NEED_UNWRAP:
 			Logger.d(this.getClass(), sc.socket().getRemoteSocketAddress() + " NEED_UNWRAP");
 			// Don’t read if inbound is already closed
@@ -346,29 +347,26 @@ public final class SecureSocket implements Socket {
 					// close the socket, which is permitted by RFC_2246.
 				}
 			} else {
-				// flush without the try/catch,
-				// letting any exceptions propagate.
+				// flush without the try/catch, letting any exceptions propagate.
 				count = flush();
 			}
 			break;
 		case FINISHED:
 			Logger.d(this.getClass(), sc.socket().getRemoteSocketAddress() + " FINISHED");
 			handshakePending = false;
-			// Indicate to the associated handshake listener that the
-			// handshake is complete
+			// Indicate to the associated handshake listener that the handshake is complete
 			hsListener.handshakeComplete(this);
+			break;
 		case NOT_HANDSHAKING:
 			Logger.d(this.getClass(), sc.socket().getRemoteSocketAddress() + " NOT_HANDSHAKING");
-			// handshake has been completed at this point, no need to
-			// check the status of the SSLEngineResult;
+			// handshake has been completed at this point, no need to check the status of the SSLEngineResult;
 			return;
 		}
 
 		// Check the result of the preceding wrap or unwrap.
 		switch (result.getStatus()) {
 		case BUFFER_UNDERFLOW:
-			// Return as we do not have enough data to continue processing
-			// the handshake
+			// Return as we do not have enough data to continue processing the handshake
 			Logger.d(this.getClass(), sc.socket().getRemoteSocketAddress() + " BUFFER_UNDERFLOW");
 			return;
 		case BUFFER_OVERFLOW:
@@ -386,16 +384,17 @@ public final class SecureSocket implements Socket {
 			// handshaking can continue.
 			break;
 		}
+
 		processHandshake();
 	}
 
 	/**
-	 * Runs the {@link SSLEngine} delegated tasks. The tasks can either run in
-	 * the same thread (single threaded implementation) or via the
-	 * {@link TaskWorker} thread (multithreaded implementation). Note that in
-	 * the single threaded implementation, the {@link AbstractSelector} thread
-	 * will block until all tasks are completed. Additionally, in this case, the
-	 * taskPending variable is not needed.
+	 * Runs the {@link SSLEngine} delegated tasks.
+	 * The tasks can either run in the same thread (single threaded implementation)
+	 * or via the {@link TaskWorker} thread (multithreaded implementation).
+	 * Note that in the single threaded implementation, the {@link AbstractSelector} thread
+	 * will block until all tasks are completed.
+	 * Additionally, in this case, the taskPending variable is not needed.
 	 */
 	private void runDelegatedTasks() {
 		if (singleThreaded) {
@@ -406,15 +405,16 @@ public final class SecureSocket implements Socket {
 			}
 			// Update the SSLEngineResult
 			updateResult();
-		} else {
+		}
+		else {
 			// Run the delegated tasks in the TaskWorker thread
 			// An existing task might already be pending for completion with
 			// the TaskWorker, and we could have arrived here from a read or
 			// write. If this is the case, we should NOT requeue the task
-			// with the TaskWorker, otherwise there will be subsequent
-			// problems. E.g. the TaskWorker finishes a (multi-queued) task
-			// which by the second time of processing is now null. This can
-			// then trigger processHandshake() to run on a potentially
+			// with the TaskWorker, otherwise there will be subsequent problems.
+			// E.g. the TaskWorker finishes a (multi-queued) task
+			// which by the second time of processing is now null.
+			// This can then trigger processHandshake() to run on a potentially
 			// closed socket.
 			if (!taskPending) {
 				taskWorker.addSocket(this);
@@ -450,8 +450,8 @@ public final class SecureSocket implements Socket {
 	}
 
 	/**
-	 * Reads a sequence of bytes from this channel into the given buffer. This
-	 * is a pass-through implementation of the underlying
+	 * Reads a sequence of bytes from this channel into the given buffer.
+	 * This is a pass-through implementation of the underlying
 	 * {@link SecureSocket#read(ByteBuffer buffer)}, with additional logic to
 	 * handle the SSL/TLS encrypted stream.
 	 * <p>
@@ -545,7 +545,10 @@ public final class SecureSocket implements Socket {
 			}
 			Logger.d(this.getClass(), sc.socket().getRemoteSocketAddress() + " OK");
 			break;
+		default:
+			break;
 		}
+
 		// process any handshaking now required
 		processHandshake();
 
@@ -567,10 +570,8 @@ public final class SecureSocket implements Socket {
 		while (buffer.hasRemaining()) {
 			decryptedOut.put(buffer.get());
 		}
-		// System.out.println("decryptedOut position " +
-		// decryptedOut.position());
-		// System.out.println("decryptedOut capacity " +
-		// decryptedOut.capacity());
+		// System.out.println("decryptedOut position " + decryptedOut.position());
+		// System.out.println("decryptedOut capacity " + decryptedOut.capacity());
 
 		int pos = decryptedOut.position();
 		encryptedOut.clear();
@@ -601,7 +602,10 @@ public final class SecureSocket implements Socket {
 			Logger.d(this.getClass(), sc.socket().getRemoteSocketAddress() + " OK");
 			// Everything is good, everything is fine.
 			break;
+		default:
+			break;
 		}
+
 		// Process any pending handshake
 		processHandshake();
 		// Flush any pending data to the network
@@ -611,12 +615,11 @@ public final class SecureSocket implements Socket {
 	}
 
 	/**
-	 * Flush encrypted output data to the underlying {@link SocketChannel}. This
-	 * method will block until all data is written to the channel. TODO:
-	 * implement a selector pool instead of looping until all data is written.
+	 * Flush encrypted output data to the underlying {@link SocketChannel}.
+	 * This method will block until all data is written to the channel.
+	 * TODO: implement a selector pool instead of looping until all data is written.
 	 * Another option would be increasing the SO_SNDBUF size to twice the size,
-	 * it can be done on the fly and could circumvent the temporary selector
-	 * issue.
+	 * it can be done on the fly and could circumvent the temporary selector issue.
 	 * 
 	 * @return The number of bytes written, possibly zero
 	 * @throws IOException
@@ -639,24 +642,38 @@ public final class SecureSocket implements Socket {
 			retries++;
 		}
 		/*
-		 * while (encryptedOut.hasRemaining()) { count = sc.write(encryptedOut);
-		 * countOut += count; retries++;
-		 * //System.out.println(sc.socket().getLocalPort() // + ":" +
-		 * sc.socket().getPort() + " Flushed " + count + " bytes"); if (count <
-		 * 0) { throw new IOException("EOF during flush"); }
-		 * 
-		 * if (count == 0) { // write channel full. Try letting other threads
-		 * have a go. Thread.yield(); count = sc.write(encryptedOut); countOut
-		 * += count; retries++; if (count < 0) { throw new
-		 * IOException("EOF during flush"); }
-		 * 
-		 * if (count == 0) { // still full. need to block until it is writable.
-		 * // TODO: implement a selector pull to handle this write while
-		 * (encryptedOut.hasRemaining()) { count = sc.write(encryptedOut);
-		 * countOut += count; retries++; } temp = Selector.open();
-		 * getSocket().register(temp, SelectionKey.OP_WRITE); temp.select(); } }
-		 * } if (temp != null) { temp.close(); temp = null; }
+		 * while (encryptedOut.hasRemaining()) {
+		 * 	count = sc.write(encryptedOut);
+		 *	countOut += count; retries++;
+		 *	// System.out.println(sc.socket().getLocalPort() + ":" + sc.socket().getPort() + " Flushed " + count + " bytes");
+		 *	if (count < 0) { throw new IOException("EOF during flush"); }
+		 *	if (count == 0) { // write channel full. Try letting other threads have a go.
+		 *		Thread.yield();
+		 *		count = sc.write(encryptedOut);
+		 *		countOut += count;
+		 *		retries++;
+		 *		if (count < 0) {
+		 *			throw new IOException("EOF during flush");
+		 *		}
+		 *		if (count == 0) {
+		 *			// still full. need to block until it is writable.
+		 *			// TODO: implement a selector pull to handle this write
+		 *			while (encryptedOut.hasRemaining()) {
+		 *				count = sc.write(encryptedOut);
+		 *				countOut += count;
+		 *				retries++;
+		 *			}
+		 *			temp = Selector.open();
+		 * 			getSocket().register(temp, SelectionKey.OP_WRITE);
+		 * 			temp.select();
+		 * 		}
+		 * 	}
+		 * }
+		 * if (temp != null) {
+		 * 	temp.close(); temp = null;
+		 * }
 		 */
+
 		encryptedOut.compact();
 
 		Logger.d(this.getClass(), sc.socket().getRemoteSocketAddress() + " Flushed "
@@ -684,7 +701,7 @@ public final class SecureSocket implements Socket {
 	@Override
 	public void close() throws IOException {
 		// if (timeout.hasExpired()) {
-		// This causes a threadlock, WHY? TODO cancel any previous timeout
+		//	// This causes a threadlock, WHY? TODO cancel any previous timeout
 		// toWorker.cancel(timeout);
 		// }
 		try {
@@ -701,7 +718,8 @@ public final class SecureSocket implements Socket {
 				 * therefore already have done closeOutbound(), so, we are
 				 * initiating the close, so we can skip the closeInbound().
 				 */
-			} else if (!engine.isInboundDone()) {
+			}
+			else if (!engine.isInboundDone()) {
 				// Closing inbound will throw an SSLException if we have not
 				// received a close_notify.
 				engine.closeInbound();
@@ -709,8 +727,7 @@ public final class SecureSocket implements Socket {
 				processHandshake();
 			}
 		} finally {
-			// Clear all buffers TODO
-			// Close the channel.
+			// Clear all buffers TODO Close the channel.
 			sc.close();
 		}
 	}
@@ -720,7 +737,7 @@ public final class SecureSocket implements Socket {
 	 * {@link SSLEngine} is still pending.
 	 * <p>
 	 * This is called from the application layer that invokes
-	 * {@link AbstractSelector#send(SocketIF, ByteBuffer)} to correctly queue
+	 * {@link AbstractSelector#send(Socket, ByteBuffer)} to correctly queue
 	 * data to be written.
 	 * 
 	 * @return whether the SSL/TLS handshaking is still pending

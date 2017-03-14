@@ -32,13 +32,11 @@ import net.cellcloud.common.Logger;
 
 /**
  * A threaded implementation of a worker processing tasks required by an
- * {@link javax.net.ssl.SSLEngine} that is associated with a
- * {@link SecureSocket}.
+ * {@link javax.net.ssl.SSLEngine} that is associated with a {@link SecureSocket}.
  * <p>
- * The worker sequentially processes tasks that need to be completed, in a FIFO
- * fashion, notifying the associated {@link TaskListener} once they have been
- * completed. The {@link TaskWorker} is otherwise waiting for incoming tasks via
- * the {@link #addSocket(SecureSocket)} method.
+ * The worker sequentially processes tasks that need to be completed,
+ * in a FIFO fashion, notifying the associated {@link TaskListener} once they have been completed.
+ * The {@link TaskWorker} is otherwise waiting for incoming tasks via the {@link #addSocket(SecureSocket)} method.
  */
 public class TaskWorker implements Runnable {
 
@@ -49,9 +47,8 @@ public class TaskWorker implements Runnable {
 	private final TaskListener listener;
 
 	/**
-	 * Create a {@link TaskWorker} instance with a single {@link TaskListener}
-	 * reference. The {@link TaskListener} is notified whenever any task has
-	 * finished being processed by the TaskWorker.
+	 * Create a {@link TaskWorker} instance with a single {@link TaskListener} reference.
+	 * The {@link TaskListener} is notified whenever any task has finished being processed by the TaskWorker.
 	 * 
 	 * @param listener
 	 *            The {@link TaskListener} to be notified of completed tasks
@@ -62,8 +59,8 @@ public class TaskWorker implements Runnable {
 
 	/**
 	 * Add a {@link SecureSocket} with an underlying
-	 * {@link javax.net.ssl.SSLEngine} that requires a task to be run. Tasks are
-	 * run in a FIFO queue according to order of socket insertion.
+	 * {@link javax.net.ssl.SSLEngine} that requires a task to be run.
+	 * Tasks are run in a FIFO queue according to order of socket insertion.
 	 * 
 	 * @param socket
 	 *            The SecureSocket that requires a task to be run
@@ -72,13 +69,13 @@ public class TaskWorker implements Runnable {
 		synchronized (queue) {
 			queue.add(socket);
 			// fireListenersNeeded(task.getSocket());
-			queue.notify();
+			queue.notifyAll();
 		}
 	}
 
 	/**
-	 * The run() method of the {@link TaskWorker}. Here, sequential processing
-	 * of {@link javax.net.ssl.SSLEngine} tasks that need to be completed is
+	 * The run() method of the {@link TaskWorker}.
+	 * Here, sequential processing of {@link javax.net.ssl.SSLEngine} tasks that need to be completed is
 	 * done in a FIFO fashion, notifying the associated {@link TaskListener}
 	 * once they have been completed. The {@link TaskWorker} is otherwise
 	 * waiting for incoming tasks via the {@link #addSocket(SecureSocket)} method.
@@ -105,8 +102,7 @@ public class TaskWorker implements Runnable {
 					} catch (InterruptedException e) {
 					}
 				}
-				// Queue has some data here
-				// get the first instance
+				// Queue has some data here get the first instance
 				socket = queue.remove();
 			}
 			// Run the runnable in this thread
@@ -146,14 +142,14 @@ public class TaskWorker implements Runnable {
 		// after processing all possible pending requests
 		if (!running) {
 			synchronized (queue) {
-				queue.notify();
+				queue.notifyAll();
 			}
 		}
 	}
 
 	/**
-	 * Shutdown procedure. This method is called if the {@link TaskWorker} was
-	 * asked to shutdown; it cleanly process the shutdown procedure.
+	 * Shutdown procedure.
+	 * This method is called if the {@link TaskWorker} was asked to shutdown; it cleanly process the shutdown procedure.
 	 */
 	private void shutdown() {
 		Logger.d(this.getClass(), "Shutting down...");

@@ -62,45 +62,54 @@ import net.cellcloud.util.nio.secure.HandshakeListener;
 import net.cellcloud.util.nio.secure.TaskListener;
 import net.cellcloud.util.nio.secure.TaskWorker;
 import net.cellcloud.util.nio.timeout.TimeoutListener;
-import net.cellcloud.util.nio.timeout.worker.TimeoutWorker;
+import net.cellcloud.util.nio.timeout.TimeoutWorker;
 
 /**
  * An abstract selector implementation that can be the basis (can be extended)
  * of an NIO TCP server or client, supporting both plain and SSL/TLS encrypted
  * sockets.
  */
-public abstract class AbstractSelector implements Runnable, TaskListener,
-		HandshakeListener, TimeoutListener {
+public abstract class AbstractSelector implements Runnable, TaskListener, HandshakeListener, TimeoutListener {
 
 	/**
 	 * The address to listen at or connect
 	 */
 	protected InetAddress address;
+
 	/**
 	 * The port to listen on or connect to
 	 */
 	protected int port;
+
 	// The buffer into which we'll read data when it's available
 	private ByteBuffer readBuffer = ByteBuffer.allocate(8192);
+
 	private final ArrayDeque<ChangeRequest> pendingChanges = new ArrayDeque<>();
+
 	/**
 	 * Maps a SocketChannel to a list of ByteBuffer instances
 	 */
 	protected final HashMap<SocketChannel, List<ByteBuffer>> pendingData = new HashMap<>();
+
 	/**
 	 * The selector we'll be monitoring
 	 */
 	protected Selector selector;
+
 	private boolean running = false;
+
 	private boolean processAll = true;
+
 	/**
 	 * Whether we are using SSL/TLS
 	 */
 	protected final boolean usingSSL;
+
 	/**
 	 * The associated SSLContext
 	 */
 	protected SSLContext context = null;
+
 	/**
 	 * A SocketContainer to hold active socket instances
 	 */
@@ -112,26 +121,32 @@ public abstract class AbstractSelector implements Runnable, TaskListener,
 	 * The underlying TaskWorker
 	 */
 	protected final TaskWorker taskWorker;
+
 	/**
 	 * The underlying TimeoutWorker
 	 */
 	protected final TimeoutWorker toWorker;
+
 	/**
-     *
+     * The protocols for SSL/TLS
      */
 	protected String[] protocols;
+
 	/**
      *
      */
 	protected String[] cipherSuits;
+
 	/**
 	 * Whether this AbstractSelector is a client
 	 */
 	protected final boolean isClient;
+
 	/**
 	 * Whether this AbstractSelector needs clientAuth
 	 */
 	protected final boolean needClientAuth;
+
 	/**
 	 * Whether the SSLEngine tasks required run in the AbstractSelector thread
 	 */
@@ -148,19 +163,17 @@ public abstract class AbstractSelector implements Runnable, TaskListener,
 	 *            The instance of packet worker to use
 	 * @param usingSSL
 	 *            Whether we are using SSL/TLS
-	 *            {@link ch.dermitza.securenio.socket.secure.TaskWorker} thread.
+	 *            {@link net.cellcloud.util.nio.secure.TaskWorker} thread.
 	 * @param isClient
 	 *            If the current Selector implementation is a client
-	 *            implementation (false indicates it is a server
-	 *            implementation).
+	 *            implementation (false indicates it is a server implementation).
 	 * @param needClientAuth
 	 *            If the current implementation is a server implementation,
 	 *            whether the client should also verify its authenticity (i.e.
 	 *            sets up SSLEngine.setNeedClientAuth(true)).
 	 */
-	public AbstractSelector(InetAddress address, int port,
-			AbstractPacketWorker packetWorker, boolean usingSSL,
-			boolean isClient, boolean needClientAuth) {
+	public AbstractSelector(InetAddress address, int port, AbstractPacketWorker packetWorker,
+				boolean usingSSL, boolean isClient, boolean needClientAuth) {
 		this.address = address;
 		this.port = port;
 		this.singleThreaded = SocketProperties.getSelectorSingleThreaded();
@@ -170,7 +183,6 @@ public abstract class AbstractSelector implements Runnable, TaskListener,
 		this.needClientAuth = needClientAuth;
 		this.packetWorker = packetWorker;
 		this.taskWorker = (singleThreaded) ? null : new TaskWorker(this);
-		// this.taskWorker = new TaskWorker(this);
 		this.toWorker = new TimeoutWorker();
 		Logger.d(this.getClass(), "Using ssl: " + usingSSL);
 	}
@@ -455,10 +467,10 @@ public abstract class AbstractSelector implements Runnable, TaskListener,
 
 	/**
 	 * Invalidate the {@link javax.net.ssl.SSLSession} associated with the
-	 * provided {@link SocketIF}. The invalidation is queued as a pending change
+	 * provided {@link Socket}. The invalidation is queued as a pending change
 	 * where it is executed in a FIFO fashion along with any other pending
 	 * changes. This method could be periodically used via a
-	 * {@link ch.dermitza.securenio.socket.timeout.worker.Timeout} to perform
+	 * {@link net.cellcloud.util.nio.timeout.Timeout} to perform
 	 * SSL/TLS session rotation if needed.
 	 * 
 	 * @param socket
@@ -477,7 +489,7 @@ public abstract class AbstractSelector implements Runnable, TaskListener,
 	}
 
 	/**
-	 * Send an {@link ByteBuffer} over the specified {@link SocketIF}. This
+	 * Send an {@link ByteBuffer} over the specified {@link Socket}. This
 	 * method does not directly send the packets, but rather queues them for
 	 * sending as soon as possible.
 	 * <p>
@@ -487,9 +499,9 @@ public abstract class AbstractSelector implements Runnable, TaskListener,
 	 * SelectionKey is not changed until the handshake has finished.
 	 * 
 	 * @param socket
-	 *            The SocketIF to send the packet through
+	 *            The Socket to send the packet through
 	 * @param data
-	 *            The ByteBuffer to send through the associated SocketIF
+	 *            The ByteBuffer to send through the associated Socket
 	 * 
 	 * @see #processChanges()
 	 */
@@ -646,7 +658,7 @@ public abstract class AbstractSelector implements Runnable, TaskListener,
 
 	/**
 	 * Should accept incoming connections and bind new non-blocking
-	 * {@link SocketIF} instances to them. If the server implementation is using
+	 * {@link Socket} instances to them. If the server implementation is using
 	 * SSL/TLS, it should also set up the {@link SSLEngine}, to be used.
 	 * 
 	 * @param key
@@ -659,7 +671,7 @@ public abstract class AbstractSelector implements Runnable, TaskListener,
 
 	/**
 	 * Should finish the connection to the server. This method should also
-	 * instantiate an SSLEngine handshake if the underlying {@link SocketIF} is
+	 * instantiate an SSLEngine handshake if the underlying {@link Socket} is
 	 * a secure socket. Finally, after the connection has been established, the
 	 * socket should be registered to the underlying {@link Selector}, with a
 	 * {@link SelectionKey} of OP_READ, signalling it is ready to read data.
@@ -682,7 +694,7 @@ public abstract class AbstractSelector implements Runnable, TaskListener,
 	 *            The SelectionKey whose associated socket we should write on
 	 * 
 	 * @see #processChanges()
-	 * @see #send(ch.dermitza.securenio.socket.SocketIF, java.nio.ByteBuffer)
+	 * @see #send(ch.dermitza.securenio.socket.Socket, java.nio.ByteBuffer)
 	 */
 	protected void write(SelectionKey key) {
 		Socket socketChannel = container.getSocket(key.channel());
@@ -732,8 +744,8 @@ public abstract class AbstractSelector implements Runnable, TaskListener,
 	 * @param key
 	 *            The SelectionKey whose associated socket we should read from
 	 * 
-	 * @see AbstractPacketWorker#addData(SocketIF, ByteBuffer, int)
-	 * @see #closeSocket(ch.dermitza.securenio.socket.SocketIF)
+	 * @see AbstractPacketWorker#addData(Socket, ByteBuffer, int)
+	 * @see #closeSocket(ch.dermitza.securenio.socket.Socket)
 	 */
 	protected void read(SelectionKey key) {
 		Socket socketChannel = container.getSocket(key.channel());
@@ -783,7 +795,7 @@ public abstract class AbstractSelector implements Runnable, TaskListener,
 	}
 
 	/**
-	 * Closes the given {@link SocketIF}. In doing that, it also removes any
+	 * Closes the given {@link Socket}. In doing that, it also removes any
 	 * potentially queued {@link ChangeRequest}s not yet processed on that
 	 * socket, and also removes the socket from the underlying
 	 * {@link SocketContainer}.

@@ -30,8 +30,8 @@ import java.nio.ByteBuffer;
 
 /**
  * A network packet interface, containing required methods to create an
- * application-level packet, to reconstrust such a packet from raw bytes
- * received, and to get the contents of this packet as raw bytes.
+ * application-level packet, to reconstrust such a packet from raw bytes received,
+ * and to get the contents of this packet as raw bytes.
  * The implementation specific details are application dependent.
  */
 public interface Packet {

@@ -36,36 +36,42 @@ import net.cellcloud.util.nio.Socket;
 import net.cellcloud.util.nio.SocketProperties;
 
 /**
- * An abstract, extensible implementation of a Packet Worker. This thread waits
- * for raw data arriving from remote peers through {@link net.cellcloud.util.nio.Socket}s,
- * adds them to respective queues and then reassembles packets based on the data in these
- * queues. Each socket maintains a queue of data, for there is a possibility
+ * An abstract, extensible implementation of a Packet Worker.
+ * This thread waits for raw data arriving from remote peers through
+ * {@link net.cellcloud.util.nio.Socket}s, adds them to respective queues
+ * and then reassembles packets based on the data in these queues.
+ * Each socket maintains a queue of data, for there is a possibility
  * that the packets received are fragmented and cannot be reassembled during
- * processing. In this case, processing should be delegated until additional
- * data on that socket arrives.
+ * processing.
+ * In this case, processing should be delegated until additional data on that socket arrives.
  */
 public abstract class AbstractPacketWorker implements Runnable {
 
 	private final ArrayList<PacketListener> listeners = new ArrayList<>();
+
 	/**
 	 * Maps a SocketChannel to a list of ByteBuffer instances
 	 */
 	protected final HashMap<Socket, ByteBuffer> pendingData = new HashMap<>();
+
 	/**
 	 * Sockets that need to be operated upon (i.e. have pending operations)
 	 */
 	protected final ArrayDeque<Socket> pendingSockets = new ArrayDeque<>();
+
 	private boolean running = false;
+
 	private byte[] tempArray;
 
 	public AbstractPacketWorker() {
 	}
 
 	/**
-	 * Queue data received from a {@link net.cellcloud.util.nio.Socket} for processing and
-	 * reconstruction. A deep copy of the passed {@link ByteBuffer} is made
-	 * locally. Following, a data queue for that {@link net.cellcloud.util.nio.Socket} is created if
-	 * it does not exist, and the current piece of data received is added to
+	 * Queue data received from a {@link net.cellcloud.util.nio.Socket}
+	 * for processing and reconstruction.
+	 * A deep copy of the passed {@link ByteBuffer} is made locally.
+	 * Following, a data queue for that {@link net.cellcloud.util.nio.Socket} is created
+	 * if it does not exist, and the current piece of data received is added to
 	 * that queue for later processing and reconstruction.
 	 * 
 	 * @param socket
@@ -80,12 +86,14 @@ public abstract class AbstractPacketWorker implements Runnable {
 	public void addData(Socket socket, ByteBuffer data, int count) {
 		tempArray = new byte[count];
 		System.arraycopy(data.array(), 0, tempArray, 0, count);
+
 		synchronized (this.pendingSockets) {
 			if (!pendingSockets.contains(socket)) {
-				// Check that we do not add a socket twice. Once is enough
-				// to trigger processing
+				// Check that we do not add a socket twice.
+				// Once is enough to trigger processing
 				pendingSockets.add(socket);
 			}
+
 			synchronized (this.pendingData) {
 				ByteBuffer buffer = this.pendingData.get(socket);
 				if (buffer == null) {
@@ -98,24 +106,20 @@ public abstract class AbstractPacketWorker implements Runnable {
 				if (count > buffer.remaining()) {
 					int diff = count - buffer.remaining();
 					Logger.d(this.getClass(),
-							"Buffer needs resizing, remaining " + buffer.remaining()
-									+ "needed " + count + " difference " + diff);
+							"Buffer needs resizing, remaining " + buffer.remaining() + ", needed " + count + ", difference " + diff);
 					Logger.d(this.getClass(), "old size: " + buffer.capacity());
 					// Allocate a new buffer. To minimize new buffer allocation,
 					// we resize the buffer appropriately, in case this is a
-					// *really* busy channel. Notes: If it is an extremely busy
-					// channel, the buffer will keep growing, potentially making
-					// the worker run out of memory trying to continuously
-					// allocate larger and larger buffers. Also, a continuously
-					// growing buffer can also indicate that the underlying
-					// data is never or wrongly processed, that can indicate a
-					// problem with the end application.
+					// *really* busy channel.
+					// Notes: If it is an extremely busy channel, the buffer will keep growing,
+					// potentially making the worker run out of memory trying to continuously
+					// allocate larger and larger buffers.
+					// Also, a continuously growing buffer can also indicate that the underlying
+					// data is never or wrongly processed, that can indicate a problem with the end application.
 					int extSize = (diff > SocketProperties.getPacketBufSize()) ? diff : SocketProperties.getPacketBufSize();
-					ByteBuffer temp = ByteBuffer.allocate(buffer.capacity()
-							+ extSize);
+					ByteBuffer temp = ByteBuffer.allocate(buffer.capacity() + extSize);
 					Logger.d(this.getClass(), "new size: " + temp.capacity());
-					// Flip existing buffer to prepare for putting in the
-					// replacement
+					// Flip existing buffer to prepare for putting in the replacement
 					buffer.flip();
 					Logger.d(this.getClass(), "pos " + buffer.position() + " lim " + buffer.limit() + " cap " + buffer.capacity());
 					// put existing buffer into the temporary replacement
@@ -126,29 +130,30 @@ public abstract class AbstractPacketWorker implements Runnable {
 					buffer = temp;
 					// associate the new buffer with the socket
 					this.pendingData.put(socket, buffer);
-					// Buffer is now resized appropriately, let the data be
-					// added naturally
+					// Buffer is now resized appropriately, let the data be added naturally
 				}
+
 				// Make a copy of the data
 				buffer.put(tempArray);
 				Logger.d(this.getClass(), "pos " + buffer.position() + " lim " + buffer.limit() + " cap " + buffer.capacity());
 			}
-			pendingSockets.notify();
+
+			// notify thread
+			pendingSockets.notifyAll();
 		}
 	}
 
 	/**
 	 * This is the main entry point of received data processing and reassembly.
-	 * This is left for the application layer to decide how to process raw
-	 * incoming data
+	 * This is left for the application layer to decide how to process raw incoming data
 	 */
 	protected abstract void processData();
 
 	/**
-	 * The run() method of the {@link AbstractPacketWorker}. Here, sequential
-	 * processing of data that need to be reconstructed and processed should be
-	 * done in a FIFO fashion. The {@link AbstractPacketWorker} is otherwise
-	 * waiting for incoming tasks via the
+	 * The run() method of the {@link AbstractPacketWorker}.
+	 * Here, sequential processing of data that need to be reconstructed and processed should be
+	 * done in a FIFO fashion.
+	 * The {@link AbstractPacketWorker} is otherwise waiting for incoming tasks via the
 	 * {@link #addData(net.cellcloud.util.nio.Socket, ByteBuffer, int)} method.
 	 */
 	@Override
@@ -170,13 +175,17 @@ public abstract class AbstractPacketWorker implements Runnable {
 					try {
 						pendingSockets.wait();
 					} catch (InterruptedException e) {
+						// Nothing
 					}
 				}
+
 				// We have some data on a socket here
 			}
+
 			// Do something with the data here
 			processData();
 		}
+
 		shutdown();
 	}
 
@@ -190,8 +199,8 @@ public abstract class AbstractPacketWorker implements Runnable {
 	}
 
 	/**
-	 * Set the running status of the {@link AbstractPacketWorker}. If the
-	 * running status of the worker is set to false, the AbstractPacketWorker is
+	 * Set the running status of the {@link AbstractPacketWorker}.
+	 * If the running status of the worker is set to false, the AbstractPacketWorker is
 	 * interrupted (if waiting for a task) in order to cleanly shutdown.
 	 * 
 	 * @param running
@@ -205,16 +214,16 @@ public abstract class AbstractPacketWorker implements Runnable {
 		// after processing all possible pending requests
 		if (!running) {
 			synchronized (pendingSockets) {
-				pendingSockets.notify();
+				pendingSockets.notifyAll();
 			}
 		}
 	}
 
 	/**
-	 * Shutdown procedure. This method is called if the
-	 * {@link AbstractPacketWorker} was asked to shutdown; it cleanly process
-	 * the shutdown procedure, clearing any queued data remaining and removing
-	 * all listener references.
+	 * Shutdown procedure.
+	 * This method is called if the {@link AbstractPacketWorker} was asked to shutdown;
+	 * it cleanly process the shutdown procedure, clearing any queued data remaining
+	 * and removing all listener references.
 	 */
 	private void shutdown() {
 		Logger.d(this.getClass(), "Shutting down...");
@@ -253,17 +262,17 @@ public abstract class AbstractPacketWorker implements Runnable {
 	}
 
 	/**
-	 * Once a {@link PacketIF} has been completely reconstructed, registered
-	 * listeners are notified via this method. This method creates a local copy
-	 * of the already registered listeners when firing events, to avoid
-	 * potential concurrent modification exceptions.
+	 * Once a {@link Packet} has been completely reconstructed,
+	 * registered listeners are notified via this method.
+	 * This method creates a local copy of the already registered listeners when firing events,
+	 * to avoid potential concurrent modification exceptions.
 	 * 
 	 * @param socket
-	 *            The net.cellcloud.util.nio.Socket a complete PacketIF is reconstructed
+	 *            The net.cellcloud.util.nio.Socket a complete Packet is reconstructed
 	 * @param packet
 	 *            The completely reconstructed AbstractPacket
 	 * 
-	 * @see PacketListener#paketArrived(net.cellcloud.util.nio.Socket, PacketIF)
+	 * @see PacketListener#paketArrived(net.cellcloud.util.nio.Socket, Packet)
 	 */
 	protected void fireListeners(Socket socket, Packet packet) {
 		PacketListener[] temp;
@@ -274,4 +283,5 @@ public abstract class AbstractPacketWorker implements Runnable {
 			}
 		}
 	}
+
 }
