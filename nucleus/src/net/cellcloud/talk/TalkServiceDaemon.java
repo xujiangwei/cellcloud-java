@@ -2,7 +2,7 @@
 -----------------------------------------------------------------------------
 This source file is part of Cell Cloud.
 
-Copyright (c) 2009-2012 Cell Cloud Team (www.cellcloud.net)
+Copyright (c) 2009-2017 Cell Cloud Team (www.cellcloud.net)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -36,24 +36,45 @@ import net.cellcloud.talk.http.HttpSpeaker;
 import net.cellcloud.talk.speaker.Speaker;
 import net.cellcloud.util.Clock;
 
-/** Talk Service 守护线程。
+/**
+ * Talk Service 守护线程。
  * 
- * @author Jiangwei Xu
+ * @author Ambrose Xu
+ * 
  */
 public final class TalkServiceDaemon extends Thread {
 
+	/**
+	 * 线程是否自旋。
+	 */
 	private boolean spinning = false;
-	protected boolean running = false;
-	private long tickTime = 0;
+
+	/**
+	 * 是否正在运行。
+	 */
+	protected volatile  boolean running = false;
+
+	/**
+	 * 每次 Tick 的时间戳。
+	 */
+	private long tickTime = 0L;
 
 	private TalkServiceKernel kernel;
 
+	/**
+	 * 构造函数。
+	 * 
+	 * @param kernel
+	 */
 	public TalkServiceDaemon(TalkServiceKernel kernel) {
 		super("TalkServiceDaemon");
 		this.kernel = kernel;
 	}
 
-	/** 返回周期时间点。
+	/**
+	 * 返回最近一次执行的时间戳。
+	 * 
+	 * @return 返回最近一次执行的时间戳。
 	 */
 	protected long getTickTime() {
 		return this.tickTime;
@@ -66,20 +87,20 @@ public final class TalkServiceDaemon extends Thread {
 
 		LinkedList<Speaker> speakerList = new LinkedList<Speaker>();
 
-		int heartbeatCount = 0;
+		int count = 0;
 
 		do {
 			// 当前时间
 			this.tickTime = Clock.currentTimeMillis();
 
-			// 心跳计数
-			++heartbeatCount;
-			if (heartbeatCount >= 60000) {
-				heartbeatCount = 0;
+			// 计数
+			++count;
+			if (count >= 600000) {
+				count = 0;
 			}
 
 			// 60 秒周期处理
-			if (heartbeatCount % 600 == 0) {
+			if (count % 1200 == 0) {
 				try {
 					// HTTP 客户端管理，每 60 秒一次计数
 					if (null != kernel.httpSpeakers) {
@@ -93,7 +114,7 @@ public final class TalkServiceDaemon extends Thread {
 			}
 
 			// 1 分钟周期处理
-			if (heartbeatCount % 600 == 0) {
+			if (count % 1200 == 0) {
 				try {
 					// 检查 HTTP Session
 					kernel.checkHttpSessionHeartbeat();
@@ -106,7 +127,7 @@ public final class TalkServiceDaemon extends Thread {
 			}
 
 			// 5 分钟周期处理
-			if (heartbeatCount % 3000 == 0) {
+			if (count % 6000 == 0) {
 				try {
 					if (null != kernel.speakers) {
 						synchronized (kernel.speakers) {
@@ -124,7 +145,7 @@ public final class TalkServiceDaemon extends Thread {
 			}
 
 			// 检查丢失连接的 Speaker
-			if (null != kernel.speakers && heartbeatCount % 10 == 0) {
+			if (null != kernel.speakers && count % 20 == 0) {
 				try {
 					synchronized (kernel.speakers) {
 						for (Speaker speaker : kernel.speakers) {
@@ -206,14 +227,12 @@ public final class TalkServiceDaemon extends Thread {
 				Logger.log(this.getClass(), e, LogLevel.ERROR);
 			}
 
-			// 休眠100毫秒
+			// 休眠50毫秒
 			try {
-				Thread.sleep(100L);
+				Thread.sleep(50L);
 			} catch (InterruptedException e) {
 				Logger.log(TalkServiceDaemon.class, e, LogLevel.ERROR);
 			}
-
-			Thread.yield();
 
 		} while (this.spinning);
 
@@ -242,7 +261,11 @@ public final class TalkServiceDaemon extends Thread {
 		this.running = false;
 	}
 
+	/**
+	 * 停止线程自旋。
+	 */
 	public void stopSpinning() {
 		this.spinning = false;
 	}
+
 }

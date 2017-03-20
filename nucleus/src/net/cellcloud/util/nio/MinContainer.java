@@ -30,8 +30,8 @@ import java.util.Collections;
 import java.util.HashSet;
 
 /**
- * An extension of the {@link HashSet} implementation, with a reference to a
- * minimum element in the set.
+ * An extension of the {@link HashSet} implementation,
+ * with a reference to a minimum element in the set.
  * 
  * @param <T>
  *            The type of object to be contained, must extend {@link Comparable}

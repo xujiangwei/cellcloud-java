@@ -195,13 +195,13 @@ public abstract class AbstractSelector implements Runnable, TaskListener, Handsh
 	 *            The location of the trustStore on the disk. The trustore is
 	 *            *ALWAYS* required for a client implementation. For a server
 	 *            implementation it is only required if needClientAuth is true,
-	 *            i.e. IFF the client should also verify its authenticity; it
+	 *            i.e. IF the client should also verify its authenticity; it
 	 *            can be null otherwise.
 	 * @param keyStoreLoc
 	 *            The location of the keyStore on the disk. The keystore is
 	 *            *ALWAYS* required for a server implementation. For a client
 	 *            implementation it is only required if needClientAuth is true,
-	 *            i.e. IFF the client should also verify its authenticity; it
+	 *            i.e. IF the client should also verify its authenticity; it
 	 *            can be null otherwise.
 	 * @param tsPassPhrase
 	 *            The passphrase to use with the trustStore or null if the
@@ -211,19 +211,19 @@ public abstract class AbstractSelector implements Runnable, TaskListener, Handsh
 	 *            keystore is not required.
 	 * @param protocolsLoc
 	 *            The location of the file containing the SSL/TLS protocols to
-	 *            be used by the client/server. WARNING: If null is passed, or
-	 *            the file is not found, the default SSL/TLS protocols will be
-	 *            used instead, as per SSLEngine.getEnabledProtocols().
+	 *            be used by the client/server.
+	 *            WARNING: If null is passed, or the file is not found,
+	 *            the default SSL/TLS protocols will be used instead,
+	 *            as per SSLEngine.getEnabledProtocols().
 	 * @param cipherSuitesLoc
 	 *            The location of the file containing the SSL/TLS cipher suites
-	 *            to be used by the client/server. WARNING: If null is passed,
-	 *            or the file is not found, the default SSL/TLS cipher suites
-	 *            will be used instead, as per
+	 *            to be used by the client/server.
+	 *            WARNING: If null is passed, or the file is not found,
+	 *            the default SSL/TLS cipher suites will be used instead, as per
 	 *            SSLEngine.getEnabledCipherSuites().
 	 */
-	public void setupSSL(String trustStoreLoc, String keyStoreLoc,
-			char[] tsPassPhrase, char[] ksPassPhrase, String protocolsLoc,
-			String cipherSuitesLoc) {
+	public void setupSSL(String trustStoreLoc, String keyStoreLoc, char[] tsPassPhrase,
+			char[] ksPassPhrase, String protocolsLoc, String cipherSuitesLoc) {
 		if (!usingSSL) {
 			Logger.w(this.getClass(), "Trying to set SSL parameters with a "
 					+ "non-SSL/TLS " + (isClient ? "client" : "server")
@@ -328,7 +328,7 @@ public abstract class AbstractSelector implements Runnable, TaskListener, Handsh
 
 	/**
 	 * Sets up the underlying {@link SSLEngine} to be used with a
-	 * {@link ch.dermitza.securenio.socket.secure.SecureSocket} implementation.
+	 * {@link net.cellcloud.util.nio.secure.SecureSocket} implementation.
 	 * The SSLEngine is initialized based on whether this instance is a server
 	 * or a client, whether we need clientAuth or not, and based on the provided
 	 * protocols and cipher suites provided in
@@ -363,10 +363,10 @@ public abstract class AbstractSelector implements Runnable, TaskListener, Handsh
 
 	/**
 	 * Initializes the selector, the worker threads, and initiates a select
-	 * procedure that can be either server or client based. The select operation
-	 * can be interrupted when there are pending tasks to be completed, which
-	 * happens via the {@link #processChanges()} method. Upon shutdown, a
-	 * best-effort attempt is made to shutdown cleanly via the
+	 * procedure that can be either server or client based.
+	 * The select operation can be interrupted when there are pending tasks to be completed,
+	 * which happens via the {@link #processChanges()} method.
+	 * Upon shutdown, a best-effort attempt is made to shutdown cleanly via the
 	 * {@link #shutdown()} method.
 	 * 
 	 * @see #processChanges()
@@ -386,8 +386,8 @@ public abstract class AbstractSelector implements Runnable, TaskListener, Handsh
 			running = true;
 		} catch (IOException ioe) {
 			running = false;
-			Logger.log(this.getClass(), ioe, LogLevel.ERROR);
 			Logger.e(this.getClass(), "Could not initialize selector, shutting down");
+			Logger.log(this.getClass(), ioe, LogLevel.ERROR);
 		}
 
 		int keyNo;
@@ -396,20 +396,16 @@ public abstract class AbstractSelector implements Runnable, TaskListener, Handsh
 				// Process any pending changes
 				processChanges();
 				// Wait for an event on one of the registered channels
-				keyNo = (processAll) ? selector.select() : selector
-						.select(SocketProperties.getSelectorTimeoutMS());
+				keyNo = (processAll) ? selector.select() : selector.select(SocketProperties.getSelectorTimeoutMS());
 
 				if (keyNo > 0) {
-					// Iterate over the set of keys for which events are
-					// available
-					Iterator<SelectionKey> selectedKeys = this.selector
-							.selectedKeys().iterator();
+					// Iterate over the set of keys for which events are available
+					Iterator<SelectionKey> selectedKeys = this.selector.selectedKeys().iterator();
 					while (selectedKeys.hasNext()) {
 						SelectionKey key = selectedKeys.next();
 						selectedKeys.remove();
 
-						// Key could have been invalidated, if so
-						// just ignore it and go back to selecting
+						// Key could have been invalidated, if so just ignore it and go back to selecting
 						if (!key.isValid()) {
 							continue;
 						}
@@ -432,25 +428,21 @@ public abstract class AbstractSelector implements Runnable, TaskListener, Handsh
 							read(key);
 						}
 						if (key.isValid() && key.isWritable()) {
-							// Ready to write stuff
-							// however, application data will be consumed
-							// (destroyed)
-							// if we are still handshaking. In this case, we
-							// need
-							// to unregister the key for being writable until
-							// the
-							// handshake is complete
-							// if(container.getSocket(key.channel()).handshakePending()){
-							// need to flush
-							// try{
-							// container.getSocket(key.channel()).flush();
-							// } catch(IOException ioe){
-							// System.out.println("IOE while flushing");
-							// closeSocket(container.getSocket(key.channel()));
-							// }
-							// }else{
+							// Ready to write stuff however, application data will be consumed (destroyed)
+							// if we are still handshaking.
+							// In this case, we need to unregister the key for being writable until
+							// the handshake is complete
+							//if (container.getSocket(key.channel()).handshakePending()) {
+							//	// need to flush
+							//	try{
+							//		container.getSocket(key.channel()).flush();
+							//	} catch(IOException ioe) {
+							//		System.out.println("IOE while flushing");
+							//		closeSocket(container.getSocket(key.channel()));
+							//	}
+							//} else {
 							write(key);
-							// }
+							//}
 						}
 					}
 				}
@@ -458,18 +450,19 @@ public abstract class AbstractSelector implements Runnable, TaskListener, Handsh
 				// Selector should NOT throw an IOException during select(),
 				// if it does, something is really wrong, shutdown
 				running = false;
-				Logger.log(this.getClass(), ioe, LogLevel.ERROR);
 				Logger.e(this.getClass(), "IOException in select(), shutting down");
+				Logger.log(this.getClass(), ioe, LogLevel.ERROR);
 			}
 		}
+
 		shutdown();
 	}
 
 	/**
 	 * Invalidate the {@link javax.net.ssl.SSLSession} associated with the
-	 * provided {@link Socket}. The invalidation is queued as a pending change
-	 * where it is executed in a FIFO fashion along with any other pending
-	 * changes. This method could be periodically used via a
+	 * provided {@link Socket}.
+	 * The invalidation is queued as a pending change where it is executed in a FIFO fashion along
+	 * with any other pending changes. This method could be periodically used via a
 	 * {@link net.cellcloud.util.nio.timeout.Timeout} to perform
 	 * SSL/TLS session rotation if needed.
 	 * 
@@ -482,21 +475,20 @@ public abstract class AbstractSelector implements Runnable, TaskListener, Handsh
 	protected void invalidateSession(Socket socket) {
 		synchronized (this.pendingChanges) {
 			socket.invalidateSession();
-			pendingChanges.add(new ChangeRequest(socket,
-					ChangeRequest.TYPE_SESSION, 0));
+			pendingChanges.add(new ChangeRequest(socket, ChangeRequest.TYPE_SESSION, 0));
 			this.selector.wakeup();
 		}
 	}
 
 	/**
-	 * Send an {@link ByteBuffer} over the specified {@link Socket}. This
-	 * method does not directly send the packets, but rather queues them for
+	 * Send an {@link ByteBuffer} over the specified {@link Socket}.
+	 * This method does not directly send the packets, but rather queues them for
 	 * sending as soon as possible.
 	 * <p>
 	 * Data are subsequently written by setting the associated
-	 * {@link SelectionKey} to SelectionKey.OP_WRITE. In case of an SSL/TLS
-	 * implementation and where the handshaking is not completed, the
-	 * SelectionKey is not changed until the handshake has finished.
+	 * {@link SelectionKey} to SelectionKey.OP_WRITE.
+	 * In case of an SSL/TLS implementation and where the handshaking is not completed,
+	 * the SelectionKey is not changed until the handshake has finished.
 	 * 
 	 * @param socket
 	 *            The Socket to send the packet through
@@ -517,11 +509,9 @@ public abstract class AbstractSelector implements Runnable, TaskListener, Handsh
 			}
 
 			// Queue the data we want written to the remote end. If a queue does
-			// not yet exist, a new one will be created and the data will be
-			// added to it.
+			// not yet exist, a new one will be created and the data will be added to it.
 			synchronized (this.pendingData) {
-				List<ByteBuffer> queue = this.pendingData.get(socket
-						.getSocket());
+				List<ByteBuffer> queue = this.pendingData.get(socket.getSocket());
 				if (queue == null) {
 					queue = new ArrayList<>();
 					this.pendingData.put(socket.getSocket(), queue);
@@ -530,11 +520,10 @@ public abstract class AbstractSelector implements Runnable, TaskListener, Handsh
 			}
 		}
 
-		// If the handshake has been previously completed, wake up our selecting
-		// thread so it can make the required changes. If the handshake is still
-		// pending, there are no changes to be made, so we can leave the
-		// selector
-		// in the select() state until an actual change happens.
+		// If the handshake has been previously completed, wake up our selecting thread
+		// so it can make the required changes.
+		// If the handshake is still pending, there are no changes to be made,
+		// so we can leave the selector in the select() state until an actual change happens.
 		if (!socket.handshakePending()) {
 			this.selector.wakeup();
 		}
@@ -542,12 +531,13 @@ public abstract class AbstractSelector implements Runnable, TaskListener, Handsh
 
 	/**
 	 * Any pending {@link ChangeRequest}s are processed via this method, in the
-	 * {@link AbstractSelector} thread. There is an option to process everything
-	 * at once, once this method is called, or to process a part of changes
-	 * queued. In the first case, care should be taken that the queued changes
-	 * are not so many that the main thread cannot return to the select() fast
-	 * enough to process a large number of connections or data reads. In the
-	 * second case, care should be taken that sufficiently many changes are
+	 * {@link AbstractSelector} thread.
+	 * There is an option to process everything at once, once this method is called,
+	 * or to process a part of changes queued.
+	 * In the first case, care should be taken that the queued changes
+	 * are not so many that the main thread cannot return to the select() fast enough
+	 * to process a large number of connections or data reads.
+	 * In the second case, care should be taken that sufficiently many changes are
 	 * processed in time, such that the change queue does not grow too large
 	 * and/or remotely connected systems timeout (and potentially fail) due to
 	 * our inactivity to process changes fast enough.
@@ -572,11 +562,8 @@ public abstract class AbstractSelector implements Runnable, TaskListener, Handsh
 					// been previously been cancelled. Check if it is valid
 					// before changing the interestOps;
 					// It can also be the case that the the socket has already
-					// been
-					// unregistered with the selector, thus having a null key.
-					// In this
-					// case, we do not need to process anything regarding that
-					// socket
+					// been unregistered with the selector, thus having a null key.
+					// In this case, we do not need to process anything regarding that socket
 					if (key != null && key.isValid()) {
 						key.interestOps(change.getOps());
 					}
@@ -596,8 +583,8 @@ public abstract class AbstractSelector implements Runnable, TaskListener, Handsh
 					} catch (IOException ioe) {
 						// At this point, the handshake is NOT completed.
 						// Drop the socket.
-						Logger.log(this.getClass(), ioe, LogLevel.INFO);
 						Logger.i(this.getClass(), "IOE after task");
+						Logger.log(this.getClass(), ioe, LogLevel.INFO);
 						closeSocket(change.getChannel());
 					}
 					break;
@@ -608,8 +595,7 @@ public abstract class AbstractSelector implements Runnable, TaskListener, Handsh
 					closeSocket(change.getChannel());
 					break;
 				case ChangeRequest.TYPE_SESSION:
-					// The SSL/TLS session has been invalidated, we need to
-					// re-initiate handshaking
+					// The SSL/TLS session has been invalidated, we need to re-initiate handshaking
 					try {
 						change.getChannel().initHandshake();
 					} catch (IOException ioe) {
@@ -623,8 +609,7 @@ public abstract class AbstractSelector implements Runnable, TaskListener, Handsh
 				// Remove the change we just processed
 				pendingChanges.removeFirst();
 				changeCount++;
-				if (!processAll
-						&& changeCount >= SocketProperties.getMaxChanges()) {
+				if (!processAll && changeCount >= SocketProperties.getMaxChanges()) {
 					// processed the changes we were asked to. Break from the
 					// loop only clearing the changes we just processed. The
 					// rest of changes will be processed in a subsequent
@@ -633,11 +618,11 @@ public abstract class AbstractSelector implements Runnable, TaskListener, Handsh
 				}
 			}
 			// All pending changes have been processed at this point
-			// we are free to clear the list. NOTE: if the pending changes to
-			// be processed are too many, this can cause the selecting thread
-			// to start refusing connections. It could in this case be better
-			// to not process everything at once, but rather process them one at
-			// a time
+			// we are free to clear the list.
+			// NOTE: if the pending changes to be processed are too many,
+			// this can cause the selecting thread to start refusing connections.
+			// It could in this case be better to not process everything at once,
+			// but rather process them one at a time
 			this.pendingChanges.clear();
 		}
 	}
@@ -700,8 +685,7 @@ public abstract class AbstractSelector implements Runnable, TaskListener, Handsh
 		Socket socketChannel = container.getSocket(key.channel());
 
 		synchronized (this.pendingData) {
-			List<ByteBuffer> queue = this.pendingData.get(socketChannel
-					.getSocket());
+			List<ByteBuffer> queue = this.pendingData.get(socketChannel.getSocket());
 
 			// Write until there's not more data ...
 			while (!queue.isEmpty()) {
@@ -710,9 +694,8 @@ public abstract class AbstractSelector implements Runnable, TaskListener, Handsh
 					int written = socketChannel.write(buf);
 					Logger.d(this.getClass(), "Written " + written + " bytes");
 				} catch (IOException ioe) {
-					// If a IOE happens when writing, something really bad
-					// happened (generally). Close the socket where the write
-					// was happening
+					// If a IOE happens when writing, something really bad happened (generally).
+					// Close the socket where the write was happening
 					Logger.log(this.getClass(), ioe, LogLevel.DEBUG);
 					closeSocket(socketChannel);
 					return;
@@ -725,27 +708,26 @@ public abstract class AbstractSelector implements Runnable, TaskListener, Handsh
 			}
 
 			if (queue.isEmpty()) {
-				// We wrote away all data, so we're no longer interested
-				// in writing on this socket. Switch back to waiting for
-				// data.
+				// We wrote away all data, so we're no longer interested in writing on this socket.
+				// Switch back to waiting for data.
 				key.interestOps(SelectionKey.OP_READ);
 			}
 		}
 	}
 
 	/**
-	 * Reads data from the socket associated with the given {@link SelectionKey}
-	 * . This method is called as soon as data is ready to be read. It tries to
-	 * read as much data as possible, handing bytes read to the underlying
+	 * Reads data from the socket associated with the given {@link SelectionKey}.
+	 * This method is called as soon as data is ready to be read.
+	 * It tries to read as much data as possible, handing bytes read to the underlying
 	 * {@link AbstractPacketWorker} for reconstruction and further processing.
-	 * It also handles potential socket disconnections and/or errors, upon
-	 * which, it makes a best effort to close the socket cleanly.
+	 * It also handles potential socket disconnections and/or errors, upon which,
+	 * it makes a best effort to close the socket cleanly.
 	 * 
 	 * @param key
 	 *            The SelectionKey whose associated socket we should read from
 	 * 
 	 * @see AbstractPacketWorker#addData(Socket, ByteBuffer, int)
-	 * @see #closeSocket(ch.dermitza.securenio.socket.Socket)
+	 * @see #closeSocket(net.cellcloud.util.nio.Socket)
 	 */
 	protected void read(SelectionKey key) {
 		Socket socketChannel = container.getSocket(key.channel());
@@ -795,9 +777,9 @@ public abstract class AbstractSelector implements Runnable, TaskListener, Handsh
 	}
 
 	/**
-	 * Closes the given {@link Socket}. In doing that, it also removes any
-	 * potentially queued {@link ChangeRequest}s not yet processed on that
-	 * socket, and also removes the socket from the underlying
+	 * Closes the given {@link Socket}.
+	 * In doing that, it also removes any potentially queued {@link ChangeRequest}s
+	 * not yet processed on that socket, and also removes the socket from the underlying
 	 * {@link SocketContainer}.
 	 * 
 	 * TODO: Only pending data is being removed. A correct implementation would
@@ -834,11 +816,9 @@ public abstract class AbstractSelector implements Runnable, TaskListener, Handsh
 				}
 			} finally {
 				// remove all pending bytebuffers registered to be sent through
-				// this
-				// socket in pendingData
+				// this socket in pendingData
 				synchronized (this.pendingData) {
-					List<ByteBuffer> queue = this.pendingData.get(socket
-							.getSocket());
+					List<ByteBuffer> queue = this.pendingData.get(socket.getSocket());
 					// clear the queue if it is not empty
 					if (queue != null && !queue.isEmpty()) {
 						queue.clear();
@@ -853,7 +833,7 @@ public abstract class AbstractSelector implements Runnable, TaskListener, Handsh
 		}
 	}
 
-	// ----------------------- RUNNABLE METHODS -------------------------------//
+	// ----------------------- RUNNABLE METHODS ------------------------------- //
 	/**
 	 * Check whether the {@link AbstractSelector} is running.
 	 * 
@@ -864,19 +844,17 @@ public abstract class AbstractSelector implements Runnable, TaskListener, Handsh
 	}
 
 	/**
-	 * Set the running status of the {@link AbstractSelector}. If the running
-	 * status of the selector is set to false, the selector is interrupted in
-	 * order to cleanly shutdown by invoking {@link Selector#wakeup()}.
+	 * Set the running status of the {@link AbstractSelector}.
+	 * If the running status of the selector is set to false,
+	 * the selector is interrupted in order to cleanly shutdown by invoking {@link Selector#wakeup()}.
 	 * 
 	 * @param running
 	 *            Whether the AbstractSelector should run or not
 	 */
 	public void setRunning(boolean running) {
 		this.running = running;
-		// If a selector is already blocked in select()
-		// and someone asked us to shutdown,
-		// we should interrupt it so that it shuts down
-		// after processing all possible pending requests
+		// If a selector is already blocked in select() and someone asked us to shutdown,
+		// we should interrupt it so that it shuts down after processing all possible pending requests
 		if (!running) {
 			selector.wakeup();
 		}
@@ -890,6 +868,7 @@ public abstract class AbstractSelector implements Runnable, TaskListener, Handsh
 	 */
 	private void shutdown() {
 		Logger.d(this.getClass(), "Shutting down..");
+
 		// Close the packetworker
 		if (packetWorker.isRunning()) {
 			packetWorker.setRunning(false);
@@ -927,7 +906,7 @@ public abstract class AbstractSelector implements Runnable, TaskListener, Handsh
 		}
 	}
 
-	// ----------------------- CHANGES METHODS -------------------------------//
+	// ----------------------- CHANGES METHODS ------------------------------- //
 
 	/**
 	 * Unused future clean-up implementation TODO

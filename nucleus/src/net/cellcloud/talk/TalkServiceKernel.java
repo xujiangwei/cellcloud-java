@@ -99,72 +99,171 @@ import org.json.JSONObject;
  */
 public final class TalkServiceKernel implements Service, SpeakerDelegate {
 
+	/** 标准服务的端口。 */
 	private int port;
+
+	/** 每个工作线程的数据块大小。 */
 	private int block;
+
+	/** 最大连接数。 */
 	private int maxConnections;
+
+	/** 工作线程数量。 */
 	private int numWorkerThreads;
 
-	private final long sessionTimeout;
+	/** 会话超时时间。 */
+	private long sessionTimeout;
 
-	// 服务器端是否启用 HTTP 服务
+	/** 服务器端是否启用 HTTP 服务。 */
 	private boolean httpEnabled;
+
+	/** HTTP 服务的待处理队列长度。 */
 	private int httpQueueSize;
 
+	/** HTTP 服务端口。 */
 	private int httpPort;
+
+	/** HTTPS 服务端口。 */
 	private int httpsPort;
 
+	/**
+	 * HTTP 会话管理器。
+	 */
 	private CookieSessionManager httpSessionManager;
+	/**
+	 * HTTP 会话监听器。
+	 */
 	private HttpSessionListener httpSessionListener;
+
+	/** HTTP 会话超时时间。 */
 	private long httpSessionTimeout;
 
+	/**
+	 * WebSocket 消息服务处理器。
+	 */
 	private WebSocketMessageHandler wsHandler;
+	/**
+	 * WebSocket 服务管理器。
+	 */
 	private WebSocketManager wsManager;
 
+	/**
+	 * WebSocket Secure 消息服务处理器。
+	 */
 	private WebSocketMessageHandler wssHandler;
+	/**
+	 * WebSocket Secure 服务管理器。
+	 */
 	private WebSocketManager wssManager;
 
+	/**
+	 * 用于标准协议的非阻塞接收器。
+	 */
 	private NonblockingAcceptor acceptor;
+
+	/**
+	 * 内核上下文。
+	 */
 	private NucleusContext nucleusContext;
+
+	/**
+	 * 对话服务事件及消息处理器。
+	 */
 	private TalkAcceptorHandler talkHandler;
 
-	// 线程执行器
+	/**
+	 * 线程执行器。
+	 */
 	protected ExecutorService executor;
 
-	/// 待检验 Session
+	/**
+	 * 存储待验证的 Session 。键是 Session 的 ID，值是服务为此 Session 生成的临时证书。
+	 */
 	private ConcurrentHashMap<Long, Certificate> unidentifiedSessions;
-	/// Session 与 Tag 的映射
+
+	/**
+	 * 存储 Session 与内核标签的映射关系。
+	 * 键是 Session 的 ID，值是内核标签。
+	 */
 	private ConcurrentHashMap<Long, String> sessionTagMap;
-	/// Tag 与 Session context 的映射
+
+	/**
+	 * 存储内核标签对应的对话 Session 的上下文。
+	 * 上下文里记录了与此标签相关的所有连接信息。
+	 * 键是内核标签，值是 {@link TalkSessionContext} 对象。
+	 */
 	private ConcurrentHashMap<String, TalkSessionContext> tagContexts;
 
-	/// Tag 缓存列表
+	/**
+	 * 存储当前与服务器连接的所有终端的标签的集合。
+	 */
 	private ConcurrentSkipListSet<String> tagList;
 
-	// 私有协议 Speaker
+	/**
+	 * 存储标准协议的 Speaker 对象。
+	 * 键是 Speaker 连接的 Cellet 的标识，值是 Speaker 对象。
+	 */
 	private ConcurrentHashMap<String, Speaker> speakerMap;
+
+	/**
+	 * 存储所有 Speaker 实例的列表。
+	 */
 	protected LinkedList<Speaker> speakers;
-	// HTTP 协议 Speaker
+
+	/**
+	 * 存储 HTTP 协议的 Speaker 对象。
+	 * 键是 HTTP Speaker 连接的 Cellet 的标识，值是 HTTP Speaker 对象。
+	 */
 	private ConcurrentHashMap<String, HttpSpeaker> httpSpeakerMap;
+
+	/**
+	 * 存储所有 HTTP Speaker 实例的列表。
+	 */
 	protected Vector<HttpSpeaker> httpSpeakers;
 
+	/**
+	 * 服务的守护线程。
+	 */
 	private TalkServiceDaemon daemon;
+
+	/**
+	 * 用于客户端模式下的对话监听器。
+	 */
 	private ArrayList<TalkListener> listeners;
 
+	/**
+	 * 用于 Cellet 回调的监听器。
+	 */
 	private CelletCallbackListener callbackListener;
 
+	/**
+	 * 对话事件委派。
+	 */
 	private TalkDelegate delegate;
 
+	/**
+	 * 扩展的 HTTP 服务封装。
+	 */
 	private LinkedList<CapsuleHolder> extendHttpHolders;
 
-	// 用于兼容 Flash Socket 安全策略的适配器
+	/**
+	 * 用于兼容 Flash Socket 安全策略的适配器。
+	 */
 	private FlashSocketSecurity fss;
 
-	// 已处理合法连接数量
+	/**
+	 * 已处理合法连接数量，仅用于计数。
+	 */
 	private long numValidSessions = 0;
-	// 已处理非法连接数量
+
+	/**
+	 * 已处理非法连接数量，仅用于计数。
+	 */
 	private long numInvalidSessions = 0;
 
-	/** 上位主机与终端之间的连接关系。 */
+	/**
+	 * 上位主机与终端之间的连接关系。
+	 */
 	private Hostlink hostlink;
 
 	/**
@@ -203,8 +302,9 @@ public final class TalkServiceKernel implements Service, SpeakerDelegate {
 	}
 
 	/**
-	 * 生成系统瞬时快照。
-	 * @return
+	 * 生成服务的实时快照。
+	 * 
+	 * @return 返回当前对话服务的快照。
 	 */
 	public TalkSnapshoot snapshot() {
 		TalkSnapshoot ts = new TalkSnapshoot();
@@ -262,8 +362,7 @@ public final class TalkServiceKernel implements Service, SpeakerDelegate {
 	}
 
 	/**
-	 * 启动会话服务。
-	 * @return 如果启动成功，则返回 true，否则返回 false
+	 * {@inheritDoc}
 	 */
 	@Override
 	public boolean startup() {
@@ -325,7 +424,8 @@ public final class TalkServiceKernel implements Service, SpeakerDelegate {
 		return succeeded;
 	}
 
-	/** 关闭会话服务。
+	/**
+	 * {@inheritDoc}
 	 */
 	@Override
 	public void shutdown() {
@@ -396,10 +496,12 @@ public final class TalkServiceKernel implements Service, SpeakerDelegate {
 		}
 	}
 
-	/** 设置服务端口。
-	 *
-	 * @note 在 startup 之前设置才能生效。
+	/**
+	 * 设置服务端口。
+	 * 
 	 * @param port 指定服务监听端口。
+	 * 
+	 * @throws InvalidException
 	 */
 	public void setPort(int port) throws InvalidException {
 		if (null != this.acceptor && this.acceptor.isRunning()) {
@@ -409,28 +511,40 @@ public final class TalkServiceKernel implements Service, SpeakerDelegate {
 		this.port = port;
 	}
 
-	/** 返回服务端口。
-	 * @return
+	/**
+	 * 获得服务绑定端口。
+	 * 
+	 * @return 返回服务绑定端口。
 	 */
 	public int getPort() {
 		return this.port;
 	}
 
 	/**
-	 * 设置适配器缓存块大小。
-	 * @param size
+	 * 设置数据接收器缓存块大小（字节）。
+	 * 每个工作线程读写数据的缓存大小。
+	 * 
+	 * @param size 指定缓存大小，单位：字节。
 	 */
 	public void setBlockSize(int size) {
 		this.block = size;
 	}
 
+	/**
+	 * 获得数据接收器缓存块大小。
+	 * 
+	 * @return 返回接收器缓存块大小。
+	 */
 	public int getBlockSize() {
 		return this.block;
 	}
 
 	/**
-	 * 设置最大连接数。
+	 * 设置接收器允许的最大连接数。
+	 * 
 	 * @param num 指定最大连接数。
+	 * 
+	 * @throws InvalidException
 	 */
 	public void setMaxConnections(int num) throws InvalidException {
 		if (null != this.acceptor && this.acceptor.isRunning()) {
@@ -440,14 +554,21 @@ public final class TalkServiceKernel implements Service, SpeakerDelegate {
 		this.maxConnections = num;
 	}
 
+	/**
+	 * 获得接收器允许的最大连接数。
+	 * 
+	 * @return 返回最大连接数。
+	 */
 	public int getMaxConnections() {
 		return this.maxConnections;
 	}
 
 	/**
-	 * 设置工作线程数。
+	 * 设置工作器线程数。
 	 * 
-	 * @param num
+	 * @param num 指定工作器线程数。
+	 * 
+	 * @throws InvalidException
 	 */
 	public void setWorkerThreadNum(int num) throws InvalidException {
 		if (null != this.acceptor && this.acceptor.isRunning()) {
@@ -457,10 +578,20 @@ public final class TalkServiceKernel implements Service, SpeakerDelegate {
 		this.numWorkerThreads = num;
 	}
 
+	/**
+	 * 获得工作器线程数。
+	 * 
+	 * @return 返回工作器线程数。
+	 */
 	public int getWorkerThreadNum() {
 		return this.numWorkerThreads;
 	}
 
+	/**
+	 * 设置每个 Session 的读取数据间隔。
+	 * 
+	 * @param intervalInMillisecond 以毫秒为单位的时间间隔。
+	 */
 	public void setEachSessionReadInterval(long intervalInMillisecond) {
 		if (null == this.acceptor) {
 			return;
@@ -469,10 +600,20 @@ public final class TalkServiceKernel implements Service, SpeakerDelegate {
 		this.acceptor.setEachSessionReadInterval(intervalInMillisecond);
 	}
 
+	/**
+	 * 获得每个 Session 的读取数据间隔。
+	 * 
+	 * @return 返回每个 Session 的读取数据间隔。
+	 */
 	public long getEachSessionReadInterval() {
 		return (null != this.acceptor) ? this.acceptor.getEachSessionReadInterval() : -1;
 	}
 
+	/**
+	 * 设置每个 Session 的写入数据间隔。
+	 * 
+	 * @param intervalInMillisecond 以毫秒为单位的时间间隔。
+	 */
 	public void setEachSessionWriteInterval(long intervalInMillisecond) {
 		if (null == this.acceptor) {
 			return;
@@ -481,10 +622,20 @@ public final class TalkServiceKernel implements Service, SpeakerDelegate {
 		this.acceptor.setEachSessionWriteInterval(intervalInMillisecond);
 	}
 
+	/**
+	 * 获得每个 Session 的写入数据间隔。
+	 * 
+	 * @return 返回每个 Session 的写入数据间隔。
+	 */
 	public long getEachSessionWriteInterval() {
 		return (null != this.acceptor) ? this.acceptor.getEachSessionWriteInterval() : -1;
 	}
 
+	/**
+	 * 设置工作线程发送数据配额（字节每秒，B/S）。
+	 * 
+	 * @param quotaInBytesPerSecond 以字节每秒为单位的带宽配额。
+	 */
 	public void setWorkerTransmissionQuota(int quotaInBytesPerSecond) {
 		if (null == this.acceptor) {
 			return;
@@ -493,11 +644,21 @@ public final class TalkServiceKernel implements Service, SpeakerDelegate {
 		this.acceptor.setTransmissionQuota(quotaInBytesPerSecond);
 	}
 
+	/**
+	 * 获得工作线程发送数据配额（字节每秒，B/S）。
+	 * 
+	 * @return 返回以字节每秒为单位的带宽配额。
+	 */
 	public int getWorkerTransmissionQuota() {
 		return (null != this.acceptor) ? this.acceptor.getTransmissionQuota() : -1;
 	}
 
-	/** 设置是否激活 HTTP 服务。
+	/**
+	 * 设置是否激活 HTTP 服务。
+	 * 
+	 * @param enabled 是否激活 HTTP 服务。
+	 * 
+	 * @throws InvalidException
 	 */
 	public void httpEnabled(boolean enabled) throws InvalidException {
 		if (null != HttpService.getInstance() && HttpService.getInstance().hasCapsule("ts")) {
@@ -508,12 +669,11 @@ public final class TalkServiceKernel implements Service, SpeakerDelegate {
 	}
 
 	/**
-	 * 设置 HTTP 服务端口。
+	 * 设置 HTTP 服务绑定端口。
 	 * 
-	 * @param port
-	 * @note 在 startup 之前设置才能生效。
+	 * @param port 指定 HTTP 服务绑定端口。
 	 */
-	public void setHttpPort(int port) {
+	public void setHttpPort(int port) throws InvalidException {
 		if (null != this.acceptor && this.acceptor.isRunning()) {
 			throw new InvalidException("Can't set the http port in talk service after the start");
 		}
@@ -522,11 +682,20 @@ public final class TalkServiceKernel implements Service, SpeakerDelegate {
 	}
 
 	/**
-	 * 设置 HTTPS 服务端口。
+	 * 获得 HTTP 服务绑定端口。
 	 * 
-	 * @param port
+	 * @return 返回 HTTP 服务绑定端口。
 	 */
-	public void setHttpsPort(int port) {
+	public int getHttpPort() {
+		return this.httpPort;
+	}
+
+	/**
+	 * 设置 HTTPS 服务绑定端口。
+	 * 
+	 * @param port 指定 HTTPS 服务绑定端口。
+	 */
+	public void setHttpsPort(int port) throws InvalidException {
 		if (null != this.acceptor && this.acceptor.isRunning()) {
 			throw new InvalidException("Can't set the http port in talk service after the start");
 		}
@@ -535,46 +704,65 @@ public final class TalkServiceKernel implements Service, SpeakerDelegate {
 	}
 
 	/**
-	 * 返回 HTTP 服务端口。
-	 * @return
-	 */
-	public int getHttpPort() {
-		return this.httpPort;
-	}
-
-	/**
-	 * 返回 HTTPS 服务端口。
-	 * @return
+	 * 获得 HTTPS 服务绑定端口。
+	 * 
+	 * @return 返回 HTTPS 服务绑定端口。
 	 */
 	public int getHttpsPort() {
 		return this.httpsPort;
 	}
 
-	/** 设置 HTTP 服务的允许接收连接的队列长度。
-	 * @param value
+	/**
+	 * 设置 HTTP 服务网络连接的队列长度。
+	 * 
+	 * @param size 指定队列长度。
 	 */
-	public void setHttpQueueSize(int value) {
-		this.httpQueueSize = value;
+	public void setHttpQueueSize(int size) {
+		this.httpQueueSize = size;
 	}
 
-	/** 设置 HTTP 会话超时时间。
+	/**
+	 * 获得 HTTP 服务网络连接的队列长度。
+	 * 
+	 * @return 返回 HTTP 服务网络连接的队列长度。
 	 */
-	public void settHttpSessionTimeout(long timeoutInMillisecond) {
+	public int getHttpQueueSize() {
+		return this.httpQueueSize;
+	}
+
+	/**
+	 * 设置 HTTP 会话超时时间（毫秒）。
+	 * 
+	 * @param timeoutInMillisecond 指定以毫秒计算的会话超时时间。
+	 */
+	public void setHttpSessionTimeout(long timeoutInMillisecond) {
 		this.httpSessionTimeout = timeoutInMillisecond;
 	}
 
-	/** 启动任务表守护线程。
+	/**
+	 * 获得 HTTP 会话超时时间（毫秒）。
+	 * 
+	 * @return 返回 HTTP 会话超时时间（毫秒）。
+	 */
+	public long getHttpSessionTimeout() {
+		return this.httpSessionTimeout;
+	}
+
+	/**
+	 * 启动会话服务的守护线程。
 	 */
 	public void startDaemon() {
 		if (null == this.daemon) {
 			this.daemon = new TalkServiceDaemon(this);
 		}
 
-		if (!this.daemon.running)
+		if (!this.daemon.running) {
 			this.daemon.start();
+		}
 	}
 
-	/** 关闭任务表守护线程。
+	/**
+	 * 停止会话服务的守护线程。
 	 */
 	public void stopDaemon() {
 		if (null != this.daemon) {
@@ -593,7 +781,10 @@ public final class TalkServiceKernel implements Service, SpeakerDelegate {
 		}
 	}
 
-	/** 添加会话监听器。
+	/**
+	 * 添加对话监听器。仅用于客户端模式下。
+	 * 
+	 * @param listener 指定监听器实例。
 	 */
 	public void addListener(TalkListener listener) {
 		if (null == this.listeners) {
@@ -607,7 +798,10 @@ public final class TalkServiceKernel implements Service, SpeakerDelegate {
 		}
 	}
 
-	/** 删除会话监听器。
+	/**
+	 * 移除对话监听器。仅用于客户端模式下。
+	 * 
+	 * @param listener 指定监听器实例。
 	 */
 	public void removeListener(TalkListener listener) {
 		if (null == this.listeners) {
@@ -620,9 +814,10 @@ public final class TalkServiceKernel implements Service, SpeakerDelegate {
 	}
 
 	/**
-	 * 是否已添加指定的监听器。
-	 * @param listener
-	 * @return
+	 * 是否已添加指定的监听器。仅用于客户端模式下。
+	 * 
+	 * @param listener 待检查的监听器。
+	 * @return 如果指定的监听器已经添加返回 <code>true</code> ，否则返回 <code>false</code> 。
 	 */
 	public boolean hasListener(TalkListener listener) {
 		if (null == this.listeners) {
@@ -635,21 +830,22 @@ public final class TalkServiceKernel implements Service, SpeakerDelegate {
 	}
 
 	/**
-	 * 返回当前所有会话者的 Tag 列表。
-	 * @return
+	 * 获得当前与服务有连接的终端的 Tag 列表。
+	 * 
+	 * @return 返回存储终端 Tag 的集合。
 	 */
-	public Set<String> getTalkerList() {
+	public Set<String> getEndpointTagList() {
 		return this.tagList;
 	}
 
 	/**
-	 * 向对端 Speaker 发送原语。
+	 * 向指定标签的终端发送原语。
 	 * 
 	 * @param targetTag 指定目标的内核标签。
 	 * @param primitive 指定发送的原语数据。
 	 * @param cellet 指定源 Cellet 。
 	 * @param sandbox 指定 Cellet 对应的沙盒。
-	 * @return 如果原语数据被正确送入发送队列返回 <code>true</code> 。
+	 * @return 如果数据被正确送入发送队列返回 <code>true</code> 。
 	 */
 	public boolean notice(String targetTag, Primitive primitive, Cellet cellet, CelletSandbox sandbox) {
 		// 检查 Cellet 合法性
@@ -731,10 +927,16 @@ public final class TalkServiceKernel implements Service, SpeakerDelegate {
 		return (null != message);
 	}
 
-	/** 通知对端 Speaker 方言。
+	/**
+	 * 向指定标签的终端发送方言。
+	 * 
+	 * @param targetTag 指定目标的内核标签。
+	 * @param dialect 指定发送的方言数据。
+	 * @param cellet 指定源 Cellet 。
+	 * @param sandbox 指定 Cellet 对应的沙盒。
+	 * @return 如果数据被正确送入发送队列返回 <code>true</code> 。
 	 */
-	public boolean notice(final String targetTag, final Dialect dialect,
-			final Cellet cellet, final CelletSandbox sandbox) {
+	public boolean notice(String targetTag, Dialect dialect, Cellet cellet, CelletSandbox sandbox) {
 		Primitive primitive = dialect.reconstruct();
 		if (null != primitive) {
 			return this.notice(targetTag, primitive, cellet, sandbox);
@@ -743,6 +945,14 @@ public final class TalkServiceKernel implements Service, SpeakerDelegate {
 		return false;
 	}
 
+	/**
+	 * 将指定标签的终端踢出。
+	 * 
+	 * @param targetTag 指定目标的内核标签。
+	 * @param cellet 指定源 Cellet 。
+	 * @param sandbox 指定 Cellet 对应的沙盒。
+	 * @return 踢出操作被正确处理返回 <code>true</code> 。
+	 */
 	public boolean kick(final String targetTag, final Cellet cellet, final CelletSandbox sandbox) {
 		// 检查 Cellet 合法性
 		if (!Nucleus.getInstance().checkSandbox(cellet, sandbox)) {
@@ -777,7 +987,10 @@ public final class TalkServiceKernel implements Service, SpeakerDelegate {
 	}
 
 	/**
-	 * 返回指定 Tag 的会话数量。
+	 * 查询指定终端标签对应的连接会话数量。
+	 * 
+	 * @param tag 指定待查询的标签。
+	 * @return 返回指定标签连接数量。
 	 */
 	public int numSessions(String tag) {
 		TalkSessionContext ctx = this.tagContexts.get(tag);
@@ -788,9 +1001,12 @@ public final class TalkServiceKernel implements Service, SpeakerDelegate {
 		return ctx.numSessions();
 	}
 
-	/** 申请调用 Cellet 服务。
+	/**
+	 * 调用指定标识的 Cellet 服务。
 	 * 
-	 * @note Client
+	 * @param identifiers 指定需调用的 Cellet 的标识清单。
+	 * @param address 指定服务器连接地址和端口。
+	 * @return 如果调用请求被成功发送给服务器返回 <code>true</code>，否则返回 <code>false</code> 。
 	 */
 	public boolean call(String[] identifiers, InetSocketAddress address) {
 		ArrayList<String> list = new ArrayList<String>(identifiers.length);
@@ -800,9 +1016,13 @@ public final class TalkServiceKernel implements Service, SpeakerDelegate {
 		return this.call(list, address);
 	}
 
-	/** 申请调用 Cellet 服务。
+	/**
+	 * 调用指定标识的 Cellet 服务。
 	 * 
-	 * @note Client
+	 * @param identifiers 指定需调用的 Cellet 的标识清单。
+	 * @param address 指定服务器连接地址和端口。
+	 * @param capacity 指定协商信息。
+	 * @return 如果调用请求被成功发送给服务器返回 <code>true</code>，否则返回 <code>false</code> 。
 	 */
 	public boolean call(String[] identifiers, InetSocketAddress address, TalkCapacity capacity) {
 		ArrayList<String> list = new ArrayList<String>(identifiers.length);
@@ -812,44 +1032,49 @@ public final class TalkServiceKernel implements Service, SpeakerDelegate {
 		return this.call(list, address, capacity);
 	}
 
-	/** 申请调用 Cellet 服务。
+	/**
+	 * 调用指定标识的 Cellet 服务。
 	 * 
-	 * @note Client
+	 * @param identifiers 指定需调用的 Cellet 的标识清单。
+	 * @param address 指定服务器连接地址和端口。
+	 * @return 如果调用请求被成功发送给服务器返回 <code>true</code>，否则返回 <code>false</code> 。
 	 */
 	public boolean call(List<String> identifiers, InetSocketAddress address) {
 		return this.call(identifiers, address, null, false);
 	}
 
 	/**
-	 * 申请调用 Cellet 服务。
+	 * 调用指定标识的 Cellet 服务。
 	 * 
-	 * @param identifier
-	 * @param address
-	 * @return
-	 * 
-	 * @note Client
+	 * @param identifiers 指定需调用的 Cellet 的标识清单。
+	 * @param address 指定服务器连接地址和端口。
+	 * @param http 是否使用 HTTP 协议进行连接。
+	 * @return 如果调用请求被成功发送给服务器返回 <code>true</code>，否则返回 <code>false</code> 。
 	 */
 	public boolean call(List<String> identifiers, InetSocketAddress address, boolean http) {
 		return this.call(identifiers, address, null, http);
 	}
 
 	/**
-	 * 申请调用 Cellet 服务。
+	 * 调用指定标识的 Cellet 服务。
 	 * 
-	 * @param identifier
-	 * @param address
-	 * @param capacity
-	 * @return
-	 * 
-	 * @note Client
+	 * @param identifiers 指定需调用的 Cellet 的标识清单。
+	 * @param address 指定服务器连接地址和端口。
+	 * @param capacity 指定协商信息。
+	 * @return 如果调用请求被成功发送给服务器返回 <code>true</code>，否则返回 <code>false</code> 。
 	 */
 	public boolean call(List<String> identifiers, InetSocketAddress address, TalkCapacity capacity) {
 		return this.call(identifiers, address, capacity, false);
 	}
 
-	/** 申请调用 Cellet 服务。
+	/**
+	 * 调用指定标识的 Cellet 服务。
 	 * 
-	 * @note Client
+	 * @param identifiers 指定需调用的 Cellet 的标识清单。
+	 * @param address 指定服务器连接地址和端口。
+	 * @param capacity 指定协商信息。
+	 * @param http 是否使用 HTTP 协议进行连接。
+	 * @return 如果调用请求被成功发送给服务器返回 <code>true</code>，否则返回 <code>false</code> 。
 	 */
 	public synchronized boolean call(List<String> identifiers, InetSocketAddress address, TalkCapacity capacity, boolean http) {
 		if (!http) {
@@ -913,6 +1138,11 @@ public final class TalkServiceKernel implements Service, SpeakerDelegate {
 		}
 	}
 
+	/**
+	 * 停止指定标识的 Cellet 服务。
+	 * 
+	 * @param identifiers 指定需要停止的 Cellet 的标识清单。
+	 */
 	public void hangUp(String[] identifiers) {
 		ArrayList<String> list = new ArrayList<String>(identifiers.length);
 		for (String id : identifiers) {
@@ -922,9 +1152,10 @@ public final class TalkServiceKernel implements Service, SpeakerDelegate {
 		this.hangUp(list);
 	}
 
-	/** 挂断 Cellet 服务。
+	/**
+	 * 停止指定标识的 Cellet 服务。
 	 * 
-	 * @note Client
+	 * @param identifiers 指定需要停止的 Cellet 的标识清单。
 	 */
 	public void hangUp(List<String> identifiers) {
 		if (null != this.speakerMap) {
@@ -964,9 +1195,12 @@ public final class TalkServiceKernel implements Service, SpeakerDelegate {
 		}
 	}
 
-	/** 向指定 Cellet 发送原语。
+	/**
+	 * 向指定的 Cellet 发送原语。
 	 * 
-	 * @note Client
+	 * @param identifier 指定目标 Cellet 的标识。
+	 * @param primitive 指定原语。
+	 * @return 如果数据被成功送入发送队列返回 <code>true</code> 。
 	 */
 	public boolean talk(String identifier, Primitive primitive) {
 		if (null != this.speakerMap) {
@@ -988,9 +1222,12 @@ public final class TalkServiceKernel implements Service, SpeakerDelegate {
 		return false;
 	}
 
-	/** 向指定 Cellet 发送方言。
+	/**
+	 * 向指定的 Cellet 发送原语。
 	 * 
-	 * @note Client
+	 * @param identifier 指定目标 Cellet 的标识。
+	 * @param dialect 指定方言。
+	 * @return 如果数据被成功送入发送队列返回 <code>true</code> 。
 	 */
 	public boolean talk(String identifier, Dialect dialect) {
 		if (null == this.speakerMap && null == this.httpSpeakerMap)
@@ -1020,10 +1257,23 @@ public final class TalkServiceKernel implements Service, SpeakerDelegate {
 		return false;
 	}
 
+	/**
+	 * 获得访问指定 Cellet 的 {@link Speaker} 实例。
+	 * 
+	 * @param identifier 指定 Cellet 的标识。
+	 * @return 返回访问指定 Cellet 的 Speaker 。
+	 */
 	public Speaker getSpeaker(String identifier) {
 		return this.speakerMap.get(identifier);
 	}
 
+	/**
+	 * 以代理方式向指定 Cellet 发送代理数据。
+	 * 
+	 * @param identifier 目标 Cellet 的标识。
+	 * @param data 指定待发送的代理数据。
+	 * @return 如果数据被成功入队返回 <code>true</code> 。
+	 */
 	public boolean proxy(String identifier, JSONObject data) {
 		if (null != this.speakerMap) {
 			Speaker speaker = this.speakerMap.get(identifier);
@@ -1038,6 +1288,13 @@ public final class TalkServiceKernel implements Service, SpeakerDelegate {
 		return false;
 	}
 
+	/**
+	 * 向指定 Cellet 透传数据。
+	 * 
+	 * @param identifier 目标 Cellet 的标识。
+	 * @param data 指定待发送数据。
+	 * @return 找到对应 Cellet 的 {@link Speaker} 并成功将输入发出返回 <code>true</code> 。
+	 */
 	public boolean pass(String identifier, byte[] data) {
 		if (null != this.speakerMap) {
 			Speaker speaker = this.speakerMap.get(identifier);
@@ -1050,9 +1307,11 @@ public final class TalkServiceKernel implements Service, SpeakerDelegate {
 		return false;
 	}
 
-	/** 是否已经与 Cellet 建立服务。
+	/**
+	 * 查询是否已经请求调用了指定的 Cellet 服务。
 	 * 
-	 * @note Client
+	 * @param identifier 指定 Cellet 的标识。
+	 * @return 如果已经调用返回 <code>true</code> 。
 	 */
 	public boolean isCalled(final String identifier) {
 		if (null != this.speakerMap) {
@@ -1072,36 +1331,56 @@ public final class TalkServiceKernel implements Service, SpeakerDelegate {
 		return false;
 	}
 
-	public synchronized void addExtendHolder(CapsuleHolder holder) {
+	/**
+	 * 添加用于 HTTP 服务的服务封装。
+	 * 
+	 * @param holder 指定 HTTP 封装。
+	 */
+	public void addExtendHolder(CapsuleHolder holder) {
 		if (null == this.extendHttpHolders) {
 			this.extendHttpHolders = new LinkedList<CapsuleHolder>();
 		}
 
-		if (this.extendHttpHolders.contains(holder)) {
-			return;
-		}
+		synchronized (this.extendHttpHolders) {
+			if (this.extendHttpHolders.contains(holder)) {
+				return;
+			}
 
-		this.extendHttpHolders.add(holder);
+			this.extendHttpHolders.add(holder);
+		}
 	}
 
-	public synchronized void removeExtendHolder(CapsuleHolder holder) {
+	/**
+	 * 移除用于 HTTP 服务的服务封装。
+	 * 
+	 * @param holder 指定 HTTP 封装。
+	 */
+	public void removeExtendHolder(CapsuleHolder holder) {
 		if (null == this.extendHttpHolders) {
 			return;
 		}
 
-		this.extendHttpHolders.remove(holder);
+		synchronized (this.extendHttpHolders) {
+			this.extendHttpHolders.remove(holder);
+		}
 	}
 
+	/**
+	 * 启动扩展的 HTTP 服务。
+	 */
 	protected void startExtendHolder() {
 		HttpCapsule capsule = HttpService.getInstance().getCapsule("ts");
 		if (null != capsule && null != this.extendHttpHolders) {
-			for (CapsuleHolder holder : this.extendHttpHolders) {
-				capsule.addHolder(holder);
+			synchronized (this.extendHttpHolders) {
+				for (CapsuleHolder holder : this.extendHttpHolders) {
+					capsule.addHolder(holder);
+				}
 			}
 		}
 	}
 
-	/** 启动 HTTP 服务。
+	/**
+	 * 启动 Talk 服务模块的 HTTP 服务。
 	 */
 	private void startHttpService() {
 		if (null == HttpService.getInstance()) {
@@ -1160,7 +1439,7 @@ public final class TalkServiceKernel implements Service, SpeakerDelegate {
 	}
 
 	/**
-	 * 通知 Dialogue 。
+	 * {@inheritDoc}
 	 */
 	@Override
 	public void onDialogue(Speakable speaker, String identifier, Primitive primitive) {
@@ -1187,7 +1466,7 @@ public final class TalkServiceKernel implements Service, SpeakerDelegate {
 	}
 
 	/**
-	 * 通知新连接。
+	 * {@inheritDoc}
 	 */
 	@Override
 	public void onContacted(Speakable speaker, String identifier) {
@@ -1204,7 +1483,7 @@ public final class TalkServiceKernel implements Service, SpeakerDelegate {
 	}
 
 	/**
-	 * 通知断开连接。
+	 * {@inheritDoc}
 	 */
 	@Override
 	public void onQuitted(Speakable speaker, String identifier) {
@@ -1221,7 +1500,7 @@ public final class TalkServiceKernel implements Service, SpeakerDelegate {
 	}
 
 	/**
-	 * 通知发生错误。
+	 * {@inheritDoc}
 	 */
 	@Override
 	public void onFailed(Speakable speaker, TalkServiceFailure failure) {
@@ -1238,10 +1517,10 @@ public final class TalkServiceKernel implements Service, SpeakerDelegate {
 	}
 
 	/**
-	 * 查找指定的 Endpoint 。
+	 * 查找指定终端对应的 Endpoint 实例。
 	 * 
-	 * @param remoteTag
-	 * @return
+	 * @param remoteTag 指定待查找终端的内核标签。
+	 * @return 如果未找到指定 Endpoint 返回 <code>null</code> 值。
 	 */
 	public Endpoint findEndpoint(String remoteTag) {
 		TalkSessionContext ctx = this.tagContexts.get(remoteTag);
@@ -1255,8 +1534,8 @@ public final class TalkServiceKernel implements Service, SpeakerDelegate {
 	/**
 	 * 判断对应的 Tag 是否是代理。
 	 * 
-	 * @param remoteTag
-	 * @return
+	 * @param remoteTag 待判断的远程标签。
+	 * @return 如果是代理返回 <code>true</code> 。
 	 */
 	public boolean isProxy(String remoteTag) {
 		TalkSessionContext ctx = this.tagContexts.get(remoteTag);
@@ -1295,7 +1574,11 @@ public final class TalkServiceKernel implements Service, SpeakerDelegate {
 		}
 	}
 
-	/** 开启 Session 。
+	/**
+	 * 启动为指定 {@link Session} 的服务。
+	 * 
+	 * @param session 需开启服务的 Session 。
+	 * @return 返回指定 Session 的证书。
 	 */
 	public synchronized Certificate openSession(Session session) {
 		Long sid = session.getId();
@@ -1318,7 +1601,10 @@ public final class TalkServiceKernel implements Service, SpeakerDelegate {
 		return cert;
 	}
 
-	/** 关闭 Session 。
+	/**
+	 * 关闭指定 {@link Session} ，移除该 {@link Session} 。
+	 * 
+	 * @param session 指定待关闭的 Session 。
 	 */
 	public synchronized void closeSession(final Session session) {
 		String tag = this.sessionTagMap.get(session.getId());
@@ -1389,7 +1675,11 @@ public final class TalkServiceKernel implements Service, SpeakerDelegate {
 		this.unidentifiedSessions.remove(session.getId());
 	}
 
-	/** 允许指定 Session 连接。
+	/**
+	 * 允许指定 {@link Session} 连接。
+	 * 
+	 * @param session 指定允许的 Session 。
+	 * @param tag 指定该 Session 对应的内核标签。
 	 */
 	public synchronized void acceptSession(Session session, String tag) {
 		Long sid = session.getId();
@@ -1420,7 +1710,10 @@ public final class TalkServiceKernel implements Service, SpeakerDelegate {
 		++this.numValidSessions;
 	}
 
-	/** 拒绝指定 Session 连接。
+	/**
+	 * 拒绝 {@link Session} 连接并关闭该 {@link Session} 对应的 Socket 连接。
+	 * 
+	 * @param session
 	 */
 	public synchronized void rejectSession(Session session) {
 		Long sid = session.getId();
@@ -1464,7 +1757,13 @@ public final class TalkServiceKernel implements Service, SpeakerDelegate {
 		++this.numInvalidSessions;
 	}
 
-	/** 请求 Cellet 。
+	/**
+	 * 处理请求 Cellet 服务。
+	 * 
+	 * @param session 待处理请求对应的 Session 。
+	 * @param tag 待处理请求的内核标签。
+	 * @param identifier 此请求的目标 Cellet 标识。
+	 * @return 如果成功处理请求返回会话追踪器，否则返回 <code>null</code> 值。
 	 */
 	public TalkTracker processRequest(final Session session, final String tag, final String identifier) {
 		TalkSessionContext ctx = this.tagContexts.get(tag);
@@ -1556,6 +1855,15 @@ public final class TalkServiceKernel implements Service, SpeakerDelegate {
 		return tracker;
 	}
 
+	/**
+	 * 处理来自代理端的代理请求。
+	 * 
+	 * @param proxyTag 代理端的内核标签。
+	 * @param tag 代理源的内核标签。
+	 * @param identifier 请求的 Cellet 的标识。
+	 * @param active 用于标记建立代理关系还是停止代理管理，如果设置为 <code>true</code> 表示建立代理关系。
+	 * @return 如果没有找到对应的 Cellet 返回 <code>false</code> 。
+	 */
 	public boolean processProxy(String proxyTag, String tag, String identifier, boolean active) {
 		// 查找 Cellet
 		Cellet cellet = Nucleus.getInstance().getCellet(identifier, this.nucleusContext);
@@ -1581,7 +1889,13 @@ public final class TalkServiceKernel implements Service, SpeakerDelegate {
 		return true;
 	}
 
-	/** 协商服务能力。
+	/**
+	 * 进行协商处理。
+	 * 
+	 * @param session 待处理的 Session 。
+	 * @param tag 待处理 Session 的内核标签。
+	 * @param capacity 协商的能力描述。
+	 * @return 返回协商成功的能力描述。
 	 */
 	public TalkCapacity processConsult(Session session, String tag, TalkCapacity capacity) {
 		TalkSessionContext ctx = this.tagContexts.get(tag);
@@ -1601,7 +1915,13 @@ public final class TalkServiceKernel implements Service, SpeakerDelegate {
 		return capacity;
 	}
 
-	/** 对话 Cellet 。
+	/**
+	 * 进行对话数据数据处理。
+	 * 
+	 * @param session 对话源 Session 。
+	 * @param speakerTag Session 对应的内核标签。
+	 * @param targetIdentifier 对话目标的 Cellet 标识。
+	 * @param primitive 对话的原语数据。
 	 */
 	public void processDialogue(Session session, String speakerTag, String targetIdentifier, Primitive primitive) {
 		TalkSessionContext ctx = this.tagContexts.get(speakerTag);
@@ -1648,13 +1968,20 @@ public final class TalkServiceKernel implements Service, SpeakerDelegate {
 		}
 	}
 
-	/** 返回 Session 证书。
+	/**
+	 * 获得指定 {@link Session} 的证书。
+	 * 
+	 * @param session 指定 Session 。
+	 * @return 返回 Session 的证书。
 	 */
 	public Certificate getCertificate(Session session) {
 		return this.unidentifiedSessions.get(session.getId());
 	}
 
-	/** 处理未识别 Session 。
+	/**
+	 * 处理未被识别的 {@link Session} ，向 {@link Session} 发送握手请求。
+	 * 
+	 * @param time 指定当前系统运行的时间戳。
 	 */
 	protected void processUnidentifiedSessions(long time) {
 		if (null == this.unidentifiedSessions || this.unidentifiedSessions.isEmpty()) {
@@ -1729,7 +2056,11 @@ public final class TalkServiceKernel implements Service, SpeakerDelegate {
 		}
 	}
 
-	/** 更新 Session tick time 。
+	/**
+	 * 更新服务器端 Session 的心跳。
+	 * 
+	 * @param session 待更新心跳计时的 Session 。
+	 * @return 心跳更新成功返回 <code>true</code> 。
 	 */
 	public boolean updateSessionHeartbeat(Session session) {
 		String tag = this.sessionTagMap.get(session.getId());
@@ -1752,15 +2083,18 @@ public final class TalkServiceKernel implements Service, SpeakerDelegate {
 		return false;
 	}
 
-	/** 返回时间点。
+	/**
+	 * 获得当前守护任务的 Tick 时间戳。
+	 * 
+	 * @return 返回 Tick 时间戳。
 	 */
 	protected long getTickTime() {
 		return this.daemon.getTickTime();
 	}
 
 	/**
-	 * 检查会话是否超时。
-	 * @param timeout
+	 * 校验所有会话的心跳状态。
+	 * 如果发现心跳超时的会话则将其连接断开并删除。
 	 */
 	protected void checkSessionHeartbeat() {
 		if (null == this.tagContexts) {
@@ -1795,7 +2129,8 @@ public final class TalkServiceKernel implements Service, SpeakerDelegate {
 		closeList = null;
 	}
 
-	/** 检查 HTTP Session 心跳。
+	/**
+	 * 校验所有 HTTP 会话的心跳状态。
 	 */
 	protected void checkHttpSessionHeartbeat() {
 		if (null == this.httpSessionManager) {
@@ -1816,7 +2151,13 @@ public final class TalkServiceKernel implements Service, SpeakerDelegate {
 		});
 	}
 
-	/** 向指定 Session 发送识别指令。
+	/**
+	 * 向指定 {@link Session} 发送握手校验指令。
+	 * 终端接收到指令后开始执行握手程序。
+	 * 
+	 * @param session 指定目标终端的 Session 。
+	 * @param text 指定明文串。
+	 * @param key 指定密钥。
 	 */
 	private void deliverChecking(Session session, String text, String key) {
 		// 如果是来自 HTTP 协议的 Session 则直接返回
@@ -1873,7 +2214,14 @@ public final class TalkServiceKernel implements Service, SpeakerDelegate {
 		packet = null;
 	}
 
-	/** 打包对话原语。
+	/**
+	 * 将原语打包为原始消息数据格式。
+	 * 
+	 * @param cellet 源 Cellet 。
+	 * @param primitive 源原语。
+	 * @param jsonFormat 是否使用 JSON 格式。
+	 * @param note 数据包注解。
+	 * @return 返回打包的 {@link net.cellcloud.common.Message} 格式数据。
 	 */
 	private Message packetDialogue(Cellet cellet, Primitive primitive, boolean jsonFormat, String note) {
 		Message message = null;
@@ -1901,7 +2249,7 @@ public final class TalkServiceKernel implements Service, SpeakerDelegate {
 			}
 		}
 		else {
-			// 包格式：原语序列|Cellet
+			// 包格式：原语序列|Cellet[|NOTE]
 
 			// 序列化原语
 			ByteArrayOutputStream stream = primitive.write();
@@ -1935,15 +2283,19 @@ public final class TalkServiceKernel implements Service, SpeakerDelegate {
 			this.checked = false;
 		}
 
-		/// 相关 Session
+		/** 相关 Session 。 */
 		public Session session;
-		/// 密钥
+
+		/** 密钥。 */
 		public String key;
-		/// 明文
+
+		/** 明文。 */
 		public String plaintext;
-		/// 时间戳
+
+		/** 时间戳。 */
 		public long time;
-		/// 是否已经发送校验请求
+
+		/** 是否已经发送校验请求。 */
 		public boolean checked;
 	}
 

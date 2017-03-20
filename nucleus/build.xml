@@ -14,6 +14,7 @@
 
 	<property name="build.dir" value="${basedir}/build" />
 	<property name="src.dir" value="${basedir}/src" />
+	<property name="doc.dir" value="${basedir}/doc" />
 	<property name="bin.dir" value="${build.dir}/bin" />
 	<property name="dist.dir" value="${build.dir}/dist" />
 	<property name="deploy.dir" value="../deploy/bin" />
@@ -45,6 +46,29 @@
 		<tstamp>
 			<format property="touch.time" pattern="yyyyMMdd" offset="-60" unit="second" />
 		</tstamp>
+	</target>
+
+	<!-- =================================================================== -->
+	<!-- Builds java documents                                               -->
+	<!-- =================================================================== -->
+	<target name="doc">
+		<delete dir="${doc.dir}" />
+		<mkdir dir="${doc.dir}" />
+		<javadoc destdir="${doc.dir}" author="true" version="true"
+			windowtitle="Nucelus API - ${version.brand}"
+			charset="UTF-8" encoding="UTF-8" docencoding="UTF-8">
+			<doctitle>Nucleus API - ${version.brand}</doctitle>
+			<!-- <bottom>
+				<![CDATA[<i>Copyright &copy; 2009,2017 Cell Cloud Team. All rights reserved.</i>]]>
+			</bottom> -->
+			<fileset dir="${src.dir}" defaultexcludes="yes">
+				<include name="net/cellcloud/**" />
+				<exclude name="org/**" />
+				<exclude name="net/cellcloud/util/rudp/**" />
+				<exclude name="net/cellcloud/util/nio/**" />
+				<exclude name="net/cellcloud/util/Base64.java" />
+			</fileset>
+		</javadoc>
 	</target>
 
 	<!-- =================================================================== -->

@@ -1,3 +1,29 @@
+/*
+-----------------------------------------------------------------------------
+This source file is part of Cell Cloud.
+
+Copyright (c) 2009-2017 Cell Cloud Team (www.cellcloud.net)
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in
+all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+THE SOFTWARE.
+-----------------------------------------------------------------------------
+*/
+
 package net.cellcloud.util.nio;
 
 import java.io.IOException;
@@ -16,7 +42,7 @@ import java.nio.channels.SocketChannel;
  * final as it should NOT be extended.
  * <p>
  * All required methods from {@link Socket} that deal with the secure
- * implementation ({@link ch.dermitza.securenio.socket.secure.SecureSocket})
+ * implementation ({@link net.cellcloud.util.nio.secure.SecureSocket})
  * have no effect in this implementation.
  */
 public final class PlainSocket implements Socket {
@@ -43,8 +69,8 @@ public final class PlainSocket implements Socket {
 	 * {@link SocketChannel#configureBlocking(boolean block)}
 	 * 
 	 * @param block
-	 *            If true then this channel will be placed in blocking mode; if
-	 *            false then it will be placed in non-blocking mode
+	 *            If true then this channel will be placed in blocking mode;
+	 *            if false then it will be placed in non-blocking mode
 	 * @return This selectable channel
 	 * @throws IOException
 	 *             Propagated exceptions from the underlying
@@ -52,8 +78,7 @@ public final class PlainSocket implements Socket {
 	 *             implementation.
 	 */
 	@Override
-	public SelectableChannel configureBlocking(boolean block)
-			throws IOException {
+	public SelectableChannel configureBlocking(boolean block) throws IOException {
 		return channel.configureBlocking(block);
 	}
 
@@ -63,8 +88,8 @@ public final class PlainSocket implements Socket {
 	 * 
 	 * @param buffer
 	 *            The buffer into which bytes are to be transferred
-	 * @return The number of bytes read, possibly zero, or -1 if the channel has
-	 *         reached end-of-stream
+	 * @return The number of bytes read, possibly zero,
+	 *         or -1 if the channel has reached end-of-stream
 	 * @throws IOException
 	 *             Propagated exceptions from the underlying
 	 *             {@link SocketChannel#read(ByteBuffer buffer)} implementation.
@@ -124,8 +149,7 @@ public final class PlainSocket implements Socket {
 	 *             implementation.
 	 */
 	@Override
-	public SelectionKey register(Selector sel, int ops)
-			throws ClosedChannelException {
+	public SelectionKey register(Selector sel, int ops) throws ClosedChannelException {
 		return channel.register(sel, ops);
 	}
 
@@ -167,11 +191,11 @@ public final class PlainSocket implements Socket {
 		return channel.finishConnect();
 	}
 
-	// ---------------------- SSL/TLS METHODS (UNUSED) ------------------------//
+	// ---------------------- SSL/TLS METHODS (UNUSED) ------------------------ //
 	/**
-	 * Empty implementation satisfying {@link Socket#processHandshake()}. No
-	 * handshaking is present on a {@link PlainSocket}. This method has NO
-	 * effect.
+	 * Empty implementation satisfying {@link Socket#processHandshake()}.
+	 * No handshaking is present on a {@link PlainSocket}.
+	 * This method has NO effect.
 	 */
 	@Override
 	public void processHandshake() {
@@ -179,9 +203,9 @@ public final class PlainSocket implements Socket {
 	}
 
 	/**
-	 * Empty implementation satisfying {@link Socket#handshakePending()}. No
-	 * handshaking is present on a {@link PlainSocket}. This method has NO
-	 * effect.
+	 * Empty implementation satisfying {@link Socket#handshakePending()}.
+	 * No handshaking is present on a {@link PlainSocket}.
+	 * This method has NO effect.
 	 * 
 	 * @return Always false, no handshake is pending on a PlainSocket
 	 */
@@ -192,9 +216,9 @@ public final class PlainSocket implements Socket {
 	}
 
 	/**
-	 * Empty implementation satisfying {@link Socket#updateResult()}. No
-	 * {@link javax.net.ssl.SSLEngineResult} is present on a {@link PlainSocket}
-	 * . This method has NO effect.
+	 * Empty implementation satisfying {@link Socket#updateResult()}.
+	 * No {@link javax.net.ssl.SSLEngineResult} is present on a {@link PlainSocket}.
+	 * This method has NO effect.
 	 */
 	@Override
 	public void updateResult() {
@@ -203,8 +227,8 @@ public final class PlainSocket implements Socket {
 
 	/**
 	 * Empty implementation satisfying
-	 * {@link Socket#setTaskPending(boolean taskPending)}. No task is pending
-	 * on a {@link PlainSocket}. This method has NO effect.
+	 * {@link Socket#setTaskPending(boolean taskPending)}.
+	 * No task is pending on a {@link PlainSocket}. This method has NO effect.
 	 * 
 	 * @param taskPending
 	 *            unused
@@ -215,8 +239,8 @@ public final class PlainSocket implements Socket {
 	}
 
 	/**
-	 * Empty implementation satisfying {@link Socket#invalidateSession()}. No
-	 * {@link javax.net.ssl.SSLSession} is present on a {@link PlainSocket}.
+	 * Empty implementation satisfying {@link Socket#invalidateSession()}.
+	 * No {@link javax.net.ssl.SSLSession} is present on a {@link PlainSocket}.
 	 * This method has NO effect.
 	 */
 	@Override
@@ -225,9 +249,9 @@ public final class PlainSocket implements Socket {
 	}
 
 	/**
-	 * Empty implementation satisfying {@link Socket#initHandshake()}. No
-	 * handshaking is present on a {@link PlainSocket}. This method has NO
-	 * effect.
+	 * Empty implementation satisfying {@link Socket#initHandshake()}.
+	 * No handshaking is present on a {@link PlainSocket}.
+	 * This method has NO effect.
 	 * 
 	 * @throws IOException
 	 *             Never thrown.
@@ -236,4 +260,5 @@ public final class PlainSocket implements Socket {
 	public void initHandshake() throws IOException {
 		// Nothing to do here
 	}
+
 }

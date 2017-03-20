@@ -39,11 +39,11 @@ public final class ChangeRequest {
 	/**
 	 * This type concerns an {@link javax.net.ssl.SSLEngine} task that has just
 	 * finished running on the
-	 * {@link ch.dermitza.securenio.socket.secure.TaskWorker} thread.
+	 * {@link net.cellcloud.util.nio.secure.TaskWorker} thread.
 	 * <p>
 	 * This type of task is used if and only if the
-	 * {@link ch.dermitza.securenio.socket.secure.SecureSocket} is processing
-	 * tasks via the {@link ch.dermitza.securenio.socket.secure.TaskWorker}
+	 * {@link net.cellcloud.util.nio.secure.SecureSocket} is processing
+	 * tasks via the {@link net.cellcloud.util.nio.secure.TaskWorker}
 	 * thread (multi-threaded implementation).
 	 */
 	public static final int TYPE_TASK = 0;
@@ -55,8 +55,8 @@ public final class ChangeRequest {
 	public static final int TYPE_OPS = 1;
 
 	/**
-	 * This type concerns a timeout that has expired on the given socket. As
-	 * such, the socket needs to be closed.
+	 * This type concerns a timeout that has expired on the given socket.
+	 * As such, the socket needs to be closed.
 	 */
 	public static final int TYPE_TIMEOUT = 2;
 
@@ -96,10 +96,9 @@ public final class ChangeRequest {
 	 * @param type
 	 *            The type associated with this ChangeRequest
 	 * @param interestOps
-	 *            The interestOps (SelectionKey.interestOps) associated with
-	 *            this ChangeRequest. If the type of this ChangeRequest is
-	 *            anything other than TYPE_OPS, the interestOps can be set to
-	 *            anything safely.
+	 *            The interestOps (SelectionKey.interestOps) associated with this ChangeRequest.
+	 *            If the type of this ChangeRequest is anything other than TYPE_OPS,
+	 *            the interestOps can be set to anything safely.
 	 */
 	public ChangeRequest(Socket socket, int type, int interestOps) {
 		this.socket = socket;

@@ -354,7 +354,7 @@ public final class Nucleus {
 				// 设置 HTTP 队列长度
 				this.talkService.setHttpQueueSize(this.config.talk.httpQueueSize);
 				// 设置 HTTP 会话超时时间
-				this.talkService.settHttpSessionTimeout(this.config.talk.httpSessionTimeout);
+				this.talkService.setHttpSessionTimeout(this.config.talk.httpSessionTimeout);
 
 				// 启动 Talk Service
 				if (this.talkService.startup()) {

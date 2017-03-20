@@ -65,9 +65,8 @@ public class TCPServer extends AbstractSelector {
 	 * @param needClientAuth
 	 *            Whether we need clients to also authenticate
 	 */
-	public TCPServer(InetAddress address, int port,
-			AbstractPacketWorker packetWorker, boolean usingSSL,
-			boolean needClientAuth) {
+	public TCPServer(InetAddress address, int port, AbstractPacketWorker packetWorker,
+			boolean usingSSL, boolean needClientAuth) {
 		super(address, port, packetWorker, usingSSL, false, needClientAuth);
 	}
 
@@ -79,19 +78,18 @@ public class TCPServer extends AbstractSelector {
 	 * @param packet
 	 *            The Packet to send through the associated Socket.
 	 * 
-	 * @see AbstractSelector#send(ch.dermitza.securenio.socket.Socket,
-	 *      java.nio.ByteBuffer)
+	 * @see AbstractSelector#send(net.cellcloud.util.nio.Socket, java.nio.ByteBuffer)
 	 */
 	public void send(Socket sc, Packet packet) {
 		send(sc, packet.toBytes());
 	}
 
 	/**
-	 * Initialize a server connection. This method initializes a
-	 * {@link ServerSocketChannel}, configures it to non-blocking, binds it to
-	 * the specified (if any) host and port, sets the specified backlog and
-	 * registers it with the underlying {@link java.nio.channels.Selector}
-	 * instance with an OP_ACCEPT {@link SelectionKey}.
+	 * Initialize a server connection.
+	 * This method initializes a {@link ServerSocketChannel},
+	 * configures it to non-blocking, binds it to the specified (if any) host and port,
+	 * sets the specified backlog and registers it with the underlying
+	 * {@link java.nio.channels.Selector} instance with an OP_ACCEPT {@link SelectionKey}.
 	 * 
 	 * @throws IOException
 	 *             Propagates all underlying IOExceptions as thrown, to be
@@ -117,13 +115,12 @@ public class TCPServer extends AbstractSelector {
 		// accepting new connections
 		Logger.d(this.getClass(), "Registering ServerChannel to selector");
 		ssc.register(selector, SelectionKey.OP_ACCEPT);
-
 	}
 
 	/**
 	 * Accepts incoming connections and binds new non-blocking {@link Socket}
-	 * instances to them. If this server implementation is using SSL/TLS, it
-	 * also sets up the {@link SSLEngine}, to be used.
+	 * instances to them. If this server implementation is using SSL/TLS,
+	 * it also sets up the {@link SSLEngine}, to be used.
 	 * 
 	 * @param key
 	 *            The selection key with the underlying {@link SocketChannel} to
@@ -141,40 +138,33 @@ public class TCPServer extends AbstractSelector {
 			// Accept the connection and make it non-blocking
 			socketChannel = ssc.accept();
 			socketChannel.configureBlocking(false);
-			socketChannel.setOption(StandardSocketOptions.TCP_NODELAY,
-					SocketProperties.getTCPNoDelay());
-			socketChannel.setOption(StandardSocketOptions.SO_SNDBUF,
-					SocketProperties.getSoSndBuf());
-			socketChannel.setOption(StandardSocketOptions.SO_RCVBUF,
-					SocketProperties.getSoRcvBuf());
-			socketChannel.setOption(StandardSocketOptions.SO_KEEPALIVE,
-					SocketProperties.getKeepAlive());
-			socketChannel.setOption(StandardSocketOptions.SO_REUSEADDR,
-					SocketProperties.getReuseAddress());
-			socketChannel.setOption(StandardSocketOptions.IP_TOS,
-					SocketProperties.getIPTos());
+			socketChannel.setOption(StandardSocketOptions.TCP_NODELAY, SocketProperties.getTCPNoDelay());
+			socketChannel.setOption(StandardSocketOptions.SO_SNDBUF, SocketProperties.getSoSndBuf());
+			socketChannel.setOption(StandardSocketOptions.SO_RCVBUF, SocketProperties.getSoRcvBuf());
+			socketChannel.setOption(StandardSocketOptions.SO_KEEPALIVE, SocketProperties.getKeepAlive());
+			socketChannel.setOption(StandardSocketOptions.SO_REUSEADDR, SocketProperties.getReuseAddress());
+			socketChannel.setOption(StandardSocketOptions.IP_TOS, SocketProperties.getIPTos());
 
-			// Register the new SocketChannel with our Selector, indicating
-			// we'd like to be notified when there's data waiting to be read
+			// Register the new SocketChannel with our Selector,
+			// indicating we'd like to be notified when there's data waiting to be read
 			socketChannel.register(selector, SelectionKey.OP_READ);
 
 			// Now wrap it in our container
 			if (usingSSL) {
-				peerHost = socketChannel.socket().getInetAddress()
-						.getHostAddress();
+				peerHost = socketChannel.socket().getInetAddress().getHostAddress();
 				peerPort = socketChannel.socket().getPort();
 				SSLEngine engine = setupEngine(peerHost, peerPort);
 
 				socket = new SecureSocket(socketChannel, engine,
 						singleThreaded, taskWorker, toWorker, this, this);
-			} else {
+			}
+			else {
 				socket = new PlainSocket(socketChannel);
 			}
 		} catch (IOException ioe) {
 			Logger.e(this.getClass(), "IOE accepting the connection");
 			Logger.log(this.getClass(), ioe, LogLevel.ERROR);
-			// If accepting the connection failed, close the socket and remove
-			// any references to it
+			// If accepting the connection failed, close the socket and remove any references to it
 			closeSocket(socket);
 			return;
 		}
@@ -185,9 +175,9 @@ public class TCPServer extends AbstractSelector {
 
 	/**
 	 * As this is the server implementation, it is NOT allowed to call this
-	 * method which is only useful for client implementations. This
-	 * implementation will throw a {@link NoSuchMethodError} if it is called and
-	 * do nothing else.
+	 * method which is only useful for client implementations.
+	 * This implementation will throw a {@link NoSuchMethodError}
+	 * if it is called and do nothing else.
 	 * 
 	 * @param key
 	 *            The selection key to be used for connecting.
@@ -198,4 +188,5 @@ public class TCPServer extends AbstractSelector {
 	protected void connect(SelectionKey key) {
 		throw new NoSuchMethodError("connect() is never called in client");
 	}
+
 }

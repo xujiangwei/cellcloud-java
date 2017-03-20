@@ -42,13 +42,14 @@ import net.cellcloud.util.nio.packet.Packet;
 import net.cellcloud.util.nio.secure.SecureSocket;
 
 /**
- * A TCP Client implementation of {@link AbstractSelector}. This implementation
- * is purely non-blocking and can handle both {@link PlainSocket}s and
- * {@link SecureSocket}s.
+ * A TCP Client implementation of {@link AbstractSelector}.
+ * This implementation is purely non-blocking and can handle both
+ * {@link PlainSocket}s and {@link SecureSocket}s.
  */
 public class TCPClient extends AbstractSelector {
 
 	private Socket sc;
+
 	private boolean connected = false;
 
 	/**
@@ -65,21 +66,19 @@ public class TCPClient extends AbstractSelector {
 	 * @param needClientAuth
 	 *            Whether this client should also authenticate with the server.
 	 */
-	public TCPClient(InetAddress address, int port,
-			AbstractPacketWorker packetWorker, boolean usingSSL,
-			boolean needClientAuth) {
+	public TCPClient(InetAddress address, int port, AbstractPacketWorker packetWorker,
+			boolean usingSSL, boolean needClientAuth) {
 		super(address, port, packetWorker, usingSSL, true, needClientAuth);
 	}
 
 	/**
-	 * Send an {@link Packet} over the this client's {@link Socket}. Since
-	 * the client only has one socket, no socket parameter is necessary.
+	 * Send an {@link Packet} over the this client's {@link Socket}.
+	 * Since the client only has one socket, no socket parameter is necessary.
 	 * 
 	 * @param packet
 	 *            The Packet to send through the associated Socket.
 	 * 
-	 * @see AbstractSelector#send(ch.dermitza.securenio.socket.Socket,
-	 *      java.nio.ByteBuffer)
+	 * @see AbstractSelector#send(net.cellcloud.util.nio.Socket, java.nio.ByteBuffer)
 	 */
 	public void send(Packet packet) {
 		// Sometimes during testing send is called before the socket is
@@ -90,8 +89,8 @@ public class TCPClient extends AbstractSelector {
 	}
 
 	/**
-	 * Invalidate the SSL/TLS session (if any) on the underlying
-	 * {@link Socket}. As this client implementation only has a single socket,
+	 * Invalidate the SSL/TLS session (if any) on the underlying {@link Socket}.
+	 * As this client implementation only has a single socket,
 	 * no parameter is needed.
 	 * 
 	 * @see AbstractSelector#invalidateSession(Socket)
@@ -103,11 +102,12 @@ public class TCPClient extends AbstractSelector {
 	}
 
 	/**
-	 * Initialize a client connection. This method initializes a
-	 * {@link SocketChannel}, configures it to non-blocking, and registers it
+	 * Initialize a client connection. This method initializes a {@link SocketChannel},
+	 * configures it to non-blocking, and registers it
 	 * with the underlying {@link java.nio.channels.Selector} instance with an
-	 * OP_CONNECT {@link SelectionKey}. If this client implementation is using
-	 * SSL/TLS, it also sets up the {@link SSLEngine}, to be used.
+	 * OP_CONNECT {@link SelectionKey}.
+	 * If this client implementation is using SSL/TLS,
+	 * it also sets up the {@link SSLEngine}, to be used.
 	 * 
 	 * @throws IOException
 	 *             Propagates all underlying IOExceptions as thrown, to be
@@ -121,42 +121,36 @@ public class TCPClient extends AbstractSelector {
 		channel.configureBlocking(false);
 		channel.connect(new InetSocketAddress(address, port));
 
-		// As part of the registration we'll register
-		// an interest in connection events. These are raised when a channel
-		// is ready to complete connection establishment.
+		// As part of the registration we'll register an interest in connection events.
+		// These are raised when a channel is ready to complete connection establishment.
 		channel.register(selector, SelectionKey.OP_CONNECT);
-		channel.setOption(StandardSocketOptions.SO_SNDBUF,
-				SocketProperties.getSoSndBuf());
-		channel.setOption(StandardSocketOptions.SO_RCVBUF,
-				SocketProperties.getSoRcvBuf());
-		channel.setOption(StandardSocketOptions.SO_KEEPALIVE,
-				SocketProperties.getKeepAlive());
-		channel.setOption(StandardSocketOptions.SO_REUSEADDR,
-				SocketProperties.getReuseAddress());
-		channel.setOption(StandardSocketOptions.IP_TOS,
-				SocketProperties.getIPTos());
+		channel.setOption(StandardSocketOptions.SO_SNDBUF, SocketProperties.getSoSndBuf());
+		channel.setOption(StandardSocketOptions.SO_RCVBUF, SocketProperties.getSoRcvBuf());
+		channel.setOption(StandardSocketOptions.SO_KEEPALIVE, SocketProperties.getKeepAlive());
+		channel.setOption(StandardSocketOptions.SO_REUSEADDR, SocketProperties.getReuseAddress());
+		channel.setOption(StandardSocketOptions.IP_TOS, SocketProperties.getIPTos());
 
 		// now wrap the channel
 		if (usingSSL) {
-			String peerHost = channel.socket().getInetAddress()
-					.getHostAddress();
+			String peerHost = channel.socket().getInetAddress().getHostAddress();
 			int peerPort = channel.socket().getPort();
 			SSLEngine engine = setupEngine(peerHost, peerPort);
 
-			sc = new SecureSocket(channel, engine, singleThreaded, taskWorker,
-					toWorker, this, this);
-		} else {
+			sc = new SecureSocket(channel, engine, singleThreaded, taskWorker, toWorker, this, this);
+		}
+		else {
 			sc = new PlainSocket(channel);
 		}
+
 		// add the socket to the container
 		container.addSocket(sc.getSocket(), sc);
 	}
 
 	/**
 	 * As this is the client implementation, it is NOT allowed to call this
-	 * method which is only useful for server implementations. This
-	 * implementation will throw a {@link NoSuchMethodError} if it is called and
-	 * do nothing else.
+	 * method which is only useful for server implementations.
+	 * This implementation will throw a {@link NoSuchMethodError}
+	 * if it is called and do nothing else.
 	 * 
 	 * @param key
 	 *            The selection key with the underlying {@link SocketChannel} to
@@ -172,8 +166,8 @@ public class TCPClient extends AbstractSelector {
 
 	/**
 	 * Finish the connection to the server. This method also instantiates an
-	 * SSLEngine handshake if the underlying {@link Socket} is a secure
-	 * socket. Finally, after the connection has been established, the socket is
+	 * SSLEngine handshake if the underlying {@link Socket} is a secure socket.
+	 * Finally, after the connection has been established, the socket is
 	 * registered to the underlying {@link java.nio.channels.Selector}, with a
 	 * {@link SelectionKey} of OP_READ, signalling it is ready to read data.
 	 * 
@@ -183,13 +177,11 @@ public class TCPClient extends AbstractSelector {
 	 */
 	@Override
 	protected void connect(SelectionKey key) {
-		// Finish the connection. If the connection operation failed
-		// this will raise an IOException.
+		// Finish the connection. If the connection operation failed this will raise an IOException.
 		try {
 			// TCP_NODELAY should be called after we are ready to connect,
 			// otherwise the socket does not recognize the option.
-			sc.getSocket().setOption(StandardSocketOptions.TCP_NODELAY,
-					SocketProperties.getTCPNoDelay());
+			sc.getSocket().setOption(StandardSocketOptions.TCP_NODELAY, SocketProperties.getTCPNoDelay());
 			sc.disconnect();
 		} catch (IOException ioe) {
 			// Cancel the channel's registration with our selector
@@ -223,8 +215,7 @@ public class TCPClient extends AbstractSelector {
 	/**
 	 * This method overrides the default
 	 * {@link AbstractSelector#closeSocket(Socket)} method, to also stop this
-	 * client from running, as this client implementation only has one
-	 * associated {@link Socket}.
+	 * client from running, as this client implementation only has one associated {@link Socket}.
 	 * 
 	 * @param socket
 	 *            The Socket to be closed
@@ -240,4 +231,5 @@ public class TCPClient extends AbstractSelector {
 		// and close the socket
 		super.closeSocket(socket);
 	}
+
 }

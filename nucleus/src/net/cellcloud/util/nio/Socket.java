@@ -38,16 +38,16 @@ import java.nio.channels.SocketChannel;
 public interface Socket {
 
 	/**
-	 * Returns the underlying {@link SocketChannel}. This is done in order to
-	 * register the current socket with a {@link Selector}, as only the
-	 * {@link SocketChannel} implementation is allowed to be associated with a
-	 * {@link Selector}.
+	 * Returns the underlying {@link SocketChannel}.
+	 * This is done in order to register the current socket with a {@link Selector},
+	 * as only the {@link SocketChannel} implementation is allowed to be associated
+	 * with a {@link Selector}.
 	 * 
 	 * @return the underlying SocketChannel
 	 */
 	SocketChannel getSocket();
 
-	// ------------------ PASS-THROUGH IMPLEMENTATIONS ------------------------//
+	// ------------------ PASS-THROUGH IMPLEMENTATIONS ------------------------ //
 	/**
 	 * Pass-through implementation of
 	 * {@link SocketChannel#connect(SocketAddress remote)}
@@ -95,8 +95,8 @@ public interface Socket {
 	 * {@link SocketChannel#configureBlocking(boolean block)}
 	 * 
 	 * @param block
-	 *            If true then this channel will be placed in blocking mode; if
-	 *            false then it will be placed in non-blocking mode
+	 *            If true then this channel will be placed in blocking mode;
+	 *            if false then it will be placed in non-blocking mode
 	 * @return This selectable channel
 	 * @throws IOException
 	 *             Propagated exceptions from the underlying
@@ -142,7 +142,7 @@ public interface Socket {
 	void close() throws IOException;
 
 
-	// -------------------- SSL/TLS-SPECIFIC IMPLEMENTATIONS ------------------//
+	// -------------------- SSL/TLS-SPECIFIC IMPLEMENTATIONS ------------------ //
 
 	/**
 	 * Invalidate the current {@link javax.net.ssl.SSLSession}. This method

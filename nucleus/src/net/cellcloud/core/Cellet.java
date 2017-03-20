@@ -119,12 +119,12 @@ public abstract class Cellet extends AbstractCellet {
 	}
 
 	/**
-	 * 返回服务器当前的会话者清单。
+	 * 获得当前与服务有连接的终端的 Tag 。
 	 * 
-	 * @return
+	 * @return 返回当前与服务有连接的终端的 Tag 集合。
 	 */
-	protected Set<String> getTalkerList() {
-		return TalkService.getInstance().getTalkerList();
+	protected Set<String> getEndpointTagList() {
+		return TalkService.getInstance().getEndpointTagList();
 	}
 
 	/**

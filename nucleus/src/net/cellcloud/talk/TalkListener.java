@@ -2,7 +2,7 @@
 -----------------------------------------------------------------------------
 This source file is part of Cell Cloud.
 
-Copyright (c) 2009-2012 Cell Cloud Team (www.cellcloud.net)
+Copyright (c) 2009-2017 Cell Cloud Team (www.cellcloud.net)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -27,25 +27,44 @@ THE SOFTWARE.
 package net.cellcloud.talk;
 
 
-/** Talk 监听器。
+/**
+ * Talk 连接监听器。
  * 
- * @author Jiangwei Xu
+ * @author Ambrose Xu
+ * 
  */
 public interface TalkListener {
 
-	/** 与内核进行会话。
-	*/
+	/**
+	 * 当收到来自服务器的数据时该函数被调用。
+	 * 
+	 * @param identifier 该数据来源的 Cellet 的标识。
+	 * @param primitive 接收到的原语数据。
+	 */
 	public void dialogue(String identifier, Primitive primitive);
 
-	/** 与对端内核建立会话。
-	*/
+	/**
+	 * 当终端成功与指定的 Cellet 建立连接时该函数被调用。
+	 * 
+	 * @param identifier 建立连接的 Cellet 的标识。
+	 * @param tag Cellet 的内核标签。
+	 */
 	public void contacted(String identifier, String tag);
 
-	/** 与对端内核断开会话。
-	*/
+	/**
+	 * 当终端与 Cellet 的连接断开时该函数被调用。
+	 * 
+	 * @param identifier 断开连接的 Cellet 的标识。
+	 * @param tag Cellet 的内核标签。
+	 */
 	public void quitted(String identifier, String tag);
 
-	/** 发生错误。
+	/**
+	 * 当发生连接错误时该函数被调用。
+	 * 
+	 * @param tag 发生错误的内核标签。
+	 * @param failure 错误描述。
 	 */
 	public void failed(String tag, TalkServiceFailure failure);
+
 }

@@ -47,39 +47,67 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 /**
+ * WebSocket 协议的消息处理器。
  * 
- * @author Jiangwei Xu
+ * @author Ambrose Xu
  *
  */
 public class WebSocketMessageHandler implements MessageHandler {
 
+	/** Talk 协议键：包标签。 */
 	protected final static String TALK_PACKET_TAG = "tpt";
+	/** Talk 协议键：版本。 */
 	protected final static String TALK_PACKET_VERSION = "ver";
+	/** Talk 协议键：包数据。 */
 	public final static String TALK_PACKET = "packet";
 
+	/** Talk 协议包类型标签：询问。 */
 	protected final static String TPT_INTERROGATE = "interrogate";
+	/** Talk 协议包类型标签：校验。 */
 	protected final static String TPT_CHECK = "check";
+	/** Talk 协议包类型标签：请求 Cellet 。 */
 	protected final static String TPT_REQUEST = "request";
+	/** Talk 协议包类型标签：进行原语对话。 */
 	protected final static String TPT_DIALOGUE = "dialogue";
+	/** Talk 协议包类型标签：心跳。 */
 	protected final static String TPT_HEARTBEAT = "hb";
+	/** Talk 协议包类型标签：快速握手。 */
 	protected final static String TPT_QUICK = "quick";
 
+	/** Talk 服务核心。 */
 	private TalkServiceKernel service;
+	/** 数据处理任务列表。 */
 	private LinkedList<Task> taskList;
+	/** 任务数量计数器。 */
 	private AtomicInteger taskCounts;
 
+	/**
+	 * 构造函数。
+	 * 
+	 * @param service 指定服务核心。
+	 */
 	public WebSocketMessageHandler(TalkServiceKernel service) {
 		this.service = service;
 		this.taskList = new LinkedList<Task>();
 		this.taskCounts = new AtomicInteger(0);
 	}
 
+	/**
+	 * 闲置状态的任务数量。
+	 * 
+	 * @return 返回闲置状态的任务数量。
+	 */
 	public int numIdleTasks() {
 		synchronized (this.taskList) {
 			return this.taskList.size();
 		}
 	}
 
+	/**
+	 * 活跃状态的任务数量。
+	 * 
+	 * @return 返回活跃状态的任务数量。
+	 */
 	public int numActiveTasks() {
 		return this.taskCounts.get();
 	}
@@ -148,11 +176,23 @@ public class WebSocketMessageHandler implements MessageHandler {
 		// Nothing
 	}
 
+	/**
+	 * 处理数据对话。
+	 * 
+	 * @param data JSON 格式的数据。
+	 * @param session 当前数据的 Session 。
+	 */
 	private void processDialogue(JSONObject data, Session session) {
 		// 异步执行任务
 		this.service.executor.execute(this.borrowTask(data, session));
 	}
 
+	/**
+	 * 处理快速握手。
+	 * 
+	 * @param data JSON 格式的数据。
+	 * @param session 当前数据的 Session 。
+	 */
 	private void processQuick(JSONObject data, Session session) {
 		TalkServiceKernel.Certificate cert = this.service.getCertificate(session);
 		if (null == cert) {
@@ -217,6 +257,12 @@ public class WebSocketMessageHandler implements MessageHandler {
 		}
 	}
 
+	/**
+	 * 处理校验。
+	 * 
+	 * @param data JSON 格式的数据。
+	 * @param session 当前数据的 Session 。
+	 */
 	private void processCheck(JSONObject data, Session session) {
 		TalkServiceKernel.Certificate cert = this.service.getCertificate(session);
 		if (null == cert) {
@@ -268,6 +314,12 @@ public class WebSocketMessageHandler implements MessageHandler {
 		}
 	}
 
+	/**
+	 * 处理 Cellet 请求。
+	 * 
+	 * @param data JSON 格式的数据。
+	 * @param session 当前数据的 Session 。
+	 */
 	private void processRequest(JSONObject data, Session session) {
 		// {"tag": tag, "identifier": identifier}
 		try {
@@ -309,7 +361,14 @@ public class WebSocketMessageHandler implements MessageHandler {
 		}
 	}
 
-	private Task borrowTask(final JSONObject data, final Session session) {
+	/**
+	 * 从缓存中借出任务实例。
+	 * 
+	 * @param data 任务需要处理的 JSON 格式数据。
+	 * @param session 任务关联的会话。
+	 * @return
+	 */
+	private Task borrowTask(JSONObject data, Session session) {
 		Task task = null;
 
 		synchronized (this.taskList) {
@@ -328,6 +387,11 @@ public class WebSocketMessageHandler implements MessageHandler {
 		return task;
 	}
 
+	/**
+	 * 归还任务实例到缓存。
+	 * 
+	 * @param task 指定归还的任务实例。
+	 */
 	private void returnTask(Task task) {
 		task.data = null;
 		task.session = null;
@@ -340,13 +404,21 @@ public class WebSocketMessageHandler implements MessageHandler {
 	}
 
 	/**
+	 * 处理任务。
 	 * 
-	 * @author Jiangwei Xu
+	 * @author Ambrose Xu
+	 *
 	 */
 	protected class Task implements Runnable {
+
+		/** 数据。 */
 		protected JSONObject data;
+		/** 会话 Session 。 */
 		protected Session session;
 
+		/**
+		 * 构造函数。
+		 */
 		protected Task() {
 		}
 
@@ -368,5 +440,7 @@ public class WebSocketMessageHandler implements MessageHandler {
 			// 归还任务
 			returnTask(this);
 		}
+
 	}
+
 }
