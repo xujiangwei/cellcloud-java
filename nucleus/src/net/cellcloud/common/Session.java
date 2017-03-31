@@ -49,6 +49,9 @@ public class Session implements Comparable<Object> {
 
 	private ConcurrentHashMap<String, Object> attributes;
 
+	public int major = 2;
+	public int minor = 0;
+
 	public Session(MessageService service, InetSocketAddress address) {
 		this.id = Utils.generateSerialNumber();
 		this.timestamp = System.currentTimeMillis();

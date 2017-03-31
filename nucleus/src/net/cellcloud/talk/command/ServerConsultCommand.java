@@ -55,10 +55,10 @@ public final class ServerConsultCommand extends ServerCommand {
 		// 包格式：源标签|能力描述序列化数据
 
 		// 标签
-		String tag = Utils.bytes2String(this.packet.getSubsegment(0));
+		String tag = Utils.bytes2String(this.packet.getSegment(0));
 
 		// 能力描述
-		TalkCapacity capacity = TalkCapacity.deserialize(this.packet.getSubsegment(1));
+		TalkCapacity capacity = TalkCapacity.deserialize(this.packet.getSegment(1));
 
 		if (null == capacity) {
 			Logger.w(ServerConsultCommand.class, "Error talk capacity data format: tag=" + tag);
@@ -72,9 +72,9 @@ public final class ServerConsultCommand extends ServerCommand {
 
 		byte[] capdata = TalkCapacity.serialize(ret);
 
-		Packet response = new Packet(TalkDefinition.TPT_CONSULT, 4, 1, 0);
-		response.appendSubsegment(this.packet.getSubsegment(0));
-		response.appendSubsegment(capdata);
+		Packet response = new Packet(TalkDefinition.TPT_CONSULT, 4, this.session.major, this.session.minor);
+		response.appendSegment(this.packet.getSegment(0));
+		response.appendSegment(capdata);
 
 		byte[] data = Packet.pack(response);
 		if (null != data) {

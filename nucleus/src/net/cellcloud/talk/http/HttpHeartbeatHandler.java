@@ -120,7 +120,7 @@ public final class HttpHeartbeatHandler extends AbstractJSONHandler implements C
 					Packet packet = Packet.unpack(message.get());
 					if (null != packet) {
 						// 将包数据转为输入流进行反序列化
-						byte[] primData = packet.getSubsegment(0);
+						byte[] primData = packet.getSegment(0);
 						ByteArrayInputStream stream = new ByteArrayInputStream(primData);
 
 						// 反序列化
@@ -128,7 +128,7 @@ public final class HttpHeartbeatHandler extends AbstractJSONHandler implements C
 						prim.read(stream);
 
 						// 添加到数组
-						identifiers.add(Utils.bytes2String(packet.getSubsegment(1)));
+						identifiers.add(Utils.bytes2String(packet.getSegment(1)));
 						primitives.add(prim);
 					}
 				}

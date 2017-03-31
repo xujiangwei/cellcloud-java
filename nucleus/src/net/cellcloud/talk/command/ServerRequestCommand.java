@@ -54,16 +54,16 @@ public final class ServerRequestCommand extends ServerCommand {
 	public void execute() {
 		// 包格式：Cellet标识串|请求方标签
 
-		byte[] identifier = this.packet.getSubsegment(0);
-		byte[] talkTag = this.packet.getSubsegment(1);
+		byte[] identifier = this.packet.getSegment(0);
+		byte[] talkTag = this.packet.getSegment(1);
 
 		// 包格式：
 		// 成功：请求方标签|成功码|Cellet识别串|Cellet版本
 		// 失败：请求方标签|失败码
 
-		Packet packet = new Packet(TalkDefinition.TPT_REQUEST, 3, 1, 0);
+		Packet packet = new Packet(TalkDefinition.TPT_REQUEST, 3, this.session.major, this.session.minor);
 		// 请求方标签
-		packet.appendSubsegment(talkTag);
+		packet.appendSegment(talkTag);
 
 		// 请求 Cellet
 		TalkTracker tracker = this.service.processRequest(this.session,
@@ -73,15 +73,15 @@ public final class ServerRequestCommand extends ServerCommand {
 			Cellet cellet = tracker.getCellet(Utils.bytes2String(identifier));
 
 			// 成功码
-			packet.appendSubsegment(TalkDefinition.SC_SUCCESS);
+			packet.appendSegment(TalkDefinition.SC_SUCCESS);
 			// Cellet识别串
-			packet.appendSubsegment(identifier);
+			packet.appendSegment(identifier);
 			// Cellet版本
-			packet.appendSubsegment(Utils.string2Bytes(cellet.getFeature().getVersion().toString()));
+			packet.appendSegment(Utils.string2Bytes(cellet.getFeature().getVersion().toString()));
 		}
 		else {
 			// 失败码
-			packet.appendSubsegment(TalkDefinition.SC_FAILURE_NOCELLET);
+			packet.appendSegment(TalkDefinition.SC_FAILURE_NOCELLET);
 		}
 
 		// 打包数据

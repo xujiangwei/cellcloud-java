@@ -66,12 +66,16 @@ public final class ServerQuickCommand extends ServerCommand {
 	public void execute() {
 		// 包格式：明文|源标签|能力描述序列化数据|CelletIdentifiers
 
+		// 获得客户端包版本
+		this.session.major = this.packet.getMajorVersion();
+		this.session.minor = this.packet.getMinorVersion();
+
 		Certificate cert = this.service.getCertificate(this.session);
 		if (null == cert) {
 			return;
 		}
 
-		byte[] plaintext = this.packet.getSubsegment(0);
+		byte[] plaintext = this.packet.getSegment(0);
 		if (null == plaintext) {
 			return;
 		}
@@ -93,14 +97,14 @@ public final class ServerQuickCommand extends ServerCommand {
 		if (checkin) {
 			log.append(" checkin.");
 
-			byte[] tagBytes = this.packet.getSubsegment(1);
+			byte[] tagBytes = this.packet.getSegment(1);
 			String tag = Utils.bytes2String(tagBytes);
 
 			// 接受 Session 连接
 			this.service.acceptSession(this.session, tag);
 
 			// 能力描述
-			TalkCapacity capacity = TalkCapacity.deserialize(this.packet.getSubsegment(2));
+			TalkCapacity capacity = TalkCapacity.deserialize(this.packet.getSegment(2));
 			if (null == capacity) {
 				Logger.w(ServerQuickCommand.class, "Error talk capacity data format: tag=" + tag);
 				capacity = new TalkCapacity();
@@ -111,9 +115,9 @@ public final class ServerQuickCommand extends ServerCommand {
 
 			// 请求 Cellet
 			boolean request = false;
-			byte[][] identifiers = new byte[this.packet.getSubsegmentCount() - 3][];
-			for (int i = 3, size = this.packet.getSubsegmentCount(); i < size; ++i) {
-				byte[] identifier = this.packet.getSubsegment(i);
+			byte[][] identifiers = new byte[this.packet.numSegments() - 3][];
+			for (int i = 3, size = this.packet.numSegments(); i < size; ++i) {
+				byte[] identifier = this.packet.getSegment(i);
 
 				// 请求 Cellet
 				TalkTracker tracker = this.service.processRequest(this.session,
@@ -135,24 +139,24 @@ public final class ServerQuickCommand extends ServerCommand {
 			byte[] capdata = TalkCapacity.serialize(ret);
 
 			// 数据打包
-			Packet packet = new Packet(TalkDefinition.TPT_QUICK, 2, 1, 1);
+			Packet packet = new Packet(TalkDefinition.TPT_QUICK, 2, this.session.major, this.session.minor);
 			if (request) {
-				packet.appendSubsegment(TalkDefinition.SC_SUCCESS);
-				packet.appendSubsegment(Nucleus.getInstance().getTagAsString().getBytes());
-				packet.appendSubsegment(capdata);
+				packet.appendSegment(TalkDefinition.SC_SUCCESS);
+				packet.appendSegment(Nucleus.getInstance().getTagAsString().getBytes());
+				packet.appendSegment(capdata);
 				for (int i = 0; i < identifiers.length; ++i) {
 					byte[] identifier = identifiers[i];
 					if (null == identifier) {
 						break;
 					}
 
-					packet.appendSubsegment(identifier);
+					packet.appendSegment(identifier);
 				}
 			}
 			else {
-				packet.appendSubsegment(TalkDefinition.SC_FAILURE_NOCELLET);
-				packet.appendSubsegment(Nucleus.getInstance().getTagAsString().getBytes());
-				packet.appendSubsegment(capdata);
+				packet.appendSegment(TalkDefinition.SC_FAILURE_NOCELLET);
+				packet.appendSegment(Nucleus.getInstance().getTagAsString().getBytes());
+				packet.appendSegment(capdata);
 			}
 
 			byte[] data = Packet.pack(packet);

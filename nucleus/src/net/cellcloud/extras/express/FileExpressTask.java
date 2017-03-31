@@ -718,7 +718,7 @@ public final class FileExpressTask implements MessageHandler, Runnable {
 	private void postAuthCode(Session session) {
 		// 包格式：授权码
 		Packet packet = new Packet(FileExpressDefinition.PT_AUTH, 1, 1, 0);
-		packet.appendSubsegment(this.context.getAuthCode().getCode().getBytes());
+		packet.appendSegment(this.context.getAuthCode().getCode().getBytes());
 
 		byte[] data = Packet.pack(packet);
 		Message message = new Message(data);
@@ -728,8 +728,8 @@ public final class FileExpressTask implements MessageHandler, Runnable {
 	private void queryFile(Session session) {
 		// 包格式：授权码|文件名
 		Packet packet = new Packet(FileExpressDefinition.PT_ATTR, 2, 1, 0);
-		packet.appendSubsegment(this.context.getAuthCode().getCode().getBytes());
-		packet.appendSubsegment(Utils.string2Bytes(this.context.getFileName()));
+		packet.appendSegment(this.context.getAuthCode().getCode().getBytes());
+		packet.appendSegment(Utils.string2Bytes(this.context.getFileName()));
 
 		byte[] data = Packet.pack(packet);
 		Message message = new Message(data);
@@ -745,10 +745,10 @@ public final class FileExpressTask implements MessageHandler, Runnable {
 
 		// 包格式：授权码|文件名|文件长度|操作
 		Packet packet = new Packet(FileExpressDefinition.PT_BEGIN, 3, 1, 0);
-		packet.appendSubsegment(this.context.getAuthCode().getCode().getBytes());
-		packet.appendSubsegment(Utils.string2Bytes(this.context.getFileName()));
-		packet.appendSubsegment(Long.toString(this.context.getAttribute().size()).getBytes());
-		packet.appendSubsegment(Integer.toString(FileExpressContext.OP_DOWNLOAD).getBytes());
+		packet.appendSegment(this.context.getAuthCode().getCode().getBytes());
+		packet.appendSegment(Utils.string2Bytes(this.context.getFileName()));
+		packet.appendSegment(Long.toString(this.context.getAttribute().size()).getBytes());
+		packet.appendSegment(Integer.toString(FileExpressContext.OP_DOWNLOAD).getBytes());
 
 		byte[] data = Packet.pack(packet);
 		if (null != data) {
@@ -763,9 +763,9 @@ public final class FileExpressTask implements MessageHandler, Runnable {
 
 		// 包格式：授权码|文件名|文件操作起始位置
 		Packet packet = new Packet(FileExpressDefinition.PT_OFFER, 4, 1, 0);
-		packet.appendSubsegment(this.context.getAuthCode().getCode().getBytes());
-		packet.appendSubsegment(Utils.string2Bytes(this.context.getFileName()));
-		packet.appendSubsegment(Long.toString(this.progress).getBytes());
+		packet.appendSegment(this.context.getAuthCode().getCode().getBytes());
+		packet.appendSegment(Utils.string2Bytes(this.context.getFileName()));
+		packet.appendSegment(Long.toString(this.progress).getBytes());
 
 		byte[] data = Packet.pack(packet);
 		if (null != data) {
@@ -785,10 +785,10 @@ public final class FileExpressTask implements MessageHandler, Runnable {
 
 		// 包结构：授权码|文件名|文件长度|操作
 		Packet packet = new Packet(FileExpressDefinition.PT_END, 7, 1, 0);
-		packet.appendSubsegment(this.context.getAuthCode().getCode().getBytes());
-		packet.appendSubsegment(Utils.string2Bytes(this.context.getFileName()));
-		packet.appendSubsegment(Long.toString(this.context.getAttribute().size()).getBytes());
-		packet.appendSubsegment(Integer.toString(this.context.getOperate()).getBytes());
+		packet.appendSegment(this.context.getAuthCode().getCode().getBytes());
+		packet.appendSegment(Utils.string2Bytes(this.context.getFileName()));
+		packet.appendSegment(Long.toString(this.context.getAttribute().size()).getBytes());
+		packet.appendSegment(Integer.toString(this.context.getOperate()).getBytes());
 
 		byte[] data = Packet.pack(packet);
 		if (null != data) {
@@ -820,9 +820,9 @@ public final class FileExpressTask implements MessageHandler, Runnable {
 		// 发送数据回执
 		// 包格式：授权码|文件名|新数据进度
 		Packet packet = new Packet(FileExpressDefinition.PT_DATA_RECEIPT, 6, 1, 0);
-		packet.appendSubsegment(this.context.getAuthCode().getCode().getBytes());
-		packet.appendSubsegment(Utils.string2Bytes(this.context.getFileName()));
-		packet.appendSubsegment(Long.toString(this.progress).getBytes());
+		packet.appendSegment(this.context.getAuthCode().getCode().getBytes());
+		packet.appendSegment(Utils.string2Bytes(this.context.getFileName()));
+		packet.appendSegment(Long.toString(this.progress).getBytes());
 
 		byte[] data = Packet.pack(packet);
 		if (null != data) {
@@ -834,10 +834,10 @@ public final class FileExpressTask implements MessageHandler, Runnable {
 	private void beginUpload(Session session, ResultSet resultSet) {
 		// 包格式：授权码|文件名|文件长度|操作
 		Packet packet = new Packet(FileExpressDefinition.PT_BEGIN, 3, 1, 0);
-		packet.appendSubsegment(this.context.getAuthCode().getCode().getBytes());
-		packet.appendSubsegment(Utils.string2Bytes(this.context.getFileName()));
-		packet.appendSubsegment(Long.toString(resultSet.getLong(LocalFileStorage.LABEL_LONG_SIZE)).getBytes());
-		packet.appendSubsegment(Integer.toString(FileExpressContext.OP_UPLOAD).getBytes());
+		packet.appendSegment(this.context.getAuthCode().getCode().getBytes());
+		packet.appendSegment(Utils.string2Bytes(this.context.getFileName()));
+		packet.appendSegment(Long.toString(resultSet.getLong(LocalFileStorage.LABEL_LONG_SIZE)).getBytes());
+		packet.appendSegment(Integer.toString(FileExpressContext.OP_UPLOAD).getBytes());
 
 		byte[] data = Packet.pack(packet);
 		if (null != data) {
@@ -856,10 +856,10 @@ public final class FileExpressTask implements MessageHandler, Runnable {
 	private void endUpload(Session session) {
 		// 包结构：授权码|文件名|文件长度|操作
 		Packet packet = new Packet(FileExpressDefinition.PT_END, 7, 1, 0);
-		packet.appendSubsegment(this.context.getAuthCode().getCode().getBytes());
-		packet.appendSubsegment(Utils.string2Bytes(this.context.getFileName()));
-		packet.appendSubsegment(Long.toString(this.context.getAttribute().size()).getBytes());
-		packet.appendSubsegment(Integer.toString(this.context.getOperate()).getBytes());
+		packet.appendSegment(this.context.getAuthCode().getCode().getBytes());
+		packet.appendSegment(Utils.string2Bytes(this.context.getFileName()));
+		packet.appendSegment(Long.toString(this.context.getAttribute().size()).getBytes());
+		packet.appendSegment(Integer.toString(this.context.getOperate()).getBytes());
 
 		byte[] data = Packet.pack(packet);
 		if (null != data) {
@@ -880,11 +880,11 @@ public final class FileExpressTask implements MessageHandler, Runnable {
 			long end = this.progress + bytes.length;
 
 			Packet packet = new Packet(FileExpressDefinition.PT_DATA, 5, 1, 0);
-			packet.appendSubsegment(this.context.getAuthCode().getCode().getBytes());
-			packet.appendSubsegment(Utils.string2Bytes(this.context.getFileName()));
-			packet.appendSubsegment(Long.toString(start).getBytes());
-			packet.appendSubsegment(Long.toString(end).getBytes());
-			packet.appendSubsegment(bytes);
+			packet.appendSegment(this.context.getAuthCode().getCode().getBytes());
+			packet.appendSegment(Utils.string2Bytes(this.context.getFileName()));
+			packet.appendSegment(Long.toString(start).getBytes());
+			packet.appendSegment(Long.toString(end).getBytes());
+			packet.appendSegment(bytes);
 
 			byte[] data = Packet.pack(packet);
 			if (null != data) {
@@ -922,7 +922,7 @@ public final class FileExpressTask implements MessageHandler, Runnable {
 				&& tag[2] == FileExpressDefinition.PT_DATA_RECEIPT[2]
 				&& tag[3] == FileExpressDefinition.PT_DATA_RECEIPT[3]) {
 				// 包格式：文件名|数据进度
-				if (packet.getSubsegmentCount() < 2) {
+				if (packet.numSegments() < 2) {
 					// 包格式错误
 					this.context.errorCode = FileExpressContext.EC_PACKET_ERROR;
 					if (null != this.listener) {
@@ -942,7 +942,7 @@ public final class FileExpressTask implements MessageHandler, Runnable {
 				&& tag[2] == FileExpressDefinition.PT_DATA[2]
 				&& tag[3] == FileExpressDefinition.PT_DATA[3]) {
 				// 包格式：授权码|文件名|数据起始位|数据结束位|数据
-				if (packet.getSubsegmentCount() < 5) {
+				if (packet.numSegments() < 5) {
 					// 包格式错误
 					this.context.errorCode = FileExpressContext.EC_PACKET_ERROR;
 					if (null != this.listener) {
@@ -955,11 +955,11 @@ public final class FileExpressTask implements MessageHandler, Runnable {
 				}
 
 				// 检查数据长度
-				String szStart = new String(packet.getSubsegment(2));
+				String szStart = new String(packet.getSegment(2));
 				long start = Long.parseLong(szStart);
-				String szEnd = new String(packet.getSubsegment(3));
+				String szEnd = new String(packet.getSegment(3));
 				long end = Long.parseLong(szEnd);
-				this.dataCache = packet.getSubsegment(4);
+				this.dataCache = packet.getSegment(4);
 				if (end - start == this.dataCache.length) {
 					this.progress = start;
 					this.state = EXPRESS_STATE_DATA;
@@ -981,7 +981,7 @@ public final class FileExpressTask implements MessageHandler, Runnable {
 				&& tag[2] == FileExpressDefinition.PT_END[2]
 				&& tag[3] == FileExpressDefinition.PT_END[3]) {
 				// 包格式：文件名|文件长度
-				if (packet.getSubsegmentCount() < 2) {
+				if (packet.numSegments() < 2) {
 					// 包格式错误
 					this.context.errorCode = FileExpressContext.EC_PACKET_ERROR;
 					if (null != this.listener) {
@@ -1001,7 +1001,7 @@ public final class FileExpressTask implements MessageHandler, Runnable {
 				&& tag[2] == FileExpressDefinition.PT_BEGIN[2]
 				&& tag[3] == FileExpressDefinition.PT_BEGIN[3]) {
 				// 包格式：文件名|文件长度
-				if (packet.getSubsegmentCount() < 2) {
+				if (packet.numSegments() < 2) {
 					// 包格式错误
 					this.context.errorCode = FileExpressContext.EC_PACKET_ERROR;
 					if (null != this.listener) {
@@ -1022,7 +1022,7 @@ public final class FileExpressTask implements MessageHandler, Runnable {
 				&& tag[2] == FileExpressDefinition.PT_ATTR[2]
 				&& tag[3] == FileExpressDefinition.PT_ATTR[3]) {
 				// 包格式：文件名|属性序列
-				if (packet.getSubsegmentCount() < 2) {
+				if (packet.numSegments() < 2) {
 					// 包格式错误
 					this.context.errorCode = FileExpressContext.EC_PACKET_ERROR;
 					if (null != this.listener) {
@@ -1035,9 +1035,9 @@ public final class FileExpressTask implements MessageHandler, Runnable {
 					return;
 				}
 
-				String fileName = Utils.bytes2String(packet.getSubsegment(0));
+				String fileName = Utils.bytes2String(packet.getSegment(0));
 				if (this.context.getFileName().equals(fileName)) {
-					FileAttribute attr = new FileAttribute(packet.getSubsegment(1));
+					FileAttribute attr = new FileAttribute(packet.getSegment(1));
 					this.context.setAttribute(attr);
 					// 变更状态
 					this.state = EXPRESS_STATE_PREPARE;
@@ -1060,7 +1060,7 @@ public final class FileExpressTask implements MessageHandler, Runnable {
 				&& tag[2] == FileExpressDefinition.PT_AUTH[2]
 				&& tag[3] == FileExpressDefinition.PT_AUTH[3]) {
 				// 权限判定
-				byte[] auth = packet.getSubsegment(0);
+				byte[] auth = packet.getSegment(0);
 				this.context.getAuthCode().changeAuth(auth);
 
 				boolean authorized = false;

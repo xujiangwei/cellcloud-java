@@ -180,10 +180,10 @@ public class HttpSpeaker implements Speakable {
 
 				int counts = 0;
 				while (!this.client.isStarted()) {
-					Thread.sleep(10);
+					Thread.sleep(100L);
 
 					++counts;
-					if (counts > 150) {
+					if (counts > 15) {
 						break;
 					}
 				}

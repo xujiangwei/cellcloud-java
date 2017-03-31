@@ -280,13 +280,13 @@ public final class FileExpress implements MessageHandler, ExpressTaskListener {
 
 	private void responseData(final Session session, final Packet packet) {
 		// 包格式：授权码|文件名|数据起始位|数据结束位|数据
-		if (packet.getSubsegmentCount() != 5) {
+		if (packet.numSegments() != 5) {
 			Logger.w(this.getClass(), "Packet format error in responseData()");
 			return;
 		}
 
 		// 获取授权码
-		String authCode = Utils.bytes2String(packet.getSubsegment(0));
+		String authCode = Utils.bytes2String(packet.getSegment(0));
 
 		// 验证 Session
 		if (false == checkSession(session, authCode)) {
@@ -294,18 +294,18 @@ public final class FileExpress implements MessageHandler, ExpressTaskListener {
 			return;
 		}
 
-		String filename = Utils.bytes2String(packet.getSubsegment(1));
-		long start = Long.parseLong(Utils.bytes2String(packet.getSubsegment(2)));
-		long end = Long.parseLong(Utils.bytes2String(packet.getSubsegment(3)));
-		byte[] fileData = packet.getSubsegment(4);
+		String filename = Utils.bytes2String(packet.getSegment(1));
+		long start = Long.parseLong(Utils.bytes2String(packet.getSegment(2)));
+		long end = Long.parseLong(Utils.bytes2String(packet.getSegment(3)));
+		byte[] fileData = packet.getSegment(4);
 
 		// 保存数据
 		SessionRecord record = this.sessionRecords.get(session.getId());
 		if (record.writeFile(filename, fileData, start, end - start) > 0) {
 			// 包格式：文件名|数据进度
 			Packet response = new Packet(FileExpressDefinition.PT_DATA_RECEIPT, 6, 1, 0);
-			response.appendSubsegment(packet.getSubsegment(1));
-			response.appendSubsegment(packet.getSubsegment(3));
+			response.appendSegment(packet.getSegment(1));
+			response.appendSegment(packet.getSegment(3));
 			byte[] data = Packet.pack(packet);
 			Message message = new Message(data);
 			session.write(message);
@@ -326,13 +326,13 @@ public final class FileExpress implements MessageHandler, ExpressTaskListener {
 
 	private void responseDataReceipt(final Session session, final Packet packet) {
 		// 包格式：授权码|文件名|新数据进度
-		if (packet.getSubsegmentCount() < 3) {
+		if (packet.numSegments() < 3) {
 			Logger.w(this.getClass(), "Packet format error in responseDataReceipt()");
 			return;
 		}
 
 		// 获取授权码
-		String authCode = Utils.bytes2String(packet.getSubsegment(0));
+		String authCode = Utils.bytes2String(packet.getSegment(0));
 
 		// 验证 Session
 		if (false == checkSession(session, authCode)) {
@@ -342,8 +342,8 @@ public final class FileExpress implements MessageHandler, ExpressTaskListener {
 
 		SessionRecord record = this.sessionRecords.get(session.getId());
 
-		String filename = Utils.bytes2String(packet.getSubsegment(1));
-		long offset = Long.parseLong(Utils.bytes2String(packet.getSubsegment(2)));
+		String filename = Utils.bytes2String(packet.getSegment(1));
+		long offset = Long.parseLong(Utils.bytes2String(packet.getSegment(2)));
 		// 读文件
 		byte[] fileData = record.readFile(filename, offset, FileExpressDefinition.CHUNK_SIZE);
 		if (null != fileData) {
@@ -351,11 +351,11 @@ public final class FileExpress implements MessageHandler, ExpressTaskListener {
 
 			// 包格式：授权码|文件名|数据起始位|数据结束位|数据
 			Packet response = new Packet(FileExpressDefinition.PT_DATA, 5, 1, 0);
-			response.appendSubsegment(packet.getSubsegment(0));
-			response.appendSubsegment(packet.getSubsegment(1));
-			response.appendSubsegment(Utils.string2Bytes(Long.toString(offset)));
-			response.appendSubsegment(Utils.string2Bytes(Long.toString(end)));
-			response.appendSubsegment(fileData);
+			response.appendSegment(packet.getSegment(0));
+			response.appendSegment(packet.getSegment(1));
+			response.appendSegment(Utils.string2Bytes(Long.toString(offset)));
+			response.appendSegment(Utils.string2Bytes(Long.toString(end)));
+			response.appendSegment(fileData);
 			byte[] data = Packet.pack(response);
 			Message message = new Message(data);
 			session.write(message);
@@ -371,8 +371,8 @@ public final class FileExpress implements MessageHandler, ExpressTaskListener {
 
 			// 包格式：文件名|文件长度
 			Packet response = new Packet(FileExpressDefinition.PT_END, 7, 1, 0);
-			response.appendSubsegment(packet.getSubsegment(0));
-			response.appendSubsegment(Utils.string2Bytes(Long.toString(ctx.getAttribute().size())));
+			response.appendSegment(packet.getSegment(0));
+			response.appendSegment(Utils.string2Bytes(Long.toString(ctx.getAttribute().size())));
 			byte[] data = Packet.pack(response);
 			Message message = new Message(data);
 			session.write(message);
@@ -381,13 +381,13 @@ public final class FileExpress implements MessageHandler, ExpressTaskListener {
 
 	private void responseBegin(final Session session, final Packet packet) {
 		// 包格式：授权码|文件名|文件长度|操作
-		if (packet.getSubsegmentCount() < 4) {
+		if (packet.numSegments() < 4) {
 			Logger.w(this.getClass(), "Packet format error in responseBegin()");
 			return;
 		}
 
 		// 获取授权码
-		String authCode = Utils.bytes2String(packet.getSubsegment(0));
+		String authCode = Utils.bytes2String(packet.getSegment(0));
 
 		// 验证 Session
 		if (false == checkSession(session, authCode)) {
@@ -399,15 +399,15 @@ public final class FileExpress implements MessageHandler, ExpressTaskListener {
 		FileExpressServoContext ctx = this.servoContexts.get(authCode);
 
 		// 准备文件
-		String filename = Utils.bytes2String(packet.getSubsegment(1));
-		long fileSize = Long.parseLong(Utils.bytes2String(packet.getSubsegment(2)));
-		int operate = Integer.parseInt(Utils.bytes2String(packet.getSubsegment(3)));
+		String filename = Utils.bytes2String(packet.getSegment(1));
+		long fileSize = Long.parseLong(Utils.bytes2String(packet.getSegment(2)));
+		int operate = Integer.parseInt(Utils.bytes2String(packet.getSegment(3)));
 		FileExpressContext fec = record.prepareFile(authCode, ctx.getAttribute(filename), filename, fileSize, operate);
 
 		// 包格式：文件名|文件长度
 		Packet response = new Packet(FileExpressDefinition.PT_BEGIN, 3, 1, 0);
-		response.appendSubsegment(packet.getSubsegment(1));
-		response.appendSubsegment(packet.getSubsegment(2));
+		response.appendSegment(packet.getSegment(1));
+		response.appendSegment(packet.getSegment(2));
 		byte[] data = Packet.pack(response);
 		Message message = new Message(data);
 		session.write(message);
@@ -418,13 +418,13 @@ public final class FileExpress implements MessageHandler, ExpressTaskListener {
 
 	private void responseEnd(final Session session, final Packet packet) {
 		// 包结构：授权码|文件名|文件长度|操作
-		if (packet.getSubsegmentCount() < 4) {
+		if (packet.numSegments() < 4) {
 			Logger.w(this.getClass(), "Packet format error in responseEnd()");
 			return;
 		}
 
 		// 获取授权码
-		String authCode = Utils.bytes2String(packet.getSubsegment(0));
+		String authCode = Utils.bytes2String(packet.getSegment(0));
 
 		// 验证 Session
 		if (false == checkSession(session, authCode)) {
@@ -441,7 +441,7 @@ public final class FileExpress implements MessageHandler, ExpressTaskListener {
 		}
 
 		// 提取文件名
-		String filename = Utils.bytes2String(packet.getSubsegment(1));
+		String filename = Utils.bytes2String(packet.getSegment(1));
 
 		// 关闭对应的记录
 		SessionRecord record = this.sessionRecords.get(session.getId());
@@ -451,8 +451,8 @@ public final class FileExpress implements MessageHandler, ExpressTaskListener {
 		if (ctx.getOperate() == FileExpressContext.OP_UPLOAD) {
 			// 包格式：文件名|文件长度
 			Packet response = new Packet(FileExpressDefinition.PT_END, 7, 1, 0);
-			response.appendSubsegment(packet.getSubsegment(1));
-			response.appendSubsegment(packet.getSubsegment(2));
+			response.appendSegment(packet.getSegment(1));
+			response.appendSegment(packet.getSegment(2));
 			byte[] data = Packet.pack(response);
 			Message message = new Message(data);
 			session.write(message);
@@ -464,13 +464,13 @@ public final class FileExpress implements MessageHandler, ExpressTaskListener {
 
 	private void responseOffer(final Session session, final Packet packet) {
 		// 包格式：授权码|文件名|文件操作起始位置
-		if (packet.getSubsegmentCount() < 3) {
+		if (packet.numSegments() < 3) {
 			Logger.w(this.getClass(), "Packet format error in responseOffer()");
 			return;
 		}
 
 		// 获取授权码
-		String authCode = Utils.bytes2String(packet.getSubsegment(0));
+		String authCode = Utils.bytes2String(packet.getSegment(0));
 
 		// 验证 Session
 		if (false == checkSession(session, authCode)) {
@@ -482,8 +482,8 @@ public final class FileExpress implements MessageHandler, ExpressTaskListener {
 
 		// 包格式：授权码|文件名|数据起始位|数据结束位|数据
 
-		String filename = Utils.bytes2String(packet.getSubsegment(1));
-		long offset = Long.parseLong(Utils.bytes2String(packet.getSubsegment(2)));
+		String filename = Utils.bytes2String(packet.getSegment(1));
+		long offset = Long.parseLong(Utils.bytes2String(packet.getSegment(2)));
 		byte[] fileData = record.readFile(filename, offset, FileExpressDefinition.CHUNK_SIZE);
 		if (null == fileData) {
 			Logger.e(this.getClass(),
@@ -494,11 +494,11 @@ public final class FileExpress implements MessageHandler, ExpressTaskListener {
 		long end = offset + fileData.length;
 
 		Packet response = new Packet(FileExpressDefinition.PT_OFFER, 3, 1, 0);
-		response.appendSubsegment(packet.getSubsegment(0));
-		response.appendSubsegment(packet.getSubsegment(1));
-		response.appendSubsegment(packet.getSubsegment(2));
-		response.appendSubsegment(Utils.string2Bytes(Long.toString(end)));
-		response.appendSubsegment(fileData);
+		response.appendSegment(packet.getSegment(0));
+		response.appendSegment(packet.getSegment(1));
+		response.appendSegment(packet.getSegment(2));
+		response.appendSegment(Utils.string2Bytes(Long.toString(end)));
+		response.appendSegment(fileData);
 
 		byte[] data = Packet.pack(response);
 		if (data != null) {
@@ -509,13 +509,13 @@ public final class FileExpress implements MessageHandler, ExpressTaskListener {
 
 	private void responseAttribute(final Session session, final Packet packet) {
 		// 包格式：授权码|文件名
-		if (packet.getSubsegmentCount() != 2) {
+		if (packet.numSegments() != 2) {
 			Logger.w(this.getClass(), "Packet format error in responseAttribute()");
 			return;
 		}
 
 		// 获取授权码
-		String authCode = Utils.bytes2String(packet.getSubsegment(0));
+		String authCode = Utils.bytes2String(packet.getSegment(0));
 
 		// 验证 Session
 		if (false == checkSession(session, authCode)) {
@@ -528,15 +528,15 @@ public final class FileExpress implements MessageHandler, ExpressTaskListener {
 			return;
 		}
 
-		String filename = Utils.bytes2String(packet.getSubsegment(1));
+		String filename = Utils.bytes2String(packet.getSegment(1));
 
 		// 包格式：文件名|属性序列
 		FileAttribute attr = servoctx.getAttribute(filename);
 		byte[] attrseri = attr.serialize();
 
 		Packet response = new Packet(FileExpressDefinition.PT_ATTR, 2, 1, 0);
-		response.appendSubsegment(packet.getSubsegment(1));
-		response.appendSubsegment(attrseri);
+		response.appendSegment(packet.getSegment(1));
+		response.appendSegment(attrseri);
 		byte[] data = Packet.pack(response);
 		if (null != data) {
 			Message message = new Message(data);
@@ -546,7 +546,7 @@ public final class FileExpress implements MessageHandler, ExpressTaskListener {
 
 	private void authenticate(final Session session, final Packet packet) {
 		// 包格式：授权码
-		byte[] authCode = packet.getSubsegment(0);
+		byte[] authCode = packet.getSegment(0);
 
 		if (null == authCode) {
 			// 包格式错误
@@ -594,10 +594,10 @@ public final class FileExpress implements MessageHandler, ExpressTaskListener {
 				break;
 			}
 
-			response.appendSubsegment(cap);
+			response.appendSegment(cap);
 		}
 		else {
-			response.appendSubsegment(FileExpressDefinition.AUTH_NOACCESS);
+			response.appendSegment(FileExpressDefinition.AUTH_NOACCESS);
 		}
 
 		// 发送响应包

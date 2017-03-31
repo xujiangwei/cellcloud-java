@@ -39,13 +39,13 @@ public final class Version {
 	public static final int MINOR = 6;
 
 	/// 修订号
-	public static final int REVISION = 8;
+	public static final int REVISION = 9;
 
 	/// 版本名
 	public static final String NAME = "Xi";
 
 	/// 版本串号
-	public static final int VERSION_NUMBER = 150;
+	public static final int VERSION_NUMBER = 160;
 
 	/// 是否调试模式
 	public static boolean DEBUG = true;

@@ -133,10 +133,24 @@ public final class Cryptology {
 		return out;
 	}
 
+	/**
+	 * 使用 RC4 算法进行加密。
+	 * 
+	 * @param plaintext 明文。
+	 * @param key 密钥。
+	 * @return 返回加密后的密文。
+	 */
 	public byte[] encryptWithRC4(byte[] plaintext, byte[] key) {
 		return RC4.encrypt(plaintext, key);
 	}
 
+	/**
+	 * 使用 RC4 算法进行解密。
+	 * 
+	 * @param ciphertext 密文。
+	 * @param key 密钥。
+	 * @return 返回解密后的明文。
+	 */
 	public byte[] decryptWithRC4(byte[] ciphertext, byte[] key) {
 		return RC4.decrypt(ciphertext, key);
 	}
@@ -188,8 +202,6 @@ public final class Cryptology {
 		return bytes;
 	}
 
-	/** 生成 MD5 散列码。
-	 */
 	/**
 	 * 使用 MD5 算法生成数据摘要。
 	 * 
@@ -235,7 +247,8 @@ public final class Cryptology {
 		return result;
 	}
 
-	/*public static void main(String[] args) {
+	/* Just for test
+	public static void main(String[] args) {
 		String text = "这是一段测试文本，来自 shixinyun.com @ 2016.12.22";
 		byte[] srcText = text.getBytes(Charset.forName("UTF-8"));
 		byte[] key = "abc_091#".getBytes();
@@ -288,5 +301,7 @@ public final class Cryptology {
 		d = System.currentTimeMillis() - time;
 		System.out.println("decryptWithRC4: " + d + " ms");
 		System.out.println("content: " + new String(plaintext, Charset.forName("UTF-8")));
-	}*/
+	}
+	*/
+
 }

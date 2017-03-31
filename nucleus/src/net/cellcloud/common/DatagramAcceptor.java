@@ -2,7 +2,7 @@
 -----------------------------------------------------------------------------
 This source file is part of Cell Cloud.
 
-Copyright (c) 2009-2016 Cell Cloud Team (www.cellcloud.net)
+Copyright (c) 2009-2017 Cell Cloud Team (www.cellcloud.net)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -45,42 +45,60 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
 /**
- * 数据报适配器。
+ * 数据报协议接收器。
  * 
  * @author Ambrose Xu
+ * 
  */
 public class DatagramAcceptor extends MessageService implements MessageAcceptor {
 
+	/** Socket 绑定地址。 */
 	private InetSocketAddress socketAddress = null;
 
-	// 会话超期时间，单位：毫秒
+	/** 会话超期时间（毫秒），默认 10 分钟。 */
 	private long sessionExpired = 10L * 60L * 1000L;
+
+	/** 超期检查定时器。 */
 	private Timer expiredTimer;
 
-	// 30 秒
+	/** Socket 等待超时（毫秒），默认 30 秒。 */
 	private int soTimeout = 30000;
 
-	// 块大小
+	/** 读数据的缓存块大小（字节），默认 16 KB。 */
 	private int block = 16 * 1024;
 
+	/** UDP 绑定 Socket 。 */
 	private DatagramSocket udpSocket;
 
-	// 数据分发线程
+	/** 数据分发处理线程。 */
 	private LoopDispatchThread mainThread;
 
+	/** 线程池执行器。 */
 	private ExecutorService executor = null;
+	/** 最大并发数据处理线程数，默认 4 。 */
 	private int maxThreads = 4;
+	/** 当前活跃线程数量。 */
 	private AtomicInteger numThreads = new AtomicInteger(0);
 
-	// Key: IP:Port
+	/** 会话 "IP:Port" 键对应的 Session 实例。 */
 	private ConcurrentHashMap<String, DatagramAcceptorSession> sessionMap;
+	/** 会话 ID 对应的 Sesson 实例。 */
 	private ConcurrentHashMap<Long, DatagramAcceptorSession> idSessionMap;
 
+	/** 写数据队列。 */
 	private LinkedList<Message> udpWriteQueue;
+	/** 写数据队列依次对应的 Session 队列。 */
 	private LinkedList<DatagramAcceptorSession> udpWriteSessionQueue;
+	/** 写数据间隔。 */
 	private long writeInterval;
+	/** 最近一次写数据时间戳。 */
 	private AtomicLong lastWriting;
 
+	/**
+	 * 构造函数。
+	 * 
+	 * @param sessionExpired
+	 */
 	public DatagramAcceptor(long sessionExpired) {
 		super();
 		this.sessionExpired = sessionExpired;

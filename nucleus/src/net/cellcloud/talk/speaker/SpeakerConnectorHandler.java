@@ -196,7 +196,7 @@ public final class SpeakerConnectorHandler implements MessageHandler {
 			&& TalkDefinition.TPT_CHECK[3] == tag[3]) {
 
 			// 记录标签
-			byte[] rtag = packet.getSubsegment(1);
+			byte[] rtag = packet.getSegment(1);
 			this.speaker.recordTag(Utils.bytes2String(rtag));
 
 			// 进行协商
@@ -205,7 +205,8 @@ public final class SpeakerConnectorHandler implements MessageHandler {
 		else if (TalkDefinition.TPT_INTERROGATE[2] == tag[2]
 			&& TalkDefinition.TPT_INTERROGATE[3] == tag[3]) {
 
-			if (packet.getMajorVersion() == 1 && packet.getMinorVersion() == 1) {
+			if (packet.getMajorVersion() >= 2
+				|| (packet.getMajorVersion() == 1 && packet.getMinorVersion() >= 1)) {
 				// 使用 QUICK 进行握手
 				this.speaker.respondQuick(packet, session);
 			}

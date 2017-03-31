@@ -912,7 +912,7 @@ public final class TalkServiceKernel implements Service, SpeakerDelegate {
 					}
 
 					// 打包
-					message = this.packetDialogue(cellet, primitive, (session instanceof WebSocketSession), note);
+					message = this.packetDialogue(cellet, primitive, session, note);
 
 					if (null != message) {
 						session.write(message);
@@ -1278,8 +1278,8 @@ public final class TalkServiceKernel implements Service, SpeakerDelegate {
 		if (null != this.speakerMap) {
 			Speaker speaker = this.speakerMap.get(identifier);
 			if (null != speaker) {
-				Packet packet = new Packet(TalkDefinition.TPT_PROXY, 20, 1, 0);
-				packet.appendSubsegment(Utils.string2Bytes(data.toString()));
+				Packet packet = new Packet(TalkDefinition.TPT_PROXY, 20, 2, 0);
+				packet.appendSegment(Utils.string2Bytes(data.toString()));
 				speaker.pass(Packet.pack(packet));
 				return true;
 			}
@@ -2199,10 +2199,10 @@ public final class TalkServiceKernel implements Service, SpeakerDelegate {
 
 		byte[] ciphertext = Cryptology.getInstance().simpleEncrypt(text.getBytes(), key.getBytes());
 
-		// 使用 1.1 版包结构，支持 QUICK 快速握手
+		// 使用 1.1 版包结构，让客户端使用 QUICK 快速握手
 		Packet packet = new Packet(TalkDefinition.TPT_INTERROGATE, 1, 1, 1);
-		packet.appendSubsegment(ciphertext);
-		packet.appendSubsegment(key.getBytes());
+		packet.appendSegment(ciphertext);
+		packet.appendSegment(key.getBytes());
 
 		byte[] data = Packet.pack(packet);
 		if (null != data) {
@@ -2219,14 +2219,14 @@ public final class TalkServiceKernel implements Service, SpeakerDelegate {
 	 * 
 	 * @param cellet 源 Cellet 。
 	 * @param primitive 源原语。
-	 * @param jsonFormat 是否使用 JSON 格式。
+	 * @param session 目标 Session 。
 	 * @param note 数据包注解。
 	 * @return 返回打包的 {@link net.cellcloud.common.Message} 格式数据。
 	 */
-	private Message packetDialogue(Cellet cellet, Primitive primitive, boolean jsonFormat, String note) {
+	private Message packetDialogue(Cellet cellet, Primitive primitive, Session session, String note) {
 		Message message = null;
 
-		if (jsonFormat) {
+		if (session instanceof WebSocketSession) {
 			try {
 				JSONObject primJson = new JSONObject();
 				PrimitiveSerializer.write(primJson, primitive);
@@ -2255,11 +2255,11 @@ public final class TalkServiceKernel implements Service, SpeakerDelegate {
 			ByteArrayOutputStream stream = primitive.write();
 
 			// 封装数据包
-			Packet packet = new Packet(TalkDefinition.TPT_DIALOGUE, 99, 1, 0);
-			packet.appendSubsegment(stream.toByteArray());
-			packet.appendSubsegment(Utils.string2Bytes(cellet.getFeature().getIdentifier()));
+			Packet packet = new Packet(TalkDefinition.TPT_DIALOGUE, 99, session.major, session.minor);
+			packet.appendSegment(stream.toByteArray());
+			packet.appendSegment(Utils.string2Bytes(cellet.getFeature().getIdentifier()));
 			if (null != note) {
-				packet.appendSubsegment(Utils.string2Bytes(note));
+				packet.appendSegment(Utils.string2Bytes(note));
 			}
 
 			// 打包数据

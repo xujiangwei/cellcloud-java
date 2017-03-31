@@ -57,17 +57,21 @@ public final class ServerCheckCommand extends ServerCommand {
 	public void execute() {
 		// 包格式：原文
 
+		// 获得客户端包版本
+		this.session.major = this.packet.getMajorVersion();
+		this.session.minor = this.packet.getMinorVersion();
+
 		Certificate cert = this.service.getCertificate(this.session);
 		if (null == cert) {
 			return;
 		}
 
-		byte[] plaintext = this.packet.getSubsegment(0);
+		byte[] plaintext = this.packet.getSegment(0);
 		if (null == plaintext) {
 			return;
 		}
 
-		byte[] tag = this.packet.getSubsegment(1);
+		byte[] tag = this.packet.getSegment(1);
 
 		boolean checkin = false;
 		String pt = new String(plaintext, Charset.forName("UTF-8"));
@@ -90,9 +94,9 @@ public final class ServerCheckCommand extends ServerCommand {
 			// 包格式：成功码|内核标签
 
 			// 数据打包
-			Packet packet = new Packet(TalkDefinition.TPT_CHECK, 2, 1, 0);
-			packet.appendSubsegment(TalkDefinition.SC_SUCCESS);
-			packet.appendSubsegment(Nucleus.getInstance().getTagAsString().getBytes());
+			Packet packet = new Packet(TalkDefinition.TPT_CHECK, 2, this.session.major, this.session.minor);
+			packet.appendSegment(TalkDefinition.SC_SUCCESS);
+			packet.appendSegment(Nucleus.getInstance().getTagAsString().getBytes());
 
 			byte[] data = Packet.pack(packet);
 			if (null != data) {

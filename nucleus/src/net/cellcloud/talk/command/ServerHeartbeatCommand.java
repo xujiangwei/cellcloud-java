@@ -58,7 +58,7 @@ public final class ServerHeartbeatCommand extends ServerCommand {
 	public void execute() {
 		// 更新时间戳成功，回送心跳包
 		if (this.service.updateSessionHeartbeat(this.session)) {
-			Packet packet = new Packet(TalkDefinition.TPT_HEARTBEAT, 9, 1, 0);
+			Packet packet = new Packet(TalkDefinition.TPT_HEARTBEAT, 9, this.session.major, this.session.minor);
 			byte[] data = Packet.pack(packet);
 			Message message = new Message(data);
 			this.session.write(message);

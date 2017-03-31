@@ -28,6 +28,8 @@ package net.cellcloud.talk;
 
 import java.nio.charset.Charset;
 
+import net.cellcloud.Version;
+
 /**
  * 会话能力描述类。
  * 
@@ -40,7 +42,7 @@ public final class TalkCapacity {
 	private int version = 3;
 
 	/** 内核的版本串号。 */
-	private int versionNumber = 150;
+	private int versionNumber = Version.VERSION_NUMBER;
 
 	/** 是否为加密会话。 */
 	public boolean secure = false;
@@ -111,7 +113,7 @@ public final class TalkCapacity {
 			this.versionNumber = 130;
 		}
 		else if (version == 2 || version == 3) {
-			this.versionNumber = 150;
+			this.versionNumber = Version.VERSION_NUMBER;
 		}
 	}
 

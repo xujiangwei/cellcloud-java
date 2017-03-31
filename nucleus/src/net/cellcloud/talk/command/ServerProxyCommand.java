@@ -62,7 +62,7 @@ public final class ServerProxyCommand extends ServerCommand {
 	public void execute() {
 		// 包格式：JSON数据
 
-		byte[] data = this.packet.getSubsegment(0);
+		byte[] data = this.packet.getSegment(0);
 
 		String jsonString = Utils.bytes2String(data);
 
@@ -84,9 +84,9 @@ public final class ServerProxyCommand extends ServerCommand {
 		boolean ret = this.service.processProxy(proxyTag, targetTag, identifier, active);
 
 		// 包格式：状态码|JSON数据
-		Packet packet = new Packet(TalkDefinition.TPT_PROXY, 20, 1, 0);
-		packet.appendSubsegment(ret ? TalkDefinition.SC_SUCCESS : TalkDefinition.SC_FAILURE_NOCELLET);
-		packet.appendSubsegment(data);
+		Packet packet = new Packet(TalkDefinition.TPT_PROXY, 20, this.session.major, this.session.minor);
+		packet.appendSegment(ret ? TalkDefinition.SC_SUCCESS : TalkDefinition.SC_FAILURE_NOCELLET);
+		packet.appendSegment(data);
 
 		// 打包数据
 		byte[] response = Packet.pack(packet);

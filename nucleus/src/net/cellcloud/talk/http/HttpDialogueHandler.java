@@ -154,10 +154,10 @@ public final class HttpDialogueHandler extends AbstractJSONHandler implements Ca
 						Packet packet = Packet.unpack(message.get());
 						if (null != packet) {
 							// 获取 cellet identifier
-							byte[] identifier = packet.getSubsegment(1);
+							byte[] identifier = packet.getSegment(1);
 
 							// 将包数据转为输入流进行反序列化
-							byte[] primData = packet.getSubsegment(0);
+							byte[] primData = packet.getSegment(0);
 							ByteArrayInputStream stream = new ByteArrayInputStream(primData);
 
 							// 反序列化

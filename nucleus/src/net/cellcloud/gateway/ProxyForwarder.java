@@ -294,10 +294,10 @@ public class ProxyForwarder implements MessageInterceptor, HttpInterceptable {
 				ByteArrayOutputStream stream = primitive.write();
 
 				// 封装数据包
-				Packet packet = new Packet(TalkDefinition.TPT_DIALOGUE, 99, 1, 0);
-				packet.appendSubsegment(stream.toByteArray());
-				packet.appendSubsegment(Utils.string2Bytes(speakerTag));
-				packet.appendSubsegment(Utils.string2Bytes(celletIdentifier));
+				Packet packet = new Packet(TalkDefinition.TPT_DIALOGUE, 99, 2, 0);
+				packet.appendSegment(stream.toByteArray());
+				packet.appendSegment(Utils.string2Bytes(speakerTag));
+				packet.appendSegment(Utils.string2Bytes(celletIdentifier));
 
 				Slave slave = routingTable.querySlave(session);
 				if (null != slave) {
@@ -347,10 +347,10 @@ public class ProxyForwarder implements MessageInterceptor, HttpInterceptable {
 			ByteArrayOutputStream stream = primitive.write();
 
 			// 封装数据包
-			Packet packet = new Packet(TalkDefinition.TPT_DIALOGUE, 99, 1, 0);
-			packet.appendSubsegment(stream.toByteArray());
-			packet.appendSubsegment(Utils.string2Bytes(speakerTag));
-			packet.appendSubsegment(Utils.string2Bytes(celletIdentifier));
+			Packet packet = new Packet(TalkDefinition.TPT_DIALOGUE, 99, 2, 0);
+			packet.appendSegment(stream.toByteArray());
+			packet.appendSegment(Utils.string2Bytes(speakerTag));
+			packet.appendSegment(Utils.string2Bytes(celletIdentifier));
 
 			return packet;
 		} catch (JSONException e) {

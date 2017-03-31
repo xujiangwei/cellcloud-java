@@ -61,18 +61,18 @@ public final class ServerDialogueCommand extends ServerCommand {
 	public void execute() {
 		// 包格式：序列化的原语|源标签
 
-		if (this.packet.getSubsegmentCount() < 2) {
+		if (this.packet.numSegments() < 2) {
 			Logger.e(ServerDialogueCommand.class, "Dialogue packet format error");
 			return;
 		}
 
-		byte[] priData = this.packet.getSubsegment(0);
+		byte[] priData = this.packet.getSegment(0);
 		ByteArrayInputStream stream = new ByteArrayInputStream(priData);
 
-		byte[] tagData = this.packet.getSubsegment(1);
+		byte[] tagData = this.packet.getSegment(1);
 		String speakerTag = Utils.bytes2String(tagData);
 
-		byte[] identifierData = this.packet.getSubsegment(2);
+		byte[] identifierData = this.packet.getSegment(2);
 
 		// 反序列化原语
 		Primitive primitive = new Primitive(speakerTag);
