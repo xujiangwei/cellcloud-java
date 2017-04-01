@@ -297,21 +297,23 @@ public final class Packet {
 			// 更新游标
 			dataCursor += PFB_SEGMENT_NUM;
 
-			// 填写动态的数据段长度
-			for (short i = 0; i < smn; ++i) {
-				int length = packet.segments.get(i).length;
-				byte[] lenBytes = ByteUtils.toBytes(length);
-				System.arraycopy(lenBytes, 0, data, dataCursor, PFB_SEGMENT_LENGTH);
-				// 更新游标
-				dataCursor += PFB_SEGMENT_LENGTH;
-			}
+			if (smn > 0) {
+				// 填写动态的数据段长度
+				for (short i = 0; i < smn; ++i) {
+					int length = packet.segments.get(i).length;
+					byte[] lenBytes = ByteUtils.toBytes(length);
+					System.arraycopy(lenBytes, 0, data, dataCursor, PFB_SEGMENT_LENGTH);
+					// 更新游标
+					dataCursor += PFB_SEGMENT_LENGTH;
+				}
 
-			// 填写动态的数据段数据
-			for (short i = 0; i < smn; ++i) {
-				byte[] sd = packet.segments.get(i);
-				System.arraycopy(sd, 0, data, dataCursor, sd.length);
-				// 更新游标
-				dataCursor += sd.length;
+				// 填写动态的数据段数据
+				for (short i = 0; i < smn; ++i) {
+					byte[] sd = packet.segments.get(i);
+					System.arraycopy(sd, 0, data, dataCursor, sd.length);
+					// 更新游标
+					dataCursor += sd.length;
+				}
 			}
 
 			return data;
@@ -400,6 +402,7 @@ public final class Packet {
 			// 解析版本号
 			int major = data[0];
 			int minor = data[1];
+			// 更新游标
 			dataCursor = 2;
 
 			// 解析 TAG
@@ -445,6 +448,8 @@ public final class Packet {
 					// 更新游标
 					dataCursor += length;
 				}
+
+				segmentLengths = null;
 			}
 
 			return packet;

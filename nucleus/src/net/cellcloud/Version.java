@@ -2,7 +2,7 @@
 -----------------------------------------------------------------------------
 This source file is part of Cell Cloud.
 
-Copyright (c) 2009-2013 Cell Cloud Team (www.cellcloud.net)
+Copyright (c) 2009-2017 Cell Cloud Team (www.cellcloud.net)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -26,33 +26,37 @@ THE SOFTWARE.
 
 package net.cellcloud;
 
-/** 程序版本描述。
+/**
+ * Nucleus 程序库的版本描述。
  * 
- * @author Jiangwei Xu
+ * @author Ambrose Xu
+ * 
  */
 public final class Version {
 
-	/// 主版本号
+	/** 主版本号。 */
 	public static final int MAJOR = 1;
 
-	/// 副版本号
+	/** 副版本号。 */
 	public static final int MINOR = 6;
 
-	/// 修订号
-	public static final int REVISION = 9;
+	/** 修订号。 */
+	public static final int REVISION = 10;
 
-	/// 版本名
+	/** 版本名。 */
 	public static final String NAME = "Xi";
 
-	/// 版本串号
+	/** 版本串号。 */
 	public static final int VERSION_NUMBER = 160;
-
-	/// 是否调试模式
-	public static boolean DEBUG = true;
 
 	private Version() {
 	}
 
+	/**
+	 * 获得字符串形式的版本描述。
+	 * 
+	 * @return 返回字符串形式的版本描述。
+	 */
 	public static String getNumbers() {
 		StringBuilder buf = new StringBuilder();
 		buf.append(MAJOR).append(".");

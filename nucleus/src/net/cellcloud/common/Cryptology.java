@@ -35,7 +35,7 @@ import net.cellcloud.util.Base64;
 import net.cellcloud.util.RC4;
 
 /**
- * 加解密库。
+ * 加解密函数库。
  * 
  * @author Ambrose Xu
  * 
