@@ -30,40 +30,44 @@ package net.cellcloud.common;
  * 消息拦截器。
  * 
  * @author Ambrose Xu
+ * 
  */
 public interface MessageInterceptor {
 
 	/**
-	 * 拦截会话创建。
+	 * 是否拦截会话创建。
 	 * 
-	 * @param session
-	 * @return
+	 * @param session 当前有效的会话对象。
+	 * @return 如果返回 <code>true</code> 则表示创建被拦截，不调用会话创建回调，并结束处理流程。
 	 */
 	public boolean interceptCreating(Session session);
 
 	/**
+	 * 是否拦截会话启用。
 	 * 
-	 * @param session
-	 * @return
+	 * @param session 当前有效的会话对象。
+	 * @return 如果返回 <code>true</code> 则表示启用被拦截，不调用会话启用回调，并结束处理流程。
 	 */
 	public boolean interceptOpening(Session session);
 
 	/**
+	 * 是否拦截会话停用。
 	 * 
-	 * @param session
-	 * @return
+	 * @param session 当前有效的会话对象。
+	 * @return 如果返回 <code>true</code> 则表示停用被拦截，不调用会话停用回调，并结束处理流程。
 	 */
 	public boolean interceptClosing(Session session);
 
 	/**
+	 * 是否拦截会话销毁。
 	 * 
-	 * @param session
-	 * @return
+	 * @param session 当前有效的会话对象。
+	 * @return 如果返回 <code>true</code> 则表示销毁被拦截，不调用会话销毁回调，并结束处理流程。
 	 */
 	public boolean interceptDestroying(Session session);
 
 	/**
-	 * 拦截消息数据处理。
+	 * 是否拦截消息数据处理。
 	 * 
 	 * @param session 本次事件的会话。
 	 * @param message 本次事件的消息数据。
@@ -72,11 +76,11 @@ public interface MessageInterceptor {
 	public boolean interceptMessage(Session session, Message message);
 
 	/**
+	 * 是否拦截错误处理。
 	 * 
-	 * 
-	 * @param session
-	 * @param errorCode
-	 * @return
+	 * @param session 发送本次错误的会话。
+	 * @param errorCode 本次错误的错误码。
+	 * @return 如果返回 <code>true</code> 则表示错误被拦截，不调用会话错误回调，并结束处理流程。
 	 */
 	public boolean interceptError(Session session, int errorCode);
 

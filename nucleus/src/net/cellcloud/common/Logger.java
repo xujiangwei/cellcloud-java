@@ -2,7 +2,7 @@
 -----------------------------------------------------------------------------
 This source file is part of Cell Cloud.
 
-Copyright (c) 2009-2012 Cell Cloud Team (www.cellcloud.net)
+Copyright (c) 2009-2017 Cell Cloud Team (www.cellcloud.net)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -29,43 +29,72 @@ package net.cellcloud.common;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 
-/** 系统通用日志接口。
+/**
+ * 系统通用日志接口。
  * 
- * @author Jiangwei Xu
+ * @author Ambrose Xu
+ *
  */
 public final class Logger {
 
-	/** 打印 DEBUG 级别日志。
+	private Logger() {
+	}
+
+	/**
+	 * 打印 DEBUG 级别日志。
+	 * 
+	 * @param clazz 记录日志的类。
+	 * @param log 日志内容。
 	 */
 	public static void d(Class<?> clazz, String log) {
 		LogManager.getInstance().log(LogLevel.DEBUG, clazz.getName(), log);
 	}
 
-	/** 打印 INFO 级别日志。
+	/**
+	 * 打印 INFO 级别日志。
+	 * 
+	 * @param clazz 记录日志的类。
+	 * @param log 日志内容。
 	 */
 	public static void i(Class<?> clazz, String log) {
 		LogManager.getInstance().log(LogLevel.INFO, clazz.getName(), log);
 	}
 
-	/** 打印 WARNING 级别日志。
+	/**
+	 * 打印 WARNING 级别日志。
+	 * 
+	 * @param clazz 记录日志的类。
+	 * @param log 日志内容。
 	 */
 	public static void w(Class<?> clazz, String log) {
 		LogManager.getInstance().log(LogLevel.WARNING, clazz.getName(), log);
 	}
 
-	/** 打印 ERROR 级别日志。
+	/**
+	 * 打印 ERROR 级别日志。
+	 * 
+	 * @param clazz 记录日志的类。
+	 * @param log 日志内容。
 	 */
 	public static void e(Class<?> clazz, String log) {
 		LogManager.getInstance().log(LogLevel.ERROR, clazz.getName(), log);
 	}
 
-	/** 日志管理器是否设置为 DEBUG 等级。
+	/**
+	 * 日志管理器是否设置为 DEBUG 等级。
+	 * 
+	 * @return 如果当前日志等级为 DEBUG 返回 <code>true</code> 。
 	 */
 	public static boolean isDebugLevel() {
 		return (LogManager.getInstance().getLevel() == LogLevel.DEBUG);
 	}
 
-	/** 记录异常。
+	/**
+	 * 打印指定等级的包含异常信息的日志。
+	 * 
+	 * @param clazz 记录日志的类。
+	 * @param exception 指定记录的异常。
+	 * @param level 日志等级 {@link LogLevel} 。
 	 */
 	public static void log(Class<?> clazz, Exception exception, byte level) {
 		if (LogManager.getInstance().getLevel() > level) {
@@ -90,4 +119,5 @@ public final class Logger {
 			}
 		}
 	}
+
 }

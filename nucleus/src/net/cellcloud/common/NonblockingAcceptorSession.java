@@ -2,7 +2,7 @@
 -----------------------------------------------------------------------------
 This source file is part of Cell Cloud.
 
-Copyright (c) 2009-2012 Cell Cloud Team (www.cellcloud.net)
+Copyright (c) 2009-2017 Cell Cloud Team (www.cellcloud.net)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -33,27 +33,39 @@ import java.util.LinkedList;
 
 import net.cellcloud.util.Clock;
 
-/** 非阻塞网络接收器会话。
+/**
+ * 非阻塞网络接收器会话。
  * 
- * @author Jiangwei Xu
+ * @author Ambrose Xu
+ * 
  */
 public class NonblockingAcceptorSession extends Session {
 
+	/** 数据块大小。 */
 	private int block;
 
+	/** 最近一次读数据时间。 */
 	protected long readTime = 0;
+	/** 最近一次写数据时间。 */
 	protected long writeTime = 0;
 
-	// 待发送消息列表
+	/** 待发送消息列表。 */
 	private LinkedList<Message> messages = new LinkedList<Message>();
 
 	protected SelectionKey selectionKey = null;
+
+	/** 当前会话对应的 Socket 。 */
 	protected Socket socket = null;
 
-	// 所属的工作线程
+	/** 所属的工作器。 */
 	protected NonblockingAcceptorWorker worker = null;
 
-	/** 构造函数。
+	/**
+	 * 构造函数。
+	 * 
+	 * @param service 消息服务。
+	 * @param address 对应的地址。
+	 * @param block 数据块大小。
 	 */
 	public NonblockingAcceptorSession(MessageService service, InetSocketAddress address, int block) {
 		super(service, address);
@@ -62,26 +74,46 @@ public class NonblockingAcceptorSession extends Session {
 		this.writeTime = Clock.currentTimeMillis();
 	}
 
-	/** 返回缓存大小。 */
+	/**
+	 * 得到缓存块大小。
+	 * 
+	 * @return 返回缓存块大小。
+	 */
 	public int getBlock() {
 		return this.block;
 	}
 
+	/**
+	 * 添加消息到发送缓存。
+	 * 
+	 * @param message 待添加的消息。
+	 */
 	protected void addMessage(Message message) {
 		synchronized (this.messages) {
 			this.messages.add(message);
 		}
 	}
 
+	/**
+	 * 消息队列是否为空。
+	 * 
+	 * @return 如果消息队列为空则返回 <code>true</code> 。
+	 */
 	protected boolean isMessageEmpty() {
 		synchronized (this.messages) {
 			return this.messages.isEmpty();
 		}
 	}
 
+	/**
+	 * 将消息队列里的第一条消息出队。
+	 * 
+	 * @return 返回消息队列里的第一条消息。
+	 */
 	protected Message pollMessage() {
 		synchronized (this.messages) {
 			return this.messages.poll();
 		}
 	}
+
 }

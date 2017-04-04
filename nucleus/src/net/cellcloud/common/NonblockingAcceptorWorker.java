@@ -2,7 +2,7 @@
 -----------------------------------------------------------------------------
 This source file is part of Cell Cloud.
 
-Copyright (c) 2009-2016 Cell Cloud Team (www.cellcloud.net)
+Copyright (c) 2009-2017 Cell Cloud Team (www.cellcloud.net)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -34,7 +34,8 @@ import java.util.LinkedList;
 import java.util.Vector;
 import java.util.concurrent.ScheduledExecutorService;
 
-/** 非阻塞网络工作器线程。
+/**
+ * 非阻塞网络工作器线程。
  * 
  * 此线程负责处理其关联的会话的数据读、写操作。
  * 
@@ -43,53 +44,90 @@ import java.util.concurrent.ScheduledExecutorService;
  */
 public final class NonblockingAcceptorWorker extends Thread {
 
-	// 控制线程生命周期的条件变量
+	/** 控制线程生命周期的条件变量。 */
 	private Object mutex = new Object();
-	// 是否处于自旋
+	/** 是否处于自旋。 */
 	private boolean spinning = false;
-	// 是否正在工作
+	/** 是否正在工作。 */
 	private boolean working = false;
 
+	/** 关联的接收器。 */
 	private NonblockingAcceptor acceptor;
 
+	/** 输出传输配额计算器。 */
 	private QuotaCalculator transmissionQuota;
 
-	// 需要执行接收数据任务的 Session 列表
+	/** 需要执行接收数据任务的 Session 列表。 */
 	private Vector<NonblockingAcceptorSession> receiveSessions = new Vector<NonblockingAcceptorSession>();
-	// 需要执行发送数据任务的 Session 列表
+	/** 需要执行发送数据任务的 Session 列表。 */
 	private Vector<NonblockingAcceptorSession> sendSessions = new Vector<NonblockingAcceptorSession>();
 
-	// 发送数据流量统计
+	/** 发送数据流量统计。 */
 	private long tx = 0;
-	// 接收数据流量统计
+	/** 接收数据流量统计。 */
 	private long rx = 0;
 
+	/** 每个会话的读间隔。 */
 	private long eachSessionReadInterval = -1;
+	/** 每个会话的写间隔。 */
 	private long eachSessionWriteInterval = -1;
 
-	// 接收消息时的数组缓存池
+	/** 接收消息时的数组缓存池。 */
 	private LinkedList<ArrayList<byte[]>> tenantablePool = new LinkedList<ArrayList<byte[]>>();
 
+	/**
+	 * 构造函数。
+	 * 
+	 * @param acceptor 消息接收器。
+	 * @param scheduledExecutor 任务执行器。
+	 */
 	public NonblockingAcceptorWorker(NonblockingAcceptor acceptor, ScheduledExecutorService scheduledExecutor) {
 		this.acceptor = acceptor;
 		this.transmissionQuota = new QuotaCalculator(scheduledExecutor, 1024 * 1024);
 		this.setName("NonblockingAcceptorWorker@" + this.toString());
 	}
 
+	/**
+	 * 设置每个会话读数据间隔。
+	 * 
+	 * @param intervalMs 以毫秒为单位的时间间隔。
+	 */
 	protected void setEachSessionReadInterval(long intervalMs) {
 		this.eachSessionReadInterval = intervalMs;
 	}
+
+	/**
+	 * 获得每个会话读数据间隔。
+	 * 
+	 * @return 返回每个会话读数据间隔。
+	 */
 	protected long getEachSessionReadInterval() {
 		return this.eachSessionReadInterval;
 	}
 
+	/**
+	 * 设置每个会话写数据间隔。
+	 * 
+	 * @param intervalMs
+	 */
 	protected void setEachSessionWriteInterval(long intervalMs) {
 		this.eachSessionWriteInterval = intervalMs;
 	}
+
+	/**
+	 * 获得每个会话写数据间隔。
+	 * 
+	 * @return 返回每个会话写数据间隔。
+	 */
 	protected long getEachSessionWriteInterval() {
 		return this.eachSessionWriteInterval;
 	}
 
+	/**
+	 * 获得配额计算器。
+	 * 
+	 * @return 返回配额计算器。
+	 */
 	protected QuotaCalculator getQuotaCalculator() {
 		return this.transmissionQuota;
 	}
@@ -175,15 +213,28 @@ public final class NonblockingAcceptorWorker extends Thread {
 		this.tenantablePool.clear();
 	}
 
+	/**
+	 * 获得发送流量。
+	 * 
+	 * @return 返回以字节为单位的流量。
+	 */
 	protected long getTX() {
 		return this.tx;
 	}
 
+	/**
+	 * 获得接收流量。
+	 * 
+	 * @return 返回以字节为单位的流量。
+	 */
 	protected long getRX() {
 		return this.rx;
 	}
 
-	/** 停止自旋
+	/**
+	 * 停止工作线程自旋。
+	 * 
+	 * @param blockingCheck
 	 */
 	protected void stopSpinning(boolean blockingCheck) {
 		this.spinning = false;
@@ -203,25 +254,31 @@ public final class NonblockingAcceptorWorker extends Thread {
 		}
 	}
 
-	/** 返回线程是否正在工作。
+	/**
+	 * 返回线程是否正在工作。
 	 */
 	protected boolean isWorking() {
 		return this.working;
 	}
 
-	/** 返回当前未处理的接收任务 Session 数量。
+	/**
+	 * 返回当前未处理的接收任务 Session 数量。
 	 */
 	protected int getReceiveSessionNum() {
 		return this.receiveSessions.size();
 	}
 
-	/** 返回当前未处理的发送任务 Session 数量。
+	/**
+	 * 返回当前未处理的发送任务 Session 数量。
 	 */
 	protected int getSendSessionNum() {
 		return this.sendSessions.size();
 	}
 
-	/** 添加执行接收数据的 Session 。
+	/**
+	 * 添加执行接收数据的 Session 。
+	 * 
+	 * @param session 指定 Session 对象。
 	 */
 	protected void pushReceiveSession(NonblockingAcceptorSession session) {
 		if (!this.spinning) {
@@ -235,7 +292,10 @@ public final class NonblockingAcceptorWorker extends Thread {
 		}
 	}
 
-	/** 添加执行发送数据的 Session 。
+	/**
+	 * 添加执行发送数据的 Session 。
+	 * 
+	 * @param session 指定 Session 对象。
 	 */
 	protected void pushSendSession(NonblockingAcceptorSession session) {
 		if (!this.spinning) {
@@ -253,7 +313,10 @@ public final class NonblockingAcceptorWorker extends Thread {
 		}
 	}
 
-	/** 从所有列表中移除指定的 Session 。
+	/**
+	 * 从所有列表中移除指定的 Session 。
+	 * 
+	 * @param session 指定 Session 对象。
 	 */
 	private void removeSession(NonblockingAcceptorSession session) {
 		try {
@@ -271,7 +334,10 @@ public final class NonblockingAcceptorWorker extends Thread {
 		}
 	}
 
-	/** 处理接收。
+	/**
+	 * 处理数据接收。
+	 * 
+	 * @param session
 	 */
 	private void processReceive(NonblockingAcceptorSession session) {
 		SocketChannel channel = (SocketChannel) session.selectionKey.channel();
@@ -387,7 +453,10 @@ public final class NonblockingAcceptorWorker extends Thread {
 		buffer = null;
 	}
 
-	/** 处理发送。
+	/**
+	 * 处理数据发送。
+	 * 
+	 * @param session
 	 */
 	private void processSend(NonblockingAcceptorSession session) {
 		SocketChannel channel = (SocketChannel) session.selectionKey.channel();
@@ -482,6 +551,12 @@ public final class NonblockingAcceptorWorker extends Thread {
 		}
 	}
 
+	/**
+	 * 解析并通知数据接收。
+	 * 
+	 * @param session
+	 * @param data
+	 */
 	private void parse(NonblockingAcceptorSession session, byte[] data) {
 		try {
 			// 根据数据标志获取数据
@@ -523,6 +598,11 @@ public final class NonblockingAcceptorWorker extends Thread {
 		}
 	}
 
+	/**
+	 * 借出数据字节数组。
+	 * 
+	 * @return
+	 */
 	private ArrayList<byte[]> borrowList() {
 		synchronized (this.tenantablePool) {
 			if (this.tenantablePool.isEmpty()) {
@@ -533,6 +613,11 @@ public final class NonblockingAcceptorWorker extends Thread {
 		}
 	}
 
+	/**
+	 * 归还数据字节数组。
+	 * 
+	 * @param list
+	 */
 	private void returnList(ArrayList<byte[]> list) {
 		list.clear();
 
@@ -543,6 +628,10 @@ public final class NonblockingAcceptorWorker extends Thread {
 
 	/**
 	 * 数据提取并输出。
+	 * 
+	 * @param out 接收数据的数组。
+	 * @param session 会话。
+	 * @param data 待提取的数据。
 	 */
 	private void extract(final ArrayList<byte[]> out, final NonblockingAcceptorSession session, final byte[] data) {
 		final byte[] headMark = this.acceptor.getHeadMark();
@@ -695,13 +784,14 @@ public final class NonblockingAcceptorWorker extends Thread {
 	}
 
 	/**
+	 * 比较字节数组是否相等。
 	 * 
-	 * @param b1
-	 * @param offsetB1
-	 * @param b2
-	 * @param offsetB2
-	 * @param length
-	 * @return 0 表示匹配，-1 表示不匹配，1 表示越界
+	 * @param b1 指定字节数组1。
+	 * @param offsetB1 指定字节数组1操作偏移。
+	 * @param b2 指定字节数组2。
+	 * @param offsetB2 指定字节数组2操作偏移。
+	 * @param length 指定数组比较长度。
+	 * @return 返回 <code>0</code> 表示匹配，<code>-1</code> 表示不匹配，<code>1</code> 表示越界
 	 */
 	private int compareBytes(byte[] b1, int offsetB1, byte[] b2, int offsetB2, int length) {
 		for (int i = 0; i < length; ++i) {
@@ -718,12 +808,24 @@ public final class NonblockingAcceptorWorker extends Thread {
 		return 0;
 	}
 
+	/**
+	 * 加密消息。
+	 * 
+	 * @param message 指定待加密消息。
+	 * @param key 指定加密密钥。
+	 */
 	private void encryptMessage(Message message, byte[] key) {
 		byte[] plaintext = message.get();
 		byte[] ciphertext = Cryptology.getInstance().simpleEncrypt(plaintext, key);
 		message.set(ciphertext);
 	}
 
+	/**
+	 * 解密消息。
+	 * 
+	 * @param message 指定待解密消息。
+	 * @param key 指定解密密钥。
+	 */
 	private void decryptMessage(Message message, byte[] key) {
 		byte[] ciphertext = message.get();
 		byte[] plaintext = Cryptology.getInstance().simpleDecrypt(ciphertext, key);

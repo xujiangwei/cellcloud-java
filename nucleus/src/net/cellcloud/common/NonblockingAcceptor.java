@@ -41,10 +41,11 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 
-
-/** 非阻塞网络接收器。
+/**
+ * 非阻塞网络接收器。
  * 
  * @author Ambrose Xu
+ * 
  */
 public class NonblockingAcceptor extends MessageService implements MessageAcceptor {
 
@@ -53,21 +54,28 @@ public class NonblockingAcceptor extends MessageService implements MessageAccept
 	/** 单次写数据块大小限制。 */
 	private int writeLimit = 32768;
 
+	/** Socket 的 backlog 。 */
 	private int backlog = 100000;
 
 	/** 服务器 NIO socket channel */
 	private ServerSocketChannel channel;
+	/** NIO selector */
 	private Selector selector;
 
+	/** 接收器的绑定地址。 */
 	private InetSocketAddress bindAddress;
+
+	/** 事务处理线程。 */
 	private Thread handleThread;
+	/** 线程是否自旋。 */
 	private boolean spinning;
+	/** 线程是否正在运行。 */
 	private boolean running;
 
 	/** 工作器线程数组。 */
 	private NonblockingAcceptorWorker[] workers;
 	/** 工作器数量。 */
-	private int workerNum;
+	private int workerNum = 8;
 
 	/** 任务池执行器。 */
 	private ScheduledExecutorService scheduledExecutor;
@@ -77,6 +85,9 @@ public class NonblockingAcceptor extends MessageService implements MessageAccept
 	/** Session Id 映射 Session，Key: Session Id ，Value: Session */
 	private ConcurrentHashMap<Long, NonblockingAcceptorSession> idSessionMap;
 
+	/**
+	 * 构造函数。
+	 */
 	public NonblockingAcceptor() {
 		this.spinning = false;
 		this.running = false;
@@ -86,14 +97,16 @@ public class NonblockingAcceptor extends MessageService implements MessageAccept
 		this.workerNum = 8;
 	}
 
-	/** {@inheritDoc}
+	/**
+	 * {@inheritDoc}
 	 */
 	@Override
 	public boolean bind(int port) {
 		return bind(new InetSocketAddress("0.0.0.0", port));
 	}
 
-	/** {@inheritDoc}
+	/**
+	 * {@inheritDoc}
 	 */
 	@Override
 	public boolean bind(final InetSocketAddress address) {
@@ -185,7 +198,8 @@ public class NonblockingAcceptor extends MessageService implements MessageAccept
 		return true;
 	}
 
-	/** {@inheritDoc}
+	/**
+	 * {@inheritDoc}
 	 */
 	@Override
 	public void unbind() {
@@ -279,7 +293,8 @@ public class NonblockingAcceptor extends MessageService implements MessageAccept
 		this.bindAddress = null;
 	}
 
-	/** {@inheritDoc}
+	/**
+	 * {@inheritDoc}
 	 */
 	@Override
 	public void close(Session session) {
@@ -298,14 +313,16 @@ public class NonblockingAcceptor extends MessageService implements MessageAccept
 		}
 	}
 
-	/** {@inheritDoc}
+	/**
+	 * {@inheritDoc}
 	 */
 	@Override
 	public Session getSession(Long sessionId) {
 		return this.idSessionMap.get(sessionId);
 	}
 
-	/** {@inheritDoc}
+	/**
+	 * {@inheritDoc}
 	 */
 	@Override
 	public void write(Session session, Message message) {
@@ -320,42 +337,56 @@ public class NonblockingAcceptor extends MessageService implements MessageAccept
 		}
 	}
 
-	/** 返回指定会话是否存在。
+	/**
+	 * 判断指定的会话是否已经连接到接收器。
 	 * 
-	 * @param session
-	 * @return
+	 * @param session 指定待判断的会话。
+	 * @return 返回指定会话是否存在。
 	 */
 	public boolean existSession(Session session) {
 		return this.idSessionMap.contains(session.getId());
 	}
 
-	/** 适配器句柄线程是否正在运行。
-	 *
-	 * @return
+	/**
+	 * 接收器句柄线程是否正在运行。
+	 * 
+	 * @return 如果线程正在运行返回 <code>true</code> 。
 	 */
 	public boolean isRunning() {
 		return this.running;
 	}
 
-	/** 返回绑定地址。
+	/**
+	 * 获得接收器绑定地址。
+	 * 
+	 * @return 返回接收器绑定地址。
 	 */
 	public final InetSocketAddress getBindAddress() {
 		return this.bindAddress;
 	}
 
-	/** 设置工作器数量。
+	/**
+	 * 设置工作器数量。
+	 * 
+	 * @param num 指定工作器数量。
 	 */
 	public void setWorkerNum(int num) {
 		this.workerNum = num;
 	}
-	/** 返回工作器数量。
+
+	/**
+	 * 获得工作器数量。
+	 * 
+	 * @return 返回工作器数量。
 	 */
 	public int getWorkerNum() {
 		return this.workerNum;
 	}
 
-	/** 设置 Block 数据块大小。
-	 * @param size
+	/**
+	 * 设置缓存数据块大小。
+	 * 
+	 * @param size 数据块大小。
 	 */
 	public void setBlockSize(int size) {
 		if (size < 2048) {
@@ -370,33 +401,49 @@ public class NonblockingAcceptor extends MessageService implements MessageAccept
 		this.writeLimit = Math.round(size * 0.5f);
 	}
 
-	/** 返回 Block 数据块大小。
-	 * @return
+	/**
+	 * 获得缓存数据块大小。
+	 * 
+	 * @return 返回缓存数据块大小。
 	 */
 	public int getBlockSize() {
 		return this.block;
 	}
 
-	/** 返回所有 Session 。
+	/**
+	 * 获得存储了所有会话的集合。
+	 * 
+	 * @return 返回接收器里的所有会话。
 	 */
 	public Collection<NonblockingAcceptorSession> getSessions() {
 		return this.socketSessionMap.values();
 	}
 
 	/**
-	 * 返回 Session 数量。
-	 * @return
+	 * 获得所有会话数量。
+	 * 
+	 * @return 返回所有会话数量。
 	 */
 	public int numSessions() {
 		return this.socketSessionMap.size();
 	}
 
+	/**
+	 * 设置每一个会话读取数据的间隔。
+	 * 
+	 * @param intervalInMillisecond 指定以毫秒为单位的间隔。
+	 */
 	public void setEachSessionReadInterval(long intervalInMillisecond) {
 		for (NonblockingAcceptorWorker worker : this.workers) {
 			worker.setEachSessionReadInterval(intervalInMillisecond);
 		}
 	}
 
+	/**
+	 * 获得每一个会话读取数据的间隔。
+	 * 
+	 * @return 返回以毫秒为单位的间隔。
+	 */
 	public long getEachSessionReadInterval() {
 		if (null == this.workers) {
 			return -1;
@@ -405,12 +452,22 @@ public class NonblockingAcceptor extends MessageService implements MessageAccept
 		return this.workers[0].getEachSessionReadInterval();
 	}
 
+	/**
+	 * 设置每一个会话写入数据的间隔。
+	 * 
+	 * @param intervalInMillisecond 指定以毫秒为单位的间隔。
+	 */
 	public void setEachSessionWriteInterval(long intervalInMillisecond) {
 		for (NonblockingAcceptorWorker worker : this.workers) {
 			worker.setEachSessionWriteInterval(intervalInMillisecond);
 		}
 	}
 
+	/**
+	 * 获得每一个会话写入数据的间隔。
+	 * 
+	 * @return 返回以毫秒为单位的间隔。
+	 */
 	public long getEachSessionWriteInterval() {
 		if (null == this.workers) {
 			return -1;
@@ -419,12 +476,22 @@ public class NonblockingAcceptor extends MessageService implements MessageAccept
 		return this.workers[0].getEachSessionWriteInterval();
 	}
 
+	/**
+	 * 设置数据传输的配额，单位：字节每秒（BPS）。
+	 * 
+	 * @param quotaInBytesPerSecond 指定以字节每秒为单位的传输带宽。
+	 */
 	public void setTransmissionQuota(int quotaInBytesPerSecond) {
 		for (NonblockingAcceptorWorker worker : this.workers) {
 			worker.getQuotaCalculator().setQuota(quotaInBytesPerSecond);
 		}
 	}
 
+	/**
+	 * 获得数据传输配额。
+	 * 
+	 * @return 返回以字节每秒为单位的传输带宽。
+	 */
 	public int getTransmissionQuota() {
 		if (null == this.workers) {
 			return -1;
@@ -434,8 +501,9 @@ public class NonblockingAcceptor extends MessageService implements MessageAccept
 	}
 
 	/**
-	 * 返回发送数据总流量。
-	 * @return
+	 * 获得发送数据总流量。
+	 * 
+	 * @return 返回发送数据总流量。
 	 */
 	public long getTotalTx() {
 		long total = 0;
@@ -446,8 +514,9 @@ public class NonblockingAcceptor extends MessageService implements MessageAccept
 	}
 
 	/**
-	 * 返回接收数据总流量。
-	 * @return
+	 * 获得接收数据总流量。
+	 * 
+	 * @return 返回接收数据总流量。
 	 */
 	public long getTotalRx() {
 		long total = 0;
@@ -457,6 +526,11 @@ public class NonblockingAcceptor extends MessageService implements MessageAccept
 		return total;
 	}
 
+	/**
+	 * 获得各工作器的数据发送流量。
+	 * 
+	 * @return 返回存储了各个工作器数据发送流量的数组。
+	 */
 	public long[] getWorkersTx() {
 		long[] ret = new long[this.workerNum];
 		for (int i = 0; i < this.workerNum; ++i) {
@@ -465,6 +539,11 @@ public class NonblockingAcceptor extends MessageService implements MessageAccept
 		return ret;
 	}
 
+	/**
+	 * 获得各工作器的数据接收流量。
+	 * 
+	 * @return 返回存储了各个工作器数据接收流量的数组。
+	 */
 	public long[] getWorkersRx() {
 		long[] ret = new long[this.workerNum];
 		for (int i = 0; i < this.workerNum; ++i) {
@@ -475,6 +554,8 @@ public class NonblockingAcceptor extends MessageService implements MessageAccept
 
 	/**
 	 * 从接收器里删除指定的 Session 。
+	 * 
+	 * @param session 指定待删除的 Session 对象。
 	 */
 	protected void eraseSession(NonblockingAcceptorSession session) {
 		boolean exist = false;
@@ -502,7 +583,11 @@ public class NonblockingAcceptor extends MessageService implements MessageAccept
 		}
 	}
 
-	/** 通知创建会话。 */
+	/**
+	 * 通知创建会话。
+	 * 
+	 * @param session 指定会话。
+	 */
 	protected void fireSessionCreated(Session session) {
 		if (null != this.interceptor && this.interceptor.interceptCreating(session)) {
 			return;
@@ -512,7 +597,12 @@ public class NonblockingAcceptor extends MessageService implements MessageAccept
 			this.handler.sessionCreated(session);
 		}
 	}
-	/** 通知打开会话。 */
+
+	/**
+	 * 通知启用会话。
+	 * 
+	 * @param session 指定会话。
+	 */
 	protected void fireSessionOpened(Session session) {
 		if (null != this.interceptor && this.interceptor.interceptOpening(session)) {
 			return;
@@ -522,7 +612,12 @@ public class NonblockingAcceptor extends MessageService implements MessageAccept
 			this.handler.sessionOpened(session);
 		}
 	}
-	/** 通知关闭会话。 */
+
+	/**
+	 * 通知停用会话。
+	 * 
+	 * @param session 指定会话。
+	 */
 	protected void fireSessionClosed(Session session) {
 		if (null != this.interceptor && this.interceptor.interceptClosing(session)) {
 			return;
@@ -532,7 +627,12 @@ public class NonblockingAcceptor extends MessageService implements MessageAccept
 			this.handler.sessionClosed(session);
 		}
 	}
-	/** 通知销毁会话。 */
+
+	/**
+	 * 通知销毁会话。
+	 * 
+	 * @param session 指定会话。
+	 */
 	protected void fireSessionDestroyed(Session session) {
 		if (null != this.interceptor && this.interceptor.interceptDestroying(session)) {
 			return;
@@ -542,7 +642,13 @@ public class NonblockingAcceptor extends MessageService implements MessageAccept
 			this.handler.sessionDestroyed(session);
 		}
 	}
-	/** 通知会话错误。 */
+
+	/**
+	 * 通知会话发生错误。
+	 * 
+	 * @param session 指定会话。
+	 * @param errorCode 指定错误码。
+	 */
 	protected void fireErrorOccurred(Session session, int errorCode) {
 		if (null != this.interceptor && this.interceptor.interceptError(session, errorCode)) {
 			return;
@@ -552,7 +658,13 @@ public class NonblockingAcceptor extends MessageService implements MessageAccept
 			this.handler.errorOccurred(errorCode, session);
 		}
 	}
-	/** 通知会话接收到消息。 */
+
+	/**
+	 * 通知会话接收到消息。
+	 * 
+	 * @param session 指定会话。
+	 * @param message 指定消息。
+	 */
 	protected void fireMessageReceived(Session session, Message message) {
 		if (null != this.interceptor && this.interceptor.interceptMessage(session, message)) {
 			return;
@@ -562,14 +674,25 @@ public class NonblockingAcceptor extends MessageService implements MessageAccept
 			this.handler.messageReceived(session, message);
 		}
 	}
-	/** 通知会话已发送消息。 */
+
+	/**
+	 * 通知会话已发出消息。
+	 * 
+	 * @param session 指定会话。
+	 * @param message 指定消息。
+	 */
 	protected void fireMessageSent(Session session, Message message) {
 		if (null != this.handler) {
 			this.handler.messageSent(session, message);
 		}
 	}
 
-	/** 事件循环。 */
+	/**
+	 * 事件循环。
+	 * 
+	 * @throws IOException
+	 * @throws Exception
+	 */
 	private void loopDispatch() throws IOException, Exception {
 		while (this.spinning) {
 			if (!this.selector.isOpen()) {
@@ -647,7 +770,11 @@ public class NonblockingAcceptor extends MessageService implements MessageAccept
 		} // # while
 	}
 
-	/** 处理 Accept */
+	/**
+	 * 处理 Accept 动作。
+	 * 
+	 * @param key
+	 */
 	private void accept(SelectionKey key) {
 		ServerSocketChannel channel = (ServerSocketChannel) key.channel();
 
@@ -711,7 +838,11 @@ public class NonblockingAcceptor extends MessageService implements MessageAccept
 		}
 	}
 
-	/** 处理 Read */
+	/**
+	 * 处理 Read 动作。
+	 * 
+	 * @param key
+	 */
 	private void receive(SelectionKey key) {
 		SocketChannel channel = (SocketChannel) key.channel();
 
@@ -738,7 +869,11 @@ public class NonblockingAcceptor extends MessageService implements MessageAccept
 		}
 	}
 
-	/** 处理 Write */
+	/**
+	 * 处理 Write 动作。
+	 * 
+	 * @param key
+	 */
 	private void send(SelectionKey key) {
 		SocketChannel channel = (SocketChannel) key.channel();
 
@@ -764,4 +899,5 @@ public class NonblockingAcceptor extends MessageService implements MessageAccept
 			key.interestOps(key.interestOps() | SelectionKey.OP_WRITE);
 		}
 	}
+
 }

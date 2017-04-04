@@ -2,7 +2,7 @@
 -----------------------------------------------------------------------------
 This source file is part of Cell Cloud.
 
-Copyright (c) 2009-2014 Cell Cloud Team (www.cellcloud.net)
+Copyright (c) 2009-2017 Cell Cloud Team (www.cellcloud.net)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -31,14 +31,20 @@ import javax.servlet.http.HttpServletRequest;
 /**
  * 用于代理跨域 HTTP 请求。
  * 
- * @author Jiangwei Xu
+ * @author Ambrose Xu
  *
  */
 public class CrossDomainRequest extends HttpRequest {
 
-	public CrossDomainRequest(HttpServletRequest request,
-			SessionManager sessionManager) {
+	/**
+	 * 构造函数。
+	 * 
+	 * @param request HTTP 请求。
+	 * @param sessionManager 会话管理器。
+	 */
+	public CrossDomainRequest(HttpServletRequest request, SessionManager sessionManager) {
 		super(request, sessionManager);
 		this.crossDomain = true;
 	}
+
 }

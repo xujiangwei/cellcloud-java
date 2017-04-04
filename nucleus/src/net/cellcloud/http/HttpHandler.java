@@ -2,7 +2,7 @@
 -----------------------------------------------------------------------------
 This source file is part of Cell Cloud.
 
-Copyright (c) 2009-2013 Cell Cloud Team (www.cellcloud.net)
+Copyright (c) 2009-2017 Cell Cloud Team (www.cellcloud.net)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -42,7 +42,7 @@ import org.eclipse.jetty.util.annotation.ManagedOperation;
 /**
  * HTTP 协议处理句柄。
  * 
- * @author Jiangwei Xu
+ * @author Ambrose Xu
  *
  */
 public abstract class HttpHandler implements Handler {
@@ -52,13 +52,17 @@ public abstract class HttpHandler implements Handler {
 
 	private HttpFilter filter;
 
+	/**
+	 * 构造函数。
+	 */
 	public HttpHandler() {
 		super();
 	}
 
 	/**
-	 * 返回该句柄的会话管理器。
-	 * @return
+	 * 获得该句柄的会话管理器。
+	 * 
+	 * @return 返回该句柄的会话管理器。
 	 */
 	public SessionManager getSessionManager() {
 		return this.sessionManager;
@@ -66,16 +70,25 @@ public abstract class HttpHandler implements Handler {
 
 	/**
 	 * 设置会话管理器。
-	 * @param sessionManager
+	 * 
+	 * @param sessionManager 指定会话管理器。
 	 */
 	protected void setSessionManager(SessionManager sessionManager) {
 		this.sessionManager = sessionManager;
 	}
 
+	/**
+	 * 设置过滤器。
+	 * 
+	 * @param filter 指定过滤器。
+	 */
 	protected void setFilter(HttpFilter filter) {
 		this.filter = filter;
 	}
 
+	/**
+	 * {@inheritDoc}
+	 */
 	@Override
 	public void handle(String target, Request baseRequest, HttpServletRequest request, HttpServletResponse response)
 			throws IOException, ServletException {
@@ -130,41 +143,51 @@ public abstract class HttpHandler implements Handler {
 	}
 
 	/**
-	 * GET Method
-	 * @param request
-	 * @param response
+	 * 执行 GET 方法。
+	 * 
+	 * @param request HTTP 请求。
+	 * @param response HTTP 应答。
+	 * 
 	 * @throws IOException
 	 */
 	protected abstract void doGet(HttpRequest request, HttpResponse response) throws IOException;
 
 	/**
-	 * POST Method
-	 * @param request
-	 * @param response
+	 * 执行 POST 方法。
+	 * 
+	 * @param request HTTP 请求。
+	 * @param response HTTP 应答。
+	 * 
 	 * @throws IOException
 	 */
 	protected abstract void doPost(HttpRequest request, HttpResponse response) throws IOException;
 
 	/**
-	 * OPTIONS Method
-	 * @param request
-	 * @param response
+	 * 执行 OPTIONS 方法。
+	 * 
+	 * @param request HTTP 请求。
+	 * @param response HTTP 应答。
+	 * 
 	 * @throws IOException
 	 */
 	protected abstract void doOptions(HttpRequest request, HttpResponse response) throws IOException;
 
 	/**
-	 * PUT Method
-	 * @param request
-	 * @param response
+	 * 执行 PUT 方法。
+	 * 
+	 * @param request HTTP 请求。
+	 * @param response HTTP 应答。
+	 * 
 	 * @throws IOException
 	 */
 	protected abstract void doPut(HttpRequest request, HttpResponse response) throws IOException;
 
 	/**
-	 * DELETE Method
-	 * @param request
-	 * @param response
+	 * 执行 DELETE 方法。
+	 * 
+	 * @param request HTTP 请求。
+	 * @param response HTTP 应答。
+	 * 
 	 * @throws IOException
 	 */
 	protected abstract void doDelete(HttpRequest request, HttpResponse response) throws IOException;
@@ -237,4 +260,5 @@ public abstract class HttpHandler implements Handler {
 	public void setServer(Server server) {
 		this.server = server;
 	}
+
 }

@@ -36,14 +36,30 @@ public class InvalidException extends RuntimeException {
 
 	private static final long serialVersionUID = 1L;
 
+	/**
+	 * 构造函数。
+	 * 
+	 * @param message
+	 */
 	public InvalidException(String message) {
 		super(message);
 	}
 
+	/**
+	 * 构造函数。
+	 * 
+	 * @param cause
+	 */
 	public InvalidException(Throwable cause) {
 		super(cause);
 	}
 
+	/**
+	 * 构造函数。
+	 * 
+	 * @param message
+	 * @param cause
+	 */
 	public InvalidException(String message, Throwable cause) {
 		super(message, cause);
 	}

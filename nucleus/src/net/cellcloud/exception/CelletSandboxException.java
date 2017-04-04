@@ -36,6 +36,11 @@ public final class CelletSandboxException extends Exception {
 
 	private static final long serialVersionUID = 1L;
 
+	/**
+	 * 构造函数。
+	 * 
+	 * @param message
+	 */
 	public CelletSandboxException(String message) {
 		super(message);
 	}

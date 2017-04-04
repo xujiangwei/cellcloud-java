@@ -2,7 +2,7 @@
 -----------------------------------------------------------------------------
 This source file is part of Cell Cloud.
 
-Copyright (c) 2009-2012 Cell Cloud Team (www.cellcloud.net)
+Copyright (c) 2009-2017 Cell Cloud Team (www.cellcloud.net)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -26,53 +26,53 @@ THE SOFTWARE.
 
 package net.cellcloud.common;
 
-
-/** 消息描述类。
+/**
+ * 消息描述类。
  * 
- * @author Jiangwei Xu
+ * @author Ambrose Xu
+ * 
  */
 public class Message {
 
+	/**
+	 * 存储消息数据的数组。
+	 */
 	private byte[] data;
 
-	/** 构造函数。
+	/**
+	 * 构造函数。
+	 * 
+	 * @param data 指定消息数据。
 	 */
 	public Message(byte[] data) {
 		this.data = data;
 	}
 
-	/** 构造函数。
+	/**
+	 * 设置消息数据。
+	 * 
+	 * @param newData 指定消息数据。
 	 */
-//	public Message(String data) {
-//		this.data = data.getBytes(Charset.forName("UTF-8"));
-//	}
-
 	protected void set(byte[] newData) {
 		this.data = newData;
 	}
 
-	/** 返回消息数据。
+	/**
+	 * 获得消息数据。
+	 * 
+	 * @return 返回消息数据。
 	 */
 	public byte[] get() {
 		return this.data;
 	}
 
-	/** 消息数据长度。
+	/**
+	 * 消息数据长度。
+	 * 
+	 * @return 消息数据长度。
 	 */
 	public int length() {
 		return this.data.length;
 	}
-
-	/** 返回 UTF-8 字符集编码的字符串形式的消息数据。
-	 */
-//	public String getAsString() {
-//		return new String(this.data, Charset.forName("UTF-8"));
-//	}
-
-	/** 返回指定字符集的消息数据的字符串形式。
-	 */
-//	public String getAsString(String charsetName) {
-//		return new String(this.data, Charset.forName(charsetName));
-//	}
 
 }

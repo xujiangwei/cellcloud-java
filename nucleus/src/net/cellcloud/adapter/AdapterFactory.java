@@ -32,6 +32,7 @@ import net.cellcloud.adapter.smart.SmartAdapter;
  * 适配器工厂。
  * 
  * @author Ambrose Xu
+ * 
  */
 public final class AdapterFactory {
 
@@ -43,7 +44,7 @@ public final class AdapterFactory {
 	 * 
 	 * @param name 指定适配器名称。
 	 * @param instanceName 指定创建的实例名。
-	 * @return
+	 * @return 返回创建的适配器。
 	 */
 	public static Adapter createAdapter(String name, String instanceName) {
 		if (name.equals(SmartAdapter.Name)) {

@@ -38,6 +38,11 @@ public final class SingletonException extends Exception {
 
 	private String className;
 
+	/**
+	 * 构造函数。
+	 * 
+	 * @param className 指定异常的类的类名。
+	 */
 	public SingletonException(String className) {
 		this.className = className;
 	}

@@ -2,7 +2,7 @@
 -----------------------------------------------------------------------------
 This source file is part of Cell Cloud.
 
-Copyright (c) 2009-2012 Cell Cloud Team (www.cellcloud.net)
+Copyright (c) 2009-2017 Cell Cloud Team (www.cellcloud.net)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -26,17 +26,24 @@ THE SOFTWARE.
 
 package net.cellcloud.common;
 
-/** 系统服务接口定义。
+/**
+ * 系统服务接口定义。
  * 
- * @author Jiangwei Xu
+ * @author Ambrose Xu
+ * 
  */
 public interface Service {
 
-	/** 启动服务。
+	/**
+	 * 启动服务。
+	 * 
+	 * @return 如果启用成功返回 <code>true</code> 。
 	 */
 	boolean startup();
 
-	/** 关闭服务。
+	/**
+	 * 关闭服务。
 	 */
 	void shutdown();
+
 }

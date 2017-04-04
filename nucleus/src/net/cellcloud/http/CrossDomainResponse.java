@@ -2,7 +2,7 @@
 -----------------------------------------------------------------------------
 This source file is part of Cell Cloud.
 
-Copyright (c) 2009-2014 Cell Cloud Team (www.cellcloud.net)
+Copyright (c) 2009-2017 Cell Cloud Team (www.cellcloud.net)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -29,13 +29,18 @@ package net.cellcloud.http;
 /**
  * 用于代理跨域 HTTP 响应。
  * 
- * @author Jiangwei Xu
+ * @author Ambrose Xu
  *
  */
 public class CrossDomainResponse extends HttpResponse {
 
 	private CrossOriginHttpServletResponse response;
 
+	/**
+	 * 构造函数。
+	 * 
+	 * @param response 跨域的 HTTP 应答。
+	 */
 	public CrossDomainResponse(CrossOriginHttpServletResponse response) {
 		super(response);
 		this.response = response;
@@ -43,9 +48,10 @@ public class CrossDomainResponse extends HttpResponse {
 
 	/**
 	 * 响应数据。
-	 * @param timestamp
-	 * @param callback
-	 * @param newCookie
+	 * 
+	 * @param timestamp 时间戳。
+	 * @param callback 回调的函数描述。
+	 * @param newCookie 新的 Cookie 。
 	 */
 	public void respond(long timestamp, String callback, String newCookie) {
 		this.response.respond(timestamp, callback, newCookie);
@@ -53,10 +59,12 @@ public class CrossDomainResponse extends HttpResponse {
 
 	/**
 	 * 响应数据。
-	 * @param timestamp
-	 * @param callback
+	 * 
+	 * @param timestamp 时间戳。
+	 * @param callback 回调的函数描述。
 	 */
 	public void respond(long timestamp, String callback) {
 		this.response.respond(timestamp, callback);
 	}
+
 }

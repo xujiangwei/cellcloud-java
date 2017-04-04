@@ -31,11 +31,26 @@ import javax.servlet.http.HttpServletResponse;
 
 import org.eclipse.jetty.server.Request;
 
+/**
+ * HTTP 过滤器。
+ * 
+ * @author Ambrose Xu
+ *
+ */
 public abstract class HttpFilter {
 
 	public HttpFilter() {
 	}
 
+	/**
+	 * 执行过滤。
+	 * 
+	 * @param target 目标。
+	 * @param baseRequest 基础请求。
+	 * @param request HTTP 请求。
+	 * @param response HTTP 应答。
+	 * @return 如果返回 <code>true</code> 则该请求不再向下传输，请求被过滤。
+	 */
 	public abstract boolean doFilter(String target, Request baseRequest, HttpServletRequest request, HttpServletResponse response);
 
 }

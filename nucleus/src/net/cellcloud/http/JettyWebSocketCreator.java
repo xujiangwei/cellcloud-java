@@ -2,7 +2,7 @@
 -----------------------------------------------------------------------------
 This source file is part of Cell Cloud.
 
-Copyright (c) 2009-2014 Cell Cloud Team (www.cellcloud.net)
+Copyright (c) 2009-2017 Cell Cloud Team (www.cellcloud.net)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -31,13 +31,20 @@ import org.eclipse.jetty.websocket.servlet.ServletUpgradeResponse;
 import org.eclipse.jetty.websocket.servlet.WebSocketCreator;
 
 /**
+ * 基于 Jettty 的 WebSocket Creator 实现。
  * 
- * @author Jiangwei Xu
+ * @author Ambrose Xu
+ * 
  */
 public final class JettyWebSocketCreator implements WebSocketCreator {
 
 	private JettyWebSocket socket;
 
+	/**
+	 * 构造函数。
+	 * 
+	 * @param socket
+	 */
 	public JettyWebSocketCreator(JettyWebSocket socket) {
 		this.socket = socket;
 	}
@@ -54,4 +61,5 @@ public final class JettyWebSocketCreator implements WebSocketCreator {
 
 		return null;
 	}
+
 }

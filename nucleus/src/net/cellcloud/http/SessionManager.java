@@ -2,7 +2,7 @@
 -----------------------------------------------------------------------------
 This source file is part of Cell Cloud.
 
-Copyright (c) 2009-2013 Cell Cloud Team (www.cellcloud.net)
+Copyright (c) 2009-2017 Cell Cloud Team (www.cellcloud.net)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -31,43 +31,50 @@ import java.util.List;
 /**
  * HTTP Sessoin 管理器接口。
  * 
- * @author Jiangwei Xu
+ * @author Ambrose Xu
  *
  */
 public interface SessionManager {
 
 	/**
 	 * 管理指定的请求。
+	 * 
 	 * @param request
+	 * @param response
 	 */
 	public void manage(HttpRequest request, HttpResponse response);
 
 	/**
 	 * 解除管理指定的请求。
+	 * 
 	 * @param request
 	 */
 	public void unmanage(HttpRequest request);
 
 	/**
 	 * 解除管理指定的会话。
+	 * 
 	 * @param session
 	 */
 	public void unmanage(HttpSession session);
 
 	/**
 	 * 返回当前被管理的 Session 总数量。
+	 * 
 	 * @return
 	 */
 	public int getSessionNum();
 
 	/**
 	 * 返回所有 Session 列表。
+	 * 
 	 * @return
 	 */
 	public List<HttpSession> getSessions();
 
 	/**
 	 * 返回指定 ID 的 Session 。
+	 * 
 	 * @param id
 	 * @return
 	 */
@@ -75,6 +82,7 @@ public interface SessionManager {
 
 	/**
 	 * 返回指定请求的 Session 。
+	 * 
 	 * @param request
 	 * @return
 	 */
@@ -82,6 +90,7 @@ public interface SessionManager {
 
 	/**
 	 * 是否包含该 Session 。
+	 * 
 	 * @param id
 	 * @return
 	 */
@@ -89,13 +98,16 @@ public interface SessionManager {
 
 	/**
 	 * 添加心跳监听器。
+	 * 
 	 * @param listener
 	 */
 	public void addSessionListener(SessionListener listener);
 
 	/**
 	 * 移除心跳监听器。
+	 * 
 	 * @param listener
 	 */
 	public void removeSessionListener(SessionListener listener);
+
 }

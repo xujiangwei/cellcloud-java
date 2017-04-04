@@ -2,7 +2,7 @@
 -----------------------------------------------------------------------------
 This source file is part of Cell Cloud.
 
-Copyright (c) 2009-2013 Cell Cloud Team (www.cellcloud.net)
+Copyright (c) 2009-2017 Cell Cloud Team (www.cellcloud.net)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -36,24 +36,38 @@ import javax.servlet.http.HttpServletRequest;
 /**
  * HTTP 请求描述。
  * 
- * @author Jiangwei Xu
+ * @author Ambrose Xu
  *
  */
 public class HttpRequest {
 
+	/** 原始 HTTP Servlet 请求。 */
 	protected HttpServletRequest request;
+
+	/** 会话管理器。 */
 	protected SessionManager sessionManager;
 
+	/** 用于存储数据的输出流。 */
 	private ByteArrayOutputStream dataStream;
 
+	/** 是否是跨域请求。 */
 	protected boolean crossDomain;
 
+	/**
+	 * 构造函数。
+	 * 
+	 * @param request 原始 Servlet 请求。
+	 * @param sessionManager 会话管理器。
+	 */
 	protected HttpRequest(HttpServletRequest request, SessionManager sessionManager) {
 		this.request = request;
 		this.sessionManager = sessionManager;
 		this.crossDomain = false;
 	}
 
+	/**
+	 * 销毁此请求。
+	 */
 	protected void destroy() {
 		this.request = null;
 		this.sessionManager = null;
@@ -62,18 +76,20 @@ public class HttpRequest {
 	}
 
 	/**
-	 * 返回指定的 HTTP 包头数据。
-	 * @param header
-	 * @return
+	 * 获得指定的 HTTP 包头对应的数据。
+	 * 
+	 * @param header 指定报头名。
+	 * @return 返回指定的 HTTP 包头对应的数据。
 	 */
 	public String getHeader(String header) {
 		return this.request.getHeader(header);
 	}
 
 	/**
-	 * 返回指定名称的参数值。
-	 * @param name
-	 * @return
+	 * 获得指定名称的参数值。
+	 * 
+	 * @param name 指定参数名。
+	 * @return 返回指定名称的参数值。
 	 */
 	public String getParameter(String name) {
 		return this.request.getParameter(name);
@@ -81,33 +97,37 @@ public class HttpRequest {
 
 	/**
 	 * 设置属性值。
-	 * @param name
-	 * @param value
+	 * 
+	 * @param name 指定属性名。
+	 * @param value 指定属性值。
 	 */
 	public void setAttribute(String name, Object value) {
 		this.request.setAttribute(name, value);
 	}
 
 	/**
-	 * 返回指定名称的属性值。
-	 * @param name
-	 * @return
+	 * 获得指定名称的属性值。
+	 * 
+	 * @param name 指定属性名。
+	 * @return 返回指定名称的属性值。
 	 */
 	public Object getAttribute(String name) {
 		return this.request.getAttribute(name);
 	}
 
 	/**
-	 * 返回 Session 。
-	 * @return
+	 * 获得该请求对应的会话。
+	 * 
+	 * @return 返回该请求对应的会话。
 	 */
 	public HttpSession getSession() {
 		return this.sessionManager.getSession(this);
 	}
 
 	/**
-	 * 返回访问端地址。
-	 * @return
+	 * 获得访问端地址。
+	 * 
+	 * @return 返回访问端地址。
 	 */
 	public InetSocketAddress getRemoteAddr() {
 		return new InetSocketAddress(this.request.getRemoteAddr(), this.request.getRemotePort());
@@ -115,15 +135,17 @@ public class HttpRequest {
 
 	/**
 	 * 是否执行跨域处理。
-	 * @return
+	 * 
+	 * @return 如果是跨域请求返回 <code>true</code> 。
 	 */
 	public boolean isCrossDomain() {
 		return this.crossDomain;
 	}
 
 	/**
-	 * 返回原始 Servlet Request 。
-	 * @return
+	 * 获得原始的 Servlet Request 对象。
+	 * 
+	 * @return 返回原始 Servlet Request 对象。
 	 */
 	public HttpServletRequest getServletRequest() {
 		return this.request;
@@ -131,7 +153,9 @@ public class HttpRequest {
 
 	/**
 	 * 读取请求数据。
-	 * @return
+	 * 
+	 * @return 返回读取的数据。
+	 * 
 	 * @throws IOException
 	 */
 	public byte[] readRequestData() throws IOException {
@@ -161,4 +185,5 @@ public class HttpRequest {
 
 		return this.dataStream.toByteArray();
 	}
+
 }

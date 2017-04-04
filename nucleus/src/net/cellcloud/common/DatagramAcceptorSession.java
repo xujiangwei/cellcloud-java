@@ -2,7 +2,7 @@
 -----------------------------------------------------------------------------
 This source file is part of Cell Cloud.
 
-Copyright (c) 2009-2016 Cell Cloud Team (www.cellcloud.net)
+Copyright (c) 2009-2017 Cell Cloud Team (www.cellcloud.net)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -29,19 +29,28 @@ package net.cellcloud.common;
 import java.net.InetSocketAddress;
 
 /**
- * 数据报适配器会话类。
+ * 数据报协议接收器会话类。
  * 
  * @author Ambrose Xu
+ * 
  */
 public class DatagramAcceptorSession extends Session {
 
-	// 标记 Session 是否被移除
+	/** 标记 Session 是否被移除。 */
 	protected boolean removed = false;
 
+	/** 最近一次活跃的时间戳。 */
 	protected long activeTimestamp;
 
+	/** 映射的键。 */
 	protected String mapKey;
 
+	/**
+	 * 构造函数。
+	 * 
+	 * @param service 消息服务。
+	 * @param address Session 对应的终端地址。
+	 */
 	public DatagramAcceptorSession(MessageService service, InetSocketAddress address) {
 		super(service, address);
 		this.activeTimestamp = System.currentTimeMillis();

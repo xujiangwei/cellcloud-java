@@ -2,7 +2,7 @@
 -----------------------------------------------------------------------------
 This source file is part of Cell Cloud.
 
-Copyright (c) 2009-2013 Cell Cloud Team (www.cellcloud.net)
+Copyright (c) 2009-2017 Cell Cloud Team (www.cellcloud.net)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -39,22 +39,29 @@ import org.eclipse.jetty.http.HttpHeader;
 /**
  * 基于 Cookie 的会话管理器。
  * 
- * @author Jiangwei Xu
+ * @author Ambrose Xu
  *
  */
 public class CookieSessionManager implements SessionManager {
 
 	private static final String COOKIE = HttpHeader.COOKIE.asString();
 
+	/** 会话的超期时间。 */
 	private long sessionExpires;
+	/** 可管理的最大会话数量。 */
 	private int maxSessionNum;
+	/** 会话映射，键是会话的 ID 。 */
 	private ConcurrentHashMap<Long, HttpSession> sessions;
 
-	// 监听器列表
+	/** 监听器列表。 */
 	private ArrayList<SessionListener> listeners;
 
+	/** 维护时间。 */
 	private volatile long maintainTime;
 
+	/**
+	 * 构造函数。
+	 */
 	public CookieSessionManager() {
 		// 默认会话有效期：12 小时
 		this.sessionExpires = 12L * 60L * 60L * 1000L;
@@ -64,14 +71,27 @@ public class CookieSessionManager implements SessionManager {
 		this.listeners = new ArrayList<SessionListener>(1);
 	}
 
+	/**
+	 * 获得会话超期时间。
+	 * 
+	 * @return 返回会话超期时间。
+	 */
 	public long getSessionExpires() {
 		return this.sessionExpires;
 	}
 
+	/**
+	 * 获得最大会话数量。
+	 * 
+	 * @return 返回最大会话数量。
+	 */
 	public int getMaxSessionNum() {
 		return this.maxSessionNum;
 	}
 
+	/**
+	 * {@inheritDoc}
+	 */
 	@Override
 	public void manage(HttpRequest request, HttpResponse response) {
 		// 获取 Cookie
@@ -135,6 +155,9 @@ public class CookieSessionManager implements SessionManager {
 		}
 	}
 
+	/**
+	 * {@inheritDoc}
+	 */
 	@Override
 	public void unmanage(HttpRequest request) {
 		// 获取 Cookie
@@ -154,6 +177,9 @@ public class CookieSessionManager implements SessionManager {
 		}
 	}
 
+	/**
+	 * {@inheritDoc}
+	 */
 	@Override
 	public void unmanage(HttpSession session) {
 		Long sessionId = session.getId();
@@ -165,11 +191,17 @@ public class CookieSessionManager implements SessionManager {
 		}
 	}
 
+	/**
+	 * {@inheritDoc}
+	 */
 	@Override
 	public int getSessionNum() {
 		return this.sessions.size();
 	}
 
+	/**
+	 * {@inheritDoc}
+	 */
 	@Override
 	public List<HttpSession> getSessions() {
 		ArrayList<HttpSession> ret = new ArrayList<HttpSession>(this.sessions.size());
@@ -179,11 +211,17 @@ public class CookieSessionManager implements SessionManager {
 		return ret;
 	}
 
+	/**
+	 * {@inheritDoc}
+	 */
 	@Override
 	public HttpSession getSession(Long id) {
 		return this.sessions.get(id);
 	}
 
+	/**
+	 * {@inheritDoc}
+	 */
 	@Override
 	public HttpSession getSession(HttpRequest request) {
 		// 获取 Cookie
@@ -210,11 +248,17 @@ public class CookieSessionManager implements SessionManager {
 		return null;
 	}
 
+	/**
+	 * {@inheritDoc}
+	 */
 	@Override
 	public boolean hasSession(Long id) {
 		return this.sessions.containsKey(id);
 	}
 
+	/**
+	 * {@inheritDoc}
+	 */
 	@Override
 	public void addSessionListener(SessionListener listener) {
 		synchronized (this.listeners) {
@@ -224,6 +268,9 @@ public class CookieSessionManager implements SessionManager {
 		}
 	}
 
+	/**
+	 * {@inheritDoc}
+	 */
 	@Override
 	public void removeSessionListener(SessionListener listener) {
 		synchronized (this.listeners) {
@@ -231,6 +278,11 @@ public class CookieSessionManager implements SessionManager {
 		}
 	}
 
+	/**
+	 * 分发会话创建事件。
+	 * 
+	 * @param session 被创建的会话。
+	 */
 	private void dispatchCreate(HttpSession session) {
 		synchronized (this.listeners) {
 			for (SessionListener listener : this.listeners) {
@@ -239,6 +291,11 @@ public class CookieSessionManager implements SessionManager {
 		}
 	}
 
+	/**
+	 * 分发会话销毁事件。
+	 * 
+	 * @param session 被销毁的会话。
+	 */
 	private void dispatchDestroy(HttpSession session) {
 		synchronized (this.listeners) {
 			for (SessionListener listener : this.listeners) {
@@ -248,9 +305,10 @@ public class CookieSessionManager implements SessionManager {
 	}
 
 	/**
-	 * 读取 Cookie 里的 Session ID
-	 * @param cookie
-	 * @return
+	 * 读取 Cookie 里的 Session ID 。
+	 * 
+	 * @param cookie 指定待读取 ID 的 Cookie 串。
+	 * @return 返回 Cookie 里的 Session ID 。如果读取失败返回 <code>-1</code> 。
 	 */
 	private long readSessionId(String cookie) {
 		String[] array = cookie.split("=");
@@ -274,6 +332,10 @@ public class CookieSessionManager implements SessionManager {
 	 * Session 维护任务。
 	 */
 	protected final class SessionMaintainTask extends Thread {
+
+		/**
+		 * 构造函数。
+		 */
 		protected SessionMaintainTask() {
 			super(SessionMaintainTask.class.getName());
 		}
@@ -294,5 +356,7 @@ public class CookieSessionManager implements SessionManager {
 				}
 			}
 		}
+
 	}
+
 }

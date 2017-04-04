@@ -2,7 +2,7 @@
 -----------------------------------------------------------------------------
 This source file is part of Cell Cloud.
 
-Copyright (c) 2009-2015 Cell Cloud Team (www.cellcloud.net)
+Copyright (c) 2009-2017 Cell Cloud Team (www.cellcloud.net)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -30,40 +30,69 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 
-/** 日志管理器。
+/**
+ * 日志管理器。
  * 
- * @author Jiangwei Xu
+ * @author Ambrose Xu
+ * 
  */
 public final class LogManager {
 
 	private final static LogManager instance = new LogManager();
 
+	/**
+	 * 默认时间格式。
+	 */
 	public final static SimpleDateFormat TIME_FORMAT = new SimpleDateFormat("HH:mm:ss.SSS");
 
+	/** 日志处理器列表。 */
 	private ArrayList<LogHandle> handles;
+	/** 当前日志等级。 */
 	private byte level;
 
+	/**
+	 * 构造函数。
+	 */
 	private LogManager() {
 		this.handles = new ArrayList<LogHandle>();
 		this.level = LogLevel.DEBUG;
 	}
 
+	/**
+	 * 获得管理器的单例。
+	 * 
+	 * @return 返回管理器单例。
+	 */
 	public static LogManager getInstance() {
 		return instance;
 	}
 
-	/** 设置日志等级。
+	/**
+	 * 设置日志等级。
+	 * 
+	 * @param level 日志等级 {@link LogLevel} 。
+	 * @see LogLevel
 	 */
 	public void setLevel(byte level) {
 		this.level = level;
 	}
-	/** 返回日志等级。
+
+	/**
+	 * 获得日志等级。
+	 * 
+	 * @return 返回日志等级 {@link LogLevel} 。
+	 * @see LogLevel
 	 */
 	public byte getLevel() {
 		return this.level;
 	}
 
-	/** 记录日志。
+	/**
+	 * 记录日志。
+	 * 
+	 * @param level 指定该日志的记录等级。
+	 * @param tag 指定日志标签。
+	 * @param log 指定日志内容。
 	 */
 	public void log(byte level, String tag, String log) {
 		synchronized (this) {
@@ -98,10 +127,10 @@ public final class LogManager {
 	}
 
 	/**
-	 * 返回指定名称的处理器。
+	 * 获得指定名称的处理器。
 	 * 
-	 * @param name
-	 * @return
+	 * @param name 指定处理器名称。
+	 * @return 返回指定名称的处理器。
 	 */
 	public LogHandle getHandle(String name) {
 		synchronized (this) {
@@ -115,7 +144,10 @@ public final class LogManager {
 		return null;
 	}
 
-	/** 添加日志内容处理器。
+	/**
+	 * 添加日志内容处理器。
+	 * 
+	 * @param handle 需添加的日志处理器。
 	 */
 	public void addHandle(LogHandle handle) {
 		synchronized (this) {
@@ -133,7 +165,10 @@ public final class LogManager {
 		}
 	}
 
-	/** 移除日志内容处理器。
+	/**
+	 * 移除日志内容处理器。
+	 * 
+	 * @param handle 需移除的日志处理器。
 	 */
 	public void removeHandle(LogHandle handle) {
 		synchronized (this) {
@@ -141,7 +176,8 @@ public final class LogManager {
 		}
 	}
 
-	/** 移除所有日志内容处理器。
+	/**
+	 * 移除所有日志内容处理器。
 	 */
 	public void removeAllHandles() {
 		synchronized (this) {
@@ -149,7 +185,8 @@ public final class LogManager {
 		}
 	}
 
-	/** 创建 System.out 日志。
+	/**
+	 * 创建 System.out 日志处理器。
 	 */
 	public static LogHandle createSystemOutHandle() {
 		return new LogHandle() {
@@ -223,4 +260,5 @@ public final class LogManager {
 			}
 		};
 	}
+
 }

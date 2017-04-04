@@ -2,7 +2,7 @@
 -----------------------------------------------------------------------------
 This source file is part of Cell Cloud.
 
-Copyright (c) 2009-2013 Cell Cloud Team (www.cellcloud.net)
+Copyright (c) 2009-2017 Cell Cloud Team (www.cellcloud.net)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -30,13 +30,20 @@ import org.eclipse.jetty.websocket.server.WebSocketHandler;
 import org.eclipse.jetty.websocket.servlet.WebSocketServletFactory;
 
 /**
+ * 基于 Jetty 的 WebSocket handler 。
  * 
- * @author Jiangwei Xu
+ * @author Ambrose Xu
+ * 
  */
 public final class JettyWebSocketHandler extends WebSocketHandler {
 
 	private JettyWebSocket webSocket;
 
+	/**
+	 * 构造函数。
+	 * 
+	 * @param webSocket
+	 */
 	public JettyWebSocketHandler(JettyWebSocket webSocket) {
 		super();
 		this.webSocket = webSocket;
@@ -49,4 +56,5 @@ public final class JettyWebSocketHandler extends WebSocketHandler {
 		factory.getPolicy().setAsyncWriteTimeout(10L * 1000L);
 		factory.setCreator(new JettyWebSocketCreator(this.webSocket));
 	}
+
 }

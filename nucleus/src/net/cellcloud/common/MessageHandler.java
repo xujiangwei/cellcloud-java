@@ -2,7 +2,7 @@
 -----------------------------------------------------------------------------
 This source file is part of Cell Cloud.
 
-Copyright (c) 2009-2012 Cell Cloud Team (www.cellcloud.net)
+Copyright (c) 2009-2017 Cell Cloud Team (www.cellcloud.net)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -29,35 +29,62 @@ package net.cellcloud.common;
 /**
  * 消息服务处理监听器。
  * 
- * @author Jiangwei Xu
+ * @author Ambrose Xu
+ * 
  */
 public interface MessageHandler {
 
-	/** 创建连接会话。
-	*/
+	/**
+	 * 当会话连接创建时此函数被调用。
+	 * 
+	 * @param session 会话对象。
+	 */
 	public void sessionCreated(Session session);
-	
-	/** 销毁连接会话。
-	*/
+
+	/**
+	 * 当会话连接销毁时此函数被调用。
+	 * 
+	 * @param session 会话对象。
+	 */
 	public void sessionDestroyed(Session session);
 
-	/** 开启连接会话。
-	*/
+	/**
+	 * 当连接启用时此函数被调用。
+	 * 
+	 * @param session 会话对象。
+	 */
 	public void sessionOpened(Session session);
 
-	/** 关闭连接会话。
-	*/
+	/**
+	 * 当连接停用时此函数被调用。
+	 * 
+	 * @param session 会话对象。
+	 */
 	public void sessionClosed(Session session);
 
-	/** 接收到消息。
-	*/
+	/**
+	 * 当接收到消息时此函数被调用。
+	 * 
+	 * @param session 接收到消息的会话。
+	 * @param message 接收到的消息数据。
+	 */
 	public void messageReceived(Session session, Message message);
 
-	/** 消息已发送。
-	*/
+	/**
+	 * 当发送出消息时此函数被调用。
+	 * 
+	 * @param session 发送出消息的会话。
+	 * @param message 发送出的消息数据。
+	 */
 	public void messageSent(Session session, Message message);
 
-	/** 发生错误。
-	*/
+	/**
+	 * 当连接发生错误时此函数被调用。
+	 * 
+	 * @param errorCode 错误码 {@link MessageErrorCode} 。
+	 * @param session 发生错误的会话对象。
+	 * @see MessageErrorCode
+	 */
 	public void errorOccurred(int errorCode, Session session);
+
 }

@@ -2,7 +2,7 @@
 -----------------------------------------------------------------------------
 This source file is part of Cell Cloud.
 
-Copyright (c) 2009-2013 Cell Cloud Team (www.cellcloud.net)
+Copyright (c) 2009-2017 Cell Cloud Team (www.cellcloud.net)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -30,36 +30,55 @@ import java.util.ArrayList;
 import java.util.List;
 
 
-/** HTTP 服务节点封装。
+/**
+ * HTTP 服务节点封装。
  * 
- * @author Jiangwei Xu
+ * @author Ambrose Xu
+ * 
  */
 public class HttpCapsule {
 
+	/** 封装容器名。 */
 	private String name;
 
+	/** 封装的 HTTP 接入处理器。 */
 	private ArrayList<CapsuleHolder> holders;
 
+	/** 使用的会话管理器。 */
 	private SessionManager sessionManager;
 
+	/**
+	 * 构造函数。
+	 * 
+	 * @param name 指定容器名称。
+	 */
 	public HttpCapsule(String name) {
 		this.name = name;
 		this.holders = new ArrayList<CapsuleHolder>();
 	}
 
+	/**
+	 * 获得容器名。
+	 * 
+	 * @return 返回容器名。
+	 */
 	public String getName() {
 		return this.name;
 	}
 
-	/** 返回 Holder 列表。
-	 * @return
+	/**
+	 * 获得 Holder 列表。
+	 *
+	 * @return 返回 Holder 列表。
 	 */
 	public List<CapsuleHolder> getHolders() {
 		return this.holders;
 	}
 
-	/** 添加接入器。
-	 * @param holder
+	/**
+	 * 添加接入器。
+	 * 
+	 * @param holder 指定接入器对象。
 	 */
 	public void addHolder(CapsuleHolder holder) {
 		this.holders.add(holder);
@@ -70,8 +89,10 @@ public class HttpCapsule {
 		}
 	}
 
-	/** 移除接入器。
-	 * @param holder
+	/**
+	 * 移除接入器。
+	 * 
+	 * @param holder 指定接入器对象。
 	 */
 	public void removeHolder(CapsuleHolder holder) {
 		this.holders.remove(holder);
@@ -84,7 +105,8 @@ public class HttpCapsule {
 
 	/**
 	 * 设置会话管理器。
-	 * @param sessionManager
+	 * 
+	 * @param sessionManager 指定会话管理器。
 	 */
 	public void setSessionManager(SessionManager sessionManager) {
 		this.sessionManager = sessionManager;
@@ -98,10 +120,12 @@ public class HttpCapsule {
 	}
 
 	/**
-	 * 返回会话管理器。
-	 * @return
+	 * 获得当前有效的会话管理器。
+	 * 
+	 * @return 返回会话管理器。
 	 */
 	public SessionManager getSessionManager() {
 		return this.sessionManager;
 	}
+
 }

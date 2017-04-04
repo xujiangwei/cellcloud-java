@@ -26,8 +26,20 @@ THE SOFTWARE.
 
 package net.cellcloud.common;
 
+/**
+ * 配额计算器配额超限时的回调。
+ * 
+ * @author Ambrose Xu
+ *
+ */
 public interface QuotaCalculatorCallback {
 
+	/**
+	 * 当发生阻塞时调用该方法。
+	 * 
+	 * @param size 被阻塞的数据大小。
+	 * @param custom 自定义数据对象。
+	 */
 	public void onCallback(int size, Object custom);
 
 }

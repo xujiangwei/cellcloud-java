@@ -2,7 +2,7 @@
 -----------------------------------------------------------------------------
 This source file is part of Cell Cloud.
 
-Copyright (c) 2009-2013 Cell Cloud Team (www.cellcloud.net)
+Copyright (c) 2009-2017 Cell Cloud Team (www.cellcloud.net)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -38,46 +38,67 @@ import java.util.LinkedList;
 import java.util.Set;
 import java.util.Vector;
 
-
-/** 非阻塞式网络连接器。
+/**
+ * 非阻塞式网络连接器。
  * 
- * @author Jiangwei Xu
+ * @author Ambrose Xu
+ * 
  */
 public class NonblockingConnector extends MessageService implements MessageConnector {
 
-	// 缓冲块大小
+	/** 缓冲块大小。 */
 	private int block = 65536;
+	/** 单次写数据大小限制。 */
 	private int writeLimit = 32768;
 
+	/** 连接器连接的地址。 */
 	private InetSocketAddress address;
+	/** 连接超时时间。 */
 	private long connectTimeout;
+	/** NIO socket channel */
 	private SocketChannel channel;
+	/** NIO selector */
 	private Selector selector;
 
+	/** 对应的会话对象。 */
 	private Session session;
 
+	/** 数据处理线程。 */
 	private Thread handleThread;
+	/** 线程是否自旋。 */
 	private boolean spinning = false;
+	/** 线程是否正在运行。 */
 	private boolean running = false;
 
+	/** 线程睡眠间隔。 */
 	private long sleepInterval = 20L;
 
-	// 待发送消息列表
+	/** 待发送消息列表。 */
 	private Vector<Message> messages;
 
+	/** 是否关闭连接。 */
 	private boolean closed = false;
 
+	/**
+	 * 构造函数。
+	 */
 	public NonblockingConnector() {
 		this.connectTimeout = 10000L;
 		this.messages = new Vector<Message>();
 	}
 
-	/** 返回连接地址。
+	/**
+	 * 获得连接地址。
+	 * 
+	 * @return 返回连接地址。
 	 */
 	public InetSocketAddress getAddress() {
 		return this.address;
 	}
 
+	/**
+	 * {@inheritDoc}
+	 */
 	@Override
 	public boolean connect(InetSocketAddress address) {
 		if (this.channel != null && this.channel.isConnected()) {
@@ -204,6 +225,9 @@ public class NonblockingConnector extends MessageService implements MessageConne
 		return true;
 	}
 
+	/**
+	 * {@inheritDoc}
+	 */
 	@Override
 	public void disconnect() {
 		this.spinning = false;
@@ -252,19 +276,35 @@ public class NonblockingConnector extends MessageService implements MessageConne
 		}
 	}
 
+	/**
+	 * {@inheritDoc}
+	 */
 	@Override
 	public void setConnectTimeout(long timeout) {
 		this.connectTimeout = timeout;
 	}
 
+	/**
+	 * 获得连接超时时间。
+	 * 
+	 * @return 返回以毫秒为单位的时间长度。
+	 */
 	public long getConnectTimeout() {
 		return this.connectTimeout;
 	}
 
+	/**
+	 * 重置线程 sleep 间隔。
+	 * 
+	 * @param sleepInterval 指定以毫秒为单位的间隔。
+	 */
 	public void resetSleepInterval(long sleepInterval) {
 		this.sleepInterval = sleepInterval;
 	}
 
+	/**
+	 * {@inheritDoc}
+	 */
 	@Override
 	public void setBlockSize(int size) {
 		if (size < 2048) {
@@ -288,25 +328,44 @@ public class NonblockingConnector extends MessageService implements MessageConne
 		}
 	}
 
+	/**
+	 * 获得缓存快大小。
+	 * 
+	 * @return 返回缓存块大小。
+	 */
 	public int getBlockSize() {
 		return this.block;
 	}
 
-	/** 是否已连接。
+	/**
+	 * 是否已建立连接。
+	 * 
+	 * @return 如果已经建立连接返回 <code>true</code> 。
 	 */
 	public boolean isConnected() {
 		return (null != this.channel && this.channel.isConnected());
 	}
 
+	/**
+	 * {@inheritDoc}
+	 */
 	@Override
 	public Session getSession() {
 		return this.session;
 	}
 
+	/**
+	 * 写消息数据给已连接的服务器。
+	 * 
+	 * @param message 指定消息。
+	 */
 	public void write(Message message) {
 		this.write(null, message);
 	}
 
+	/**
+	 * {@inheritDoc}
+	 */
 	@Override
 	public void write(Session session, Message message) {
 		if (message.length() > this.writeLimit) {
@@ -317,17 +376,28 @@ public class NonblockingConnector extends MessageService implements MessageConne
 		this.messages.add(message);
 	}
 
+	/**
+	 * 通知会话创建。
+	 */
 	private void fireSessionCreated() {
 		if (null != this.handler) {
 			this.handler.sessionCreated(this.session);
 		}
 	}
+
+	/**
+	 * 通知会话启用。
+	 */
 	private void fireSessionOpened() {
 		if (null != this.handler) {
 			this.closed = false;
 			this.handler.sessionOpened(this.session);
 		}
 	}
+
+	/**
+	 * 通知会话停用。
+	 */
 	private void fireSessionClosed() {
 		if (null != this.handler) {
 			if (!this.closed) {
@@ -336,18 +406,32 @@ public class NonblockingConnector extends MessageService implements MessageConne
 			}
 		}
 	}
+
+	/**
+	 * 通知会话销毁。
+	 */
 	private void fireSessionDestroyed() {
 		if (null != this.handler) {
 			this.handler.sessionDestroyed(this.session);
 		}
 	}
+
+	/**
+	 * 通知发生连接错误。
+	 * 
+	 * @param errorCode 错误码。
+	 */
 	private void fireErrorOccurred(int errorCode) {
 		if (null != this.handler) {
 			this.handler.errorOccurred(errorCode, this.session);
 		}
 	}
 
-	/** 事件循环。 */
+	/**
+	 * 循环事件分发处理。
+	 * 
+	 * @throws Exception
+	 */
 	private void loopDispatch() throws Exception {
 		// 自旋
 		this.spinning = true;
@@ -405,6 +489,12 @@ public class NonblockingConnector extends MessageService implements MessageConne
 		this.fireSessionClosed();
 	}
 
+	/**
+	 * 执行连接事件。
+	 * 
+	 * @param key 
+	 * @return
+	 */
 	private boolean doConnect(SelectionKey key) {
 		// 获取创建通道选择器事件键的套接字通道
 		SocketChannel channel = (SocketChannel) key.channel();
@@ -438,6 +528,11 @@ public class NonblockingConnector extends MessageService implements MessageConne
 		return true;
 	}
 
+	/**
+	 * 执行数据接收事件。
+	 * 
+	 * @param key
+	 */
 	private void receive(SelectionKey key) {
 		SocketChannel channel = (SocketChannel) key.channel();
 
@@ -533,6 +628,11 @@ public class NonblockingConnector extends MessageService implements MessageConne
 		}
 	}
 
+	/**
+	 * 执行数据发送事件。
+	 * 
+	 * @param key
+	 */
 	private void send(SelectionKey key) {
 		SocketChannel channel = (SocketChannel) key.channel();
 
@@ -591,6 +691,11 @@ public class NonblockingConnector extends MessageService implements MessageConne
 		}
 	}
 
+	/**
+	 * 解析并处理消息。
+	 * 
+	 * @param data 接收到的数据数组。
+	 */
 	private void process(byte[] data) {
 		// 根据数据标志获取数据
 		if (this.existDataMark()) {
@@ -718,6 +823,9 @@ public class NonblockingConnector extends MessageService implements MessageConne
 
 	/**
 	 * 数据提取并输出。
+	 * 
+	 * @param out 解析之后的输出数据。
+	 * @param data 待处理数据。
 	 */
 	private void extract(final LinkedList<byte[]> out, final byte[] data) {
 		final byte[] headMark = this.getHeadMark();
@@ -870,13 +978,14 @@ public class NonblockingConnector extends MessageService implements MessageConne
 	}
 
 	/**
+	 * 比较字节数组是否相等。
 	 * 
-	 * @param b1
-	 * @param offsetB1
-	 * @param b2
-	 * @param offsetB2
-	 * @param length
-	 * @return 0 表示匹配，-1 表示不匹配，1 表示越界
+	 * @param b1 指定字节数组1。
+	 * @param offsetB1 指定字节数组1操作偏移。
+	 * @param b2 指定字节数组2。
+	 * @param offsetB2 指定字节数组2操作偏移。
+	 * @param length 指定数组比较长度。
+	 * @return 返回 <code>0</code> 表示匹配，<code>-1</code> 表示不匹配，<code>1</code> 表示越界
 	 */
 	private int compareBytes(byte[] b1, int offsetB1, byte[] b2, int offsetB2, int length) {
 		for (int i = 0; i < length; ++i) {
@@ -893,15 +1002,28 @@ public class NonblockingConnector extends MessageService implements MessageConne
 		return 0;
 	}
 
+	/**
+	 * 加密消息。
+	 * 
+	 * @param message 指定待加密消息。
+	 * @param key 指定加密密钥。
+	 */
 	private void encryptMessage(Message message, byte[] key) {
 		byte[] plaintext = message.get();
 		byte[] ciphertext = Cryptology.getInstance().simpleEncrypt(plaintext, key);
 		message.set(ciphertext);
 	}
 
+	/**
+	 * 解密消息。
+	 * 
+	 * @param message 指定待解密消息。
+	 * @param key 指定解密密钥。
+	 */
 	private void decryptMessage(Message message, byte[] key) {
 		byte[] ciphertext = message.get();
 		byte[] plaintext = Cryptology.getInstance().simpleDecrypt(ciphertext, key);
 		message.set(plaintext);
 	}
+
 }

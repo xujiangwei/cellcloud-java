@@ -2,7 +2,7 @@
 -----------------------------------------------------------------------------
 This source file is part of Cell Cloud.
 
-Copyright (c) 2009-2013 Cell Cloud Team (www.cellcloud.net)
+Copyright (c) 2009-2017 Cell Cloud Team (www.cellcloud.net)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -29,7 +29,7 @@ package net.cellcloud.http;
 /**
  * 会话期满监听器。
  * 
- * @author Jiangwei Xu
+ * @author Ambrose Xu
  *
  */
 public interface SessionListener {
@@ -37,14 +37,15 @@ public interface SessionListener {
 	/**
 	 * 会话被创建。
 	 * 
-	 * @param session
+	 * @param session 产生该事件的会话。
 	 */
 	public void onCreate(HttpSession session);
 
 	/**
 	 * 会话被销毁。
 	 * 
-	 * @param session
+	 * @param session 产生该事件的会话。
 	 */
 	public void onDestroy(HttpSession session);
+
 }

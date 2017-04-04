@@ -2,7 +2,7 @@
 -----------------------------------------------------------------------------
 This source file is part of Cell Cloud.
 
-Copyright (c) 2009-2012 Cell Cloud Team (www.cellcloud.net)
+Copyright (c) 2009-2017 Cell Cloud Team (www.cellcloud.net)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -28,15 +28,20 @@ package net.cellcloud.http;
 
 import org.eclipse.jetty.util.log.Logger;
 
-/** Jetty 日志傀儡。
+/**
+ * Jetty 日志傀儡。
  * 
- * @author Jiangwei Xu
+ * @author Ambrose Xu
+ * 
  */
 public class JettyLoggerPuppet implements org.eclipse.jetty.util.log.Logger {
 
 	private boolean debugEnabled = false;
 	private StringBuilder buffer = null;
 
+	/**
+	 * 构造函数。
+	 */
 	public JettyLoggerPuppet() {
 		this.buffer = new StringBuilder();
 	}
@@ -158,4 +163,5 @@ public class JettyLoggerPuppet implements org.eclipse.jetty.util.log.Logger {
 	public void setDebugEnabled(boolean value) {
 		this.debugEnabled = value;
 	}
+
 }

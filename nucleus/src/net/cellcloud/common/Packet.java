@@ -30,7 +30,6 @@ import java.util.ArrayList;
 
 import net.cellcloud.util.ByteUtils;
 
-
 /**
  * 数据包类。描述在网络上进行投递的数据包格式。
  * 
@@ -96,7 +95,7 @@ import net.cellcloud.util.ByteUtils;
  * 
  */
 public final class Packet {
-	
+
 	protected static final int PSL_TAG = 4;
 	protected static final int PSL_VERSION = 4;
 	protected static final int PSL_SN = 4;
@@ -132,8 +131,8 @@ public final class Packet {
 	/**
 	 * 构造函数。
 	 * 
-	 * @param tag
-	 * @param sn
+	 * @param tag 包标签。
+	 * @param sn 包序号。
 	 */
 	public Packet(byte[] tag, int sn) {
 		this.tag = tag;
@@ -146,10 +145,10 @@ public final class Packet {
 	/**
 	 * 构造函数。
 	 * 
-	 * @param tag
-	 * @param sn
-	 * @param major
-	 * @param minor
+	 * @param tag 包标签。
+	 * @param sn 包序号。
+	 * @param major 包主版本号。
+	 * @param minor 包副版本号
 	 */
 	public Packet(byte[] tag, int sn, int major, int minor) {
 		this.tag = tag;
@@ -198,7 +197,7 @@ public final class Packet {
 	/**
 	 * 添加数据段。
 	 * 
-	 * @param segment
+	 * @param segment 数组端数据。
 	 */
 	public void appendSegment(byte[] segment) {
 		this.segments.add(segment);
@@ -207,8 +206,8 @@ public final class Packet {
 	/**
 	 * 获得指定索引的数据段。
 	 * 
-	 * @param index
-	 * @return
+	 * @param index 指定索引。
+	 * @return 返回查找的数据段数据。
 	 */
 	public byte[] getSegment(int index) {
 		if (index < 0 || index >= this.segments.size())
@@ -259,8 +258,8 @@ public final class Packet {
 	/**
 	 * 将指定的包序列化为字节数组。
 	 * 
-	 * @param packet
-	 * @return
+	 * @param packet 指定待处理的包对象。
+	 * @return 返回序列化的数据。
 	 */
 	public static byte[] pack(Packet packet) {
 		if (packet.major == 2) {
@@ -384,8 +383,9 @@ public final class Packet {
 	/**
 	 * 将指定的数据反序列化为包对象。
 	 * 
-	 * @param data
-	 * @return
+	 * @param data 指定待处理的序列化数据。
+	 * @return 返回反序列化的包对象。
+	 * 
 	 * @throws NumberFormatException
 	 */
 	public static Packet unpack(byte[] data) throws NumberFormatException {

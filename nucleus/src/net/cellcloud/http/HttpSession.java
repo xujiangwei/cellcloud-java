@@ -2,7 +2,7 @@
 -----------------------------------------------------------------------------
 This source file is part of Cell Cloud.
 
-Copyright (c) 2009-2013 Cell Cloud Team (www.cellcloud.net)
+Copyright (c) 2009-2017 Cell Cloud Team (www.cellcloud.net)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -37,25 +37,26 @@ import net.cellcloud.util.Clock;
 /**
  * HTTP 会话。
  * 
- * @author Jiangwei Xu
+ * @author Ambrose Xu
  *
  */
 public class HttpSession extends Session {
 
-	// 绝对时间时间戳，单位：毫秒
+	/** 绝对时间时间戳，单位：毫秒。 */
 	private long timestamp;
-	// 过期时间，单位：毫秒
+	/** 过期时间，单位：毫秒。 */
 	private long expires;
-	// 心跳
+	/** 心跳。 */
 	private long heartbeat;
 
-	// 推送消息队列
+	/** 推送消息队列。 */
 	private ConcurrentLinkedQueue<Message> queue;
 
 	/**
 	 * 构造函数。
-	 * @param address
-	 * @param expires
+	 * 
+	 * @param address 发起会话的地址。
+	 * @param expires 会话超期时间。
 	 */
 	public HttpSession(InetSocketAddress address, long expires) {
 		super(null, address);
@@ -67,9 +68,10 @@ public class HttpSession extends Session {
 
 	/**
 	 * 构造函数。
-	 * @param id
-	 * @param address
-	 * @param expires
+	 * 
+	 * @param id 指定会话的 ID 。
+	 * @param address 发起会话的地址。
+	 * @param expires 会话超期时间。
 	 */
 	public HttpSession(long id, InetSocketAddress address, long expires) {
 		super(id, null, address);
@@ -80,8 +82,7 @@ public class HttpSession extends Session {
 	}
 
 	/**
-	 * 返回会话时间戳。
-	 * @return
+	 * {@inheritDoc}
 	 */
 	@Override
 	public long getTimestamp() {
@@ -89,23 +90,25 @@ public class HttpSession extends Session {
 	}
 
 	/**
-	 * 返回会话过期时间。
-	 * @return
+	 * 获得会话过期时间。
+	 * 
+	 * @return 返回会话过期时间。
 	 */
 	public long getExpires() {
 		return this.expires;
 	}
 
 	/**
-	 * 返回最近一次心跳时间戳。
-	 * @return
+	 * 获得最近一次心跳时间戳。
+	 * 
+	 * @return 返回最近一次心跳时间戳。
 	 */
 	public long getHeartbeat() {
 		return this.heartbeat;
 	}
 
 	/**
-	 * 心跳。
+	 * 执行心跳。
 	 */
 	public void heartbeat() {
 		this.heartbeat = Clock.currentTimeMillis();
@@ -117,8 +120,9 @@ public class HttpSession extends Session {
 	}
 
 	/**
-	 * 返回消息队列。
-	 * @return
+	 * 获得消息队列。
+	 * 
+	 * @return 返回消息队列。
 	 */
 	public final Queue<Message> getQueue() {
 		return this.queue;

@@ -36,6 +36,11 @@ public class StorageException extends Exception {
 
 	private static final long serialVersionUID = 1L;
 
+	/**
+	 * 构造函数。
+	 * 
+	 * @param message
+	 */
 	public StorageException(String message) {
 		super(message);
 	}

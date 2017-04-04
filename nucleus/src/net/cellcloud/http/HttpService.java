@@ -2,7 +2,7 @@
 -----------------------------------------------------------------------------
 This source file is part of Cell Cloud.
 
-Copyright (c) 2009-2016 Cell Cloud Team (www.cellcloud.net)
+Copyright (c) 2009-2017 Cell Cloud Team (www.cellcloud.net)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -58,40 +58,55 @@ import org.eclipse.jetty.server.handler.ContextHandlerCollection;
 import org.eclipse.jetty.util.resource.FileResource;
 import org.eclipse.jetty.util.ssl.SslContextFactory;
 
-/** HTTP 服务。
+/**
+ * HTTP 服务。
  * 
- * @author Jiangwei Xu
+ * @author Ambrose Xu
+ * 
  */
 public final class HttpService implements Service {
 
 	private static HttpService instance = null;
 
+	/** HTTP 服务器。 */
 	private Server httpServer = null;
+	/** HTTPS 服务器。 */
 	private Server httpsServer = null;
 
+	/** 处理 HTTP 跨域请求的处理器。 */
 	private HttpCrossDomainHandler httpCrossDomainHandler = null;
+	/** 处理 HTTPS 跨域请求的处理器。 */
 	private HttpCrossDomainHandler httpsCrossDomainHandler = null;
 
+	/** 接入器列表。 */
 	protected LinkedList<HttpCapsule> capsules = null;
 
-	// HTTP URI 上下文 Holder
+	/** HTTP URI 上下文接入器映射。 */
 	protected ConcurrentHashMap<String, CapsuleHolder> holders;
 
-	// WebSocket
+	/** WebSocket 服务器。 */
 	private Server wsServer = null;
+	/** WebSocket 服务端口。 */
 	private int wsPort = 7777;
+	/** WebSocket 队列长度。 */
 	private int wsQueueSize = 1000;
+	/** 基于 Jetty 的 WebSocket 处理器。 */
 	private JettyWebSocket webSocket;
 
-	// WebSocket Secure
+	/** WebSocket Secure 服务器。 */
 	private Server wssServer = null;
+	/** WebSocket Secure 服务端口。 */
 	private int wssPort = 7778;
+	/** WebSocket Secure 队列长度。 */
 	private int wssQueueSize = 1000;
+	/** 基于 Jetty 的 WebSocket Secure 处理器。 */
 	private JettyWebSocket webSocketSecure;
 
 	/**
 	 * 构造函数。
-	 * @param context
+	 * 
+	 * @param context 内核上下文。
+	 * 
 	 * @throws SingletonException
 	 */
 	public HttpService(NucleusContext context) throws SingletonException {
@@ -110,13 +125,15 @@ public final class HttpService implements Service {
 		}
 	}
 
-	/** 返回单例。
+	/**
+	 * 返回 HTTP 服务单例。
 	 */
 	public static HttpService getInstance() {
 		return HttpService.instance;
 	}
 
-	/** 启动服务。
+	/**
+	 * {@inheritDoc}
 	 */
 	@Override
 	public boolean startup() {
@@ -220,6 +237,9 @@ public final class HttpService implements Service {
 		return true;
 	}
 
+	/**
+	 * {@inheritDoc}
+	 */
 	@Override
 	public void shutdown() {
 		if (null != this.httpServer) {
@@ -267,13 +287,19 @@ public final class HttpService implements Service {
 		}
 	}
 
-	/** 添加服务节点。
+	/**
+	 * 添加服务接入节点。
+	 * 
+	 * @param capsule 指定以 URI 为键的服务接入器。
 	 */
 	public void addCapsule(HttpCapsule capsule) {
 		this.capsules.add(capsule);
 	}
 
-	/** 删除服务节点。
+	/**
+	 * 删除服务接入节点。
+	 * 
+	 * @param capsule 指定以 URI 为键的服务接入器。
 	 */
 	public void removeCapsule(HttpCapsule capsule) {
 		if (null == capsule) {
@@ -283,12 +309,23 @@ public final class HttpService implements Service {
 		this.capsules.remove(capsule);
 	}
 
+	/**
+	 * 获得全部服务接入节点。
+	 * 
+	 * @return 返回存储了所有服务接入点的列表。
+	 */
 	public List<HttpCapsule> getCapsules() {
 		ArrayList<HttpCapsule> list = new ArrayList<HttpCapsule>(this.capsules.size());
 		list.addAll(this.capsules);
 		return list;
 	}
 
+	/**
+	 * 获得指定名称的服务接入点。
+	 * 
+	 * @param name 指定接入器名称。
+	 * @return 返回指定的服务接入点。
+	 */
 	public HttpCapsule getCapsule(String name) {
 		for (HttpCapsule capsule : this.capsules) {
 			if (capsule.getName().equals(name)) {
@@ -299,6 +336,12 @@ public final class HttpService implements Service {
 		return null;
 	}
 
+	/**
+	 * 服务是否包含指定的接入点。
+	 * 
+	 * @param name 指定待判断的接入点名称。
+	 * @return 返回指定名称的接入点。
+	 */
 	public boolean hasCapsule(String name) {
 		for (HttpCapsule capsule : this.capsules) {
 			if (capsule.getName().equals(name)) {
@@ -309,6 +352,14 @@ public final class HttpService implements Service {
 		return false;
 	}
 
+	/**
+	 * 激活 HTTP 服务。
+	 * 
+	 * @param ports 指定需要开通服务的端口。
+	 * @param idleTimeout 服务闲置超时时间。
+	 * @param acceptQueueSize HTTP Accept 队列长度。
+	 * @return 激活成功返回 <code>true</code> 。
+	 */
 	public boolean activateHttp(int[] ports, long idleTimeout, int acceptQueueSize) {
 		if (ports.length == 0) {
 			return false;
@@ -337,6 +388,17 @@ public final class HttpService implements Service {
 		return true;
 	}
 
+	/**
+	 * 激活 HTTP Secure 服务。
+	 * 
+	 * @param port 指定服务端口。 
+	 * @param idleTimeout 服务闲置超时时间。
+	 * @param acceptQueueSize HTTP Accept 队列长度。
+	 * @param jksResource JKS 文件路径。
+	 * @param keyStorePassword JKS 密码存储密码。
+	 * @param keyManagerPassword JKS 密码管理密码。
+	 * @return 激活成功返回 <code>true</code> 。
+	 */
 	public boolean activateHttpSecure(int port, long idleTimeout, int acceptQueueSize, String jksResource, String keyStorePassword, String keyManagerPassword) {
 		if (null == jksResource || null == keyStorePassword || null == keyManagerPassword) {
 			Logger.w(this.getClass(), "No key store password, can NOT start HTTP Secure service");
@@ -389,6 +451,17 @@ public final class HttpService implements Service {
 		return true;
 	}
 
+	/**
+	 * 激活 WebSocket Secure 服务。
+	 * 
+	 * @param port 指定服务端口。
+	 * @param queueSize 指定队列长度。
+	 * @param handler 消息处理句柄。
+	 * @param jksResource JKS 文件路径。
+	 * @param keyStorePassword JKS 密钥存储密码。
+	 * @param keyManagerPassword JKS 密钥管理密码。
+	 * @return 激活成功返回 <code>true</code> 。
+	 */
 	public WebSocketManager activeWebSocketSecure(int port, int queueSize, MessageHandler handler
 			, String jksResource, String keyStorePassword, String keyManagerPassword) {
 		if (null == jksResource || null == keyStorePassword || null == keyManagerPassword || port <= 80) {
@@ -456,6 +529,9 @@ public final class HttpService implements Service {
 		return this.webSocketSecure;
 	}
 
+	/**
+	 * 停止 WebSocket Secure 服务。
+	 */
 	public void deactiveWebSocketSecure() {
 		if (this.wssServer != null) {
 			try {
@@ -471,7 +547,11 @@ public final class HttpService implements Service {
 
 	/**
 	 * 激活 WebSocket 服务。
-	 * @param port 指定 WebSocket 接口。
+	 * 
+	 * @param port 指定服务端口。
+	 * @param queueSize 指定连接队列长度。
+	 * @param handler 指定消息处理句柄。
+	 * @return 激活成功返回 <code>true</code> 。
 	 */
 	public WebSocketManager activeWebSocket(int port, int queueSize, MessageHandler handler) {
 		if (port <= 80) {
@@ -511,7 +591,7 @@ public final class HttpService implements Service {
 	}
 
 	/**
-	 * 禁用 WebSocket 服务。
+	 * 停止 WebSocket 服务。
 	 */
 	public void deactiveWebSocket() {
 		if (this.wsServer != null) {
@@ -526,22 +606,47 @@ public final class HttpService implements Service {
 		}
 	}
 
+	/**
+	 * 获得 HTTP 服务端口。
+	 * 
+	 * @return 返回 HTTP 服务端口。
+	 */
 	public int getHttpPort() {
 		return (null != this.httpServer) ? ((ServerConnector)this.httpServer.getConnectors()[0]).getPort() : 0;
 	}
 
+	/**
+	 * 获得 HTTPS 服务端口。
+	 * 
+	 * @return 返回 HTTPS 服务端口。
+	 */
 	public int getHttpsPort() {
 		return (null != this.httpsServer) ? ((ServerConnector)(this.httpsServer.getConnectors()[0])).getPort() : 0;
 	}
 
+	/**
+	 * 获得 WebSocket 服务端口。
+	 * 
+	 * @return 返回 WebSocket 服务端口。
+	 */
 	public int getWebSocketPort() {
 		return this.wsPort;
 	}
 
+	/**
+	 * 获得 WebSocket Secure 服务端口。
+	 * 
+	 * @return 返回 WebSocket Secure 服务端口。
+	 */
 	public int getWebSocketSecurePort() {
 		return this.wssPort;
 	}
 
+	/**
+	 * 获得当前 WebSocket 连接会话数。
+	 * 
+	 * @return 返回当前 WebSocket 连接会话数。
+	 */
 	public int getWebSocketSessionNum() {
 		if (null != this.webSocket) {
 			return this.webSocket.numSessions();
@@ -550,6 +655,11 @@ public final class HttpService implements Service {
 		return 0;
 	}
 
+	/**
+	 * 获得当前 WebSocket Secure 连接会话数。
+	 * 
+	 * @return 返回当前 WebSocket Secure 连接会话数。
+	 */
 	public int getWebSocketSecureSessionNum() {
 		if (null != this.webSocketSecure) {
 			return this.webSocketSecure.numSessions();
@@ -558,6 +668,11 @@ public final class HttpService implements Service {
 		return 0;
 	}
 
+	/**
+	 * 获得 WebSocket 服务的总接收流量。
+	 * 
+	 * @return 返回 WebSocket 服务的总接收流量。
+	 */
 	public long getTotalWSRx() {
 		if (null != this.webSocket) {
 			return this.webSocket.getTotalRx();
@@ -566,6 +681,11 @@ public final class HttpService implements Service {
 		return 0;
 	}
 
+	/**
+	 * 获得 WebSocket Secure 服务的总接收流量。
+	 * 
+	 * @return 返回 WebSocket Secure 服务的总接收流量。
+	 */
 	public long getTotalWSSRx() {
 		if (null != this.webSocketSecure) {
 			return this.webSocketSecure.getTotalRx();
@@ -574,6 +694,11 @@ public final class HttpService implements Service {
 		return 0;
 	}
 
+	/**
+	 * 获得 WebSocket 服务的总发送流量。
+	 * 
+	 * @return 返回 WebSocket 服务的总接收流量。
+	 */
 	public long getTotalWSTx() {
 		if (null != this.webSocket) {
 			return this.webSocket.getTotalTx();
@@ -582,6 +707,11 @@ public final class HttpService implements Service {
 		return 0;
 	}
 
+	/**
+	 * 获得 WebSocket Secure 服务的总发送流量。
+	 * 
+	 * @return 返回 WebSocket Secure 服务的总接收流量。
+	 */
 	public long getTotalWSSTx() {
 		if (null != this.webSocketSecure) {
 			return this.webSocketSecure.getTotalTx();

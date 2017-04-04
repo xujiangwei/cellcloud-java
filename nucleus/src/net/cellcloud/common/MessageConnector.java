@@ -2,7 +2,7 @@
 -----------------------------------------------------------------------------
 This source file is part of Cell Cloud.
 
-Copyright (c) 2009-2013 Cell Cloud Team (www.cellcloud.net)
+Copyright (c) 2009-2017 Cell Cloud Team (www.cellcloud.net)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -28,24 +28,46 @@ package net.cellcloud.common;
 
 import java.net.InetSocketAddress;
 
-/** 消息连接器。
+/**
+ * 消息连接器。
  * 
- * @author Jiangwei Xu
+ * @author Ambrose Xu
+ * 
  */
 public interface MessageConnector {
 
-	/** 连接远端的消息接收器。 */
+	/**
+	 * 连接远端的消息接收器。
+	 * 
+	 * @param address 指定连接地址。
+	 * @return 如果连接请求发出返回 <code>true</code> 。
+	 */
 	public boolean connect(InetSocketAddress address);
 
-	/** 关闭已建立的连接。 */
+	/**
+	 * 关闭已建立的连接。
+	 */
 	public void disconnect();
 
-	/** 设置连接超时值。 */
+	/**
+	 * 设置连接超时值。
+	 * 
+	 * @param timeout 指定以毫秒为单位的超时时间。
+	 */
 	public void setConnectTimeout(long timeout);
 
-	/** 设置数据缓存块大小。 */
+	/**
+	 * 设置数据缓存块大小。
+	 * 
+	 * @param size 指定以字节为单位的缓存块大小。
+	 */
 	public void setBlockSize(int size);
 
-	/** 返回会话实例。 */
+	/**
+	 * 获得会话实例。
+	 * 
+	 * @return 返回会话实例。
+	 */
 	public Session getSession();
+
 }

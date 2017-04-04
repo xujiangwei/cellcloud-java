@@ -2,7 +2,7 @@
 -----------------------------------------------------------------------------
 This source file is part of Cell Cloud.
 
-Copyright (c) 2009-2012 Cell Cloud Team (www.cellcloud.net)
+Copyright (c) 2009-2017 Cell Cloud Team (www.cellcloud.net)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -28,33 +28,47 @@ package net.cellcloud.common;
 
 import java.net.InetSocketAddress;
 
-/** 消息接收器接口。
+/**
+ * 消息接收器接口。
  * 
- * @author Jiangwei Xu
+ * @author Ambrose Xu
+ * 
  */
 public interface MessageAcceptor {
 
-	/** 绑定消息接收服务到指定端口。
-	*/
+	/**
+	 * 绑定消息接收服务到指定端口。
+	 * 
+	 * @param port 指定绑定端口。
+	 * @return 如果绑定成功返回 <code>true</code> 。
+	 */
 	public boolean bind(int port);
 
-	/** 绑定消息接收服务到指定地址。
-	*/
+	/**
+	 * 绑定消息接收服务到指定地址。
+	 * 
+	 * @param address 指定绑定端口。
+	 * @return 如果绑定成功返回 <code>true</code> 。
+	 */
 	public boolean bind(InetSocketAddress address);
-	
-	/** 解绑当前绑定的服务地址。
-	*/
+
+	/**
+	 * 解绑当前绑定的服务地址。
+	 */
 	public void unbind();
 
-	/** 关闭指定会话。
-	*/
+	/**
+	 * 关闭指定会话。指定会话连接将被断开。
+	 * 
+	 * @param session 指定需关闭的会话。
+	 */
 	public void close(Session session);
 
 	/**
-	 * 返回指定 ID 的会话实例。
+	 * 获得指定 ID 的会话实例。
 	 * 
-	 * @param sessionId
-	 * @return
+	 * @param sessionId 指定
+	 * @return 返回指定 ID 的会话实例。
 	 */
 	public Session getSession(Long sessionId);
 

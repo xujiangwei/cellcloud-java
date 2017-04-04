@@ -2,7 +2,7 @@
 -----------------------------------------------------------------------------
 This source file is part of Cell Cloud.
 
-Copyright (c) 2009-2013 Cell Cloud Team (www.cellcloud.net)
+Copyright (c) 2009-2017 Cell Cloud Team (www.cellcloud.net)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -37,39 +37,57 @@ import org.json.JSONObject;
 /**
  * 抽象层 JSON 格式 HTTP Handler 。
  * 
- * @author Jiangwei Xu
+ * @author Ambrose Xu
  * 
  */
 public abstract class AbstractJSONHandler extends HttpHandler {
 
+	/**
+	 * 构造函数。
+	 */
 	public AbstractJSONHandler() {
 		super();
 	}
 
+	/**
+	 * {@inheritDoc}
+	 */
 	@Override
 	protected void doGet(HttpRequest request, HttpResponse response)
 		throws IOException {
 		this.respond(response, HttpResponse.SC_METHOD_NOT_ALLOWED);
 	}
 
+	/**
+	 * {@inheritDoc}
+	 */
 	@Override
 	protected void doPost(HttpRequest request, HttpResponse response)
 		throws IOException {
 		this.respond(response, HttpResponse.SC_METHOD_NOT_ALLOWED);
 	}
 
+	/**
+	 * {@inheritDoc}
+	 */
 	@Override
 	protected void doOptions(HttpRequest request, HttpResponse response)
 			throws IOException {
 		this.respond(response, HttpResponse.SC_METHOD_NOT_ALLOWED);
 	}
 
+	/**
+	 * {@inheritDoc}
+	 */
 	@Override
 	protected void doPut(HttpRequest request, HttpResponse response)
 		throws IOException {
 		this.respond(response, HttpResponse.SC_METHOD_NOT_ALLOWED);
 	}
 
+	/**
+	 * {@inheritDoc}
+	 */
 	@Override
 	protected void doDelete(HttpRequest request, HttpResponse response)
 		throws IOException {
@@ -78,8 +96,9 @@ public abstract class AbstractJSONHandler extends HttpHandler {
 
 	/**
 	 * 按照指定状态码处理访问响应。
-	 * @param response
-	 * @param status
+	 * 
+	 * @param response HTTP 应答。
+	 * @param status HTTP 状态码。
 	 */
 	protected void respond(HttpResponse response, int status) {
 		response.setContentType("application/json");
@@ -103,9 +122,11 @@ public abstract class AbstractJSONHandler extends HttpHandler {
 
 	/**
 	 * 按照指定状态处理访问响应，并写入 JSON 数据。
-	 * @param response
-	 * @param status
-	 * @param json
+	 * 
+	 * @param response HTTP 响应。
+	 * @param status HTTP 状态码。
+	 * @param json JSON 数据。
+	 * 
 	 * @throws IOException
 	 */
 	protected void respond(HttpResponse response, int status, JSONObject json) throws IOException {
@@ -129,8 +150,9 @@ public abstract class AbstractJSONHandler extends HttpHandler {
 	}
 
 	/**
-	 * 按照 200 状态处理访问响应
-	 * @param response
+	 * 按照 200 状态处理访问响应。
+	 * 
+	 * @param response HTTP 响应。
 	 */
 	protected void respondWithOk(HttpResponse response) {
 		response.setContentType("application/json");
@@ -154,8 +176,10 @@ public abstract class AbstractJSONHandler extends HttpHandler {
 
 	/**
 	 * 按照 200 状态处理访问响应，并写入 JSON 数据。
-	 * @param response
-	 * @param json
+	 * 
+	 * @param response HTTP 响应。
+	 * @param json JSON 数据。
+	 * 
 	 * @throws IOException
 	 */
 	protected void respondWithOk(HttpResponse response, JSONObject json) throws IOException {
@@ -177,4 +201,5 @@ public abstract class AbstractJSONHandler extends HttpHandler {
 			}
 		}
 	}
+
 }

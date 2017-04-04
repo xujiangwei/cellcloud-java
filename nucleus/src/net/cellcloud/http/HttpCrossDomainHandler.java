@@ -2,7 +2,7 @@
 -----------------------------------------------------------------------------
 This source file is part of Cell Cloud.
 
-Copyright (c) 2009-2013 Cell Cloud Team (www.cellcloud.net)
+Copyright (c) 2009-2017 Cell Cloud Team (www.cellcloud.net)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -43,7 +43,8 @@ import org.eclipse.jetty.server.Request;
 /**
  * HTTP 跨域支持。
  * 
- * @author Jiangwei Xu
+ * @author Ambrose Xu
+ * 
  */
 public final class HttpCrossDomainHandler extends HttpHandler implements CapsuleHolder {
 
@@ -59,26 +60,45 @@ public final class HttpCrossDomainHandler extends HttpHandler implements Capsule
 
 	private AtomicInteger concurrentCounts;
 
+	/**
+	 * 构造函数。
+	 * 
+	 * @param service 指定 HTTP 服务。
+	 */
 	public HttpCrossDomainHandler(HttpService service) {
 		super();
 		this.service = service;
 		this.concurrentCounts = new AtomicInteger(0);
 	}
 
+	/**
+	 * 获得并发处理数量。
+	 * 
+	 * @return 返回并发处理数量。
+	 */
 	public int getConcurrentCounts() {
 		return this.concurrentCounts.get();
 	}
 
+	/**
+	 * {@inheritDoc}
+	 */
 	@Override
 	public String getPathSpec() {
 		return "/cccd.js";
 	}
 
+	/**
+	 * {@inheritDoc}
+	 */
 	@Override
 	public HttpHandler getHttpHandler() {
 		return this;
 	}
 
+	/**
+	 * {@inheritDoc}
+	 */
 	@Override
 	public void handle(String target, Request baseRequest, HttpServletRequest request, HttpServletResponse response)
 			throws IOException, ServletException {
@@ -169,36 +189,57 @@ public final class HttpCrossDomainHandler extends HttpHandler implements Capsule
 		this.concurrentCounts.decrementAndGet();
 	}
 
+	/**
+	 * {@inheritDoc}
+	 */
 	@Override
 	protected void doGet(HttpRequest request, HttpResponse response)
 			throws IOException {
 		this.respond(response, HttpResponse.SC_NOT_IMPLEMENTED);
 	}
 
+	/**
+	 * {@inheritDoc}
+	 */
 	@Override
 	protected void doPost(HttpRequest request, HttpResponse response)
 			throws IOException {
 		this.respond(response, HttpResponse.SC_NOT_IMPLEMENTED);
 	}
 
+	/**
+	 * {@inheritDoc}
+	 */
 	@Override
 	protected void doOptions(HttpRequest request, HttpResponse response)
 			throws IOException {
 		this.respond(response, HttpResponse.SC_NOT_IMPLEMENTED);
 	}
 
+	/**
+	 * {@inheritDoc}
+	 */
 	@Override
 	protected void doPut(HttpRequest request, HttpResponse response)
 			throws IOException {
 		this.respond(response, HttpResponse.SC_NOT_IMPLEMENTED);
 	}
 
+	/**
+	 * {@inheritDoc}
+	 */
 	@Override
 	protected void doDelete(HttpRequest request, HttpResponse response)
 			throws IOException {
 		this.respond(response, HttpResponse.SC_NOT_IMPLEMENTED);
 	}
 
+	/**
+	 * 向客户端应答数据。
+	 * 
+	 * @param response HTTP 应答。
+	 * @param status HTTP 状态码。
+	 */
 	private void respond(HttpResponse response, int status) {
 		response.setContentType("text/javascript");
 		response.setCharacterEncoding("UTF-8");
@@ -219,6 +260,12 @@ public final class HttpCrossDomainHandler extends HttpHandler implements Capsule
 		}
 	}
 
+	/**
+	 * 向客户端应答数据。
+	 * 
+	 * @param response HTTP 应答。
+	 * @param status HTTP 状态码。
+	 */
 	private void respond(HttpServletResponse response, int status) {
 		response.setContentType("text/javascript");
 		response.setCharacterEncoding("UTF-8");
@@ -238,4 +285,5 @@ public final class HttpCrossDomainHandler extends HttpHandler implements Capsule
 			}
 		}
 	}
+
 }

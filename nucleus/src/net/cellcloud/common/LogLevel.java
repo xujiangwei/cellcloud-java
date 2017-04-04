@@ -2,7 +2,7 @@
 -----------------------------------------------------------------------------
 This source file is part of Cell Cloud.
 
-Copyright (c) 2009-2012 Cell Cloud Team (www.cellcloud.net)
+Copyright (c) 2009-2017 Cell Cloud Team (www.cellcloud.net)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -26,24 +26,35 @@ THE SOFTWARE.
 
 package net.cellcloud.common;
 
-/** 日志等级。
+/**
+ * 日志等级。
  * 
- * @author Jiangwei Xu
+ * @author Ambrose Xu
+ * 
  */
 public final class LogLevel {
 
-	// Debug
+	/**
+	 * Debug 等级。
+	 */
 	public final static byte DEBUG = 1;
-	
-	// Info
+
+	/**
+	 * Info 等级。
+	 */
 	public final static byte INFO = 2;
-	
-	// Warning
+
+	/**
+	 * Warning 等级。
+	 */
 	public final static byte WARNING = 3;
 
-	// Error
+	/**
+	 * Error 等级。
+	 */
 	public final static byte ERROR = 4;
 
 	private LogLevel() {
 	}
+
 }

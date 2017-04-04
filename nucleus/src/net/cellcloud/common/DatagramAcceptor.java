@@ -75,10 +75,16 @@ public class DatagramAcceptor extends MessageService implements MessageAcceptor 
 
 	/** 线程池执行器。 */
 	private ExecutorService executor = null;
-	/** 最大并发数据处理线程数，默认 4 。 */
-	private int maxThreads = 4;
-	/** 当前活跃线程数量。 */
-	private AtomicInteger numThreads = new AtomicInteger(0);
+
+	/** 最大并发写数据处理线程数，默认 4 。 */
+	private int maxWriteThreads = 4;
+	/** 当前活跃写数据线程数量。 */
+	private AtomicInteger numWriteThreads = new AtomicInteger(0);
+
+	/** 最大并发读数据处理线程数，默认 4 。 */
+	private int maxReadThreads = 4;
+	/** 当前活跃读数据线程数量。 */
+	private AtomicInteger numReadThreads = new AtomicInteger(0);
 
 	/** 会话 "IP:Port" 键对应的 Session 实例。 */
 	private ConcurrentHashMap<String, DatagramAcceptorSession> sessionMap;
@@ -94,10 +100,13 @@ public class DatagramAcceptor extends MessageService implements MessageAcceptor 
 	/** 最近一次写数据时间戳。 */
 	private AtomicLong lastWriting;
 
+	/** 读数据包队列。 */
+	private LinkedList<DatagramPacket> readPacketQueue;
+
 	/**
 	 * 构造函数。
 	 * 
-	 * @param sessionExpired
+	 * @param sessionExpired 会话超期时间。
 	 */
 	public DatagramAcceptor(long sessionExpired) {
 		super();
@@ -109,32 +118,72 @@ public class DatagramAcceptor extends MessageService implements MessageAcceptor 
 		this.setMaxConnectNum(5000);
 	}
 
+	/**
+	 * 设置写数据到缓存的间隔，单位：毫秒。
+	 * 
+	 * @param intervalInMillisecond 指定以毫秒为单位的时间间隔。
+	 */
 	public void setWriteInterval(long intervalInMillisecond) {
 		this.writeInterval = intervalInMillisecond;
 	}
 
+	/**
+	 * 设置 Socket 超时时间。
+	 * 
+	 * @param timeoutInMillisecond 指定以毫秒为单位的超时时间。
+	 */
 	public void setSoTimeout(int timeoutInMillisecond) {
 		this.soTimeout = timeoutInMillisecond;
 	}
 
+	/**
+	 * 设置缓存块大小。
+	 * 
+	 * @param size 指定以字节为单位的缓存块大小。
+	 */
 	public void setBlockSize(int size) {
 		this.block = size;
 	}
 
-	public void setMaxThreads(int maxThreads) {
-		this.maxThreads = maxThreads;
+	/**
+	 * 设置允许使用的最大写数据线程数量。
+	 * 
+	 * @param threads 指定线程数量。
+	 */
+	public void setMaxWriteThreads(int threads) {
+		this.maxWriteThreads = threads;
 	}
 
+	/**
+	 * 设置允许使用的最大读数据线程数量。
+	 * 
+	 * @param threads 指定线程数量。
+	 */
+	public void setMaxReadThreads(int threads) {
+		this.maxReadThreads = threads;
+	}
+
+	/**
+	 * 获得 Socket 绑定地址。
+	 * 
+	 * @return 返回 Socket 绑定地址。
+	 */
 	public InetSocketAddress getBindAddress() {
 		return this.socketAddress;
 	}
 
+	/**
+	 * {@inheritDoc}
+	 */
 	@Override
 	public boolean bind(int port) {
 		InetSocketAddress address = new InetSocketAddress(port);
 		return this.bind(address);
 	}
 
+	/**
+	 * {@inheritDoc}
+	 */
 	@Override
 	public boolean bind(InetSocketAddress address) {
 		if (null != this.udpSocket) {
@@ -167,6 +216,10 @@ public class DatagramAcceptor extends MessageService implements MessageAcceptor 
 			this.udpWriteSessionQueue = new LinkedList<DatagramAcceptorSession>();
 		}
 
+		if (null == this.readPacketQueue) {
+			this.readPacketQueue = new LinkedList<DatagramPacket>();
+		}
+
 		this.mainThread = new LoopDispatchThread();
 		this.mainThread.start();
 
@@ -184,6 +237,9 @@ public class DatagramAcceptor extends MessageService implements MessageAcceptor 
 		return true;
 	}
 
+	/**
+	 * {@inheritDoc}
+	 */
 	@Override
 	public void unbind() {
 		// 关闭线程
@@ -210,6 +266,10 @@ public class DatagramAcceptor extends MessageService implements MessageAcceptor 
 			this.udpWriteSessionQueue.clear();
 		}
 
+		if (null != this.readPacketQueue) {
+			this.readPacketQueue.clear();
+		}
+
 		if (null != this.executor) {
 			this.executor.shutdown();
 			this.executor = null;
@@ -232,6 +292,9 @@ public class DatagramAcceptor extends MessageService implements MessageAcceptor 
 		this.idSessionMap.clear();
 	}
 
+	/**
+	 * {@inheritDoc}
+	 */
 	@Override
 	public void close(Session session) {
 		if (!(session instanceof DatagramAcceptorSession)) {
@@ -274,11 +337,17 @@ public class DatagramAcceptor extends MessageService implements MessageAcceptor 
 		}
 	}
 
+	/**
+	 * {@inheritDoc}
+	 */
 	@Override
 	public Session getSession(Long sessionId) {
 		return this.idSessionMap.get(sessionId);
 	}
 
+	/**
+	 * {@inheritDoc}
+	 */
 	@Override
 	public void write(Session session, Message message) {
 		if (!(session instanceof DatagramAcceptorSession)) {
@@ -298,14 +367,14 @@ public class DatagramAcceptor extends MessageService implements MessageAcceptor 
 			this.udpWriteSessionQueue.addLast(bas);
 		}
 
-		if (this.numThreads.get() >= this.maxThreads) {
+		if (this.numWriteThreads.get() >= this.maxWriteThreads) {
 			return;
 		}
 
 		this.executor.execute(new Runnable() {
 			@Override
 			public void run() {
-				numThreads.incrementAndGet();
+				numWriteThreads.incrementAndGet();
 
 				while (null != udpSocket && !udpWriteQueue.isEmpty()) {
 					if (writeInterval > 0L && lastWriting.get() > 0) {
@@ -362,12 +431,18 @@ public class DatagramAcceptor extends MessageService implements MessageAcceptor 
 					}
 				} //#while
 
-				numThreads.decrementAndGet();
+				numWriteThreads.decrementAndGet();
 			}
 		});
 	}
 
-
+	/**
+	 * 通过连接 IP 和连接端口更新会话。
+	 * 
+	 * @param ip 指定字符串形式 IP 地址。
+	 * @param port 指定端口。
+	 * @return 返回该地址和端口对应的 {@link DatagramAcceptorSession} 对象。
+	 */
 	private synchronized DatagramAcceptorSession updateSession(String ip, int port) {
 		// 计算会话 Key
 		String sessionKey = this.calcSessionKey(ip, port);
@@ -395,6 +470,13 @@ public class DatagramAcceptor extends MessageService implements MessageAcceptor 
 		return session;
 	}
 
+	/**
+	 * 计算地址和端口对应的会话映射的键。
+	 * 
+	 * @param ip 指定地址。
+	 * @param port 指定端口。
+	 * @return 返回映射需要的键。
+	 */
 	private String calcSessionKey(String ip, int port) {
 		StringBuilder buf = new StringBuilder(ip);
 		buf.append(":");
@@ -405,6 +487,9 @@ public class DatagramAcceptor extends MessageService implements MessageAcceptor 
 		return ret;
 	}
 
+	/**
+	 * 检查并处理超期的会话。
+	 */
 	private void checkExpire() {
 		// 当前时间
 		long time = System.currentTimeMillis();
@@ -432,20 +517,35 @@ public class DatagramAcceptor extends MessageService implements MessageAcceptor 
 		removedList = null;
 	}
 
-
+	/**
+	 * 循环事件分发线程。
+	 * 
+	 * @author Ambrose
+	 *
+	 */
 	protected class LoopDispatchThread extends Thread {
 
+		/** 是否自旋。 */
 		private boolean spinning = false;
+		/** 是否正在运行。 */
 		private boolean running = false;
 
 		protected LoopDispatchThread() {
 			super("DatagramAcceptor@LoopDispatchThread");
 		}
 
+		/**
+		 * 关闭线程。
+		 */
 		public void shutdown() {
 			this.spinning = false;
 		}
 
+		/**
+		 * 是否正在运行。
+		 * 
+		 * @return 如果正在运行返回 <code>true</code> 。
+		 */
 		public boolean isRunning() {
 			return this.running;
 		}
@@ -498,33 +598,59 @@ public class DatagramAcceptor extends MessageService implements MessageAcceptor 
 			Logger.d(this.getClass(), "LoopDispatch#stop");
 		}
 
-		private void receive(final DatagramPacket packet) {
+		/**
+		 * 处理数据接收。
+		 * 
+		 * @param packet 接收到的数据包。
+		 */
+		private void receive(DatagramPacket dgpacket) {
+			synchronized (readPacketQueue) {
+				readPacketQueue.add(dgpacket);
+			}
+
+			if (numReadThreads.get() >= maxReadThreads) {
+				// 达到最大允许的线程数量
+				return;
+			}
+
 			executor.execute(new Runnable() {
 				@Override
 				public void run() {
-					numThreads.incrementAndGet();
+					numReadThreads.incrementAndGet();
 
-					InetAddress addr = packet.getAddress();
-					String ip = addr.getHostAddress();
-					int port = packet.getPort();
-					byte[] data = new byte[packet.getLength()];
-					System.arraycopy(packet.getData(), 0, data, 0, packet.getLength());
+					while (running && !readPacketQueue.isEmpty()) {
+						DatagramPacket packet = null;
+						synchronized (readPacketQueue) {
+							packet = readPacketQueue.poll();
+						}
 
-					// 匹配 Session
-					DatagramAcceptorSession session = updateSession(ip, port);
-					Message message = new Message(data);
+						if (null == packet) {
+							break;
+						}
 
-					// 更新活跃时间
-					session.activeTimestamp = System.currentTimeMillis();
+						InetAddress addr = packet.getAddress();
+						String ip = addr.getHostAddress();
+						int port = packet.getPort();
+						byte[] data = new byte[packet.getLength()];
+						System.arraycopy(packet.getData(), 0, data, 0, packet.getLength());
 
-					if (null != handler) {
-						handler.messageReceived(session, message);
+						// 匹配 Session
+						DatagramAcceptorSession session = updateSession(ip, port);
+						Message message = new Message(data);
+
+						// 更新活跃时间
+						session.activeTimestamp = System.currentTimeMillis();
+
+						if (null != handler) {
+							handler.messageReceived(session, message);
+						}
 					}
 
-					numThreads.decrementAndGet();
+					numReadThreads.decrementAndGet();
 				}
 			});
 		}
+
 	}
 
 }

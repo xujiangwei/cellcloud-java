@@ -2,7 +2,7 @@
 -----------------------------------------------------------------------------
 This source file is part of Cell Cloud.
 
-Copyright (c) 2009-2013 Cell Cloud Team (www.cellcloud.net)
+Copyright (c) 2009-2017 Cell Cloud Team (www.cellcloud.net)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -37,17 +37,24 @@ import net.cellcloud.common.Logger;
 import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.handler.ErrorHandler;
 
-/** 默认错误处理句柄。
+/**
+ * 默认错误处理句柄。
  * 
- * @author Jiangwei Xu
+ * @author Ambrose Xu
  *
  */
 public class DefaultErrorHandler extends ErrorHandler {
 
+	/**
+	 * 构造函数。
+	 */
 	public DefaultErrorHandler() {
 		super();
 	}
 
+	/**
+	 * {@inheritDoc}
+	 */
 	@Override
 	public void handle(String target, Request baseRequest, HttpServletRequest request, HttpServletResponse response) {
 		if (Logger.isDebugLevel()) {
@@ -87,4 +94,5 @@ public class DefaultErrorHandler extends ErrorHandler {
 	protected void writeErrorPageStacks(HttpServletRequest request, Writer writer) throws IOException {
 		// Nothing
 	}
+
 }

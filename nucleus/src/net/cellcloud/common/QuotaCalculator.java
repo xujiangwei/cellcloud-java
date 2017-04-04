@@ -38,18 +38,28 @@ import java.util.concurrent.atomic.AtomicInteger;
  */
 public class QuotaCalculator {
 
-	/** 标准配额数值。
-	 */
+	/** 标准配额数值。 */
 	private volatile int quota = 102400;
 
+	/** 运行时配额计数。 */
 	private AtomicInteger runtime;
 
+	/** 任务执行器。 */
 	private ScheduledExecutorService scheduledExecutor;
+	/** 当前任务的 Furture 。 */
 	private ScheduledFuture<?> future;
 
+	/** 上一次拥塞大小。 */
 	private volatile long lastBlockingSize;
+	/** 上一次拥塞的时间戳。 */
 	private volatile long lastBlockingTime;
 
+	/**
+	 * 构造函数。
+	 * 
+	 * @param scheduledExecutor 任务执行器。
+	 * @param quotaInSecond 以秒为计算周期的配额。
+	 */
 	public QuotaCalculator(ScheduledExecutorService scheduledExecutor, int quotaInSecond) {
 		this.scheduledExecutor = scheduledExecutor;
 		this.quota = quotaInSecond;
@@ -58,22 +68,45 @@ public class QuotaCalculator {
 		this.lastBlockingTime = 0;
 	}
 
+	/**
+	 * 设置配额值。
+	 * 
+	 * @param quotaInSecond 以秒为计算周期的配额。
+	 */
 	public void setQuota(int quotaInSecond) {
 		this.quota = quotaInSecond;
 	}
 
+	/**
+	 * 获得配额值。
+	 * 
+	 * @return 返回以秒为计算周期的配额。
+	 */
 	public int getQuota() {
 		return this.quota;
 	}
 
+	/**
+	 * 获得最近一次阻塞的数据大小。
+	 * 
+	 * @return 返回最近一次阻塞的数据大小。
+	 */
 	public long getLastBlockingSize() {
 		return this.lastBlockingSize;
 	}
 
+	/**
+	 * 获得最近一次阻塞时的时间戳。
+	 * 
+	 * @return 返回最近一次阻塞时的时间戳。
+	 */
 	public long getLastBlockingTime() {
 		return this.lastBlockingTime;
 	}
 
+	/**
+	 * 启动计算器。
+	 */
 	public void start() {
 		this.future = this.scheduledExecutor.scheduleWithFixedDelay(new Runnable() {
 			@Override
@@ -92,6 +125,9 @@ public class QuotaCalculator {
 		}, 1L, 1L, TimeUnit.SECONDS);
 	}
 
+	/**
+	 * 停止计算器。
+	 */
 	public void stop() {
 		if (null != this.future) {
 			this.future.cancel(false);
@@ -103,6 +139,13 @@ public class QuotaCalculator {
 		}
 	}
 
+	/**
+	 * 消耗配额。
+	 * 
+	 * @param value 指定消耗值。
+	 * @param callback 指定发生阻塞时的回调。
+	 * @param custom 指定回调时的自定义数据对象。
+	 */
 	public void consumeBlocking(int value, QuotaCalculatorCallback callback, Object custom) {
 		if (null == this.future) {
 			return;

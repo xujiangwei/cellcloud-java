@@ -2,7 +2,7 @@
 -----------------------------------------------------------------------------
 This source file is part of Cell Cloud.
 
-Copyright (c) 2009-2012 Cell Cloud Team (www.cellcloud.net)
+Copyright (c) 2009-2017 Cell Cloud Team (www.cellcloud.net)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -26,29 +26,51 @@ THE SOFTWARE.
 
 package net.cellcloud.common;
 
-/** 日志操作器。
+/**
+ * 日志操作器。
  * 
- * @author Jiangwei Xu
+ * @author Ambrose Xu
+ * 
  */
 public interface LogHandle {
 
-	/** 返回日志句柄名称。
+	/**
+	 * 获得日志句柄名称。
+	 * 
+	 * @return 返回日志句柄名称。
 	 */
 	public String getName();
 
-	/** 记录 DEBUG 记录。
+	/**
+	 * 记录 DEBUG 记录。
+	 * 
+	 * @param tag 日志标签。
+	 * @param log 日志内容。
 	 */
 	public void logDebug(String tag, String log);
 
-	/** 记录 INFO 记录。
+	/**
+	 * 记录 INFO 记录。
+	 * 
+	 * @param tag 日志标签。
+	 * @param log 日志内容。
 	 */
 	public void logInfo(String tag, String log);
 
-	/** 记录 WARNING 记录。
+	/**
+	 * 记录 WARNING 记录。
+	 * 
+	 * @param tag 日志标签。
+	 * @param log 日志内容。
 	 */
 	public void logWarning(String tag, String log);
 
-	/** 记录 ERROR 记录。
+	/**
+	 * 记录 ERROR 记录。
+	 * 
+	 * @param tag 日志标签。
+	 * @param log 日志内容。
 	 */
 	public void logError(String tag, String log);
+
 }

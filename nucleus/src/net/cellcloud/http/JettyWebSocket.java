@@ -2,7 +2,7 @@
 -----------------------------------------------------------------------------
 This source file is part of Cell Cloud.
 
-Copyright (c) 2009-2015 Cell Cloud Team (www.cellcloud.net)
+Copyright (c) 2009-2017 Cell Cloud Team (www.cellcloud.net)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -44,48 +44,85 @@ import org.eclipse.jetty.websocket.api.annotations.OnWebSocketMessage;
 import org.eclipse.jetty.websocket.api.annotations.WebSocket;
 
 /**
+ * 基于 Jetty WebSocket 的 WebSocket 管理器实现。
  * 
- * @author Jiangwei Xu
+ * @author Ambrose Xu
+ * 
  */
 @WebSocket(maxTextMessageSize = 64 * 1024, maxBinaryMessageSize = 64 * 1024)
 public final class JettyWebSocket implements WebSocketManager {
 
+	/** 消息处理器。 */
 	private MessageHandler handler;
+	/** 消息拦截器。 */
 	private MessageInterceptor interceptor;
 
+	/** 当前 WebSocket 上连接的所有 Jetty 会话。 */
 	private LinkedList<Session> sessions;
+	/** 当前 WebSocket 上连接的所有会话。 */
 	private LinkedList<WebSocketSession> wsSessions;
 
-	// 接收的数据流量
+	/** 接收的数据流量。 */
 	private long rx = 0;
-	// 发送的数据流量
+	/** 发送的数据流量。 */
 	private long tx = 0;
 
+	/**
+	 * 构造函数。
+	 * 
+	 * @param handler 指定消息处理器。
+	 */
 	public JettyWebSocket(MessageHandler handler) {
 		this.handler = handler;
 		this.sessions = new LinkedList<Session>();
 		this.wsSessions = new LinkedList<WebSocketSession>();
 	}
 
+	/**
+	 * {@inheritDoc}
+	 */
 	@Override
 	public void setInterceptor(MessageInterceptor interceptor) {
 		this.interceptor = interceptor;
 	}
 
+	/**
+	 * 当前连接的会话数量。
+	 * 
+	 * @return 返回当前连接的会话数量。
+	 */
 	public int numSessions() {
 		synchronized (this.sessions) {
 			return this.sessions.size();
 		}
 	}
 
+	/**
+	 * 获得累计的接收数据流量。
+	 * 
+	 * @return 返回累计的接收数据流量。
+	 */
 	public long getTotalRx() {
 		return this.rx;
 	}
 
+	/**
+	 * 获得累计的发送数据流量。
+	 * 
+	 * @return 返回累计的发送数据流量。
+	 */
 	public long getTotalTx() {
 		return this.tx;
 	}
 
+	/**
+	 * 当接收到二进制数据时该方法被调用。
+	 * 
+	 * @param session 数据对应的会话。
+	 * @param buf 接收到的数据。
+	 * @param offset 数据偏移量。
+	 * @param length 数据长度。
+	 */
 	@OnWebSocketMessage
 	public void onWebSocketBinary(Session session, byte[] buf, int offset, int length) {
 		Logger.d(this.getClass(), "onWebSocketBinary");
@@ -108,6 +145,12 @@ public final class JettyWebSocket implements WebSocketManager {
 		*/
 	}
 
+	/**
+	 * 当接收到文本数据时该方法被调用。
+	 * 
+	 * @param session 数据对应的会话。
+	 * @param text 接收到的文本数据。
+	 */
 	@OnWebSocketMessage
 	public void onWebSocketText(Session session, String text) {
 		//Logger.d(this.getClass(), "onWebSocketText");
@@ -148,6 +191,11 @@ public final class JettyWebSocket implements WebSocketManager {
 		*/
 	}
 
+	/**
+	 * 当有新会话连接时调用该方法。
+	 * 
+	 * @param session 连接的新会话。
+	 */
 	@OnWebSocketConnect
 	public void onWebSocketConnect(Session session) {
 		Logger.d(this.getClass(), "onWebSocketConnect");
@@ -184,6 +232,13 @@ public final class JettyWebSocket implements WebSocketManager {
 		}
 	}
 
+	/**
+	 * 当有会话关闭时调用该方法。
+	 * 
+	 * @param session 被关系的会话。
+	 * @param code 关闭代码。
+	 * @param reason 关闭原因描述。
+	 */
 	@OnWebSocketClose
 	public void onWebSocketClose(Session session, int code, String reason) {
 		Logger.d(this.getClass(), "onWebSocketClose");
@@ -220,6 +275,12 @@ public final class JettyWebSocket implements WebSocketManager {
 		}
 	}
 
+	/**
+	 * 当会话发生错误时调用该方法。
+	 * 
+	 * @param session 发成错误的会话。
+	 * @param cause 异常实例。
+	 */
 	@OnWebSocketError
 	public void onWebSocketError(Session session, Throwable cause) {
 		Logger.w(this.getClass(), "onWebSocketError: " + cause.getMessage());
@@ -240,6 +301,9 @@ public final class JettyWebSocket implements WebSocketManager {
 		}
 	}
 
+	/**
+	 * {@inheritDoc}
+	 */
 	@Override
 	public boolean hasSession(WebSocketSession session) {
 		synchronized (this.sessions) {
@@ -247,6 +311,9 @@ public final class JettyWebSocket implements WebSocketManager {
 		}
 	}
 
+	/**
+	 * {@inheritDoc}
+	 */
 	@Override
 	public void write(WebSocketSession session, Message message) {
 		session.write(message);
@@ -255,6 +322,9 @@ public final class JettyWebSocket implements WebSocketManager {
 		this.tx += message.length();
 	}
 
+	/**
+	 * {@inheritDoc}
+	 */
 	@Override
 	public void close(WebSocketSession session) {
 		Session rawSession = null;
@@ -271,7 +341,8 @@ public final class JettyWebSocket implements WebSocketManager {
 		}
 	}
 
-	/*private void checkSessionTimeout() {
+	/*
+	private void checkSessionTimeout() {
 		ArrayList<Session> closedList = new ArrayList<Session>();
 
 		synchronized (this.sessions) {
@@ -294,5 +365,7 @@ public final class JettyWebSocket implements WebSocketManager {
 			closedList.clear();
 		}
 		closedList = null;
-	}*/
+	}
+	*/
+
 }
