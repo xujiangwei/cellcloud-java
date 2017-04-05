@@ -64,6 +64,8 @@
 			<fileset dir="${src.dir}" defaultexcludes="yes">
 				<include name="net/cellcloud/**" />
 				<exclude name="org/**" />
+				<exclude name="net/cellcloud/extras/**" />
+				<exclude name="net/cellcloud/storage/**" />
 				<exclude name="net/cellcloud/util/rudp/**" />
 				<exclude name="net/cellcloud/util/nio/**" />
 				<exclude name="net/cellcloud/util/Base64.java" />

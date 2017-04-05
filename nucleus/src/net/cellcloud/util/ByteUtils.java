@@ -2,7 +2,7 @@
 -----------------------------------------------------------------------------
 This source file is part of Cell Cloud.
 
-Copyright (c) 2009-2016 Cell Cloud Team (www.cellcloud.net)
+Copyright (c) 2009-2017 Cell Cloud Team (www.cellcloud.net)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -28,11 +28,23 @@ package net.cellcloud.util;
 
 import java.nio.charset.Charset;
 
+/**
+ * 字节操作辅助函数。
+ * 
+ * @author Ambrose
+ *
+ */
 public final class ByteUtils {
 
 	private ByteUtils() {
 	}
 
+	/**
+	 * short 转字节数组。
+	 * 
+	 * @param data
+	 * @return
+	 */
 	public static byte[] toBytes(short data) {
 		byte[] bytes = new byte[2];
 		bytes[0] = (byte) (data & 0xff);
@@ -40,6 +52,12 @@ public final class ByteUtils {
 		return bytes;
 	}
 
+	/**
+	 * char 转字节数组。
+	 * 
+	 * @param data
+	 * @return
+	 */
 	public static byte[] toBytes(char data) {
 		byte[] bytes = new byte[2];
 		bytes[0] = (byte) (data);
@@ -47,6 +65,12 @@ public final class ByteUtils {
 		return bytes;
 	}
 
+	/**
+	 * int 转字节数组。
+	 * 
+	 * @param data
+	 * @return
+	 */
 	public static byte[] toBytes(int data) {
 		byte[] bytes = new byte[4];
 		bytes[0] = (byte) (data & 0xff);
@@ -56,6 +80,12 @@ public final class ByteUtils {
 		return bytes;
 	}
 
+	/**
+	 * long 转字节数组。
+	 * 
+	 * @param data
+	 * @return
+	 */
 	public static byte[] toBytes(long data) {
 		byte[] bytes = new byte[8];
 		bytes[0] = (byte) (data & 0xff);
@@ -69,36 +99,85 @@ public final class ByteUtils {
 		return bytes;
 	}
 
+	/**
+	 * float 转字节数组。
+	 * 
+	 * @param data
+	 * @return
+	 */
 	public static byte[] toBytes(float data) {
 		int intBits = Float.floatToIntBits(data);
 		return toBytes(intBits);
 	}
 
+	/**
+	 * double 转字节数组。
+	 * 
+	 * @param data
+	 * @return
+	 */
 	public static byte[] toBytes(double data) {
 		long longBits = Double.doubleToLongBits(data);
 		return toBytes(longBits);
 	}
 
+	/**
+	 * boolean 转字节数组。
+	 * 
+	 * @param data
+	 * @return
+	 */
 	public static byte[] toBytes(boolean data) {
 		return new byte[]{ data ? (byte) 1 : (byte) 0 };
 	}
 
+	/**
+	 * String 转字节数组。
+	 * 
+	 * @param data
+	 * @param charsetName
+	 * @return
+	 */
 	public static byte[] toBytes(String data, String charsetName) {
 		return data.getBytes(Charset.forName(charsetName));
 	}
 
+	/**
+	 * String 转字节数组。
+	 * 
+	 * @param data
+	 * @return
+	 */
 	public static byte[] toBytes(String data) {
 		return toBytes(data, "UTF-8");
 	}
 
+	/**
+	 * 字节数组转 short 。
+	 * 
+	 * @param bytes
+	 * @return
+	 */
 	public static short toShort(byte[] bytes) {
 		return (short) ((0xff & bytes[0]) | (0xff00 & (bytes[1] << 8)));
 	}
 
+	/**
+	 * 字节数组转 char 。
+	 * 
+	 * @param bytes
+	 * @return
+	 */
 	public static char toChar(byte[] bytes) {
 		return (char) ((0xff & bytes[0]) | (0xff00 & (bytes[1] << 8)));
 	}
 
+	/**
+	 * 字节数组转 int 。
+	 * 
+	 * @param bytes
+	 * @return
+	 */
 	public static int toInt(byte[] bytes) {
 		return (0xff & bytes[0])
 				| (0xff00 & (bytes[1] << 8))
@@ -106,6 +185,12 @@ public final class ByteUtils {
 				| (0xff000000 & (bytes[3] << 24));
 	}
 
+	/**
+	 * 字节数组转 long 。
+	 * 
+	 * @param bytes
+	 * @return
+	 */
 	public static long toLong(byte[] bytes) {
 		return (0xffL & (long) bytes[0])
 				| (0xff00L & ((long) bytes[1] << 8))
@@ -117,58 +202,55 @@ public final class ByteUtils {
 				| (0xff00000000000000L & ((long) bytes[7] << 56));
 	}
 
+	/**
+	 * 字节数组转 float 。
+	 * 
+	 * @param bytes
+	 * @return
+	 */
 	public static float toFloat(byte[] bytes) {
 		return Float.intBitsToFloat(toInt(bytes));
 	}
 
+	/**
+	 * 字节数组转 double 。
+	 * 
+	 * @param bytes
+	 * @return
+	 */
 	public static double toDouble(byte[] bytes) {
 		return Double.longBitsToDouble(toLong(bytes));
 	}
 
+	/**
+	 * 字节数组转 boolean 。
+	 * 
+	 * @param bytes
+	 * @return
+	 */
 	public static boolean toBoolean(byte[] bytes) {
 		return (bytes[0] == (byte)1) ? true : false;
 	}
 
+	/**
+	 * 字节数组转 String 。
+	 * 
+	 * @param bytes
+	 * @param charsetName
+	 * @return
+	 */
 	public static String toString(byte[] bytes, String charsetName) {
 		return new String(bytes, Charset.forName(charsetName));
 	}
 
+	/**
+	 * 字节数组转 String 。
+	 * 
+	 * @param bytes
+	 * @return
+	 */
 	public static String toString(byte[] bytes) {
 		return toString(bytes, "UTF-8");
 	}
 
-//	public static void main(String[] args) {
-//		short s = -12;
-//		int i = -1234;
-//		long l = -123456789L;
-//
-//		char c = 'a';
-//
-//		float f = -123.45f;
-//		double d = -12345.67d;
-//		
-//		boolean b = false;
-//
-//		String string = "我是好孩子";
-//
-//		System.out.println(s);
-//		System.out.println(i);
-//		System.out.println(l);
-//		System.out.println(c);
-//		System.out.println(f);
-//		System.out.println(d);
-//		System.out.println(b);
-//		System.out.println(string);
-//
-//		System.out.println("**************");
-//
-//		System.out.println(toShort(toBytes(s)));
-//		System.out.println(toInt(toBytes(i)));
-//		System.out.println(toLong(toBytes(l)));
-//		System.out.println(toChar(toBytes(c)));
-//		System.out.println(toFloat(toBytes(f)));
-//		System.out.println(toDouble(toBytes(d)));
-//		System.out.println(toBoolean(toBytes(b)));
-//		System.out.println(toString(toBytes(string)));
-//	}
 }

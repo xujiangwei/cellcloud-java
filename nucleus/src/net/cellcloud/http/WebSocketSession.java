@@ -2,7 +2,7 @@
 -----------------------------------------------------------------------------
 This source file is part of Cell Cloud.
 
-Copyright (c) 2009-2015 Cell Cloud Team (www.cellcloud.net)
+Copyright (c) 2009-2017 Cell Cloud Team (www.cellcloud.net)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -39,19 +39,31 @@ import org.eclipse.jetty.websocket.api.BatchMode;
 import org.eclipse.jetty.websocket.api.RemoteEndpoint;
 
 /**
+ * WebSocket 连接的会话。
  * 
- * @author Jiangwei Xu
+ * @author Ambrose Xu
  *
  */
 public class WebSocketSession extends Session {
 
 	private org.eclipse.jetty.websocket.api.Session rawSession;
 
+	/**
+	 * 构造函数。
+	 * 
+	 * @param address
+	 * @param session
+	 */
 	public WebSocketSession(InetSocketAddress address, org.eclipse.jetty.websocket.api.Session session) {
 		super(null, address);
 		this.rawSession = session;
 	}
 
+	/**
+	 * 会话是否已开启。
+	 * 
+	 * @return 如果会话已开启返回 <code>true</code> 。
+	 */
 	public boolean isOpen() {
 		return this.rawSession.isOpen();
 	}
@@ -76,4 +88,5 @@ public class WebSocketSession extends Session {
 			Logger.log(this.getClass(), e, LogLevel.ERROR);
 		}
 	}
+
 }

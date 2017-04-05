@@ -35,6 +35,12 @@ import java.util.logging.LogRecord;
 
 import net.cellcloud.common.LogManager;
 
+/**
+ * 简单日志格式化处理器。
+ * 
+ * @author Ambrose Xu
+ *
+ */
 public class SimpleFormatter extends Formatter {
 
 	// format string for printing the log record
@@ -155,4 +161,5 @@ public class SimpleFormatter extends Formatter {
 		return String.format(format, LogManager.TIME_FORMAT.format(dat), source, record.getLoggerName(),
 				record.getLevel().getLocalizedName(), message, throwable);
 	}
+
 }

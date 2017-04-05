@@ -2,7 +2,7 @@
 -----------------------------------------------------------------------------
 This source file is part of Cell Cloud.
 
-Copyright (c) 2009-2014 Cell Cloud Team (www.cellcloud.net)
+Copyright (c) 2009-2017 Cell Cloud Team (www.cellcloud.net)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -30,35 +30,40 @@ import net.cellcloud.common.Message;
 import net.cellcloud.common.MessageInterceptor;
 
 /**
+ * WebSocket 管理器接口。
  * 
- * @author Jiangwei Xu
+ * @author Ambrose Xu
  *
  */
 public interface WebSocketManager {
 
 	/**
+	 * 是否存在指定的会话。
 	 * 
-	 * @param session
-	 * @return
+	 * @param session 指定待判断的会话。
+	 * @return 如果存在指定的会话返回 <code>true</code> 。
 	 */
 	public boolean hasSession(WebSocketSession session);
 
 	/**
+	 * 向指定的会话写入消息。
 	 * 
-	 * @param session
-	 * @param message
+	 * @param session 指定目标会话。
+	 * @param message 指定待写入的消息。
 	 */
 	public void write(WebSocketSession session, Message message);
 
 	/**
-	 * 关闭指定的 session 。
-	 * @param session
+	 * 关闭指定的会话。
+	 * 
+	 * @param session 待关闭的会话。
 	 */
 	public void close(WebSocketSession session);
 
 	/**
+	 * 设置消息拦截器。
 	 * 
-	 * @param interceptor
+	 * @param interceptor 指定消息拦截器实例。
 	 */
 	public void setInterceptor(MessageInterceptor interceptor);
 

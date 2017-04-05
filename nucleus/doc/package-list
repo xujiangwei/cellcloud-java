@@ -8,16 +8,8 @@ net.cellcloud.cluster.protocol
 net.cellcloud.common
 net.cellcloud.core
 net.cellcloud.exception
-net.cellcloud.extras.express
-net.cellcloud.extras.memory
-net.cellcloud.extras.memory.attribute
 net.cellcloud.gateway
 net.cellcloud.http
-net.cellcloud.storage
-net.cellcloud.storage.ehcache
-net.cellcloud.storage.file
-net.cellcloud.storage.mongodb
-net.cellcloud.storage.sqlite
 net.cellcloud.talk
 net.cellcloud.talk.command
 net.cellcloud.talk.dialect

@@ -2,7 +2,7 @@
 -----------------------------------------------------------------------------
 This source file is part of Cell Cloud.
 
-Copyright (c) 2009-2015 Cell Cloud Team (www.cellcloud.net)
+Copyright (c) 2009-2017 Cell Cloud Team (www.cellcloud.net)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -31,8 +31,10 @@ import java.util.TimerTask;
 import java.util.concurrent.atomic.AtomicLong;
 
 /**
+ * 按照指定周期从系统获取时间的时钟类。
  * 
- * @author Jiangwei Xu
+ * @author Ambrose Xu
+ * 
  */
 public final class Clock {
 
@@ -64,18 +66,35 @@ public final class Clock {
 		}
 	}
 
+	/**
+	 * 时钟在运行时的启动时间。
+	 * 
+	 * @return 返回时钟在运行时的启动时间。
+	 */
 	public static long startTime() {
 		return Clock.instance.start;
 	}
 
+	/**
+	 * 启动时钟。
+	 */
 	public static void start() {
 		Clock.instance.startTimer(100L);
 	}
 
+	/**
+	 * 停止时钟。
+	 */
 	public static void stop() {
 		Clock.instance.stopTimer();
 	}
 
+	/**
+	 * 重置时间更新周期。
+	 * 
+	 * @param precision 指定以毫秒为单位的时间更新周期。
+	 * @return 如果重置成功返回 <code>true</code> 。
+	 */
 	public static boolean resetPrecision(long precision) {
 		if (precision < 5L || precision > 1000L) {
 			return false;
@@ -87,6 +106,11 @@ public final class Clock {
 		return true;
 	}
 
+	/**
+	 * 当前系统的绝对时间。
+	 * 
+	 * @return 返回当前系统的绝对时间。
+	 */
 	public static long currentTimeMillis() {
 		return Clock.instance.time.get();
 	}
@@ -100,4 +124,5 @@ public final class Clock {
 			time.set(System.currentTimeMillis());
 		}
 	}
+
 }

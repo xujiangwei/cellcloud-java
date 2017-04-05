@@ -26,6 +26,12 @@ THE SOFTWARE.
 
 package net.cellcloud.util;
 
+/**
+ * 控制台日志句柄。
+ * 
+ * @author Ambrose Xu
+ *
+ */
 public class ConsoleHandler extends java.util.logging.ConsoleHandler {
 
 	public ConsoleHandler() {

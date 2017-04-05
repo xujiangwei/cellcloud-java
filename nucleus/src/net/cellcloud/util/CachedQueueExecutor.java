@@ -2,7 +2,7 @@
 -----------------------------------------------------------------------------
 This source file is part of Cell Cloud.
 
-Copyright (c) 2009-2013 Cell Cloud Team (www.cellcloud.net)
+Copyright (c) 2009-2017 Cell Cloud Team (www.cellcloud.net)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -41,7 +41,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 /**
  * 可缓存的队列执行器。
  * 
- * @author Jiangwei Xu
+ * @author Ambrose Xu
  *
  */
 public final class CachedQueueExecutor implements ExecutorService {
@@ -53,8 +53,9 @@ public final class CachedQueueExecutor implements ExecutorService {
 	private ConcurrentLinkedQueue<Runnable> queue;
 
 	/**
-	 * 私有构造函数。
-	 * @param maxThreads
+	 * 构造函数。
+	 * 
+	 * @param maxThreads 指定最大并发线程数量。
 	 */
 	private CachedQueueExecutor(int maxThreads) {
 		this.executor = Executors.newCachedThreadPool();
@@ -64,7 +65,8 @@ public final class CachedQueueExecutor implements ExecutorService {
 
 	/**
 	 * 创建可缓存队列执行器。
-	 * @param maxThreads
+	 * 
+	 * @param maxThreads 指定最大并发线程数量。
 	 * @return
 	 */
 	public static CachedQueueExecutor newCachedQueueThreadPool(int maxThreads) {
@@ -176,4 +178,5 @@ public final class CachedQueueExecutor implements ExecutorService {
 			numThreads.decrementAndGet();
 		}
 	}
+
 }

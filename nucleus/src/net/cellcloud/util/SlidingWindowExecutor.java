@@ -2,7 +2,7 @@
 -----------------------------------------------------------------------------
 This source file is part of Cell Cloud.
 
-Copyright (c) 2009-2013 Cell Cloud Team (www.cellcloud.net)
+Copyright (c) 2009-2017 Cell Cloud Team (www.cellcloud.net)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -39,9 +39,11 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
 
-/** 滑动窗执行器。
+/**
+ * 采用滑动窗算法的线程池执行器。
  * 
- * @author Jiangwei Xu
+ * @author Ambrose Xu
+ * 
  */
 public class SlidingWindowExecutor implements ExecutorService {
 
@@ -73,8 +75,9 @@ public class SlidingWindowExecutor implements ExecutorService {
 
 	/**
 	 * 创建指定窗口大小的活动滑窗线程池。
-	 * @param windowSize
-	 * @param maxThreadNum
+	 * 
+	 * @param windowSize 指定窗口大小。
+	 * @param maxThreadNum 指定最大允许并发线程数量。
 	 * @return
 	 */
 	public static SlidingWindowExecutor newSlidingWindowThreadPool(int windowSize) {
@@ -184,6 +187,7 @@ public class SlidingWindowExecutor implements ExecutorService {
 
 	/**
 	 * 快照线程数量。
+	 * 
 	 * @return
 	 */
 	public int snapshootThreadNum() {
@@ -236,4 +240,5 @@ public class SlidingWindowExecutor implements ExecutorService {
 			dispatching = false;
 		}
 	}
+
 }

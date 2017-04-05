@@ -39,74 +39,74 @@ public interface SessionManager {
 	/**
 	 * 管理指定的请求。
 	 * 
-	 * @param request
-	 * @param response
+	 * @param request HTTP 请求对象。
+	 * @param response HTTP 应答对象。
 	 */
 	public void manage(HttpRequest request, HttpResponse response);
 
 	/**
 	 * 解除管理指定的请求。
 	 * 
-	 * @param request
+	 * @param request HTTP 请求对象。
 	 */
 	public void unmanage(HttpRequest request);
 
 	/**
 	 * 解除管理指定的会话。
 	 * 
-	 * @param session
+	 * @param session HTTP 会话。
 	 */
 	public void unmanage(HttpSession session);
 
 	/**
-	 * 返回当前被管理的 Session 总数量。
+	 * 获得当前被管理的连接会话总数量。
 	 * 
-	 * @return
+	 * @return 返回当前被管理的连接会话总数量。
 	 */
 	public int getSessionNum();
 
 	/**
-	 * 返回所有 Session 列表。
+	 * 获得所有连接会话列表。
 	 * 
-	 * @return
+	 * @return 返回所有连接会话列表。
 	 */
 	public List<HttpSession> getSessions();
 
 	/**
-	 * 返回指定 ID 的 Session 。
+	 * 获得指定 ID 的连接会话。
 	 * 
-	 * @param id
-	 * @return
+	 * @param id 指定会话的 ID 。
+	 * @return 返回指定 ID 的连接会话。
 	 */
 	public HttpSession getSession(Long id);
 
 	/**
-	 * 返回指定请求的 Session 。
+	 * 获得指定请求的会话。
 	 * 
-	 * @param request
-	 * @return
+	 * @param request 指定 HTTP 请求对象。
+	 * @return 返回指定请求的会话。
 	 */
 	public HttpSession getSession(HttpRequest request);
 
 	/**
-	 * 是否包含该 Session 。
+	 * 是否存在指定 ID 的会话。
 	 * 
-	 * @param id
-	 * @return
+	 * @param id 指定会话的 ID 。
+	 * @return 如果存在指定 ID 的会话返回 <code>true</code> 。
 	 */
 	public boolean hasSession(Long id);
 
 	/**
-	 * 添加心跳监听器。
+	 * 添加会话监听器。
 	 * 
-	 * @param listener
+	 * @param listener 指定监听器。
 	 */
 	public void addSessionListener(SessionListener listener);
 
 	/**
-	 * 移除心跳监听器。
+	 * 移除会话监听器。
 	 * 
-	 * @param listener
+	 * @param listener 指定监听器。
 	 */
 	public void removeSessionListener(SessionListener listener);
 
