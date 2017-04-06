@@ -26,8 +26,8 @@ THE SOFTWARE.
 
 package net.cellcloud.talk;
 
-import java.util.ArrayList;
 import java.util.List;
+import java.util.Vector;
 
 /**
  * 故障描述类。
@@ -60,7 +60,7 @@ public final class TalkServiceFailure {
 	/**
 	 * 故障相关的 Cellet 标识。
 	 */
-	private ArrayList<String> sourceCelletIdentifiers = new ArrayList<String>(2);
+	private Vector<String> sourceCelletIdentifiers = new Vector<String>(2);
 
 	/**
 	 * 故障相关连接的地址。

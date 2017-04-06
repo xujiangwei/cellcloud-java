@@ -29,10 +29,10 @@ package net.cellcloud.talk.speaker;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.net.InetSocketAddress;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Timer;
 import java.util.TimerTask;
+import java.util.Vector;
 
 import net.cellcloud.Version;
 import net.cellcloud.common.Cryptology;
@@ -80,7 +80,7 @@ public class Speaker implements Speakable {
 	private int block;
 
 	/** 此对话者请求的 Cellet 标识清单。 */
-	private List<String> identifierList;
+	private Vector<String> identifierList;
 
 	/** 对话者协商的能力描述。 */
 	public TalkCapacity capacity = null;
@@ -123,7 +123,7 @@ public class Speaker implements Speakable {
 		this.address = address;
 		this.delegate = delegate;
 		this.block = block;
-		this.identifierList = new ArrayList<String>(2);
+		this.identifierList = new Vector<String>(2);
 	}
 
 	/**
@@ -140,7 +140,7 @@ public class Speaker implements Speakable {
 		this.delegate = delegate;
 		this.block = block;
 		this.capacity = capacity;
-		this.identifierList = new ArrayList<String>(2);
+		this.identifierList = new Vector<String>(2);
 	}
 
 	/**
