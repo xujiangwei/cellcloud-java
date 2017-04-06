@@ -59,6 +59,11 @@ public final class TalkServiceDaemon extends Thread {
 	 */
 	private long tickTime = 0L;
 
+	/**
+	 * 自旋间隔。
+	 */
+	private final long interval = 20L;
+
 	private TalkServiceKernel kernel;
 
 	/**
@@ -100,7 +105,7 @@ public final class TalkServiceDaemon extends Thread {
 			}
 
 			// 60 秒周期处理
-			if (count % 1200 == 0) {
+			if (count % 3000 == 0) {
 				try {
 					// HTTP 客户端管理，每 60 秒一次计数
 					if (null != kernel.httpSpeakers) {
@@ -114,7 +119,7 @@ public final class TalkServiceDaemon extends Thread {
 			}
 
 			// 1 分钟周期处理
-			if (count % 1200 == 0) {
+			if (count % 3000 == 0) {
 				try {
 					// 检查 HTTP Session
 					kernel.checkHttpSessionHeartbeat();
@@ -127,7 +132,7 @@ public final class TalkServiceDaemon extends Thread {
 			}
 
 			// 5 分钟周期处理
-			if (count % 6000 == 0) {
+			if (count % 15000 == 0) {
 				try {
 					if (null != kernel.speakers) {
 						synchronized (kernel.speakers) {
@@ -145,7 +150,7 @@ public final class TalkServiceDaemon extends Thread {
 			}
 
 			// 检查丢失连接的 Speaker
-			if (null != kernel.speakers && count % 20 == 0) {
+			if (null != kernel.speakers && count % 50 == 0) {
 				try {
 					synchronized (kernel.speakers) {
 						for (Speaker speaker : kernel.speakers) {
@@ -227,9 +232,9 @@ public final class TalkServiceDaemon extends Thread {
 				Logger.log(this.getClass(), e, LogLevel.ERROR);
 			}
 
-			// 休眠50毫秒
+			// 休眠 20 毫秒
 			try {
-				Thread.sleep(50L);
+				Thread.sleep(this.interval);
 			} catch (InterruptedException e) {
 				Logger.log(TalkServiceDaemon.class, e, LogLevel.ERROR);
 			}

@@ -67,7 +67,7 @@ public class ChunkDialect extends Dialect {
 
 	/**
 	 * 用于标识该区块是否能写入缓存队列。
-	 * 如果为 true ，表示已经“污染”，不能进入队列，必须直接发送
+	 * 如果为 true ，表示已经“污染”，不能进入队列，必须直接发送。
 	 */
 	protected boolean infectant = false;
 

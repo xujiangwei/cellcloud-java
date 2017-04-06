@@ -146,7 +146,7 @@ public class QuotaCalculator {
 	 * @param callback 指定发生阻塞时的回调。
 	 * @param custom 指定回调时的自定义数据对象。
 	 */
-	public void consumeBlocking(int value, QuotaCalculatorCallback callback, Object custom) {
+	public void consume(int value, QuotaCalculatorCallback callback, Object custom) {
 		if (null == this.future) {
 			return;
 		}

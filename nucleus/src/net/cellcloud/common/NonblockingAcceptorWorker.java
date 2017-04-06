@@ -513,7 +513,7 @@ public final class NonblockingAcceptorWorker extends Thread {
 							this.tx += size;
 
 							// 配额控制
-							this.transmissionQuota.consumeBlocking(size, null, null);
+							this.transmissionQuota.consume(size, null, null);
 						}
 					} catch (IOException e) {
 						Logger.log(NonblockingAcceptorWorker.class, e, LogLevel.WARNING);

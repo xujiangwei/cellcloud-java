@@ -179,11 +179,12 @@ public final class ActionDialectFactory extends DialectFactory {
 		if (this.threadCount.get() < this.maxThreadNum) {
 			// 线程数量未达到最大线程数，启动新线程
 
+			// 更新线程计数
+			this.threadCount.incrementAndGet();
+
 			this.executor.execute(new Runnable() {
 				@Override
 				public void run() {
-					threadCount.incrementAndGet();
-
 					while (!dialects.isEmpty()) {
 						ActionDelegate adg = null;
 						ActionDialect adl = null;
@@ -191,8 +192,8 @@ public final class ActionDialectFactory extends DialectFactory {
 							if (dialects.isEmpty()) {
 								break;
 							}
-							adg = delegates.remove(0);
-							adl = dialects.remove(0);
+							adg = delegates.removeFirst();
+							adl = dialects.removeFirst();
 						}
 
 						// Do action
@@ -213,6 +214,7 @@ public final class ActionDialectFactory extends DialectFactory {
 						}
 					}
 
+					// 更新线程计数
 					threadCount.decrementAndGet();
 				}
 			});

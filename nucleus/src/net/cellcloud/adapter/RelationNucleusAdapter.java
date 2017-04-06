@@ -613,7 +613,7 @@ public abstract class RelationNucleusAdapter implements Adapter {
 		}
 
 		// 配额计算，并阻塞
-		this.quota.consumeBlocking(data.length, this.quotaCallback, destination);
+		this.quota.consume(data.length, this.quotaCallback, destination);
 
 		OutputStream os = null;
 		try {

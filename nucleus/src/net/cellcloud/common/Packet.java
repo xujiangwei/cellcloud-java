@@ -319,9 +319,6 @@ public final class Packet {
 		}
 		else {
 			int ssNum = packet.numSegments();
-			if (0 == ssNum) {
-				return null;
-			}
 
 			// 计算总长度
 			int bodyLength = PSL_SEGMENT_NUM + (ssNum * PSL_SEGMENT_LENGTH);
