@@ -26,7 +26,6 @@ THE SOFTWARE.
 
 package net.cellcloud.talk;
 
-
 /**
  * Talk 连接监听器。
  * 

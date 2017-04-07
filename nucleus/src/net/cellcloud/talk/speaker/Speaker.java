@@ -240,6 +240,12 @@ public class Speaker implements Speakable {
 		}
 
 		if (null != this.connector) {
+			Session session = this.connector.getSession();
+			if (null != session) {
+				// 吊销密钥
+				session.deactiveSecretKey();
+			}
+
 			this.connector.disconnect();
 			this.connector = null;
 		}
@@ -471,10 +477,12 @@ public class Speaker implements Speakable {
 
 		this.delegate.onQuitted(this, celletIdentifier);
 
-		// 吊销密钥
-		Session session = this.connector.getSession();
-		if (null != session) {
-			session.deactiveSecretKey();
+		if (null != this.connector) {
+			// 吊销密钥
+			Session session = this.connector.getSession();
+			if (null != session) {
+				session.deactiveSecretKey();
+			}
 		}
 	}
 

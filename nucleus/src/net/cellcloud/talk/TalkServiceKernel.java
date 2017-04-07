@@ -1657,7 +1657,7 @@ public final class TalkServiceKernel implements Service, SpeakerDelegate {
 							}
 						}
 						else {
-							// proxyQuitted
+							// quitted
 							cellet.quitted(tag);
 						}
 					}

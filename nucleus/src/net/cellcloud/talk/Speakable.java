@@ -60,7 +60,8 @@ public interface Speakable {
 
 	/**
 	 * 是否已经与 Cellet 建立服务。
-	 * @return
+	 * 
+	 * @return 如果已经建立服务返回 <code>true</code> 。
 	 */
 	public boolean isCalled();
 
