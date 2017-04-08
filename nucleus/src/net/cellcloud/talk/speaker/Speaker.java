@@ -101,7 +101,7 @@ public class Speaker implements Speakable {
 	/** 上一次重连的时间戳。 */
 	public long retryTimestamp = 0;
 	/** 重连次数。 */
-	public int retryCounts = 0;
+	public int retryCount = 0;
 	/** 是否已经达到最大重连次数，重连结束。 */
 	public boolean retryEnd = false;
 
@@ -330,7 +330,7 @@ public class Speaker implements Speakable {
 	 */
 	protected void reset() {
 		this.retryTimestamp = 0;
-		this.retryCounts = 0;
+		this.retryCount = 0;
 		this.retryEnd = false;
 	}
 

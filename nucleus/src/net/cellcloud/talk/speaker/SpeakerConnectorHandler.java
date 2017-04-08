@@ -218,7 +218,7 @@ public final class SpeakerConnectorHandler implements MessageHandler {
 			// 重置重试参数
 			if (null != this.speaker.capacity) {
 				this.speaker.retryTimestamp = 0;
-				this.speaker.retryCounts = 0;
+				this.speaker.retryCount = 0;
 				this.speaker.retryEnd = false;
 			}
 		}

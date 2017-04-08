@@ -164,7 +164,7 @@ public final class TalkServiceDaemon extends Thread {
 								}
 
 								// 判断是否达到最大重试次数
-								if (speaker.retryCounts >= speaker.capacity.retry) {
+								if (speaker.retryCount >= speaker.capacity.retry) {
 									if (!speaker.retryEnd) {
 										speaker.retryEnd = true;
 										speaker.fireRetryEnd();
@@ -214,7 +214,7 @@ public final class TalkServiceDaemon extends Thread {
 							}
 
 							// 重连计数
-							speaker.retryCounts++;
+							speaker.retryCount++;
 						}
 
 						// 清空列表
