@@ -43,7 +43,7 @@ public interface CelletCallbackListener {
 	 * @param cellet 发生此事件的 Cellet 。
 	 * @param targetTag 发送目标的标签。
 	 * @param dialect 发送的方言。
-	 * @return 返回 <code>true</code> 表示截获该方言，将不被送入发送队列。
+	 * @return 返回 <code>false</code> 表示截获该方言，将不被送入发送队列。
 	 */
 	public boolean doTalk(Cellet cellet, String targetTag, Dialect dialect);
 
@@ -53,7 +53,7 @@ public interface CelletCallbackListener {
 	 * @param cellet 发生此事件的 Cellet 。
 	 * @param sourceTag 源终端的标签。
 	 * @param dialect 接收到的方言。
-	 * @return 返回 <code>true</code> 表示截获该方言，将不调用监听器通知 dialogue 事件发生。
+	 * @return 返回 <code>false</code> 表示截获该方言，将不调用监听器通知 dialogue 事件发生。
 	 */
 	public boolean doDialogue(Cellet cellet, String sourceTag, Dialect dialect);
 

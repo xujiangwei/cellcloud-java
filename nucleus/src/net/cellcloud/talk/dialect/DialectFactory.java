@@ -61,7 +61,7 @@ public abstract class DialectFactory {
 	 * 
 	 * @param identifier 目标 Cellet 标识。
 	 * @param dialect 被发送的方言。
-	 * @return 返回 <code>true</code> 表示工厂截获该方言，将不被送入发送队列。
+	 * @return 返回 <code>false</code> 表示工厂截获该方言，将不被送入发送队列。
 	 */
 	abstract protected boolean onTalk(String identifier, Dialect dialect);
 
@@ -70,7 +70,7 @@ public abstract class DialectFactory {
 	 * 
 	 * @param identifier 来源 Cellet 标识。
 	 * @param dialect 接收到的方言。
-	 * @return 返回 <code>true</code> 表示工厂截获该方言，将不调用监听器通知 dialogue 事件发生。
+	 * @return 返回 <code>false</code> 表示工厂截获该方言，将不调用监听器通知 dialogue 事件发生。
 	 */
 	abstract protected boolean onDialogue(String identifier, Dialect dialect);
 
@@ -80,7 +80,7 @@ public abstract class DialectFactory {
 	 * @param cellet 当前发送此方言的 Cellet 。
 	 * @param targetTag 目标终端的内核标签。
 	 * @param dialect 被发送的方言。
-	 * @return 返回 <code>true</code> 表示工厂截获该方言，将不被送入发送队列。
+	 * @return 返回 <code>false</code> 表示工厂截获该方言，将不被送入发送队列。
 	 */
 	abstract protected boolean onTalk(Cellet cellet, String targetTag, Dialect dialect);
 
@@ -90,7 +90,7 @@ public abstract class DialectFactory {
 	 * @param cellet 接收此方言的 Cellet 。
 	 * @param sourceTag 源终端的内核标签。
 	 * @param dialect 接收到的方言。
-	 * @return 返回 <code>true</code> 表示工厂截获该方言，将不调用监听器通知 dialogue 事件发生。
+	 * @return 返回 <code>false</code> 表示工厂截获该方言，将不调用监听器通知 dialogue 事件发生。
 	 */
 	abstract protected boolean onDialogue(Cellet cellet, String sourceTag, Dialect dialect);
 
