@@ -26,16 +26,12 @@ THE SOFTWARE.
 
 package net.cellcloud.cluster.protocol;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Iterator;
-import java.util.List;
 import java.util.Map;
 
 import net.cellcloud.cluster.ClusterNode;
-import net.cellcloud.cluster.ClusterVirtualNode;
 import net.cellcloud.common.Session;
 import net.cellcloud.core.Nucleus;
+import net.cellcloud.util.Utils;
 
 /**
  * 集群发现协议。
@@ -59,16 +55,20 @@ public class ClusterDiscoveringProtocol extends ClusterProtocol {
 	 */
 	public final static String KEY_SOURCE_PORT = "Source-Port";
 	/**
-	 * 数据键：虚节点 Hash 串。
+	 * 数据键：源散列码。
 	 */
-	public final static String KEY_VNODES = "VNodes";
+	public final static String KEY_SOURCE_HASH = "Source-Hash";
+
+	public final static String KEY_HASH = "Hash";
 
 	/** 源IP地址。 */
 	private String sourceIP = null;
 	/** 源端口号。 */
 	private int sourcePort = 0;
-	/** 节点。 */
-	private ClusterNode node = null;
+	/** 源散列码。 */
+	private long sourceHash = 0;
+	/** 源节点。 */
+	private ClusterNode sourceNode = null;
 
 	/**
 	 * 构造函数。
@@ -77,11 +77,12 @@ public class ClusterDiscoveringProtocol extends ClusterProtocol {
 	 * @param sourcePort 指定源端口号。
 	 * @param node 指定源节点。
 	 */
-	public ClusterDiscoveringProtocol(String sourceIP, int sourcePort, ClusterNode node) {
+	public ClusterDiscoveringProtocol(String sourceIP, int sourcePort, ClusterNode sourceNode) {
 		super(ClusterDiscoveringProtocol.NAME);
+		super.setProp(KEY_SN, Utils.randomNumberString(16));
 		this.sourceIP = sourceIP;
 		this.sourcePort = sourcePort;
-		this.node = node;
+		this.sourceNode = sourceNode;
 	}
 
 	/**
@@ -128,20 +129,27 @@ public class ClusterDiscoveringProtocol extends ClusterProtocol {
 	/**
 	 * 返回虚拟节点的 Hash 码列表。
 	 */
-	public List<Long> getVNodeHash() {
-		Object value = this.getProp(KEY_VNODES);
-		if (null == value) {
-			return null;
+	public long getSourceHash() {
+		if (0 != this.sourceHash) {
+			return this.sourceHash;
 		}
 
-		String str = value.toString();
-		String[] array = str.split(",");
-		ArrayList<Long> res = new ArrayList<Long>();
-		for (String sz : array) {
-			Long hash = Long.parseLong(sz);
-			res.add(hash);
+		Object value = this.getProp(KEY_SOURCE_HASH);
+		if (null != value) {
+			this.sourceHash = Long.parseLong(value.toString());
 		}
-		return res;
+
+		return this.sourceHash;
+	}
+
+	/**
+	 * 获得应答终端的 Hash 值。
+	 * 
+	 * @return 返回应答终端的 Hash 值。
+	 */
+	public long getResponseHash() {
+		Object value = this.getProp(KEY_HASH);
+		return Long.parseLong(value.toString());
 	}
 
 	/**
@@ -152,26 +160,13 @@ public class ClusterDiscoveringProtocol extends ClusterProtocol {
 		StringBuilder buf = new StringBuilder();
 		buf.append(KEY_PROTOCOL).append(":").append(ClusterDiscoveringProtocol.NAME).append("\n");
 		buf.append(KEY_TAG).append(":").append(Nucleus.getInstance().getTagAsString()).append("\n");
+		buf.append(KEY_SN).append(":").append(super.getSN()).append("\n");
 		buf.append(KEY_DATE).append(":").append(super.getStandardDate()).append("\n");
 		buf.append(KEY_SOURCE_IP).append(":").append(this.sourceIP).append("\n");
 		buf.append(KEY_SOURCE_PORT).append(":").append(this.sourcePort).append("\n");
-		buf.append(KEY_HASH).append(":").append(this.node.getHashCode()).append("\n");
+		buf.append(KEY_SOURCE_HASH).append(":").append(this.sourceNode.getHashCode()).append("\n");
 
-		// 写入虚拟节点信息
-		Collection<ClusterVirtualNode> vnodes = this.node.getOwnVirtualNodes();
-		if (null != vnodes && !vnodes.isEmpty()) {
-			buf.append(KEY_VNODES).append(":");
-
-			Iterator<ClusterVirtualNode> iter = vnodes.iterator();
-			while (iter.hasNext()) {
-				ClusterVirtualNode vnode = iter.next();
-				buf.append(vnode.getHashCode()).append(",");
-			}
-
-			buf.deleteCharAt(buf.length() - 1);
-			buf.append("\n");
-		}
-
+		// 发送
 		this.touch(session, buf, null);
 		buf = null;
 	}
@@ -184,25 +179,12 @@ public class ClusterDiscoveringProtocol extends ClusterProtocol {
 		StringBuilder buf = new StringBuilder();
 		buf.append(KEY_PROTOCOL).append(":").append(ClusterDiscoveringProtocol.NAME).append("\n");
 		buf.append(KEY_TAG).append(":").append(Nucleus.getInstance().getTagAsString()).append("\n");
+		buf.append(KEY_SN).append(":").append(super.getSN()).append("\n");
 		buf.append(KEY_DATE).append(":").append(super.getStandardDate()).append("\n");
 		buf.append(KEY_STATE).append(":").append(state.getCode()).append("\n");
 		buf.append(KEY_HASH).append(":").append(node.getHashCode()).append("\n");
 
-		// 写入虚拟节点信息
-		Collection<ClusterVirtualNode> vnodes = node.getOwnVirtualNodes();
-		if (null != vnodes && !vnodes.isEmpty()) {
-			buf.append(KEY_VNODES).append(":");
-
-			Iterator<ClusterVirtualNode> iter = vnodes.iterator();
-			while (iter.hasNext()) {
-				ClusterVirtualNode vnode = iter.next();
-				buf.append(vnode.getHashCode()).append(",");
-			}
-
-			buf.deleteCharAt(buf.length() - 1);
-			buf.append("\n");
-		}
-
+		// 发送
 		this.touch(this.contextSession, buf, null);
 		buf = null;
 	}
@@ -214,9 +196,11 @@ public class ClusterDiscoveringProtocol extends ClusterProtocol {
 		StringBuilder buf = new StringBuilder();
 		buf.append(KEY_PROTOCOL).append(":").append(ClusterDiscoveringProtocol.NAME).append("\n");
 		buf.append(KEY_TAG).append(":").append(Nucleus.getInstance().getTagAsString()).append("\n");
+		buf.append(KEY_SN).append(":").append(super.getSN()).append("\n");
 		buf.append(KEY_DATE).append(":").append(super.getStandardDate()).append("\n");
 		buf.append(KEY_STATE).append(":").append(ClusterProtocol.StateCode.REJECT.getCode()).append("\n");
 
+		// 发送
 		this.touch(this.contextSession, buf, null);
 		buf = null;
 	}

@@ -82,6 +82,9 @@ public final class CachedQueueExecutor implements ExecutorService {
 		this.queue.offer(command);
 
 		if (this.numThreads.get() < this.maxThreads) {
+			// 线程计数
+			this.numThreads.incrementAndGet();
+
 			this.executor.execute(new QueueTask());
 		}
 	}
@@ -164,15 +167,11 @@ public final class CachedQueueExecutor implements ExecutorService {
 
 		@Override
 		public void run() {
-			numThreads.incrementAndGet();
-
 			do {
 				Runnable task = queue.poll();
 				if (null != task) {
 					task.run();
 				}
-
-				Thread.yield();
 			} while (!queue.isEmpty());
 
 			numThreads.decrementAndGet();

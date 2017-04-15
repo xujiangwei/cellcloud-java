@@ -55,4 +55,13 @@ public final class ProtocolMonitor {
 		this.timestamp = Clock.currentTimeMillis();
 	}
 
+	/**
+	 * 获得协议的 SN 。
+	 * 
+	 * @return
+	 */
+	public String getSN() {
+		return this.protocol.getSN();
+	}
+
 }

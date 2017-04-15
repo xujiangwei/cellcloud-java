@@ -28,7 +28,7 @@ package net.cellcloud.cell.command;
 
 import net.cellcloud.cluster.ClusterController;
 import net.cellcloud.cluster.ClusterNode;
-import net.cellcloud.cluster.ClusterVirtualNode;
+import net.cellcloud.cluster.VirtualNode;
 import net.cellcloud.core.Nucleus;
 
 /** Cluster 命令。
@@ -65,24 +65,15 @@ public class ClusterCommand extends ConsoleCommand {
 		else {
 			ClusterController cltr = Nucleus.getInstance().getClusterController();
 			ClusterNode node = cltr.getNode();
-			Long[] hashes = node.getVirtualNodeHashList();
+			VirtualNode[] vnodes = node.getVirtualNodes();
 
-			StringBuilder info = new StringBuilder("Cluster nodes: ");
-			info.append(hashes.length + " virtual nodes\n");
+			StringBuilder info = new StringBuilder("Cluster node: ");
+			info.append(vnodes.length + " virtual nodes\n");
 			info.append("VNode\n");
 			info.append("----------------------------------------------------------------------\n");
 			int sn = 1;
-			for (Long h : hashes) {
-				info.append(sn).append("\t").append(h).append("\t");
-
-				// 判断是否是本地
-				info.append(node.containsOwnVirtualNode(h) ? "L" : "R");
-
-				ClusterVirtualNode vnode = cltr.getNode().getVirtualNode(h);
-				// 虚拟节点物理地址
-				info.append("  ").append(vnode.getHost()).append(":").append(vnode.getPort());
-
-				info.append("\n");
+			for (VirtualNode vn : vnodes) {
+				info.append(sn).append("\t").append(vn.numChunks()).append("\t");
 				++sn;
 			}
 			info.deleteCharAt(info.length() - 1);
@@ -112,28 +103,7 @@ public class ClusterCommand extends ConsoleCommand {
 			}
 			else {
 				if (this.subcmd.isIntArg(0)) {
-					ClusterController cltr = Nucleus.getInstance().getClusterController();
-					ClusterNode node = cltr.getNode();
-					Long[] hashes = node.getVirtualNodeHashList();
-
-					int sn = this.subcmd.getIntArg(0);
-					if (sn >= 1 && sn <= hashes.length) {
-						Long hash = hashes[sn - 1];
-						StringBuilder buf = new StringBuilder("Virtual node - ").append(hash).append("\n");
-						if (node.containsOwnVirtualNode(hash)) {
-							ClusterVirtualNode vnode = node.getOwnVirtualNode(hash);
-							buf.append("Number of memory chunk: ").append(vnode.numOfChunk()).append("\n");
-						}
-						else {
-							// TODO
-						}
-
-						print(buf.toString());
-						buf = null;
-					}
-					else {
-						print("Warning: Cluster 'vn' command argument <sn> error.");
-					}
+					// TODO
 				}
 				else {
 					print("Warning: Cluster 'vn' command argument error.");

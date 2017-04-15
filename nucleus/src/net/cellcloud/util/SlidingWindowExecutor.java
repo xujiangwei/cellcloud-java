@@ -37,6 +37,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
@@ -61,7 +62,7 @@ public class SlidingWindowExecutor implements ExecutorService {
 	private int windowSize = 4;
 	protected byte[] monitor = new byte[0];
 
-	private volatile boolean dispatching = false;
+	private AtomicBoolean dispatching = new AtomicBoolean(false);
 
 	protected SlidingWindowExecutor self;
 
@@ -95,8 +96,8 @@ public class SlidingWindowExecutor implements ExecutorService {
 		}
 
 		// 启动分发任务
-		if (!this.dispatching) {
-			this.dispatching = true;
+		if (!this.dispatching.get()) {
+			this.dispatching.set(true);
 			this.executor.execute(new Dispatcher());
 		}
 		else {
@@ -237,7 +238,7 @@ public class SlidingWindowExecutor implements ExecutorService {
 				Thread.yield();
 			} while (!taskQueue.isEmpty());
 
-			dispatching = false;
+			dispatching.set(false);
 		}
 	}
 

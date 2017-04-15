@@ -26,19 +26,18 @@ THE SOFTWARE.
 
 package net.cellcloud.cluster;
 
-import java.net.InetSocketAddress;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * 集群虚拟节点。
+ * 集群数据节点。
  * 
  * @author Ambrose Xu
  * 
  */
-public class ClusterVirtualNode extends ClusterNode {
+public class VirtualNode {
 
 	/**
-	 * 此虚拟节点关联的物理节点。
+	 * 此数据节点关联的物理节点。
 	 */
 	protected ClusterNode master = null;
 
@@ -50,12 +49,10 @@ public class ClusterVirtualNode extends ClusterNode {
 	/**
 	 * 构造函数。
 	 * 
-	 * @param master 指定物理节点。
+	 * @param master 指定主节点。
 	 * @param hashCode 指定该节点散列码。
-	 * @param address 指定访问地址。
 	 */
-	public ClusterVirtualNode(ClusterNode master, long hashCode, InetSocketAddress address) {
-		super(hashCode, address, -1);
+	public VirtualNode(ClusterNode master) {
 		this.master = master;
 		this.memoryChunks = new ConcurrentHashMap<String, Chunk>();
 	}
@@ -65,7 +62,7 @@ public class ClusterVirtualNode extends ClusterNode {
 	 * 
 	 * @return 返回数据块数量。
 	 */
-	public int numOfChunk() {
+	public int numChunks() {
 		return this.memoryChunks.size();
 	}
 

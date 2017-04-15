@@ -73,6 +73,7 @@ public class ClusterPushProtocol extends ClusterProtocol {
 	 */
 	public ClusterPushProtocol(long targetHash, Chunk chunk) {
 		super(ClusterPushProtocol.NAME);
+		super.setProp(KEY_SN, Utils.randomNumberString(16));
 		this.targetHash = targetHash;
 		this.chunk = chunk;
 	}
@@ -149,6 +150,7 @@ public class ClusterPushProtocol extends ClusterProtocol {
 		StringBuilder buf = new StringBuilder();
 		buf.append(KEY_PROTOCOL).append(":").append(NAME).append("\n");
 		buf.append(KEY_TAG).append(":").append(Nucleus.getInstance().getTagAsString()).append("\n");
+		buf.append(KEY_SN).append(":").append(super.getSN()).append("\n");
 		buf.append(KEY_DATE).append(":").append(super.getStandardDate()).append("\n");
 
 		buf.append(KEY_TARGET_HASH).append(":").append(this.targetHash).append("\n");
@@ -166,6 +168,7 @@ public class ClusterPushProtocol extends ClusterProtocol {
 		StringBuilder buf = new StringBuilder();
 		buf.append(KEY_PROTOCOL).append(":").append(NAME).append("\n");
 		buf.append(KEY_TAG).append(":").append(Nucleus.getInstance().getTagAsString()).append("\n");
+		buf.append(KEY_SN).append(":").append(super.getSN()).append("\n");
 		buf.append(KEY_DATE).append(":").append(super.getStandardDate()).append("\n");
 		buf.append(KEY_STATE).append(":").append(state.getCode()).append("\n");
 

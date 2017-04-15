@@ -29,6 +29,7 @@ package net.cellcloud.talk.speaker;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.net.InetSocketAddress;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Timer;
 import java.util.TimerTask;
@@ -403,9 +404,12 @@ public class Speaker implements Speakable {
 		this.state = SpeakerState.HANGUP;
 
 		// 通知退出
-		for (String identifier : this.identifierList) {
+		ArrayList<String> identifiers = new ArrayList<String>(this.identifierList);
+		for (String identifier : identifiers) {
 			this.fireQuitted(identifier);
 		}
+		identifiers.clear();
+		identifiers = null;
 	}
 
 	/**

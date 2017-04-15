@@ -27,6 +27,7 @@ THE SOFTWARE.
 package net.cellcloud.cluster.protocol;
 
 import java.util.Date;
+import java.util.HashMap;
 import java.util.Map;
 
 import net.cellcloud.cluster.ClusterNode;
@@ -50,8 +51,8 @@ public abstract class ClusterProtocol {
 	public final static String KEY_DATE = "Date";
 	/** 数据键：状态。 */
 	public final static String KEY_STATE = "State";
-	/** 数据键：节点散列码。 */
-	public final static String KEY_HASH = "Hash";
+	/** 数据键：序号。 */
+	public final static String KEY_SN = "SN";
 	/** 数据键：负载。 */
 	public final static String KEY_PAYLOAD = "Payload";
 
@@ -121,32 +122,32 @@ public abstract class ClusterProtocol {
 	 * @return 返回整数形式的协议状态。
 	 */
 	public int getStateCode() {
-		Object oState = this.prop.get(KEY_STATE);
-		if (null == oState) {
+		Object state = this.prop.get(KEY_STATE);
+		if (null == state) {
 			return -1;
 		}
 
-		if (oState instanceof Integer) {
-			return ((Integer) oState).intValue();
+		if (state instanceof Integer) {
+			return ((Integer) state).intValue();
 		}
 		else {
-			return Integer.parseInt(oState.toString());
+			return Integer.parseInt(state.toString());
 		}
 	}
 
 	/**
-	 * 获得物理节点的 Hash 值。
+	 * 获得协议的 SN 。
 	 * 
-	 * @return 返回物理节点 Hash 值。
+	 * @return 返回协议的 SN 。
 	 */
-	public long getHash() {
-		Object oHash = this.prop.get(KEY_HASH);
+	public String getSN() {
+		Object sn = this.prop.get(KEY_SN);
 
-		if (oHash instanceof Long) {
-			return ((Long) oHash).longValue();
+		if (sn instanceof String) {
+			return (String) sn;
 		}
 		else {
-			return Long.parseLong(oHash.toString());
+			return sn.toString();
 		}
 	}
 
@@ -158,6 +159,20 @@ public abstract class ClusterProtocol {
 	 */
 	public Object getProp(String key) {
 		return (null != this.prop) ? this.prop.get(key) : null;
+	}
+
+	/**
+	 * 设置指定键值的属性。
+	 * 
+	 * @param key 指定数据键。
+	 * @param value 指定数据值。
+	 */
+	public void setProp(String key, Object value) {
+		if (null == this.prop) {
+			this.prop = new HashMap<String, Object>();
+		}
+
+		this.prop.put(key, value);
 	}
 
 	/**

@@ -72,6 +72,11 @@ public final class Utils {
 		'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z'};
 
 	/**
+	 * 数字表。
+	 */
+	private static final char[] NUMERATION = {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9'};
+
+	/**
 	 * 生成随机长整数。
 	 */
 	public static long randomLong() {
@@ -115,9 +120,33 @@ public final class Utils {
 		int min = 0;
 		int index = 0;
 		for (int i = 0; i < length; ++i) {
-			index = sRandom.nextInt(max)%(max-min+1) + min;
+			index = sRandom.nextInt(max) % (max-min+1) + min;
 			buf[i] = ALPHABET[index];
 		}
+		return new String(buf);
+	}
+
+	/**
+	 * 生成指定长度的随机数字串。
+	 * 
+	 * @param length 指定需生成数字串的长度。
+	 * @return
+	 */
+	public static String randomNumberString(int length) {
+		char[] buf = new char[length];
+		int max = NUMERATION.length - 1;
+		int min = 0;
+		int index = 0;
+
+		// 第一个字符不能是 '0'
+		index = sRandom.nextInt(max) % (max-min+1) + min;
+		buf[0] = NUMERATION[(index == 0 ? 1 : index)];
+
+		for (int i = 1; i < length; ++i) {
+			index = sRandom.nextInt(max) % (max-min+1) + min;
+			buf[i] = NUMERATION[index];
+		}
+
 		return new String(buf);
 	}
 
