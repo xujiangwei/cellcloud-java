@@ -28,9 +28,11 @@ package net.cellcloud.cell;
 
 import net.cellcloud.Version;
 
-/** Cell 容器的版本信息。
+/**
+ * Cell 容器的版本信息。
  * 
- * @author Jiangwei Xu
+ * @author Ambrose Xu
+ * 
  */
 public final class CellVersion {
 

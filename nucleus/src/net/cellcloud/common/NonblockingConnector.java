@@ -831,48 +831,29 @@ public class NonblockingConnector extends MessageService implements MessageConne
 		final byte[] headMark = this.getHeadMark();
 		final byte[] tailMark = this.getTailMark();
 
-		// 当数据小于标签长度时直接缓存
-//		if (data.length < headMark.length) {
-//			if (this.session.cacheCursor + data.length > this.session.getCacheSize()) {
-//				// 重置 cache 大小
-//				this.session.resetCacheSize(this.session.cacheCursor + data.length);
-//			}
-//			System.arraycopy(data, 0, this.session.cache, this.session.cacheCursor, data.length);
-//			this.session.cacheCursor += data.length;
-//			return;
-//		}
-
 		byte[] real = data;
 		if (this.session.cacheCursor > 0) {
 			real = new byte[this.session.cacheCursor + data.length];
 			System.arraycopy(this.session.cache, 0, real, 0, this.session.cacheCursor);
 			System.arraycopy(data, 0, real, this.session.cacheCursor, data.length);
-			this.session.cacheCursor = 0;
-		}
-
-		// 当数据小于标签长度时直接缓存
-		if (real.length < headMark.length) {
-			if (this.session.cacheCursor + real.length > this.session.getCacheSize()) {
-				// 重置 cache 大小
-				this.session.resetCacheSize(this.session.cacheCursor + real.length);
-			}
-			System.arraycopy(real, 0, this.session.cache, this.session.cacheCursor, real.length);
-			this.session.cacheCursor += real.length;
-			return;
+			// 重置缓存
+			this.session.resetCache();
 		}
 
 		int index = 0;
-		int len = real.length;
+		final int len = real.length;
 		int headPos = -1;
 		int tailPos = -1;
+		int ret = -1;
 
-		if (0 == compareBytes(headMark, 0, real, index, headMark.length)) {
+		ret = compareBytes(headMark, 0, real, index, headMark.length);
+		if (0 == ret) {
 			// 有头标签
 			index += headMark.length;
 			// 记录数据位置头
 			headPos = index;
 			// 判断是否有尾标签，依次计数
-			int ret = -1;
+			ret = -1;
 			while (index < len) {
 				if (real[index] == tailMark[0]) {
 					ret = compareBytes(tailMark, 0, real, index, tailMark.length);
@@ -910,8 +891,7 @@ public class NonblockingConnector extends MessageService implements MessageConne
 				}
 			}
 			else {
-				// 没有尾标签
-				// 仅进行缓存
+				// 没有尾标签，仅进行缓存
 				if (len + this.session.cacheCursor > this.session.getCacheSize()) {
 					// 缓存扩容
 					this.session.resetCacheSize(len + this.session.cacheCursor);
@@ -921,8 +901,73 @@ public class NonblockingConnector extends MessageService implements MessageConne
 				this.session.cacheCursor += len;
 			}
 		}
-		else {
+		else if (-1 == ret){
 			// 没有头标签
+			// 尝试查找
+			ret = -1;
+			while (index < len) {
+				if (real[index] == headMark[0]) {
+					ret = compareBytes(headMark, 0, real, index, headMark.length);
+					if (0 == ret) {
+						// 找到头标签
+						headPos = index;
+						break;
+					}
+					else if (1 == ret) {
+						// 越界
+						break;
+					}
+					else {
+						// 未找到头标签
+						++index;
+					}
+				}
+				else {
+					++index;
+				}
+			}
+
+			if (headPos > 0) {
+				// 找到头标签
+				byte[] newBytes = new byte[len - headPos];
+				System.arraycopy(real, headPos, newBytes, 0, newBytes.length);
+
+				// 递归
+				extract(out, newBytes);
+			}
+			else {
+				// 没有找到头标签，尝试判断结束位置
+				byte backwardOne = real[len - 1];
+				byte backwardTwo = real[len - 2];
+				byte backwardThree = real[len - 3];
+				int pos = -1;
+				int cplen = 0;
+				if (headMark[0] == backwardOne) {
+					pos = len - 1;
+					cplen = 1;
+				}
+				else if (headMark[0] == backwardTwo && headMark[1] == backwardOne) {
+					pos = len - 2;
+					cplen = 2;
+				}
+				else if (headMark[0] == backwardThree && headMark[1] == backwardTwo && headMark[2] == backwardOne) {
+					pos = len - 3;
+					cplen = 3;
+				}
+
+				if (pos >= 0) {
+					// 有可能是数据头，进行缓存
+					if (cplen + this.session.cacheCursor > this.session.getCacheSize()) {
+						// 缓存扩容
+						this.session.resetCacheSize(cplen + this.session.cacheCursor);
+					}
+
+					System.arraycopy(real, pos, this.session.cache, this.session.cacheCursor, cplen);
+					this.session.cacheCursor += cplen;
+				}
+			}
+
+			/*
 			// 尝试找到头标签
 			byte[] markBuf = new byte[headMark.length];
 			int searchIndex = 0;
@@ -970,11 +1015,17 @@ public class NonblockingConnector extends MessageService implements MessageConne
 				// 重置计数
 				searchCounts = 0;
 			} while (searchIndex < len);
+			*/
 		}
-
-//		byte[] newBytes = new byte[len - headMark.length];
-//		System.arraycopy(real, headMark.length, newBytes, 0, newBytes.length);
-//		extract(out, newBytes);
+		else {
+			// 数据越界，直接缓存
+			if (this.session.cacheCursor + real.length > this.session.getCacheSize()) {
+				// 重置 cache 大小
+				this.session.resetCacheSize(this.session.cacheCursor + real.length);
+			}
+			System.arraycopy(real, 0, this.session.cache, this.session.cacheCursor, real.length);
+			this.session.cacheCursor += real.length;
+		}
 	}
 
 	/**
