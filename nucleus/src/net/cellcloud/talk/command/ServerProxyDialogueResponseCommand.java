@@ -24,78 +24,37 @@ THE SOFTWARE.
 -----------------------------------------------------------------------------
 */
 
-package net.cellcloud.talk;
+package net.cellcloud.talk.command;
+
+import net.cellcloud.common.Packet;
+import net.cellcloud.common.Session;
+import net.cellcloud.talk.TalkServiceKernel;
 
 /**
- * 会话故障码。
+ * Talk proxy dialogue response command.
  * 
  * @author Ambrose Xu
  * 
  */
-public enum TalkFailureCode {
-
-	/**
-	 * 未找到指定的 Cellet 。
-	 * 此错误不触发自动重连。
-	 */
-	NOT_FOUND(1000),
-
-	/**
-	 * Call 请求失败。
-	 */
-	CALL_FAILED(1100),
-
-	/**
-	 * 会话连接被断开。
-	 */
-	TALK_LOST(2000),
-
-	/**
-	 * 会话网络断开。
-	 */
-	NETWORK_NOT_AVAILABLE(2100),
-
-	/**
-	 * 代理错误。
-	 */
-	PROXY_FAILED(3000),
-
-	/**
-	 * 代理对话错误。
-	 */
-	PROXY_DIALOGUE_FAILED(3100),
-
-	/**
-	 * 数据异常。
-	 * 此错误不触发自动重连。
-	 */
-	INCORRECT_DATA(4000),
-
-	/**
-	 * 重试次数达到上限，重试结束。
-	 * 此错误不触发自动重连。
-	 */
-	RETRY_END(4100);
-
-	/** 错误码。 */
-	private int code;
+public final class ServerProxyDialogueResponseCommand extends ServerCommand {
 
 	/**
 	 * 构造函数。
-	 * 
-	 * @param code 指定错误码。
 	 */
-	private TalkFailureCode(int code) {
-		this.code = code;
+	public ServerProxyDialogueResponseCommand(TalkServiceKernel service) {
+		super(service, null, null);
 	}
 
 	/**
-	 * 获得此错误的错误码。
-	 * 
-	 * @return 返回错误码。
+	 * 构造函数。
 	 */
-	public int getCode() {
-		return this.code;
+	public ServerProxyDialogueResponseCommand(TalkServiceKernel service, Session session, Packet packet) {
+		super(service, session, packet);
+	}
+
+	@Override
+	public void execute() {
+//		byte[] data = packet.getSegment(0);
 	}
 
 }

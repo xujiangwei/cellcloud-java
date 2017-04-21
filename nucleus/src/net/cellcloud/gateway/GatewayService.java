@@ -28,14 +28,15 @@ package net.cellcloud.gateway;
 
 import java.net.InetSocketAddress;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Vector;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 
 import net.cellcloud.common.LogLevel;
 import net.cellcloud.common.Logger;
+import net.cellcloud.common.Packet;
 import net.cellcloud.common.Service;
 import net.cellcloud.common.Session;
 import net.cellcloud.core.Cellet;
@@ -48,8 +49,14 @@ import net.cellcloud.http.CapsuleHolder;
 import net.cellcloud.http.CookieSessionManager;
 import net.cellcloud.http.HttpCapsule;
 import net.cellcloud.http.HttpService;
+import net.cellcloud.talk.Primitive;
 import net.cellcloud.talk.TalkCapacity;
+import net.cellcloud.talk.TalkDefinition;
+import net.cellcloud.talk.TalkFailureCode;
 import net.cellcloud.talk.TalkServiceKernel;
+import net.cellcloud.talk.stuff.PrimitiveSerializer;
+import net.cellcloud.util.CachedQueueExecutor;
+import net.cellcloud.util.Utils;
 
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -86,7 +93,7 @@ public class GatewayService implements Service {
 	private ConcurrentHashMap<String, PuppetCellet> puppetCelletMap;
 
 	/** 当前服务器的会话核心。 */
-	protected TalkServiceKernel serverKernel;
+	protected TalkServiceKernel talkKernel;
 
 	/** HTTP 代理。 */
 	private ConcurrentHashMap<String, HttpProxy> httpProxies;
@@ -97,7 +104,7 @@ public class GatewayService implements Service {
 	 * @param sandboxes 与内核共享的沙盒映射。
 	 */
 	public GatewayService(ConcurrentHashMap<String, CelletSandbox> sandboxes) {
-		this.executor = Executors.newCachedThreadPool();
+		this.executor = CachedQueueExecutor.newCachedQueueThreadPool(128);
 		this.sandboxes = sandboxes;
 		this.slaves = new ArrayList<Slave>();
 		this.onlineSlaves = new Vector<Slave>();
@@ -144,7 +151,7 @@ public class GatewayService implements Service {
 	 * @param kernel 指定 Talk 服务核心。
 	 */
 	public void setTalkServiceKernel(TalkServiceKernel kernel) {
-		this.serverKernel = kernel;
+		this.talkKernel = kernel;
 	}
 
 	/**
@@ -210,7 +217,7 @@ public class GatewayService implements Service {
 		}
 
 		// 设置消息拦截器
-		this.serverKernel.setInterceptor(this.forwarder, this.forwarder);
+		this.talkKernel.setInterceptor(this.forwarder, this.forwarder);
 
 		// 初始化 Call
 		for (int i = 0; i < this.slaves.size(); ++i) {
@@ -254,7 +261,7 @@ public class GatewayService implements Service {
 			slave.kernel.stopDaemon();
 		}
 
-		this.serverKernel.setInterceptor(null, null);
+		this.talkKernel.setInterceptor(null, null);
 
 		this.slaves.clear();
 		this.onlineSlaves.clear();
@@ -301,6 +308,45 @@ public class GatewayService implements Service {
 		return this.sandboxes.get(identifier);
 	}
 
+	/**
+	 * 应答代理对话失败。
+	 * 
+	 * @param targetTag
+	 * @param cellet
+	 * @param primitive
+	 * @param failureCode
+	 */
+	protected void respondDialogueFailure(String targetTag, Cellet cellet, Primitive primitive, TalkFailureCode failureCode) {
+		JSONObject data = new JSONObject();
+
+		JSONObject primitiveJson = new JSONObject();
+		try {
+			PrimitiveSerializer.write(primitiveJson, primitive);
+		} catch (JSONException e) {
+			Logger.log(this.getClass(), e, LogLevel.ERROR);
+		}
+
+		try {
+			data.put("tag", targetTag);
+			data.put("identifier", cellet.getFeature().getIdentifier());
+			data.put("primitive", primitiveJson);
+			data.put("failure", failureCode.getCode());
+		} catch (JSONException e) {
+			Logger.log(this.getClass(), e, LogLevel.ERROR);
+		}
+
+		Packet packet = new Packet(TalkDefinition.TPT_PROXY_DR, 98, 2, 0);
+		packet.appendSegment(Utils.string2Bytes(data.toString()));
+		byte[] packetData = Packet.pack(packet);
+		this.talkKernel.pass(cellet.getFeature().getIdentifier(), packetData);
+	}
+
+	/**
+	 * 刷新 HTTP 路由信息。
+	 * 
+	 * @param remoteAddress
+	 * @return
+	 */
 	public Slave refreshHttpRouting(String remoteAddress) {
 		Slave slave = this.routingTable.querySlaveByAddress(remoteAddress);
 		if (null == slave) {
@@ -336,8 +382,9 @@ public class GatewayService implements Service {
 		else {
 			// 查找通信链路数量最小的下位机
 			int value = Integer.MAX_VALUE;
-			for (int i = 0, size = this.onlineSlaves.size(); i < size; ++i) {
-				Slave candidate = this.onlineSlaves.get(i);
+			Iterator<Slave> iter = this.onlineSlaves.iterator();
+			while (iter.hasNext()) {
+				Slave candidate = iter.next();
 				if (candidate.numSessions() < value) {
 					value = candidate.numSessions();
 					slave = candidate;

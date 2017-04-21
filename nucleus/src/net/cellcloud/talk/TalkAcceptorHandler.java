@@ -39,6 +39,7 @@ import net.cellcloud.talk.command.ServerConsultCommand;
 import net.cellcloud.talk.command.ServerDialogueCommand;
 import net.cellcloud.talk.command.ServerHeartbeatCommand;
 import net.cellcloud.talk.command.ServerProxyCommand;
+import net.cellcloud.talk.command.ServerProxyDialogueResponseCommand;
 import net.cellcloud.talk.command.ServerQuickCommand;
 import net.cellcloud.talk.command.ServerRequestCommand;
 
@@ -193,6 +194,15 @@ public final class TalkAcceptorHandler implements MessageHandler {
 				ServerProxyCommand cmd = borrowProxyCommand(session, packet);
 				cmd.execute();
 				returnProxyCommand(cmd);
+			} catch (Exception e) {
+				Logger.log(TalkAcceptorHandler.class, e, LogLevel.ERROR);
+			}
+		}
+		else if (TalkDefinition.isProxyDialogueResponse(tag)) {
+			try {
+				ServerProxyDialogueResponseCommand cmd = new ServerProxyDialogueResponseCommand(this.kernel, session, packet);
+				cmd.execute();
+				cmd = null;
 			} catch (Exception e) {
 				Logger.log(TalkAcceptorHandler.class, e, LogLevel.ERROR);
 			}

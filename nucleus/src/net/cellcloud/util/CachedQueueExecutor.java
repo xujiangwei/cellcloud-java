@@ -79,6 +79,7 @@ public final class CachedQueueExecutor implements ExecutorService {
 
 	@Override
 	public void execute(Runnable command) {
+		// 命令入队
 		this.queue.offer(command);
 
 		if (this.numThreads.get() < this.maxThreads) {

@@ -80,7 +80,7 @@ public class ProxyTalkListener implements TalkListener, SpeakerProxyListener {
 	public void quitted(String identifier, String tag) {
 		Logger.d(this.getClass(), "quitted: " + identifier);
 
-		// 断开下位机，从在线移除
+		// 断开下位机，从在线列表中移除
 		this.gateway.removeOnlineSlave(this.slave);
 	}
 
@@ -125,9 +125,12 @@ public class ProxyTalkListener implements TalkListener, SpeakerProxyListener {
 		}
 
 		// 操控 Cellet 发送数据
-		boolean ret = this.gateway.serverKernel.notice(targetTag, primitive, cellet, this.gateway.getSandbox(celletIdentifier));
+		boolean ret = this.gateway.talkKernel.notice(targetTag, primitive, cellet, this.gateway.getSandbox(celletIdentifier));
 		if (!ret) {
 			Logger.w(this.getClass(), "Talk kernel notice failed, target:'" + targetTag + "', cellet:'" + celletIdentifier + "'");
+
+			// 向下位机返回错误
+			this.gateway.respondDialogueFailure(targetTag, cellet, primitive, TalkFailureCode.PROXY_DIALOGUE_FAILED);
 		}
 	}
 
