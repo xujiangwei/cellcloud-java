@@ -110,7 +110,7 @@ public abstract class MessageService {
 	 * 
 	 * @return 返回该服务使用使用了数据标记。
 	 */
-	public boolean existDataMark() {
+	public boolean hasDataMark() {
 		return (null != this.headMark && null != this.tailMark);
 	}
 

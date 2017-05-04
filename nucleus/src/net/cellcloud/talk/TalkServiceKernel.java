@@ -592,7 +592,7 @@ public final class TalkServiceKernel implements Service, SpeakerDelegate {
 	 * 
 	 * @param intervalInMillisecond 以毫秒为单位的时间间隔。
 	 */
-	public void setEachSessionReadInterval(long intervalInMillisecond) {
+	protected void setEachSessionReadInterval(long intervalInMillisecond) {
 		if (null == this.acceptor) {
 			return;
 		}
@@ -1616,7 +1616,7 @@ public final class TalkServiceKernel implements Service, SpeakerDelegate {
 					this.executor.execute(new Runnable() {
 						@Override
 						public void run() {
-							if (acceptor.existSession(session)) {
+							if (acceptor.hasSession(session)) {
 								acceptor.close(session);
 							}
 						}

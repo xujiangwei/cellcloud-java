@@ -67,7 +67,7 @@ public interface MessageAcceptor {
 	/**
 	 * 获得指定 ID 的会话实例。
 	 * 
-	 * @param sessionId 指定
+	 * @param sessionId 指定会话 ID 。
 	 * @return 返回指定 ID 的会话实例。
 	 */
 	public Session getSession(Long sessionId);

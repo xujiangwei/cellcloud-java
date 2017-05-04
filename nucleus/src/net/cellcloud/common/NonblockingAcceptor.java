@@ -130,6 +130,7 @@ public class NonblockingAcceptor extends MessageService implements MessageAccept
 			this.selector = Selector.open();
 			this.channel = ServerSocketChannel.open();
 			this.channel.configureBlocking(false);
+			this.channel.socket().setReceiveBufferSize(this.block * 4);
 			this.channel.socket().bind(address, this.backlog);
 
 			skey = this.channel.register(this.selector, SelectionKey.OP_ACCEPT);
@@ -333,7 +334,7 @@ public class NonblockingAcceptor extends MessageService implements MessageAccept
 
 		NonblockingAcceptorSession nas = this.idSessionMap.get(session.getId());
 		if (null != nas) {
-			nas.addMessage(message);
+			nas.putMessage(message);
 		}
 	}
 
@@ -343,7 +344,7 @@ public class NonblockingAcceptor extends MessageService implements MessageAccept
 	 * @param session 指定待判断的会话。
 	 * @return 返回指定会话是否存在。
 	 */
-	public boolean existSession(Session session) {
+	public boolean hasSession(Session session) {
 		return this.idSessionMap.contains(session.getId());
 	}
 
@@ -792,6 +793,8 @@ public class NonblockingAcceptor extends MessageService implements MessageAccept
 				return;
 			}
 
+			clientChannel.socket().setReceiveBufferSize(this.block);
+			clientChannel.socket().setSendBufferSize(this.block);
 			clientChannel.configureBlocking(false);
 			clientChannel.register(this.selector, SelectionKey.OP_READ | SelectionKey.OP_WRITE);
 

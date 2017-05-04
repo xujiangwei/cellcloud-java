@@ -145,7 +145,7 @@ public final class NonblockingAcceptorWorker extends Thread {
 
 		long time = System.currentTimeMillis();
 		// 使用 time 计数方式来减少 System.currentTimeMillis() 的调用次数，提高效率
-		int timeCounts = 0;
+		int timeCount = 0;
 
 		while (this.spinning) {
 			// 如果没有任务，则线程 wait
@@ -160,11 +160,11 @@ public final class NonblockingAcceptorWorker extends Thread {
 					}
 
 					time = System.currentTimeMillis();
-					timeCounts = 0;
+					timeCount = 0;
 				}
 			}
 
-			long ctime = time + timeCounts;
+			long ctime = time + timeCount;
 
 			try {
 				if (!this.receiveSessions.isEmpty()) {
@@ -199,10 +199,10 @@ public final class NonblockingAcceptorWorker extends Thread {
 			}
 
 			// 时间计数
-			++timeCounts;
-			if (timeCounts >= 1000) {
+			++timeCount;
+			if (timeCount >= 1000) {
 				time = System.currentTimeMillis();
-				timeCounts = 0;
+				timeCount = 0;
 			}
 		}
 
@@ -299,10 +299,6 @@ public final class NonblockingAcceptorWorker extends Thread {
 	 */
 	protected void pushSendSession(NonblockingAcceptorSession session) {
 		if (!this.spinning) {
-			return;
-		}
-
-		if (session.isMessageEmpty()) {
 			return;
 		}
 
@@ -465,13 +461,13 @@ public final class NonblockingAcceptorWorker extends Thread {
 			return;
 		}
 
-		if (!session.isMessageEmpty()) {
+		if (!session.isEmptyMessage()) {
 			// 有消息，进行发送
 			Message message = null;
 
 			synchronized (session) {
 				// 遍历待发信息
-				while (!session.isMessageEmpty()) {
+				while (!session.isEmptyMessage()) {
 					message = session.pollMessage();
 					if (null == message) {
 						break;
@@ -487,7 +483,7 @@ public final class NonblockingAcceptorWorker extends Thread {
 					ByteBuffer buf = null;
 
 					// 根据是否有数据掩码组装数据包
-					if (this.acceptor.existDataMark()) {
+					if (this.acceptor.hasDataMark()) {
 						byte[] data = message.get();
 						byte[] head = this.acceptor.getHeadMark();
 						byte[] tail = this.acceptor.getTailMark();
@@ -560,7 +556,7 @@ public final class NonblockingAcceptorWorker extends Thread {
 	private void parse(NonblockingAcceptorSession session, byte[] data) {
 		try {
 			// 根据数据标志获取数据
-			if (this.acceptor.existDataMark()) {
+			if (this.acceptor.hasDataMark()) {
 				ArrayList<byte[]> out = this.borrowList();
 				// 进行递归提取
 				this.extract(out, session, data);

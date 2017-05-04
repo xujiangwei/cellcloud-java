@@ -127,9 +127,9 @@ public class Session implements Comparable<Object> {
 	}
 
 	/**
-	 * 获得会话的网络地址。
+	 * 获得会话指向的网络地址。
 	 * 
-	 * @return 返回会话的网络地址。
+	 * @return 返回会话指向的网络地址。
 	 */
 	public InetSocketAddress getAddress() {
 		return this.address;

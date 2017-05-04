@@ -37,6 +37,9 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.Set;
 import java.util.Vector;
+import java.util.concurrent.ExecutorService;
+
+import net.cellcloud.util.CachedQueueExecutor;
 
 /**
  * 非阻塞式网络连接器。
@@ -80,11 +83,17 @@ public class NonblockingConnector extends MessageService implements MessageConne
 	private boolean closed = false;
 
 	/**
+	 * 线程池执行器。
+	 */
+	private ExecutorService executor;
+
+	/**
 	 * 构造函数。
 	 */
 	public NonblockingConnector() {
 		this.connectTimeout = 10000L;
 		this.messages = new Vector<Message>();
+		this.executor = CachedQueueExecutor.newCachedQueueThreadPool(2);
 	}
 
 	/**
@@ -659,7 +668,7 @@ public class NonblockingConnector extends MessageService implements MessageConne
 					}
 
 					ByteBuffer writeBuffer = null;
-					if (this.existDataMark()) {
+					if (this.hasDataMark()) {
 						byte[] data = message.get();
 						byte[] head = this.getHeadMark();
 						byte[] tail = this.getTailMark();
@@ -698,28 +707,31 @@ public class NonblockingConnector extends MessageService implements MessageConne
 	 */
 	private void process(byte[] data) {
 		// 根据数据标志获取数据
-		if (this.existDataMark()) {
-			LinkedList<byte[]> out = new LinkedList<byte[]>();
+		if (this.hasDataMark()) {
+			LinkedList<byte[]> output = new LinkedList<byte[]>();
 			// 数据递归提取
-			this.extract(out, data);
+			this.extract(output, data);
 
-			if (!out.isEmpty()) {
-				for (byte[] bytes : out) {
-					Message message = new Message(bytes);
+			if (!output.isEmpty()) {
+				for (byte[] bytes : output) {
+					final Message message = new Message(bytes);
 
 					byte[] skey = this.session.getSecretKey();
 					if (null != skey) {
 						this.decryptMessage(message, skey);
 					}
 
-					if (null != this.handler) {
-						this.handler.messageReceived(this.session, message);
-					}
+					this.executor.execute(new Runnable() {
+						@Override
+						public void run() {
+							if (null != handler) {
+								handler.messageReceived(session, message);
+							}
+						}
+					});
 				}
-
-				out.clear();
 			}
-			out = null;
+			output = null;
 		}
 		else {
 			Message message = new Message(data);
@@ -740,7 +752,7 @@ public class NonblockingConnector extends MessageService implements MessageConne
 	 */
 	protected void processData(byte[] data) {
 		// 根据数据标志获取数据
-		if (this.existDataMark()) {
+		if (this.hasDataMark()) {
 			byte[] headMark = this.getHeadMark();
 			byte[] tailMark = this.getTailMark();
 

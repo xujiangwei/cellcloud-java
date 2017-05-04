@@ -386,7 +386,7 @@ public class ActionDialect extends Dialect {
 	 * @param name 指定需判断的参数名。
 	 * @return 如果该参数存在返回 <code>true</code> ，否则返回 <code>false</code> 。
 	 */
-	public boolean existParam(String name) {
+	public boolean hasParam(String name) {
 		synchronized (this) {
 			return this.nameList.contains(name);
 		}

@@ -50,7 +50,7 @@ public class NonblockingAcceptorSession extends Session {
 	protected long writeTime = 0;
 
 	/** 待发送消息列表。 */
-	private LinkedList<Message> messages = new LinkedList<Message>();
+	private LinkedList<Message> sendBuffer = new LinkedList<Message>();
 
 	protected SelectionKey selectionKey = null;
 
@@ -88,9 +88,9 @@ public class NonblockingAcceptorSession extends Session {
 	 * 
 	 * @param message 待添加的消息。
 	 */
-	protected void addMessage(Message message) {
-		synchronized (this.messages) {
-			this.messages.add(message);
+	protected void putMessage(Message message) {
+		synchronized (this.sendBuffer) {
+			this.sendBuffer.add(message);
 		}
 	}
 
@@ -99,9 +99,9 @@ public class NonblockingAcceptorSession extends Session {
 	 * 
 	 * @return 如果消息队列为空则返回 <code>true</code> 。
 	 */
-	protected boolean isMessageEmpty() {
-		synchronized (this.messages) {
-			return this.messages.isEmpty();
+	protected boolean isEmptyMessage() {
+		synchronized (this.sendBuffer) {
+			return this.sendBuffer.isEmpty();
 		}
 	}
 
@@ -111,8 +111,8 @@ public class NonblockingAcceptorSession extends Session {
 	 * @return 返回消息队列里的第一条消息。
 	 */
 	protected Message pollMessage() {
-		synchronized (this.messages) {
-			return this.messages.poll();
+		synchronized (this.sendBuffer) {
+			return this.sendBuffer.poll();
 		}
 	}
 
