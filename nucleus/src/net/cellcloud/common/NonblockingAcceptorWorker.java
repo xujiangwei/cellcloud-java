@@ -629,20 +629,159 @@ public final class NonblockingAcceptorWorker extends Thread {
 	 * @param session 会话。
 	 * @param data 待提取的数据。
 	 */
-	private void extract(final ArrayList<byte[]> out, final NonblockingAcceptorSession session, final byte[] data) {
+	private void extract(final ArrayList<byte[]> output, final NonblockingAcceptorSession session, final byte[] data) {
 		final byte[] headMark = this.acceptor.getHeadMark();
 		final byte[] tailMark = this.acceptor.getTailMark();
 
-		// 当数据小于标签长度时直接缓存
-//		if (data.length < headMark.length) {
-//			if (session.cacheCursor + data.length > session.getCacheSize()) {
-//				// 重置 cache 大小
-//				session.resetCacheSize(session.cacheCursor + data.length);
-//			}
-//			System.arraycopy(data, 0, session.cache, session.cacheCursor, data.length);
-//			session.cacheCursor += data.length;
-//			return;
-//		}
+		byte[] real = data;
+		if (session.cacheCursor > 0) {
+			real = new byte[session.cacheCursor + data.length];
+			System.arraycopy(session.cache, 0, real, 0, session.cacheCursor);
+			System.arraycopy(data, 0, real, session.cacheCursor, data.length);
+			// 重置缓存
+			session.resetCache();
+		}
+
+		int index = 0;
+		final int len = real.length;
+		int headPos = -1;
+		int tailPos = -1;
+		int ret = -1;
+
+		ret = compareBytes(headMark, 0, real, index, headMark.length);
+		if (0 == ret) {
+			// 标记头标签
+			index = headMark.length;
+			// 记录数据位置头
+			headPos = index;
+			// 判断是否有尾标签，依次计数
+			ret = -1;
+			while (index < len) {
+				if (real[index] == tailMark[0]) {
+					ret = compareBytes(tailMark, 0, real, index, tailMark.length);
+					if (0 == ret) {
+						// 找到尾标签
+						tailPos = index;
+						break;
+					}
+					else if (1 == ret) {
+						// 越界
+						break;
+					}
+					else {
+						// 未找到尾标签
+						++index;
+					}
+				}
+				else {
+					++index;
+				}
+			}
+
+			if (headPos > 0 && tailPos > 0) {
+				byte[] outBytes = new byte[tailPos - headPos];
+				System.arraycopy(real, headPos, outBytes, 0, tailPos - headPos);
+				output.add(outBytes);
+
+				int newLen = len - tailPos - tailMark.length;
+				if (newLen > 0) {
+					byte[] newBytes = new byte[newLen];
+					System.arraycopy(real, tailPos + tailMark.length, newBytes, 0, newLen);
+
+					// 递归
+					extract(output, session, newBytes);
+				}
+			}
+			else {
+				// 没有尾标签，仅进行缓存
+				if (len + session.cacheCursor > session.getCacheSize()) {
+					// 缓存扩容
+					session.resetCacheSize(len + session.cacheCursor);
+				}
+
+				System.arraycopy(real, 0, session.cache, session.cacheCursor, len);
+				session.cacheCursor += len;
+			}
+		}
+		else if (-1 == ret){
+			// 没有头标签
+			// 尝试查找
+			ret = -1;
+			while (index < len) {
+				if (real[index] == headMark[0]) {
+					ret = compareBytes(headMark, 0, real, index, headMark.length);
+					if (0 == ret) {
+						// 找到头标签
+						headPos = index;
+						break;
+					}
+					else if (1 == ret) {
+						// 越界
+						break;
+					}
+					else {
+						// 未找到头标签
+						++index;
+					}
+				}
+				else {
+					++index;
+				}
+			}
+
+			if (headPos > 0) {
+				// 找到头标签
+				byte[] newBytes = new byte[len - headPos];
+				System.arraycopy(real, headPos, newBytes, 0, newBytes.length);
+
+				// 递归
+				extract(output, session, newBytes);
+			}
+			else {
+				// 没有找到头标签，尝试判断结束位置，没有找到则丢弃数据
+				byte backwardOne = real[len - 1];
+				byte backwardTwo = real[len - 2];
+				byte backwardThree = real[len - 3];
+				int pos = -1;
+				int cplen = 0;
+				if (headMark[0] == backwardOne) {
+					pos = len - 1;
+					cplen = 1;
+				}
+				else if (headMark[0] == backwardTwo && headMark[1] == backwardOne) {
+					pos = len - 2;
+					cplen = 2;
+				}
+				else if (headMark[0] == backwardThree && headMark[1] == backwardTwo && headMark[2] == backwardOne) {
+					pos = len - 3;
+					cplen = 3;
+				}
+
+				if (pos >= 0) {
+					// 有可能是数据头，进行缓存
+					if (cplen + session.cacheCursor > session.getCacheSize()) {
+						// 缓存扩容
+						session.resetCacheSize(cplen + session.cacheCursor);
+					}
+
+					System.arraycopy(real, pos, session.cache, session.cacheCursor, cplen);
+					session.cacheCursor += cplen;
+				}
+			}
+		}
+		else {
+			// 数据越界，直接缓存
+			if (session.cacheCursor + real.length > session.getCacheSize()) {
+				// 重置 cache 大小
+				session.resetCacheSize(session.cacheCursor + real.length);
+			}
+			System.arraycopy(real, 0, session.cache, session.cacheCursor, real.length);
+			session.cacheCursor += real.length;
+		}
+	}
+	/*private void extract(final ArrayList<byte[]> output, final NonblockingAcceptorSession session, final byte[] data) {
+		final byte[] headMark = this.acceptor.getHeadMark();
+		final byte[] tailMark = this.acceptor.getTailMark();
 
 		byte[] real = data;
 		if (session.cacheCursor > 0) {
@@ -670,7 +809,7 @@ public final class NonblockingAcceptorWorker extends Thread {
 
 		if (0 == compareBytes(headMark, 0, real, index, headMark.length)) {
 			// 有头标签
-			index += headMark.length;
+			index = headMark.length;
 			// 记录数据位置头
 			headPos = index;
 			// 判断是否有尾标签，依次计数
@@ -700,7 +839,7 @@ public final class NonblockingAcceptorWorker extends Thread {
 			if (headPos > 0 && tailPos > 0) {
 				byte[] outBytes = new byte[tailPos - headPos];
 				System.arraycopy(real, headPos, outBytes, 0, tailPos - headPos);
-				out.add(outBytes);
+				output.add(outBytes);
 
 				int newLen = len - tailPos - tailMark.length;
 				if (newLen > 0) {
@@ -708,7 +847,7 @@ public final class NonblockingAcceptorWorker extends Thread {
 					System.arraycopy(real, tailPos + tailMark.length, newBytes, 0, newLen);
 
 					// 递归
-					extract(out, session, newBytes);
+					extract(output, session, newBytes);
 				}
 			}
 			else {
@@ -762,7 +901,7 @@ public final class NonblockingAcceptorWorker extends Thread {
 					// 找到 head mark
 					byte[] newReal = new byte[len - searchIndex];
 					System.arraycopy(real, searchIndex, newReal, 0, newReal.length);
-					extract(out, session, newReal);
+					extract(output, session, newReal);
 					return;
 				}
 
@@ -773,11 +912,7 @@ public final class NonblockingAcceptorWorker extends Thread {
 				searchCounts = 0;
 			} while (searchIndex < len);
 		}
-
-//		byte[] newBytes = new byte[len - headMark.length];
-//		System.arraycopy(real, headMark.length, newBytes, 0, newBytes.length);
-//		extract(out, session, newBytes);
-	}
+	}*/
 
 	/**
 	 * 比较字节数组是否相等。

@@ -839,7 +839,7 @@ public class NonblockingConnector extends MessageService implements MessageConne
 	 * @param out 解析之后的输出数据。
 	 * @param data 待处理数据。
 	 */
-	private void extract(final LinkedList<byte[]> out, final byte[] data) {
+	private void extract(final LinkedList<byte[]> output, final byte[] data) {
 		final byte[] headMark = this.getHeadMark();
 		final byte[] tailMark = this.getTailMark();
 
@@ -861,7 +861,7 @@ public class NonblockingConnector extends MessageService implements MessageConne
 		ret = compareBytes(headMark, 0, real, index, headMark.length);
 		if (0 == ret) {
 			// 有头标签
-			index += headMark.length;
+			index = headMark.length;
 			// 记录数据位置头
 			headPos = index;
 			// 判断是否有尾标签，依次计数
@@ -891,7 +891,7 @@ public class NonblockingConnector extends MessageService implements MessageConne
 			if (headPos > 0 && tailPos > 0) {
 				byte[] outBytes = new byte[tailPos - headPos];
 				System.arraycopy(real, headPos, outBytes, 0, tailPos - headPos);
-				out.add(outBytes);
+				output.add(outBytes);
 
 				int newLen = len - tailPos - tailMark.length;
 				if (newLen > 0) {
@@ -899,7 +899,7 @@ public class NonblockingConnector extends MessageService implements MessageConne
 					System.arraycopy(real, tailPos + tailMark.length, newBytes, 0, newLen);
 
 					// 递归
-					extract(out, newBytes);
+					extract(output, newBytes);
 				}
 			}
 			else {
@@ -945,7 +945,7 @@ public class NonblockingConnector extends MessageService implements MessageConne
 				System.arraycopy(real, headPos, newBytes, 0, newBytes.length);
 
 				// 递归
-				extract(out, newBytes);
+				extract(output, newBytes);
 			}
 			else {
 				// 没有找到头标签，尝试判断结束位置
