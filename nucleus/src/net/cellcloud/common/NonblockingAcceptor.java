@@ -289,7 +289,10 @@ public class NonblockingAcceptor extends MessageService implements MessageAccept
 		this.socketSessionMap.clear();
 		this.idSessionMap.clear();
 
-		this.scheduledExecutor.shutdown();
+		if (null != this.scheduledExecutor) {
+			this.scheduledExecutor.shutdown();
+			this.scheduledExecutor = null;
+		}
 
 		this.bindAddress = null;
 	}

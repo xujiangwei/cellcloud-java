@@ -85,7 +85,7 @@ public class NonblockingConnector extends MessageService implements MessageConne
 	/**
 	 * 线程池执行器。
 	 */
-	private ExecutorService executor;
+	private ExecutorService executor = null;
 
 	/**
 	 * 构造函数。
@@ -93,7 +93,6 @@ public class NonblockingConnector extends MessageService implements MessageConne
 	public NonblockingConnector() {
 		this.connectTimeout = 10000L;
 		this.messages = new Vector<Message>();
-		this.executor = CachedQueueExecutor.newCachedQueueThreadPool(2);
 	}
 
 	/**
@@ -193,6 +192,12 @@ public class NonblockingConnector extends MessageService implements MessageConne
 			return false;
 		}
 
+		if (null != this.executor) {
+			this.executor.shutdown();
+		}
+
+		this.executor = CachedQueueExecutor.newCachedQueueThreadPool(2);
+
 		// 创建 Session
 		this.session = new Session(this, this.address);
 
@@ -209,6 +214,11 @@ public class NonblockingConnector extends MessageService implements MessageConne
 				} catch (Exception e) {
 					spinning = false;
 					Logger.log(NonblockingConnector.class, e, LogLevel.DEBUG);
+				}
+
+				if (null != executor) {
+					executor.shutdown();
+					executor = null;
 				}
 
 				// 通知 Session 销毁。
@@ -282,6 +292,11 @@ public class NonblockingConnector extends MessageService implements MessageConne
 				this.handleThread.interrupt();
 				this.running = false;
 			}
+		}
+
+		if (null != this.executor) {
+			this.executor.shutdown();
+			this.executor = null;
 		}
 	}
 

@@ -471,6 +471,53 @@ public final class Application {
 							Logger.i(this.getClass(), "[-] nucleus.talk.ssl.keystore = null");
 							Logger.i(this.getClass(), "[-] nucleus.talk.ssl.password = null");
 						}
+
+						// chunk
+						nl = elTalk.getElementsByTagName("chunk");
+						if (nl.getLength() > 0) {
+							Element elChunk = (Element) nl.item(0);
+
+							// cache-path
+							nl = elChunk.getElementsByTagName("cache-path");
+							if (nl.getLength() > 0) {
+								config.talk.chunkFilePath = nl.item(0).getTextContent().trim();
+								Logger.i(this.getClass(), "[*] nucleus.talk.chunk.cache-path = " + config.talk.chunkFilePath);
+							}
+							else {
+								Logger.i(this.getClass(), "[*] nucleus.talk.chunk.cache-path = " + config.talk.chunkFilePath);
+							}
+							// max-memory
+							nl = elChunk.getElementsByTagName("max-memory");
+							if (nl.getLength() > 0) {
+								try {
+									config.talk.maxChunkMemorySize = Long.parseLong(nl.item(0).getTextContent().trim());
+									Logger.i(this.getClass(), "[*] nucleus.talk.chunk.max-memory = " + config.talk.maxChunkMemorySize);
+								} catch (NumberFormatException e) {
+									Logger.log(this.getClass(), e, LogLevel.WARNING);
+								}
+							}
+							else {
+								Logger.i(this.getClass(), "[-] nucleus.talk.chunk.max-memory = " + config.talk.maxChunkMemorySize);
+							}
+							// max-disk
+							nl = elChunk.getElementsByTagName("max-disk");
+							if (nl.getLength() > 0) {
+								try {
+									config.talk.maxChunkFileSize = Long.parseLong(nl.item(0).getTextContent().trim());
+									Logger.i(this.getClass(), "[*] nucleus.talk.chunk.max-disk = " + config.talk.maxChunkFileSize);
+								} catch (NumberFormatException e) {
+									Logger.log(this.getClass(), e, LogLevel.WARNING);
+								}
+							}
+							else {
+								Logger.i(this.getClass(), "[-] nucleus.talk.chunk.max-disk = " + config.talk.maxChunkFileSize);
+							}
+						}
+						else {
+							Logger.i(this.getClass(), "[-] nucleus.talk.chunk.cache-path = " + config.talk.chunkFilePath);
+							Logger.i(this.getClass(), "[-] nucleus.talk.chunk.max-memory = " + config.talk.maxChunkMemorySize);
+							Logger.i(this.getClass(), "[-] nucleus.talk.chunk.max-disk = " + config.talk.maxChunkFileSize);
+						}
 					} // #end talk config
 
 					// gateway config

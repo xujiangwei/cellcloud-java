@@ -31,6 +31,7 @@ import java.util.LinkedList;
 import java.util.List;
 
 import net.cellcloud.core.Cellet;
+import net.cellcloud.talk.stuff.StuffVersion;
 
 /**
  * Talk 追踪器。
@@ -45,6 +46,9 @@ public final class TalkTracker {
 
 	/** 当前对话请求的 Cellet 清单。 */
 	private LinkedList<Cellet> cellets = null;
+
+	/** 当前 Session 使用的语素版本。 */
+	protected StuffVersion stuffVersion = null;
 
 	/**
 	 * 构造函数。

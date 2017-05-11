@@ -82,7 +82,7 @@ public class Primitive {
 	public Primitive() {
 		this.ownerTag = null;
 		this.celletIdentifier = null;
-		this.version = StuffVersion.V2;
+		this.version = StuffVersion.V3;
 		this.dialect = null;
 		this.cellet = null;
 	}
@@ -95,7 +95,7 @@ public class Primitive {
 	public Primitive(String ownerTag) {
 		this.ownerTag = ownerTag;
 		this.celletIdentifier = null;
-		this.version = StuffVersion.V2;
+		this.version = StuffVersion.V3;
 		this.dialect = null;
 		this.cellet = null;
 	}
@@ -108,7 +108,7 @@ public class Primitive {
 	public Primitive(Dialect dialect) {
 		this.ownerTag = null;
 		this.celletIdentifier = null;
-		this.version = StuffVersion.V2;
+		this.version = StuffVersion.V3;
 		this.dialect = dialect;
 		this.cellet = null;
 	}
@@ -446,7 +446,7 @@ public class Primitive {
 	 * @return 返回存储序列化数据的流。
 	 */
 	public ByteArrayOutputStream write() {
-		ByteArrayOutputStream stream = new ByteArrayOutputStream(256);
+		ByteArrayOutputStream stream = new ByteArrayOutputStream(128);
 		PrimitiveSerializer.write(stream, this);
 		return stream;
 	}

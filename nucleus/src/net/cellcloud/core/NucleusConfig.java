@@ -112,6 +112,13 @@ public final class NucleusConfig {
 		/** JKS 相关的 Password 。 */
 		public String keyManagerPassword = null;
 
+		/** Chunk 方言工厂的文件缓存路径。 */
+		public String chunkFilePath = "_chunks/";
+		/** Chunk 方言工厂的最大内存缓存大小。 */
+		public long maxChunkMemorySize = 100L * 1024L * 1024L;
+		/** Chunk 方言工厂的最大文件缓存大小。 */
+		public long maxChunkFileSize = 1024L * 1024L * 1024L;
+
 		private TalkConfig() {
 		}
 	}

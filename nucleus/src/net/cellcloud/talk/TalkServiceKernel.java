@@ -497,6 +497,15 @@ public final class TalkServiceKernel implements Service, SpeakerDelegate {
 	}
 
 	/**
+	 * 是否启用了 Acceptor 。
+	 * 
+	 * @return
+	 */
+	public boolean hasAcceptor() {
+		return (null != this.acceptor);
+	}
+
+	/**
 	 * 设置服务端口。
 	 * 
 	 * @param port 指定服务监听端口。
@@ -757,6 +766,7 @@ public final class TalkServiceKernel implements Service, SpeakerDelegate {
 		}
 
 		if (!this.daemon.running) {
+			this.daemon.running = true;
 			this.daemon.start();
 		}
 	}
@@ -892,7 +902,8 @@ public final class TalkServiceKernel implements Service, SpeakerDelegate {
 				if (tracker.hasCellet(cellet)) {
 
 					// 兼容性处理
-					StuffVersion sv = CompatibilityHelper.match(tracker.getCapacity().getVersionNumber());
+					StuffVersion sv = (null != tracker.stuffVersion) ?
+							tracker.stuffVersion : CompatibilityHelper.match(tracker.getCapacity().getVersionNumber());
 					// 设置语素版本
 					primitive.setVersion(sv);
 
@@ -1937,6 +1948,10 @@ public final class TalkServiceKernel implements Service, SpeakerDelegate {
 		if (null != ctx) {
 			TalkTracker tracker = ctx.getTracker(session);
 			if (null != tracker) {
+				if (null == tracker.stuffVersion) {
+					tracker.stuffVersion = primitive.getVersion();
+				}
+
 				// 更新时间
 				ctx.dialogueTickTime = this.getTickTime();
 

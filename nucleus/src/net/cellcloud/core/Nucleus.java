@@ -52,6 +52,9 @@ import net.cellcloud.exception.SingletonException;
 import net.cellcloud.gateway.GatewayService;
 import net.cellcloud.http.HttpService;
 import net.cellcloud.talk.TalkService;
+import net.cellcloud.talk.dialect.ChunkDialect;
+import net.cellcloud.talk.dialect.ChunkDialectFactory;
+import net.cellcloud.talk.dialect.DialectEnumerator;
 import net.cellcloud.util.Clock;
 
 /**
@@ -328,6 +331,10 @@ public final class Nucleus {
 
 			// 创建 Talk Service
 			if (this.config.talk.enabled && (null == this.talkService)) {
+				if (null != this.config.talk.chunkFilePath) {
+					ChunkDialectFactory.CachePath = this.config.talk.chunkFilePath;
+				}
+
 				try {
 					this.talkService = new TalkService(this.context);
 				} catch (SingletonException e) {
@@ -355,6 +362,11 @@ public final class Nucleus {
 				this.talkService.setHttpQueueSize(this.config.talk.httpQueueSize);
 				// 设置 HTTP 会话超时时间
 				this.talkService.setHttpSessionTimeout(this.config.talk.httpSessionTimeout);
+
+				// 配置方言工厂
+				ChunkDialectFactory cdf = (ChunkDialectFactory) DialectEnumerator.getInstance().getFactory(ChunkDialect.DIALECT_NAME);
+				cdf.setMaxCacheMemorySize(this.config.talk.maxChunkMemorySize);
+				cdf.setMaxFileCacheSpace(this.config.talk.maxChunkFileSize);
 
 				// 启动 Talk Service
 				if (this.talkService.startup()) {

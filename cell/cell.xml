@@ -32,6 +32,12 @@
 				<keystore>/nucleus.jks</keystore>
 				<password>cellcloud</password>
 			</ssl>
+			<!-- 区块方言配置 -->
+			<chunk>
+			    <cache-path>chunk_cache/</cache-path>
+			    <max-memory>104857600</max-memory>
+			    <max-disk>1073741824</max-disk>
+			</chunk>
 		</talk>
 
 		<!-- 网关配置 -->

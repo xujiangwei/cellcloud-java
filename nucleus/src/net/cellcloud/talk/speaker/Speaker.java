@@ -267,11 +267,11 @@ public class Speaker implements Speakable {
 			return false;
 		}
 
-		// 兼容性判断
-		StuffVersion version = CompatibilityHelper.match(Version.VERSION_NUMBER);
-		if (version != primitive.getVersion()) {
-			primitive.setVersion(version);
-		}
+		// FIXME 2017-5-11 不需要兼容性判断，Talk 服务直接设置好 Primitive 版本
+//		StuffVersion version = CompatibilityHelper.match(Version.VERSION_NUMBER);
+//		if (version != primitive.getVersion()) {
+//			primitive.setVersion(version);
+//		}
 
 		// 序列化原语
 		ByteArrayOutputStream stream = primitive.write();

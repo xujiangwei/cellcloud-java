@@ -61,7 +61,7 @@ public abstract class Stuff {
 	private static final DecimalFormat DF = new DecimalFormat("#0.0000");
 
 	/** 语素版本。 */
-	private StuffVersion version = StuffVersion.V2;
+	private StuffVersion version = StuffVersion.V3;
 
 	/** 语素类型。 */
 	private StuffType type;
@@ -213,12 +213,12 @@ public abstract class Stuff {
 		}
 
 		if (StuffVersion.V1 == newVersion) {
-			// V2 -> V1
-			if (LiteralBase.INT == this.literalBase) {
+			// V2/V3 -> V1
+			if (LiteralBase.INT == this.literalBase || LiteralBase.UINT == this.literalBase) {
 				int nv = ByteUtils.toInt(this.value);
 				this.value = Integer.toString(nv).getBytes();
 			}
-			else if (LiteralBase.LONG == this.literalBase) {
+			else if (LiteralBase.LONG == this.literalBase || LiteralBase.ULONG == this.literalBase) {
 				long nv = ByteUtils.toLong(this.value);
 				this.value = Long.toString(nv).getBytes();
 			}
@@ -235,13 +235,13 @@ public abstract class Stuff {
 				this.value = DF.format(nv).getBytes();
 			}
 		}
-		else if (StuffVersion.V2 == newVersion) {
-			// V1 -> V2
-			if (LiteralBase.INT == this.literalBase) {
+		else if (StuffVersion.V1 == this.version) {
+			// V1 -> V2/V3
+			if (LiteralBase.INT == this.literalBase || LiteralBase.UINT == this.literalBase) {
 				int nv = Integer.parseInt(new String(this.value));
 				this.value = ByteUtils.toBytes(nv);
 			}
-			else if (LiteralBase.LONG == this.literalBase) {
+			else if (LiteralBase.LONG == this.literalBase || LiteralBase.ULONG == this.literalBase) {
 				long nv = Long.parseLong(new String(this.value));
 				this.value = ByteUtils.toBytes(nv);
 			}
@@ -302,7 +302,7 @@ public abstract class Stuff {
 	 * @return 返回整数数据。
 	 */
 	public int getValueAsInt() {
-		if (StuffVersion.V2 == this.version) {
+		if (StuffVersion.V1 != this.version) {
 			return ByteUtils.toInt(this.value);
 		}
 		else {
@@ -316,7 +316,7 @@ public abstract class Stuff {
 	 * @return 返回长整数数据。
 	 */
 	public long getValueAsLong() {
-		if (StuffVersion.V2 == this.version) {
+		if (StuffVersion.V1 != this.version) {
 			return ByteUtils.toLong(this.value);
 		}
 		else {
@@ -330,7 +330,7 @@ public abstract class Stuff {
 	 * @return 返回浮点数数据。
 	 */
 	public float getValueAsFloat() {
-		if (StuffVersion.V2 == this.version) {
+		if (StuffVersion.V1 != this.version) {
 			return ByteUtils.toFloat(this.value);
 		}
 		else {
@@ -344,7 +344,7 @@ public abstract class Stuff {
 	 * @return 返回双精浮点数数据。
 	 */
 	public double getValueAsDouble() {
-		if (StuffVersion.V2 == this.version) {
+		if (StuffVersion.V1 != this.version) {
 			return ByteUtils.toDouble(this.value);
 		}
 		else {
@@ -358,7 +358,7 @@ public abstract class Stuff {
 	 * @return 返回布尔值数据。
 	 */
 	public boolean getValueAsBool() {
-		if (StuffVersion.V2 == this.version) {
+		if (StuffVersion.V1 != this.version) {
 			return ByteUtils.toBoolean(this.value);
 		}
 		else {
@@ -429,7 +429,7 @@ public abstract class Stuff {
 	 * @param value 指定语义为整数的数据。
 	 */
 	protected void setValue(int value) {
-		if (StuffVersion.V2 == this.version) {
+		if (StuffVersion.V1 != this.version) {
 			this.value = ByteUtils.toBytes(value);
 		}
 		else {
@@ -443,7 +443,7 @@ public abstract class Stuff {
 	 * @param value 指定语义为长整数的数据。
 	 */
 	protected void setValue(long value) {
-		if (StuffVersion.V2 == this.version) {
+		if (StuffVersion.V1 != this.version) {
 			this.value = ByteUtils.toBytes(value);
 		}
 		else {
@@ -457,7 +457,7 @@ public abstract class Stuff {
 	 * @param value 指定语义为布尔值的数据。
 	 */
 	protected void setValue(boolean value) {
-		if (StuffVersion.V2 == this.version) {
+		if (StuffVersion.V1 != this.version) {
 			this.value = ByteUtils.toBytes(value);
 		}
 		else {
@@ -471,7 +471,7 @@ public abstract class Stuff {
 	 * @param value 指定语义为浮点数的数据。
 	 */
 	protected void setValue(float value) {
-		if (StuffVersion.V2 == this.version) {
+		if (StuffVersion.V1 != this.version) {
 			this.value = ByteUtils.toBytes(value);
 		}
 		else {
@@ -485,7 +485,7 @@ public abstract class Stuff {
 	 * @param value 指定语义为双精浮点数的数据。
 	 */
 	protected void setValue(double value) {
-		if (StuffVersion.V2 == this.version) {
+		if (StuffVersion.V1 != this.version) {
 			this.value = ByteUtils.toBytes(value);
 		}
 		else {

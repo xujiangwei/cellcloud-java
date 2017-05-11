@@ -72,28 +72,50 @@ public final class PrimitiveSerializer {
 	private static final byte PARSE_PHASE_DIALECT = 6;
 
 	private static final String LITERALBASE_STRING = "string";
+	private static final String LITERALBASE_STRING_M = "s";
 	private static final String LITERALBASE_INT = "int";
+	private static final String LITERALBASE_INT_M = "i";
 	private static final String LITERALBASE_UINT = "uint";
+	private static final String LITERALBASE_UINT_M = "ui";
 	private static final String LITERALBASE_LONG = "long";
+	private static final String LITERALBASE_LONG_M = "l";
 	private static final String LITERALBASE_ULONG = "ulong";
+	private static final String LITERALBASE_ULONG_M = "ul";
 	private static final String LITERALBASE_FLOAT = "float";
+	private static final String LITERALBASE_FLOAT_M = "f";
 	private static final String LITERALBASE_DOUBLE = "double";
+	private static final String LITERALBASE_DOUBLE_M = "d";
 	private static final String LITERALBASE_BOOL = "bool";
+	private static final String LITERALBASE_BOOL_M = "b";
 	private static final String LITERALBASE_JSON = "json";
+	private static final String LITERALBASE_JSON_M = "j";
 	private static final String LITERALBASE_BIN = "bin";
+	private static final String LITERALBASE_BIN_M = "bn";
 	private static final String LITERALBASE_XML = "xml";
+	private static final String LITERALBASE_XML_M = "x";
 
 	private static final byte[] LITERALBASE_STRING_BYTES = LITERALBASE_STRING.getBytes();
+	private static final byte[] LITERALBASE_STRING_M_BYTES = LITERALBASE_STRING_M.getBytes();
 	private static final byte[] LITERALBASE_INT_BYTES = LITERALBASE_INT.getBytes();
+	private static final byte[] LITERALBASE_INT_M_BYTES = LITERALBASE_INT_M.getBytes();
 	private static final byte[] LITERALBASE_UINT_BYTES = LITERALBASE_UINT.getBytes();
+	private static final byte[] LITERALBASE_UINT_M_BYTES = LITERALBASE_UINT_M.getBytes();
 	private static final byte[] LITERALBASE_LONG_BYTES = LITERALBASE_LONG.getBytes();
+	private static final byte[] LITERALBASE_LONG_M_BYTES = LITERALBASE_LONG_M.getBytes();
 	private static final byte[] LITERALBASE_ULONG_BYTES = LITERALBASE_ULONG.getBytes();
+	private static final byte[] LITERALBASE_ULONG_M_BYTES = LITERALBASE_ULONG_M.getBytes();
 	private static final byte[] LITERALBASE_FLOAT_BYTES = LITERALBASE_FLOAT.getBytes();
+	private static final byte[] LITERALBASE_FLOAT_M_BYTES = LITERALBASE_FLOAT_M.getBytes();
 	private static final byte[] LITERALBASE_DOUBLE_BYTES = LITERALBASE_DOUBLE.getBytes();
+	private static final byte[] LITERALBASE_DOUBLE_M_BYTES = LITERALBASE_DOUBLE_M.getBytes();
 	private static final byte[] LITERALBASE_BOOL_BYTES = LITERALBASE_BOOL.getBytes();
+	private static final byte[] LITERALBASE_BOOL_M_BYTES = LITERALBASE_BOOL_M.getBytes();
 	private static final byte[] LITERALBASE_JSON_BYTES = LITERALBASE_JSON.getBytes();
+	private static final byte[] LITERALBASE_JSON_M_BYTES = LITERALBASE_JSON_M.getBytes();
 	private static final byte[] LITERALBASE_BIN_BYTES = LITERALBASE_BIN.getBytes();
+	private static final byte[] LITERALBASE_BIN_M_BYTES = LITERALBASE_BIN_M.getBytes();
 	private static final byte[] LITERALBASE_XML_BYTES = LITERALBASE_XML.getBytes();
+	private static final byte[] LITERALBASE_XML_M_BYTES = LITERALBASE_XML_M.getBytes();
 
 	private static final String STUFFTYPE_SUBJECT = "sub";
 	private static final String STUFFTYPE_PREDICATE = "pre";
@@ -140,9 +162,13 @@ public final class PrimitiveSerializer {
 
 		try {
 			// 版本
+			StuffVersion sv = primitive.getVersion();
 			stream.write((int)TOKEN_OPEN_BRACKET);
 			byte[] version = null;
-			if (StuffVersion.V2 == primitive.getVersion()) {
+			if (StuffVersion.V3 == sv) {
+				version = new byte[]{'0', '3'};
+			}
+			else if (StuffVersion.V2 == sv) {
 				version = new byte[]{'0', '0', '2', '0', '0'};
 			}
 			else {
@@ -172,7 +198,7 @@ public final class PrimitiveSerializer {
 					buf.clear();
 
 					stream.write((int)TOKEN_OPERATE_DECLARE);
-					stream.write(parseLiteralBase(stuff.literalBase));
+					stream.write(parseLiteralBase(stuff.literalBase, sv));
 					stream.write((int)TOKEN_CLOSE_BRACE);
 				}
 			}
@@ -193,7 +219,7 @@ public final class PrimitiveSerializer {
 					buf.clear();
 
 					stream.write((int)TOKEN_OPERATE_DECLARE);
-					stream.write(parseLiteralBase(stuff.literalBase));
+					stream.write(parseLiteralBase(stuff.literalBase, sv));
 					stream.write((int)TOKEN_CLOSE_BRACE);
 				}
 			}
@@ -214,7 +240,7 @@ public final class PrimitiveSerializer {
 					buf.clear();
 
 					stream.write((int)TOKEN_OPERATE_DECLARE);
-					stream.write(parseLiteralBase(stuff.literalBase));
+					stream.write(parseLiteralBase(stuff.literalBase, sv));
 					stream.write((int)TOKEN_CLOSE_BRACE);
 				}
 			}
@@ -235,7 +261,7 @@ public final class PrimitiveSerializer {
 					buf.clear();
 
 					stream.write((int)TOKEN_OPERATE_DECLARE);
-					stream.write(parseLiteralBase(stuff.literalBase));
+					stream.write(parseLiteralBase(stuff.literalBase, sv));
 					stream.write((int)TOKEN_CLOSE_BRACE);
 				}
 			}
@@ -256,7 +282,7 @@ public final class PrimitiveSerializer {
 					buf.clear();
 
 					stream.write((int)TOKEN_OPERATE_DECLARE);
-					stream.write(parseLiteralBase(stuff.literalBase));
+					stream.write(parseLiteralBase(stuff.literalBase, sv));
 					stream.write((int)TOKEN_CLOSE_BRACE);
 				}
 			}
@@ -277,7 +303,7 @@ public final class PrimitiveSerializer {
 					buf.clear();
 
 					stream.write((int)TOKEN_OPERATE_DECLARE);
-					stream.write(parseLiteralBase(stuff.literalBase));
+					stream.write(parseLiteralBase(stuff.literalBase, sv));
 					stream.write((int)TOKEN_CLOSE_BRACE);
 				}
 			}
@@ -318,7 +344,7 @@ public final class PrimitiveSerializer {
 			int read = 0;
 
 			ByteBuffer buf = ByteBuffer.allocate(BLOCK);
-			byte[] version = new byte[5];
+			byte[] version = null;
 			byte[] type = new byte[3];
 			byte[] value = null;
 			byte[] literal = null;
@@ -412,22 +438,28 @@ public final class PrimitiveSerializer {
 
 				case PARSE_PHASE_VERSION:
 					if (read == TOKEN_CLOSE_BRACKET) {
+						version = new byte[length];
 						// 解析版本结束
 						buf.flip();
-						buf.get(version, 0, version.length);
+						buf.get(version, 0, length);
 						buf.clear();
 
-						if (version[2] == '2') {
+						if (version.length > 2 && version[2] == '2') {
 							primitive.setVersion(StuffVersion.V2);
+						}
+						else if (version.length == 2 && version[1] == '3') {
+							primitive.setVersion(StuffVersion.V3);
 						}
 						else {
 							primitive.setVersion(StuffVersion.V1);
 						}
 
 						phase = PARSE_PHASE_STUFF;
+						length = 0;
 						continue;
 					}
 					buf.put((byte)read);
+					++length;
 					break;
 
 				case PARSE_PHASE_DIALECT:
@@ -557,39 +589,39 @@ public final class PrimitiveSerializer {
 	 * @param literal 指定字面义。
 	 * @return 返回序列化的字面义。
 	 */
-	private static byte[] parseLiteralBase(LiteralBase literal) {
+	private static byte[] parseLiteralBase(LiteralBase literal, StuffVersion version) {
 		if (literal == LiteralBase.STRING) {
-			return LITERALBASE_STRING_BYTES;
+			return (version == StuffVersion.V3) ? LITERALBASE_STRING_M_BYTES : LITERALBASE_STRING_BYTES;
 		}
 		else if (literal == LiteralBase.JSON) {
-			return LITERALBASE_JSON_BYTES;
+			return (version == StuffVersion.V3) ? LITERALBASE_JSON_M_BYTES : LITERALBASE_JSON_BYTES;
 		}
 		else if (literal == LiteralBase.INT) {
-			return LITERALBASE_INT_BYTES;
+			return (version == StuffVersion.V3) ? LITERALBASE_INT_M_BYTES : LITERALBASE_INT_BYTES;
 		}
 		else if (literal == LiteralBase.LONG) {
-			return LITERALBASE_LONG_BYTES;
+			return (version == StuffVersion.V3) ? LITERALBASE_LONG_M_BYTES : LITERALBASE_LONG_BYTES;
 		}
 		else if (literal == LiteralBase.BOOL) {
-			return LITERALBASE_BOOL_BYTES;
+			return (version == StuffVersion.V3) ? LITERALBASE_BOOL_M_BYTES : LITERALBASE_BOOL_BYTES;
 		}
 		else if (literal == LiteralBase.BIN) {
-			return LITERALBASE_BIN_BYTES;
+			return (version == StuffVersion.V3) ? LITERALBASE_BIN_M_BYTES : LITERALBASE_BIN_BYTES;
 		}
 		else if (literal == LiteralBase.FLOAT) {
-			return LITERALBASE_FLOAT_BYTES;
+			return (version == StuffVersion.V3) ? LITERALBASE_FLOAT_M_BYTES : LITERALBASE_FLOAT_BYTES;
 		}
 		else if (literal == LiteralBase.DOUBLE) {
-			return LITERALBASE_DOUBLE_BYTES;
+			return (version == StuffVersion.V3) ? LITERALBASE_DOUBLE_M_BYTES : LITERALBASE_DOUBLE_BYTES;
 		}
 		else if (literal == LiteralBase.UINT) {
-			return LITERALBASE_UINT_BYTES;
+			return (version == StuffVersion.V3) ? LITERALBASE_UINT_M_BYTES : LITERALBASE_UINT_BYTES;
 		}
 		else if (literal == LiteralBase.ULONG) {
-			return LITERALBASE_ULONG_BYTES;
+			return (version == StuffVersion.V3) ? LITERALBASE_UINT_M_BYTES : LITERALBASE_ULONG_BYTES;
 		}
 		else if (literal == LiteralBase.XML) {
-			return LITERALBASE_XML_BYTES;
+			return (version == StuffVersion.V3) ? LITERALBASE_XML_M_BYTES : LITERALBASE_XML_BYTES;
 		}
 		else {
 			return null;
@@ -603,41 +635,81 @@ public final class PrimitiveSerializer {
 	 * @return 返回转义后的字面义枚举对象。
 	 */
 	private static LiteralBase parseLiteralBase(byte[] literal) {
-		if (literal[0] == LITERALBASE_STRING_BYTES[0] && literal[1] == LITERALBASE_STRING_BYTES[1]) {
-			return LiteralBase.STRING;
-		}
-		else if (literal[0] == LITERALBASE_JSON_BYTES[0] && literal[1] == LITERALBASE_JSON_BYTES[1]) {
-			return LiteralBase.JSON;
-		}
-		else if (literal[0] == LITERALBASE_INT_BYTES[0] && literal[1] == LITERALBASE_INT_BYTES[1]) {
-			return LiteralBase.INT;
-		}
-		else if (literal[0] == LITERALBASE_LONG_BYTES[0] && literal[1] == LITERALBASE_LONG_BYTES[1]) {
-			return LiteralBase.LONG;
-		}
-		else if (literal[0] == LITERALBASE_BOOL_BYTES[0] && literal[1] == LITERALBASE_BOOL_BYTES[1]) {
-			return LiteralBase.BOOL;
-		}
-		else if (literal[0] == LITERALBASE_BIN_BYTES[0] && literal[1] == LITERALBASE_BIN_BYTES[1]) {
-			return LiteralBase.BIN;
-		}
-		else if (literal[0] == LITERALBASE_FLOAT_BYTES[0] && literal[1] == LITERALBASE_FLOAT_BYTES[1]) {
-			return LiteralBase.FLOAT;
-		}
-		else if (literal[0] == LITERALBASE_DOUBLE_BYTES[0] && literal[1] == LITERALBASE_DOUBLE_BYTES[1]) {
-			return LiteralBase.DOUBLE;
-		}
-		else if ((literal[0] == LITERALBASE_UINT_BYTES[0] && literal[1] == LITERALBASE_UINT_BYTES[1])) {
-			return LiteralBase.UINT;
-		}
-		else if (literal[0] == LITERALBASE_ULONG_BYTES[0] && literal[1] == LITERALBASE_ULONG_BYTES[1]) {
-			return LiteralBase.ULONG;
-		}
-		else if (literal[0] == LITERALBASE_XML_BYTES[0] && literal[1] == LITERALBASE_XML_BYTES[1]) {
-			return LiteralBase.XML;
+		if (literal.length <= 2) {
+			if (literal[0] == LITERALBASE_STRING_M_BYTES[0]) {
+				return LiteralBase.STRING;
+			}
+			else if (literal[0] == LITERALBASE_JSON_M_BYTES[0]) {
+				return LiteralBase.JSON;
+			}
+			else if (literal[0] == LITERALBASE_INT_M_BYTES[0]) {
+				return LiteralBase.INT;
+			}
+			else if (literal[0] == LITERALBASE_LONG_M_BYTES[0]) {
+				return LiteralBase.LONG;
+			}
+			else if (literal.length == 2 && literal[0] == LITERALBASE_BIN_M_BYTES[0] && literal[1] == LITERALBASE_BIN_M_BYTES[1]) {
+				return LiteralBase.BIN;
+			}
+			else if (literal[0] == LITERALBASE_BOOL_M_BYTES[0]) {
+				return LiteralBase.BOOL;
+			}
+			else if (literal[0] == LITERALBASE_FLOAT_M_BYTES[0]) {
+				return LiteralBase.FLOAT;
+			}
+			else if (literal[0] == LITERALBASE_DOUBLE_M_BYTES[0]) {
+				return LiteralBase.DOUBLE;
+			}
+			else if (literal.length == 2 && literal[0] == LITERALBASE_UINT_M_BYTES[0] && literal[1] == LITERALBASE_UINT_M_BYTES[1]) {
+				return LiteralBase.UINT;
+			}
+			else if (literal.length == 2 && literal[0] == LITERALBASE_ULONG_M_BYTES[0] && literal[1] == LITERALBASE_ULONG_M_BYTES[1]) {
+				return LiteralBase.ULONG;
+			}
+			else if (literal[0] == LITERALBASE_XML_M_BYTES[0]) {
+				return LiteralBase.XML;
+			}
+			else {
+				return null;
+			}
 		}
 		else {
-			return null;
+			if (literal[0] == LITERALBASE_STRING_BYTES[0] && literal[1] == LITERALBASE_STRING_BYTES[1]) {
+				return LiteralBase.STRING;
+			}
+			else if (literal[0] == LITERALBASE_JSON_BYTES[0] && literal[1] == LITERALBASE_JSON_BYTES[1]) {
+				return LiteralBase.JSON;
+			}
+			else if (literal[0] == LITERALBASE_INT_BYTES[0] && literal[1] == LITERALBASE_INT_BYTES[1]) {
+				return LiteralBase.INT;
+			}
+			else if (literal[0] == LITERALBASE_LONG_BYTES[0] && literal[1] == LITERALBASE_LONG_BYTES[1]) {
+				return LiteralBase.LONG;
+			}
+			else if (literal[0] == LITERALBASE_BOOL_BYTES[0] && literal[1] == LITERALBASE_BOOL_BYTES[1]) {
+				return LiteralBase.BOOL;
+			}
+			else if (literal[0] == LITERALBASE_BIN_BYTES[0] && literal[1] == LITERALBASE_BIN_BYTES[1]) {
+				return LiteralBase.BIN;
+			}
+			else if (literal[0] == LITERALBASE_FLOAT_BYTES[0] && literal[1] == LITERALBASE_FLOAT_BYTES[1]) {
+				return LiteralBase.FLOAT;
+			}
+			else if (literal[0] == LITERALBASE_DOUBLE_BYTES[0] && literal[1] == LITERALBASE_DOUBLE_BYTES[1]) {
+				return LiteralBase.DOUBLE;
+			}
+			else if ((literal[0] == LITERALBASE_UINT_BYTES[0] && literal[1] == LITERALBASE_UINT_BYTES[1])) {
+				return LiteralBase.UINT;
+			}
+			else if (literal[0] == LITERALBASE_ULONG_BYTES[0] && literal[1] == LITERALBASE_ULONG_BYTES[1]) {
+				return LiteralBase.ULONG;
+			}
+			else if (literal[0] == LITERALBASE_XML_BYTES[0] && literal[1] == LITERALBASE_XML_BYTES[1]) {
+				return LiteralBase.XML;
+			}
+			else {
+				return null;
+			}
 		}
 	}
 

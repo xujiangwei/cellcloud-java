@@ -26,7 +26,17 @@ THE SOFTWARE.
 
 package net.cellcloud.talk.dialect;
 
+import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.nio.charset.Charset;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -38,9 +48,11 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
+import net.cellcloud.common.LogLevel;
 import net.cellcloud.common.Logger;
 import net.cellcloud.core.Cellet;
 import net.cellcloud.talk.TalkService;
+import net.cellcloud.util.ByteUtils;
 import net.cellcloud.util.Clock;
 
 /**
@@ -50,6 +62,9 @@ import net.cellcloud.util.Clock;
  * 
  */
 public class ChunkDialectFactory extends DialectFactory {
+
+	/** 当内存不足时，将内存数据移入磁盘文件的路径。 */
+	public static String CachePath = "_chunks/";
 
 	/**
 	 * 方言元数据。
@@ -80,12 +95,20 @@ public class ChunkDialectFactory extends DialectFactory {
 
 	/** 当前缓存占用的内存大小。 */
 	private AtomicLong cacheMemorySize = new AtomicLong(0);
-	/** 内存清理门限，当内存缓存大小大于此值时，将执行清理算法对内存进行清理。 */
-	private final long clearThreshold = 100L * 1024L * 1024L;
-	/** 是否正在执行清理任务。 */
-	private AtomicBoolean clearRunning = new AtomicBoolean(false);
-	/** 线程互斥体。 */
-	private Object mutex = new Object();
+	/** 内存门限，当内存缓存大小大于此值时，将内存数据移入磁盘文件。  */
+	private long memoryThreshold = 100L * 1024L * 1024L;
+
+	/** 当前缓存文件占用的磁盘空间大小。 */
+	private AtomicLong fileSpace = new AtomicLong(0);
+	/** 文件门限，当所有区块文件大小大于此值时，将执行清理算法对文件进行清理。 */
+	private long fileThreshold = 1024L * 1024L * 1024L;
+	/** 保存当前系统维护的所有 Chunk 文件。 */
+	private ConcurrentHashMap<String, File> chunkFileMap;
+
+	/** 是否正在执行内存转移任务。 */
+	private AtomicBoolean moveMemoryRunning = new AtomicBoolean(false);
+	/** 是否正在执行文件清理任务。 */
+	private AtomicBoolean clearFileRunning = new AtomicBoolean(false);
 
 	/** 用于辅助打印日志的计数器。 */
 	private int logCounts = 0;
@@ -99,9 +122,26 @@ public class ChunkDialectFactory extends DialectFactory {
 		this.metaData = new DialectMetaData(ChunkDialect.DIALECT_NAME, "Chunk Dialect");
 		this.executor = executor;
 		this.cacheMap = new ConcurrentHashMap<String, Cache>();
+		this.chunkFileMap = new ConcurrentHashMap<String, File>();
 		this.quotaTimer = new Timer("ChunkQuotaTimer");
 		// 每 500ms 一次任务
 		this.quotaTimer.schedule(new QuotaTask(), 3000L, 500L);
+
+		File dir = new File(CachePath);
+		if (!dir.exists()) {
+			dir.mkdirs();
+		}
+		if (dir.isDirectory()) {
+			Logger.i(this.getClass(), "Chunk cache file path: \"" + dir.getAbsolutePath() + "\"");
+
+			File[] files = dir.listFiles();
+			for (File f : files) {
+				if (f.isFile()) {
+					this.chunkFileMap.put(f.getName(), f);
+					this.fileSpace.addAndGet(f.length());
+				}
+			}
+		}
 	}
 
 	/**
@@ -126,6 +166,7 @@ public class ChunkDialectFactory extends DialectFactory {
 	@Override
 	public void shutdown() {
 		this.cacheMap.clear();
+		this.chunkFileMap.clear();
 
 		if (null != this.quotaTimer) {
 			this.quotaTimer.cancel();
@@ -153,12 +194,21 @@ public class ChunkDialectFactory extends DialectFactory {
 	}
 
 	/**
-	 * 获得允许的最大缓存大小。
+	 * 获得允许的最大内存缓存大小。
 	 * 
 	 * @return 返回缓存最大值。
 	 */
 	public long getMaxCacheMemorySize() {
-		return this.clearThreshold;
+		return this.memoryThreshold;
+	}
+
+	/**
+	 * 设置允许的最大内存缓存大小。
+	 * 
+	 * @param value 最大内存缓存大小。
+	 */
+	public void setMaxCacheMemorySize(long value) {
+		this.memoryThreshold = value;
 	}
 
 	/**
@@ -168,6 +218,24 @@ public class ChunkDialectFactory extends DialectFactory {
 	 */
 	public int getCacheNum() {
 		return this.cacheMap.size();
+	}
+
+	/**
+	 * 获得允许使用的最大文件缓存空间大小。
+	 * 
+	 * @return 返回允许使用的最大文件缓存空间大小。
+	 */
+	public long getMaxFileCacheSpace() {
+		return this.fileThreshold;
+	}
+
+	/**
+	 * 设置允许使用的最大文件缓存空间大小。
+	 * 
+	 * @param value 最大文件缓存空间大小。
+	 */
+	public void setMaxFileCacheSpace(long value) {
+		this.fileThreshold = value;
 	}
 
 	/**
@@ -301,12 +369,10 @@ public class ChunkDialectFactory extends DialectFactory {
 			this.logCounts = 0;
 		}
 
-		if (this.cacheMemorySize.get() > this.clearThreshold) {
-			synchronized (this.mutex) {
-				if (!this.clearRunning.get()) {
-					this.clearRunning.set(true);
-					(new Thread(new ClearCacheTask())).start();
-				}
+		if (this.cacheMemorySize.get() > this.memoryThreshold) {
+			if (!this.moveMemoryRunning.get()) {
+				this.moveMemoryRunning.set(true);
+				(new Thread(new MoveMemoryTask())).start();
 			}
 		}
 
@@ -344,6 +410,48 @@ public class ChunkDialectFactory extends DialectFactory {
 
 			System.arraycopy(buf, 0, out, 0, len);
 			return len;
+		}
+		else {
+			// 尝试从磁盘恢复
+			File file = this.chunkFileMap.get(sign);
+			if (null != file) {
+				FileInputStream fis = null;
+				try {
+					fis = new FileInputStream(file);
+					// 反序列化
+					cache = new Cache(fis);
+				} catch (IOException e) {
+					Logger.log(this.getClass(), e, LogLevel.WARNING);
+				} finally {
+					if (null != fis) {
+						try {
+							fis.close();
+						} catch (IOException e) {
+							// Nothing
+						}
+					}
+				}
+			}
+
+			if (null != cache) {
+				// 放入内存
+				this.cacheMap.put(cache.sign, cache);
+				this.cacheMemorySize.addAndGet(cache.currentLength);
+				// 更新时间戳
+				cache.timestamp = Clock.currentTimeMillis();
+
+				ChunkDialect cd = cache.get(index);
+				byte[] buf = cd.data;
+				int len = cd.length;
+
+				if (null != buf) {
+					System.arraycopy(buf, 0, out, 0, len);
+					return len;
+				}
+			}
+			else {
+				Logger.w(this.getClass(), "Can NOT find chunk in disk : " + sign);
+			}
 		}
 
 		return -1;
@@ -454,11 +562,11 @@ public class ChunkDialectFactory extends DialectFactory {
 		/** 块记号。 */
 		private String sign;
 		/** 区块方言列表。 */
-		private ArrayList<ChunkDialect> dataQueue;
+		private ArrayList<ChunkDialect> list;
 		/** 更新时间戳。 */
 		private long timestamp;
-		/** 总数据大小。 */
-		private long dataSize;
+		/** 当前数据大小。 */
+		private long currentLength;
 
 		/**
 		 * 构造函数。
@@ -468,11 +576,83 @@ public class ChunkDialectFactory extends DialectFactory {
 		 */
 		private Cache(String sign, int capacity) {
 			this.sign = sign;
-			this.dataQueue = new ArrayList<ChunkDialect>(capacity);
+			this.list = new ArrayList<ChunkDialect>(capacity);
 			for (int i = 0; i < capacity; ++i) {
-				this.dataQueue.add(new ChunkDialect());
+				this.list.add(new ChunkDialect());
 			}
-			this.dataSize = 0;
+			this.currentLength = 0;
+		}
+
+		/**
+		 * 构造函数。执行反序列化。
+		 * 
+		 * @param stream
+		 */
+		public Cache(InputStream stream) throws IOException {
+			// 128 bytes - 块记号
+			// 8 bytes - 时间戳
+			// 8 bytes - 数据总大小
+			// 4 bytes - 块总数
+			// N * 4 bytes - 每个块的序列长度
+			// M bytes - 数据
+
+			// sign
+			byte[] signBuf = new byte[128];
+			if (stream.read(signBuf) != 128) {
+				throw new IOException("Sign error");
+			}
+			this.sign = new String(signBuf, Charset.forName("UTF-8"));
+
+			// timestamp
+			byte[] tsBuf = new byte[8];
+			if (stream.read(tsBuf) != 8) {
+				throw new IOException("Timestamp error");
+			}
+			this.timestamp = ByteUtils.toLong(tsBuf);
+
+			// total
+			byte[] totalBuf = new byte[8];
+			if (stream.read(totalBuf) != 8) {
+				throw new IOException("Total error");
+			}
+			long total = ByteUtils.toLong(totalBuf);
+
+			byte[] numBuf = new byte[4];
+			if (stream.read(numBuf) != 4) {
+				throw new IOException("Number of chunk error");
+			}
+			int num = ByteUtils.toInt(numBuf);
+
+			// init list
+			this.list = new ArrayList<ChunkDialect>(num);
+
+			int[] lengthArray = new int[num];
+			for (int i = 0; i < num; ++i) {
+				byte[] buf = new byte[4];
+				if (stream.read(buf) != 4) {
+					throw new IOException("Chunk length error");
+				}
+
+				lengthArray[i] = ByteUtils.toInt(buf);
+			}
+
+			for (int i = 0; i < num; ++i) {
+				int length = lengthArray[i];
+				if (length > 0) {
+					byte[] buf = new byte[length];
+					if (stream.read(buf) != length) {
+						throw new IOException("Chunk data error");
+					}
+
+					ChunkDialect dialect = new ChunkDialect(this.sign, total, i, num, buf, length);
+					this.list.add(dialect);
+
+					this.currentLength += length;
+				}
+				else {
+					this.list.add(new ChunkDialect());
+				}
+			}
 		}
 
 		/**
@@ -481,19 +661,19 @@ public class ChunkDialectFactory extends DialectFactory {
 		 * @param dialect 指定待追加区块方言。
 		 */
 		public void offer(ChunkDialect dialect) {
-			synchronized (this.dataQueue) {
-				if (this.dataQueue.contains(dialect)) {
-					int index = this.dataQueue.indexOf(dialect);
+			synchronized (this.list) {
+				if (this.list.contains(dialect)) {
+					int index = this.list.indexOf(dialect);
 					// 删除旧长度
-					ChunkDialect old = this.dataQueue.get(index);
-					this.dataSize -= old.getLength();
+					ChunkDialect old = this.list.get(index);
+					this.currentLength -= old.getLength();
 					// 设置新值
-					this.dataQueue.set(index, dialect);
-					this.dataSize += dialect.getLength();
+					this.list.set(index, dialect);
+					this.currentLength += dialect.getLength();
 				}
 				else {
-					this.dataQueue.set(dialect.getChunkIndex(), dialect);
-					this.dataSize += dialect.getLength();
+					this.list.set(dialect.getChunkIndex(), dialect);
+					this.currentLength += dialect.getLength();
 				}
 			}
 
@@ -507,12 +687,12 @@ public class ChunkDialectFactory extends DialectFactory {
 		 * @return 返回对应的区块方言。
 		 */
 		public ChunkDialect get(int index) {
-			synchronized (this.dataQueue) {
-				if (index >= this.dataQueue.size()) {
+			synchronized (this.list) {
+				if (index >= this.list.size()) {
 					return null;
 				}
 
-				return this.dataQueue.get(index);
+				return this.list.get(index);
 			}
 		}
 
@@ -522,12 +702,12 @@ public class ChunkDialectFactory extends DialectFactory {
 		 * @return 如果已经接收到所有的块返回 <code>true</code> 。
 		 */
 		public boolean hasCompleted() {
-			synchronized (this.dataQueue) {
-				if (this.dataQueue.isEmpty()) {
+			synchronized (this.list) {
+				if (this.list.isEmpty()) {
 					return false;
 				}
 
-				for (ChunkDialect cd : this.dataQueue) {
+				for (ChunkDialect cd : this.list) {
 					if (cd.getLength() <= 0) {
 						return false;
 					}
@@ -543,10 +723,10 @@ public class ChunkDialectFactory extends DialectFactory {
 		 * @return 返回清理前的数据总长度。
 		 */
 		public long clear() {
-			long size = this.dataSize;
-			synchronized (this.dataQueue) {
-				this.dataQueue.clear();
-				this.dataSize = 0;
+			long size = this.currentLength;
+			synchronized (this.list) {
+				this.list.clear();
+				this.currentLength = 0;
 			}
 			return size;
 		}
@@ -560,6 +740,79 @@ public class ChunkDialectFactory extends DialectFactory {
 			return this.timestamp;
 		}
 
+		/**
+		 * 返回块的总长度。
+		 * 
+		 * @return
+		 */
+		public long getTotalLength() {
+			synchronized (this.list) {
+				for (ChunkDialect cd : this.list) {
+					if (cd.length > 0) {
+						return cd.totalLength;
+					}
+				}
+			}
+
+			return 0;
+		}
+
+		/**
+		 * 序列化缓存。
+		 * 
+		 * 128 bytes - 块记号
+		 * 8 bytes - 时间戳
+		 * 8 bytes - 数据总大小
+		 * 4 bytes - 块总数
+		 * N * 4 bytes - 每个块的序列长度
+		 * D bytes - 数据
+		 * 
+		 * @return
+		 */
+		public ByteArrayOutputStream serialize() throws IOException {
+			// 没有数据不能进行序列化
+			if (this.currentLength == 0) {
+				return null;
+			}
+
+			ByteArrayOutputStream stream = new ByteArrayOutputStream(128);
+
+			// 块记号
+			byte[] signBuf = new byte[128];
+			for (int i = 0; i < signBuf.length; ++i) {
+				signBuf[i] = 0;
+			}
+			System.arraycopy(this.sign.getBytes(Charset.forName("UTF-8")), 0, signBuf, 0, this.sign.length());
+			stream.write(signBuf);
+
+			// 更新时间戳
+			byte[] tsBuf = ByteUtils.toBytes(this.timestamp);
+			stream.write(tsBuf);
+
+			// 数据总大小
+			byte[] sizeBuf = ByteUtils.toBytes(this.getTotalLength());
+			stream.write(sizeBuf);
+
+			// 块总数
+			byte[] numBuf = ByteUtils.toBytes(this.list.size());
+			stream.write(numBuf);
+
+			synchronized (this.list) {
+				for (int i = 0, size = this.list.size(); i < size; ++i) {
+					ChunkDialect cd = this.list.get(i);
+					stream.write(ByteUtils.toBytes(cd.length));
+				}
+
+				for (int i = 0, size = this.list.size(); i < size; ++i) {
+					ChunkDialect cd = this.list.get(i);
+					if (cd.length > 0) {
+						stream.write(cd.data);
+					}
+				}
+			}
+
+			return stream;
+		}
 	}
 
 	/**
@@ -807,13 +1060,13 @@ public class ChunkDialectFactory extends DialectFactory {
 
 
 	/**
-	 * 清理缓存任务。
+	 * 转移内存缓存任务。
 	 */
-	private class ClearCacheTask implements Runnable {
+	private class MoveMemoryTask implements Runnable {
 		/**
 		 * 构造函数。
 		 */
-		private ClearCacheTask() {
+		private MoveMemoryTask() {
 		}
 
 		@Override
@@ -821,25 +1074,122 @@ public class ChunkDialectFactory extends DialectFactory {
 			long time = Long.MAX_VALUE;
 			Cache selected = null;
 
-			for (Cache cache : cacheMap.values()) {
-				// 找到最旧的 cache
-				long ft = cache.getTimestamp();
-				if (ft < time) {
-					time = ft;
-					selected = cache;
+			while (cacheMemorySize.get() > memoryThreshold) {
+				for (Cache cache : cacheMap.values()) {
+					// 找到最旧的 cache
+					long ft = cache.getTimestamp();
+					if (ft < time) {
+						time = ft;
+						selected = cache;
+					}
+				}
+
+				if (null != selected) {
+					// 将 Cache 写入文件
+					this.writeCacheToFile(selected, CachePath);
+
+					long size = selected.clear();
+
+					// 更新内存大小记录
+					cacheMemorySize.set(cacheMemorySize.get() - size);
+
+					cacheMap.remove(selected.sign);
+				}
+
+				time = Long.MAX_VALUE;
+			}
+
+			moveMemoryRunning.set(false);
+		}
+
+		private void writeCacheToFile(Cache cache, String path) {
+			File file = new File(path, cache.sign);
+			if (file.exists()) {
+				file.delete();
+			}
+
+			FileOutputStream fos = null;
+			try {
+				ByteArrayOutputStream bos = cache.serialize();
+				if (null == bos) {
+					Logger.w(this.getClass(), "Chunk cache serialize faild: " + cache.sign);
+					return;
+				}
+
+				fos = new FileOutputStream(file);
+				fos.write(bos.toByteArray());
+				fos.flush();
+
+				bos = null;
+			} catch (FileNotFoundException e) {
+				Logger.log(this.getClass(), e, LogLevel.WARNING);
+			} catch (IOException e) {
+				Logger.log(this.getClass(), e, LogLevel.WARNING);
+			} finally {
+				if (null != fos) {
+					try {
+						fos.close();
+					} catch (IOException e) {
+						// Nothing
+					}
 				}
 			}
 
-			if (null != selected) {
-				long size = selected.clear();
+			if (file.exists()) {
+				File old = chunkFileMap.get(file.getName());
+				if (null == old) {
+					chunkFileMap.put(file.getName(), file);
+				}
+				else {
+					fileSpace.set(fileSpace.get() - old.length());
+					chunkFileMap.put(file.getName(), file);
+				}
 
-				// 更新内存大小记录
-				cacheMemorySize.set(cacheMemorySize.get() - size);
+				fileSpace.addAndGet(file.length());
 
-				cacheMap.remove(selected.sign);
+				if (fileSpace.get() > fileThreshold) {
+					if (!clearFileRunning.get()) {
+						clearFileRunning.set(true);
+						(new Thread(new ClearFileTask())).start();
+					}
+				}
+			}
+		}
+	}
+	
+	/**
+	 * 清理文件。
+	 */
+	private class ClearFileTask implements Runnable {
+		/**
+		 * 构造函数。
+		 */
+		private ClearFileTask() {
+		}
+
+		@Override
+		public void run() {
+			// 按照文件修改时间进行排序
+			ArrayList<File> files = new ArrayList<File>(chunkFileMap.values());
+			Collections.sort(files, new Comparator<File>() {
+				@Override
+				public int compare(File o1, File o2) {
+					return (int) (o1.lastModified() - o2.lastModified());
+				}
+			});
+
+			while (fileSpace.get() > fileThreshold) {
+				File file = files.remove(0);
+				if (null == file) {
+					break;
+				}
+
+				chunkFileMap.remove(file.getName());
+				fileSpace.set(fileSpace.get() - file.length());
+				file.delete();
 			}
 
-			clearRunning.set(false);
+			clearFileRunning.set(false);
 		}
 	}
 

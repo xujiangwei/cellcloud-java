@@ -52,7 +52,7 @@ public final class TalkServiceDaemon extends Thread {
 	/**
 	 * 是否正在运行。
 	 */
-	protected volatile  boolean running = false;
+	protected volatile boolean running = false;
 
 	/**
 	 * 每次 Tick 的时间戳。
@@ -262,7 +262,7 @@ public final class TalkServiceDaemon extends Thread {
 		// 关闭所有工厂
 		DialectEnumerator.getInstance().shutdownAll();
 
-		Logger.i(this.getClass(), "Talk service daemon quit.");
+		Logger.i(this.getClass(), "Talk service daemon (" + (this.kernel.hasAcceptor() ? this.kernel.getPort() : "-") + ") quit.");
 		this.running = false;
 	}
 

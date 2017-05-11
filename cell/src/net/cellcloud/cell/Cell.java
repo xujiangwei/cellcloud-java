@@ -42,9 +42,11 @@ import net.cellcloud.common.Logger;
 import net.cellcloud.core.Nucleus;
 import net.cellcloud.util.Utils;
 
-/** Cell Cloud 容器。
+/**
+ * Cell Cloud 容器。
  * 
  * @author Ambrose Xu
+ * 
  */
 public final class Cell {
 
@@ -65,13 +67,15 @@ public final class Cell {
 	public Cell() {
 	}
 
-	/** 启动 Cell 容器。
+	/**
+	 * 启动 Cell 容器。
 	 */
 	public boolean start() {
 		return this.start(false, "cell.log");
 	}
 
-	/** 启动 Cell 容器。
+	/**
+	 * 启动 Cell 容器。
 	 */
 	public boolean start(final boolean console, final String logFile) {
 		if (null != this.daemon) {
@@ -107,7 +111,8 @@ public final class Cell {
 		return true;
 	}
 
-	/** 关闭 Cell 容器。
+	/**
+	 * 关闭 Cell 容器。
 	 */
 	public void stop() {
 		if (null != this.app) {
@@ -126,7 +131,8 @@ public final class Cell {
 		this.daemon = null;
 	}
 
-	/** 阻塞当前线程直到 Cell 停止。
+	/**
+	 * 阻塞当前线程直到 Cell 停止。
 	 */
 	public void waitForCellStopped() {
 		if (null == this.signal) {
@@ -142,7 +148,8 @@ public final class Cell {
 		}
 	}
 
-	/** 返回控制台。
+	/**
+	 * 返回控制台。
 	 */
 	public Console getConsole() {
 		return this.app.getConsole();
