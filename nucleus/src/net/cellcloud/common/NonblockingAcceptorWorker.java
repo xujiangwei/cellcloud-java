@@ -170,7 +170,7 @@ public final class NonblockingAcceptorWorker extends Thread {
 				if (!this.receiveSessions.isEmpty()) {
 					// 执行接收数据任务，并移除已执行的 Session
 					session = this.receiveSessions.remove(0);
-					if (ctime - session.readTime > this.eachSessionReadInterval) {
+					if (Math.abs(ctime - session.readTime) > this.eachSessionReadInterval) {
 						if (null != session.socket) {
 							processReceive(session);
 							session.readTime = ctime;
@@ -184,7 +184,7 @@ public final class NonblockingAcceptorWorker extends Thread {
 				if (!this.sendSessions.isEmpty()) {
 					// 执行发送数据任务，并移除已执行的 Session
 					session = this.sendSessions.remove(0);
-					if (ctime - session.writeTime > this.eachSessionWriteInterval) {
+					if (Math.abs(ctime - session.writeTime) > this.eachSessionWriteInterval) {
 						if (null != session.socket) {
 							processSend(session);
 							session.writeTime = ctime;
@@ -288,7 +288,7 @@ public final class NonblockingAcceptorWorker extends Thread {
 		this.receiveSessions.add(session);
 
 		synchronized (this.mutex) {
-			this.mutex.notifyAll();
+			this.mutex.notify();
 		}
 	}
 
@@ -302,10 +302,15 @@ public final class NonblockingAcceptorWorker extends Thread {
 			return;
 		}
 
+		// 必须进行此判断
+		if (session.isEmptyMessage()) {
+			return;
+		}
+
 		this.sendSessions.add(session);
 
 		synchronized (this.mutex) {
-			this.mutex.notifyAll();
+			this.mutex.notify();
 		}
 	}
 

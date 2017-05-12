@@ -1097,6 +1097,7 @@ public class ChunkDialectFactory extends DialectFactory {
 				}
 
 				time = Long.MAX_VALUE;
+				selected = null;
 			}
 
 			moveMemoryRunning.set(false);
@@ -1178,7 +1179,7 @@ public class ChunkDialectFactory extends DialectFactory {
 				}
 			});
 
-			while (fileSpace.get() > fileThreshold) {
+			while (fileSpace.get() > fileThreshold && !files.isEmpty()) {
 				File file = files.remove(0);
 				if (null == file) {
 					break;

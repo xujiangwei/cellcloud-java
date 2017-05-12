@@ -106,20 +106,20 @@ public final class CachedQueueExecutor implements ExecutorService {
 	public <T> List<Future<T>> invokeAll(
 			Collection<? extends Callable<T>> tasks, long timeout, TimeUnit unit)
 			throws InterruptedException {
-		return null;
+		return this.executor.invokeAll(tasks, timeout, unit);
 	}
 
 	@Override
 	public <T> T invokeAny(Collection<? extends Callable<T>> tasks)
 			throws InterruptedException, ExecutionException {
-		return null;
+		return this.executor.invokeAny(tasks);
 	}
 
 	@Override
 	public <T> T invokeAny(Collection<? extends Callable<T>> tasks, long timeout,
 			TimeUnit unit) throws InterruptedException, ExecutionException,
 			TimeoutException {
-		return null;
+		return this.executor.invokeAny(tasks, timeout, unit);
 	}
 
 	@Override
@@ -146,17 +146,17 @@ public final class CachedQueueExecutor implements ExecutorService {
 
 	@Override
 	public <T> Future<T> submit(Callable<T> task) {
-		return null;
+		return this.executor.submit(task);
 	}
 
 	@Override
 	public Future<?> submit(Runnable task) {
-		return null;
+		return this.executor.submit(task);
 	}
 
 	@Override
 	public <T> Future<T> submit(Runnable task, T result) {
-		return null;
+		return this.executor.submit(task, result);
 	}
 
 	/**
