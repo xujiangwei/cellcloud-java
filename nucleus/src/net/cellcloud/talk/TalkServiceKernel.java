@@ -398,6 +398,8 @@ public final class TalkServiceKernel implements Service, SpeakerDelegate {
 		this.acceptor.setMaxConnectNum(this.maxConnections);
 		// 工作线程数
 		this.acceptor.setWorkerNum(this.numWorkerThreads);
+		// 数据写间隔
+		this.acceptor.setEachSessionWriteInterval(20L);
 
 		// 启动 acceptor
 		boolean succeeded = this.acceptor.bind(this.port);
@@ -417,9 +419,6 @@ public final class TalkServiceKernel implements Service, SpeakerDelegate {
 				Logger.w(TalkServiceKernel.class, "Start Flash socket security policy failed.");
 			}
 		}
-
-		// 数据写间隔
-		this.acceptor.setEachSessionWriteInterval(20L);
 
 		return succeeded;
 	}

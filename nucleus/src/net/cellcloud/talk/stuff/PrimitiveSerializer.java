@@ -464,6 +464,7 @@ public final class PrimitiveSerializer {
 
 				case PARSE_PHASE_DIALECT:
 					if (read == TOKEN_OPEN_BRACE) {
+						// 语素未解析完成，回到解析语素阶段
 						phase = PARSE_PHASE_TYPE;
 						buf.clear();
 					}
