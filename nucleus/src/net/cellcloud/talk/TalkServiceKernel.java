@@ -398,14 +398,15 @@ public final class TalkServiceKernel implements Service, SpeakerDelegate {
 		this.acceptor.setMaxConnectNum(this.maxConnections);
 		// 工作线程数
 		this.acceptor.setWorkerNum(this.numWorkerThreads);
-		// 数据写间隔
-		this.acceptor.setEachSessionWriteInterval(20L);
 
 		// 启动 acceptor
 		boolean succeeded = this.acceptor.bind(this.port);
 		if (succeeded) {
 			this.startDaemon();
 		}
+
+		// 数据写间隔
+		this.acceptor.setEachSessionWriteInterval(20L);
 
 		if (succeeded && this.httpEnabled) {
 			// 启动 HTTP 服务
