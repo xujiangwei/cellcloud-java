@@ -876,7 +876,10 @@ public class ChunkDialectFactory extends DialectFactory {
 			if (chunk.getChunkIndex() == 0) {
 				double t = (ChunkDialect.CHUNK_SIZE_KB + 0.0d) / (chunk.speedInKB + 0.0d) * 1000.0d;
 				if (t >= 10.0d) {
-					this.interval = (long) t;
+					this.interval = Math.round(t) + 1;
+				}
+				else {
+					this.interval = 10L;
 				}
 			}
 		}
