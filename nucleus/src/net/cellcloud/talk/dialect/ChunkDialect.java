@@ -78,7 +78,7 @@ public class ChunkDialect extends Dialect {
 	private int readIndex = 0;
 
 	/** 数据传输速率，单位：KB/S */
-	protected int speedInKB = 20;
+	protected int speedInKB = 128;
 
 	/**
 	 * 构造函数。
@@ -291,6 +291,16 @@ public class ChunkDialect extends Dialect {
 		}
 
 		return false;
+	}
+
+	/**
+	 * 取消当前记号的 Chunk 的发送。
+	 * 
+	 * @return 返回已经取消发送的 Chunk 的列表。
+	 */
+	public List<ChunkDialect> cancel() {
+		ChunkDialectFactory fact = (ChunkDialectFactory) DialectEnumerator.getInstance().getFactory(ChunkDialect.DIALECT_NAME);
+		return fact.cancel(this.sign);
 	}
 
 	/**

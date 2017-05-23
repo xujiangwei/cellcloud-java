@@ -79,7 +79,7 @@ public class ChunkDialectFactory extends DialectFactory {
 	/** 配额定时器。 */
 	private Timer quotaTimer;
 	/** 每个区块列表列表的默认配额。 */
-	private long defaultQuotaPerList = 48L * 1024L;
+	private long defaultQuotaPerList = 128L * 1024L;
 
 	/** 数据接收缓存。键是区块记号 */
 	private ConcurrentHashMap<String, Cache> cacheMap;
@@ -124,8 +124,7 @@ public class ChunkDialectFactory extends DialectFactory {
 		this.cacheMap = new ConcurrentHashMap<String, Cache>();
 		this.chunkFileMap = new ConcurrentHashMap<String, File>();
 		this.quotaTimer = new Timer("ChunkQuotaTimer");
-		// 每 500ms 一次任务
-		this.quotaTimer.schedule(new QuotaTask(), 3000L, 500L);
+		this.quotaTimer.schedule(new QuotaTask(), 3000L, 1000L);
 
 		File dir = new File(CachePath);
 		if (!dir.exists()) {
@@ -239,6 +238,29 @@ public class ChunkDialectFactory extends DialectFactory {
 	}
 
 	/**
+	 * 取消正在发送的 Chunk 。
+	 * 
+	 * @param sign 指定待取消发送的 Chunk 的记号。
+	 * @return 返回已经取消发送的 Chunk 的列表。
+	 */
+	public List<ChunkDialect> cancel(String sign) {
+		ChunkList list = null;
+		if (null != this.cListMap) {
+			list = this.cListMap.remove(sign);
+		}
+
+		if (null == list && null != this.sListMap) {
+			list = this.sListMap.remove(sign);
+		}
+
+		if (null == list) {
+			return null;
+		}
+
+		return list.list;
+	}
+
+	/**
 	 * 获得服务器模式下的发送区块列表大小。
 	 * 
 	 * @return 返回服务器模式下的发送区块列表大小。
@@ -262,6 +284,35 @@ public class ChunkDialectFactory extends DialectFactory {
 		}
 
 		return this.cListMap.size();
+	}
+
+	/**
+	 * 获得指定记号对应的所有已接收到缓存的 Chunk 方言。
+	 * 
+	 * @param sign 指定 Chunk 方言的记号。
+	 * @return 返回 Chunk 方言列表。如果没有找到指定的 Chunk ，返回 <code>null</code> 值。
+	 */
+	public List<ChunkDialect> getCachedList(String sign) {
+		Cache cache = this.cacheMap.get(sign);
+		if (null == cache) {
+			cache = this.getCacheFromFile(sign);
+		}
+
+		if (null == cache) {
+			return null;
+		}
+
+		ArrayList<ChunkDialect> list = new ArrayList<ChunkDialect>();
+
+		synchronized (cache.list) {
+			for (ChunkDialect cd : cache.list) {
+				if (cd.length > 0) {
+					list.add(cd);
+				}
+			}
+		}
+
+		return list;
 	}
 
 	@Override
@@ -413,25 +464,7 @@ public class ChunkDialectFactory extends DialectFactory {
 		}
 		else {
 			// 尝试从磁盘恢复
-			File file = this.chunkFileMap.get(sign);
-			if (null != file) {
-				FileInputStream fis = null;
-				try {
-					fis = new FileInputStream(file);
-					// 反序列化
-					cache = new Cache(fis);
-				} catch (IOException e) {
-					Logger.log(this.getClass(), e, LogLevel.WARNING);
-				} finally {
-					if (null != fis) {
-						try {
-							fis.close();
-						} catch (IOException e) {
-							// Nothing
-						}
-					}
-				}
-			}
+			cache = getCacheFromFile(sign);
 
 			if (null != cache) {
 				// 放入内存
@@ -455,6 +488,32 @@ public class ChunkDialectFactory extends DialectFactory {
 		}
 
 		return -1;
+	}
+
+	private Cache getCacheFromFile(String sign) {
+		Cache cache = null;
+
+		File file = this.chunkFileMap.get(sign);
+		if (null != file) {
+			FileInputStream fis = null;
+			try {
+				fis = new FileInputStream(file);
+				// 反序列化
+				cache = new Cache(fis);
+			} catch (IOException e) {
+				Logger.log(this.getClass(), e, LogLevel.WARNING);
+			} finally {
+				if (null != fis) {
+					try {
+						fis.close();
+					} catch (IOException e) {
+						// Nothing
+					}
+				}
+			}
+		}
+
+		return cache;
 	}
 
 	/**
@@ -708,7 +767,7 @@ public class ChunkDialectFactory extends DialectFactory {
 				}
 
 				for (ChunkDialect cd : this.list) {
-					if (cd.getLength() <= 0) {
+					if (cd.length <= 0) {
 						return false;
 					}
 				}
