@@ -26,6 +26,7 @@ THE SOFTWARE.
 
 package net.cellcloud.common;
 
+import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -241,7 +242,7 @@ public class Session implements Comparable<Object> {
 	 * 
 	 * @param message 指定待写入的消息。
 	 */
-	public void write(Message message) {
+	public void write(Message message) throws IOException {
 		this.service.write(this, message);
 	}
 

@@ -27,6 +27,7 @@ THE SOFTWARE.
 package net.cellcloud.talk;
 
 import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
@@ -926,7 +927,12 @@ public final class TalkServiceKernel implements Service, SpeakerDelegate {
 					message = this.packetDialogue(cellet, primitive, session, note);
 
 					if (null != message) {
-						session.write(message);
+						try {
+							session.write(message);
+						} catch (Exception e) {
+							Logger.log(this.getClass(), e, LogLevel.WARNING);
+							return false;
+						}
 					}
 					else {
 						Logger.e(this.getClass(), "Packet error");
@@ -1678,9 +1684,9 @@ public final class TalkServiceKernel implements Service, SpeakerDelegate {
 			// 删除此条会话记录
 			this.sessionTagMap.remove(session.getId());
 		}
-		else {
-			Logger.d(this.getClass(), "Can NOT find tag with session: " + session.getAddress().getHostString());
-		}
+		//else {
+		//	Logger.d(this.getClass(), "Can NOT find tag with session: " + session.getAddress().getHostString());
+		//}
 
 		// 清理未授权表
 		this.unidentifiedSessions.remove(session.getId());
@@ -2222,7 +2228,11 @@ public final class TalkServiceKernel implements Service, SpeakerDelegate {
 		byte[] data = Packet.pack(packet);
 		if (null != data) {
 			Message message = new Message(data);
-			this.acceptor.write(session, message);
+			try {
+				this.acceptor.write(session, message);
+			} catch (IOException e) {
+				Logger.log(this.getClass(), e, LogLevel.ERROR);
+			}
 			message = null;
 		}
 

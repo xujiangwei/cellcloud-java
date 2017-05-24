@@ -26,11 +26,14 @@ THE SOFTWARE.
 
 package net.cellcloud.cluster.protocol;
 
+import java.io.IOException;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 
 import net.cellcloud.cluster.ClusterNode;
+import net.cellcloud.common.LogLevel;
+import net.cellcloud.common.Logger;
 import net.cellcloud.common.Message;
 import net.cellcloud.common.Session;
 import net.cellcloud.util.Utils;
@@ -216,7 +219,11 @@ public abstract class ClusterProtocol {
 			message = new Message(Utils.string2Bytes(buffer.toString()));
 		}
 
-		session.write(message);
+		try {
+			session.write(message);
+		} catch (IOException e) {
+			Logger.log(this.getClass(), e, LogLevel.WARNING);
+		}
 	}
 
 	/**

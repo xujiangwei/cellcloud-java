@@ -28,6 +28,7 @@ package net.cellcloud.talk.speaker;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.util.ArrayList;
 import java.util.List;
@@ -285,7 +286,11 @@ public class Speaker implements Speakable {
 		// 发送数据
 		byte[] data = Packet.pack(packet);
 		Message message = new Message(data);
-		this.connector.write(message);
+		try {
+			this.connector.write(message);
+		} catch (IOException e) {
+			Logger.log(this.getClass(), e, LogLevel.ERROR);
+		}
 
 		return true;
 	}
@@ -305,7 +310,11 @@ public class Speaker implements Speakable {
 	 */
 	public void pass(byte[] data) {
 		Message message = new Message(data);
-		this.connector.write(message);
+		try {
+			this.connector.write(message);
+		} catch (IOException e) {
+			Logger.log(this.getClass(), e, LogLevel.ERROR);
+		}
 	}
 
 	/**
@@ -356,7 +365,11 @@ public class Speaker implements Speakable {
 			Packet packet = new Packet(TalkDefinition.TPT_HEARTBEAT, 9, 2, 0);
 			byte[] data = Packet.pack(packet);
 			Message message = new Message(data);
-			this.connector.write(message);
+			try {
+				this.connector.write(message);
+			} catch (IOException e) {
+				Logger.log(this.getClass(), e, LogLevel.ERROR);
+			}
 			return true;
 		}
 		else {
@@ -544,7 +557,12 @@ public class Speaker implements Speakable {
 		// 数据打包
 		byte[] data = Packet.pack(response);
 		Message message = new Message(data);
-		session.write(message);
+
+		try {
+			session.write(message);
+		} catch (IOException e) {
+			Logger.log(this.getClass(), e, LogLevel.ERROR);
+		}
 	}
 
 	/**
@@ -570,7 +588,11 @@ public class Speaker implements Speakable {
 		byte[] data = Packet.pack(packet);
 		if (null != data) {
 			Message message = new Message(data);
-			this.connector.write(message);
+			try {
+				this.connector.write(message);
+			} catch (IOException e) {
+				Logger.log(this.getClass(), e, LogLevel.ERROR);
+			}
 		}
 	}
 
@@ -589,7 +611,11 @@ public class Speaker implements Speakable {
 
 			byte[] data = Packet.pack(packet);
 			Message message = new Message(data);
-			session.write(message);
+			try {
+				session.write(message);
+			} catch (IOException e) {
+				Logger.log(this.getClass(), e, LogLevel.ERROR);
+			}
 
 			try {
 				Thread.sleep(5L);
@@ -758,7 +784,11 @@ public class Speaker implements Speakable {
 
 		byte[] data = Packet.pack(response);
 		Message message = new Message(data);
-		session.write(message);
+		try {
+			session.write(message);
+		} catch (IOException e) {
+			Logger.log(this.getClass(), e, LogLevel.ERROR);
+		}
 		message = null;
 
 		response = null;

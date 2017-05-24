@@ -26,6 +26,7 @@ THE SOFTWARE.
 
 package net.cellcloud.talk;
 
+import java.io.IOException;
 import java.nio.charset.Charset;
 import java.util.LinkedList;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -254,6 +255,8 @@ public class WebSocketMessageHandler implements MessageHandler {
 			}
 		} catch (JSONException e) {
 			Logger.log(this.getClass(), e, LogLevel.WARNING);
+		} catch (IOException e) {
+			Logger.log(this.getClass(), e, LogLevel.ERROR);
 		}
 	}
 
@@ -311,6 +314,8 @@ public class WebSocketMessageHandler implements MessageHandler {
 			}
 		} catch (JSONException e) {
 			Logger.log(this.getClass(), e, LogLevel.WARNING);
+		} catch (IOException e) {
+			Logger.log(this.getClass(), e, LogLevel.ERROR);
 		}
 	}
 
@@ -358,6 +363,8 @@ public class WebSocketMessageHandler implements MessageHandler {
 			}
 		} catch (JSONException e) {
 			Logger.log(this.getClass(), e, LogLevel.WARNING);
+		} catch (IOException e) {
+			Logger.log(this.getClass(), e, LogLevel.ERROR);
 		}
 	}
 

@@ -27,6 +27,7 @@ THE SOFTWARE.
 package net.cellcloud.extras.express;
 
 import java.io.File;
+import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -308,7 +309,12 @@ public final class FileExpress implements MessageHandler, ExpressTaskListener {
 			response.appendSegment(packet.getSegment(3));
 			byte[] data = Packet.pack(packet);
 			Message message = new Message(data);
-			session.write(message);
+			
+			try {
+				session.write(message);
+			} catch (IOException e) {
+				// Nothing
+			}
 
 			FileExpressContext ctx = record.getContext(filename);
 			ctx.bytesLoaded = end;
@@ -358,7 +364,12 @@ public final class FileExpress implements MessageHandler, ExpressTaskListener {
 			response.appendSegment(fileData);
 			byte[] data = Packet.pack(response);
 			Message message = new Message(data);
-			session.write(message);
+			
+			try {
+				session.write(message);
+			} catch (IOException e) {
+				// Nothing
+			}
 
 			FileExpressContext ctx = record.getContext(filename);
 			ctx.bytesLoaded = end;
@@ -375,7 +386,12 @@ public final class FileExpress implements MessageHandler, ExpressTaskListener {
 			response.appendSegment(Utils.string2Bytes(Long.toString(ctx.getAttribute().size())));
 			byte[] data = Packet.pack(response);
 			Message message = new Message(data);
-			session.write(message);
+			
+			try {
+				session.write(message);
+			} catch (IOException e) {
+				// Nothing
+			}
 		}
 	}
 
@@ -410,7 +426,12 @@ public final class FileExpress implements MessageHandler, ExpressTaskListener {
 		response.appendSegment(packet.getSegment(2));
 		byte[] data = Packet.pack(response);
 		Message message = new Message(data);
-		session.write(message);
+
+		try {
+			session.write(message);
+		} catch (IOException e) {
+			// Nothing
+		}
 
 		// 回调-开始
 		this.expressStarted(fec);
@@ -455,7 +476,12 @@ public final class FileExpress implements MessageHandler, ExpressTaskListener {
 			response.appendSegment(packet.getSegment(2));
 			byte[] data = Packet.pack(response);
 			Message message = new Message(data);
-			session.write(message);
+
+			try {
+				session.write(message);
+			} catch (IOException e) {
+				// Nothing
+			}
 		}
 
 		// 回调-完成
@@ -503,7 +529,12 @@ public final class FileExpress implements MessageHandler, ExpressTaskListener {
 		byte[] data = Packet.pack(response);
 		if (data != null) {
 			Message message = new Message(data);
-			session.write(message);
+			
+			try {
+				session.write(message);
+			} catch (IOException e) {
+				// Nothing
+			}
 		}
 	}
 
@@ -540,7 +571,12 @@ public final class FileExpress implements MessageHandler, ExpressTaskListener {
 		byte[] data = Packet.pack(response);
 		if (null != data) {
 			Message message = new Message(data);
-			session.write(message);
+
+			try {
+				session.write(message);
+			} catch (IOException e) {
+				// Nothing
+			}
 		}
 	}
 
@@ -603,7 +639,12 @@ public final class FileExpress implements MessageHandler, ExpressTaskListener {
 		// 发送响应包
 		byte[] data = Packet.pack(response);
 		Message message = new Message(data);
-		session.write(message);
+
+		try {
+			session.write(message);
+		} catch (IOException e) {
+			// Nothing
+		}
 
 		// 检查并维护伺服上下文
 		maintainSevoContext();
@@ -614,7 +655,12 @@ public final class FileExpress implements MessageHandler, ExpressTaskListener {
 		byte[] data = Packet.pack(packet);
 		if (data != null) {
 			Message message = new Message(data);
-			session.write(message);
+
+			try {
+				session.write(message);
+			} catch (IOException e) {
+				// Nothing
+			}
 		}
 		else {
 			this.acceptor.close(session);

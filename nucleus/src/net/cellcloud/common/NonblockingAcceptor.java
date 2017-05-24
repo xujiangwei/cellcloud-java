@@ -329,7 +329,7 @@ public class NonblockingAcceptor extends MessageService implements MessageAccept
 	 * {@inheritDoc}
 	 */
 	@Override
-	public void write(Session session, Message message) {
+	public void write(Session session, Message message) throws IOException {
 		if (message.length() > this.writeLimit) {
 			this.fireErrorOccurred(session, MessageErrorCode.WRITE_OUTOFBOUNDS);
 			return;
@@ -338,6 +338,10 @@ public class NonblockingAcceptor extends MessageService implements MessageAccept
 		NonblockingAcceptorSession nas = this.idSessionMap.get(session.getId());
 		if (null != nas) {
 			nas.putMessage(message);
+		}
+		else {
+			this.fireErrorOccurred(session, MessageErrorCode.WRITE_FAILED);
+			throw new IOException("Can NOT find session: " + session.getId());
 		}
 	}
 

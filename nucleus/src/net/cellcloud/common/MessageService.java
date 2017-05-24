@@ -26,6 +26,8 @@ THE SOFTWARE.
 
 package net.cellcloud.common;
 
+import java.io.IOException;
+
 /**
  * 消息服务。
  * 
@@ -156,6 +158,6 @@ public abstract class MessageService {
 	 * @param session 指定写入消息的会话。
 	 * @param message 指定写入的消息。
 	 */
-	public abstract void write(Session session, Message message);
+	public abstract void write(Session session, Message message) throws IOException;
 
 }

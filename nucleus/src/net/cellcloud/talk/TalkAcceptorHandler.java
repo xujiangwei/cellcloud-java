@@ -151,6 +151,7 @@ public final class TalkAcceptorHandler implements MessageHandler {
 	@Override
 	public void errorOccurred(int errorCode, Session session) {
 		Logger.d(this.getClass(), "Network error: " + errorCode + ", session: " + session.getAddress().getHostString());
+		this.kernel.closeSession(session);
 	}
 
 	/**

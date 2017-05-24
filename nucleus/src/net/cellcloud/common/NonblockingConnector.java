@@ -383,7 +383,7 @@ public class NonblockingConnector extends MessageService implements MessageConne
 	 * 
 	 * @param message 指定消息。
 	 */
-	public void write(Message message) {
+	public void write(Message message) throws IOException {
 		this.write(null, message);
 	}
 
@@ -391,7 +391,7 @@ public class NonblockingConnector extends MessageService implements MessageConne
 	 * {@inheritDoc}
 	 */
 	@Override
-	public void write(Session session, Message message) {
+	public void write(Session session, Message message) throws IOException {
 		if (message.length() > this.writeLimit) {
 			this.fireErrorOccurred(MessageErrorCode.WRITE_OUTOFBOUNDS);
 			return;

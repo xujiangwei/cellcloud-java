@@ -26,6 +26,8 @@ THE SOFTWARE.
 
 package net.cellcloud.extras.express;
 
+import java.io.IOException;
+
 import net.cellcloud.common.LogLevel;
 import net.cellcloud.common.Logger;
 import net.cellcloud.common.Message;
@@ -722,7 +724,12 @@ public final class FileExpressTask implements MessageHandler, Runnable {
 
 		byte[] data = Packet.pack(packet);
 		Message message = new Message(data);
-		session.write(message);
+		
+		try {
+			session.write(message);
+		} catch (IOException e) {
+			// Nothing
+		}
 	}
 
 	private void queryFile(Session session) {
@@ -733,7 +740,12 @@ public final class FileExpressTask implements MessageHandler, Runnable {
 
 		byte[] data = Packet.pack(packet);
 		Message message = new Message(data);
-		session.write(message);
+
+		try {
+			session.write(message);
+		} catch (IOException e) {
+			// Nothing
+		}
 	}
 
 	private void beginDownload(Session session) {
@@ -753,7 +765,11 @@ public final class FileExpressTask implements MessageHandler, Runnable {
 		byte[] data = Packet.pack(packet);
 		if (null != data) {
 			Message message = new Message(data);
-			session.write(message);
+			try {
+				session.write(message);
+			} catch (IOException e) {
+				// Nothing
+			}
 		}
 	}
 
@@ -770,7 +786,11 @@ public final class FileExpressTask implements MessageHandler, Runnable {
 		byte[] data = Packet.pack(packet);
 		if (null != data) {
 			Message message = new Message(data);
-			session.write(message);
+			try {
+				session.write(message);
+			} catch (IOException e) {
+				// Nothing
+			}
 		}
 	}
 
@@ -793,7 +813,11 @@ public final class FileExpressTask implements MessageHandler, Runnable {
 		byte[] data = Packet.pack(packet);
 		if (null != data) {
 			Message message = new Message(data);
-			session.write(message);
+			try {
+				session.write(message);
+			} catch (IOException e) {
+				// Nothing
+			}
 		}
 
 		// 回调监听器
@@ -827,7 +851,11 @@ public final class FileExpressTask implements MessageHandler, Runnable {
 		byte[] data = Packet.pack(packet);
 		if (null != data) {
 			Message message = new Message(data);
-			session.write(message);
+			try {
+				session.write(message);
+			} catch (IOException e) {
+				// Nothing
+			};
 		}
 	}
 
@@ -842,7 +870,11 @@ public final class FileExpressTask implements MessageHandler, Runnable {
 		byte[] data = Packet.pack(packet);
 		if (null != data) {
 			Message message = new Message(data);
-			session.write(message);
+			try {
+				session.write(message);
+			} catch (IOException e) {
+				// Nothing
+			}
 		}
 
 		// 设置总字节数
@@ -864,7 +896,11 @@ public final class FileExpressTask implements MessageHandler, Runnable {
 		byte[] data = Packet.pack(packet);
 		if (null != data) {
 			Message message = new Message(data);
-			session.write(message);
+			try {
+				session.write(message);
+			} catch (IOException e) {
+				// Nothing
+			}
 		}
 
 		if (null != this.listener) {
@@ -889,7 +925,11 @@ public final class FileExpressTask implements MessageHandler, Runnable {
 			byte[] data = Packet.pack(packet);
 			if (null != data) {
 				Message message = new Message(data);
-				session.write(message);
+				try {
+					session.write(message);
+				} catch (IOException e) {
+					// Nothing
+				}
 
 				// 更新进度
 				this.progress += bytes.length;

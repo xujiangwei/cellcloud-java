@@ -26,8 +26,10 @@ THE SOFTWARE.
 
 package net.cellcloud.talk.command;
 
+import java.io.IOException;
 import java.nio.charset.Charset;
 
+import net.cellcloud.common.LogLevel;
 import net.cellcloud.common.Logger;
 import net.cellcloud.common.Message;
 import net.cellcloud.common.Packet;
@@ -101,7 +103,12 @@ public final class ServerCheckCommand extends ServerCommand {
 			byte[] data = Packet.pack(packet);
 			if (null != data) {
 				Message message = new Message(data);
-				this.session.write(message);
+
+				try {
+					this.session.write(message);
+				} catch (IOException e) {
+					Logger.log(this.getClass(), e, LogLevel.ERROR);
+				}
 			}
 		}
 		else {
