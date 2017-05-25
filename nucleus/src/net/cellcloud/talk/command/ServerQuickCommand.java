@@ -72,6 +72,10 @@ public final class ServerQuickCommand extends ServerCommand {
 		this.session.major = this.packet.getMajorVersion();
 		this.session.minor = this.packet.getMinorVersion();
 
+		if (this.session.major != 2 && Logger.isDebugLevel()) {
+			Logger.d(this.getClass(), "Packet version is NOT V2: " + session.getAddress().getHostString());
+		}
+
 		Certificate cert = this.service.getCertificate(this.session);
 		if (null == cert) {
 			return;

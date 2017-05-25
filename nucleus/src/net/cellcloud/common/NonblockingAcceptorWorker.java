@@ -562,12 +562,12 @@ public final class NonblockingAcceptorWorker extends Thread {
 		try {
 			// 根据数据标志获取数据
 			if (this.acceptor.hasDataMark()) {
-				ArrayList<byte[]> out = this.borrowList();
+				ArrayList<byte[]> output = this.borrowList();
 				// 进行递归提取
-				this.extract(out, session, data);
+				this.extract(output, session, data);
 
-				if (!out.isEmpty()) {
-					for (byte[] bytes : out) {
+				if (!output.isEmpty()) {
+					for (byte[] bytes : output) {
 						Message message = new Message(bytes);
 
 						// 是否是加密会话，如果是则进行解密
@@ -579,9 +579,9 @@ public final class NonblockingAcceptorWorker extends Thread {
 						this.acceptor.fireMessageReceived(session, message);
 					}
 
-					out.clear();
+					output.clear();
 				}
-				this.returnList(out);
+				this.returnList(output);
 			}
 			else {
 				Message message = new Message(data);

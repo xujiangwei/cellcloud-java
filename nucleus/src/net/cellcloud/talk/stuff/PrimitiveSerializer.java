@@ -157,7 +157,8 @@ public final class PrimitiveSerializer {
 		原语序列化格式：
 		[version]{sutff}...{stuff}[dialect@tracker]
 		示例：
-		[01000]{sub=cloud:string}{pre=add:string}[Action@Ambrose]
+		[01000]{sub=cloud:string}{pre=2013:int}[Action@Ambrose]
+		[03]{sub=cloud:s}{pre=2013:i}[Action@Ambrose]
 		*/
 
 		try {
@@ -336,7 +337,8 @@ public final class PrimitiveSerializer {
 		原语序列化格式：
 		[version]{sutff}...{stuff}[dialect@tracker]
 		示例：
-		[01000]{sub=cloud:string}{pre=add:string}[Action@Ambrose]
+		[01000]{sub=cloud:string}{pre=2013:int}[Action@Ambrose]
+		[03]{sub=cloud:s}{pre=2013:i}[Action@Ambrose]
 		*/
 
 		try {
@@ -643,14 +645,14 @@ public final class PrimitiveSerializer {
 			else if (literal[0] == LITERALBASE_JSON_M_BYTES[0]) {
 				return LiteralBase.JSON;
 			}
+			else if (literal.length == 2 && literal[0] == LITERALBASE_BIN_M_BYTES[0] && literal[1] == LITERALBASE_BIN_M_BYTES[1]) {
+				return LiteralBase.BIN;
+			}
 			else if (literal[0] == LITERALBASE_INT_M_BYTES[0]) {
 				return LiteralBase.INT;
 			}
 			else if (literal[0] == LITERALBASE_LONG_M_BYTES[0]) {
 				return LiteralBase.LONG;
-			}
-			else if (literal.length == 2 && literal[0] == LITERALBASE_BIN_M_BYTES[0] && literal[1] == LITERALBASE_BIN_M_BYTES[1]) {
-				return LiteralBase.BIN;
 			}
 			else if (literal[0] == LITERALBASE_BOOL_M_BYTES[0]) {
 				return LiteralBase.BOOL;

@@ -723,42 +723,48 @@ public class NonblockingConnector extends MessageService implements MessageConne
 	private void process(byte[] data) {
 		// 根据数据标志获取数据
 		if (this.hasDataMark()) {
-			LinkedList<byte[]> output = new LinkedList<byte[]>();
+			final LinkedList<byte[]> output = new LinkedList<byte[]>();
+
 			// 数据递归提取
 			this.extract(output, data);
 
 			if (!output.isEmpty()) {
-				for (byte[] bytes : output) {
-					final Message message = new Message(bytes);
+				this.executor.execute(new Runnable() {
+					@Override
+					public void run() {
+						for (byte[] bytes : output) {
+							Message message = new Message(bytes);
 
-					byte[] skey = this.session.getSecretKey();
-					if (null != skey) {
-						this.decryptMessage(message, skey);
-					}
+							byte[] skey = session.getSecretKey();
+							if (null != skey) {
+								decryptMessage(message, skey);
+							}
 
-					this.executor.execute(new Runnable() {
-						@Override
-						public void run() {
 							if (null != handler) {
 								handler.messageReceived(session, message);
 							}
 						}
-					});
-				}
+						output.clear();
+					}
+				});
 			}
-			output = null;
 		}
 		else {
-			Message message = new Message(data);
+			final Message message = new Message(data);
 
 			byte[] skey = this.session.getSecretKey();
 			if (null != skey) {
 				this.decryptMessage(message, skey);
 			}
 
-			if (null != this.handler) {
-				this.handler.messageReceived(this.session, message);
-			}
+			this.executor.execute(new Runnable() {
+				@Override
+				public void run() {
+					if (null != handler) {
+						handler.messageReceived(session, message);
+					}
+				}
+			});
 		}
 	}
 

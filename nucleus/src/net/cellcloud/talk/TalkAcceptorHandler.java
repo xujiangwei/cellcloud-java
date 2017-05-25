@@ -31,6 +31,7 @@ import java.util.LinkedList;
 import net.cellcloud.common.LogLevel;
 import net.cellcloud.common.Logger;
 import net.cellcloud.common.Message;
+import net.cellcloud.common.MessageErrorCode;
 import net.cellcloud.common.MessageHandler;
 import net.cellcloud.common.Packet;
 import net.cellcloud.common.Session;
@@ -151,7 +152,10 @@ public final class TalkAcceptorHandler implements MessageHandler {
 	@Override
 	public void errorOccurred(int errorCode, Session session) {
 		Logger.d(this.getClass(), "Network error: " + errorCode + ", session: " + session.getAddress().getHostString());
-		this.kernel.closeSession(session);
+
+		if (errorCode != MessageErrorCode.WRITE_OUTOFBOUNDS) {
+			this.kernel.closeSession(session);
+		}
 	}
 
 	/**
