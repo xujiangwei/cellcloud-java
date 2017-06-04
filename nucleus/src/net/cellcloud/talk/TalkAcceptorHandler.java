@@ -128,6 +128,8 @@ public final class TalkAcceptorHandler implements MessageHandler {
 			Logger.log(this.getClass(), e, LogLevel.WARNING);
 		} catch (ArrayIndexOutOfBoundsException e) {
 			Logger.log(this.getClass(), e, LogLevel.WARNING);
+		} catch (Exception e) {
+			Logger.log(this.getClass(), e, LogLevel.WARNING);
 		}
 	}
 
@@ -211,6 +213,9 @@ public final class TalkAcceptorHandler implements MessageHandler {
 			} catch (Exception e) {
 				Logger.log(TalkAcceptorHandler.class, e, LogLevel.ERROR);
 			}
+		}
+		else if (TalkDefinition.isProxyInfo(tag)) {
+			
 		}
 		else if (TalkDefinition.isRequest(tag)) {
 			try {

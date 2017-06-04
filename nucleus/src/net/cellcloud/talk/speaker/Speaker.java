@@ -308,13 +308,17 @@ public class Speaker implements Speakable {
 	 * 
 	 * @param data 指定需透传的数据。
 	 */
-	public void pass(byte[] data) {
+	public boolean pass(byte[] data) {
 		Message message = new Message(data);
+
 		try {
 			this.connector.write(message);
+			return true;
 		} catch (IOException e) {
 			Logger.log(this.getClass(), e, LogLevel.ERROR);
 		}
+
+		return false;
 	}
 
 	/**

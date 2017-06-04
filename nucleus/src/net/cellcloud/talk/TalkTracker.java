@@ -30,6 +30,7 @@ import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 
+import net.cellcloud.common.Session;
 import net.cellcloud.core.Cellet;
 import net.cellcloud.talk.stuff.StuffVersion;
 
@@ -50,12 +51,15 @@ public final class TalkTracker {
 	/** 当前 Session 使用的语素版本。 */
 	protected StuffVersion stuffVersion = null;
 
+	protected Session session = null;
+
 	/**
 	 * 构造函数。
 	 */
-	protected TalkTracker() {
+	protected TalkTracker(Session session) {
 		this.cellets = new LinkedList<Cellet>();
 		this.capacity = new TalkCapacity();
+		this.session = session;
 	}
 
 	/**

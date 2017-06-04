@@ -64,11 +64,10 @@ public final class TalkCapacity {
 	/**
 	 * 构造函数。
 	 * 
-	 * @param retry 指定自动重连次数。
-	 * @param retryDelay 指定自动重连延迟时间。
+	 * @param secure 指定是否使用加密传输。
 	 */
-	public TalkCapacity(int retry, long retryDelay) {
-		this(false, retry, retryDelay);
+	public TalkCapacity(boolean secure) {
+		this(secure, 0, 0, false);
 	}
 
 	/**

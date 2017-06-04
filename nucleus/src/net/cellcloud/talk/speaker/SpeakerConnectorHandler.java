@@ -107,6 +107,8 @@ public final class SpeakerConnectorHandler implements MessageHandler {
 			Logger.log(this.getClass(), e, LogLevel.WARNING);
 		} catch (ArrayIndexOutOfBoundsException e) {
 			Logger.log(this.getClass(), e, LogLevel.WARNING);
+		} catch (Exception e) {
+			Logger.log(this.getClass(), e, LogLevel.WARNING);
 		}
 	}
 
@@ -179,6 +181,26 @@ public final class SpeakerConnectorHandler implements MessageHandler {
 			&& TalkDefinition.TPT_PROXY[3] == tag[3]) {
 			this.speaker.doProxy(packet, session);
 		}
+		else if (TalkDefinition.TPT_INTERROGATE[2] == tag[2]
+			&& TalkDefinition.TPT_INTERROGATE[3] == tag[3]) {
+
+			if (packet.getMajorVersion() >= 2
+				|| (packet.getMajorVersion() == 1 && packet.getMinorVersion() >= 1)) {
+				// 使用 QUICK 进行握手
+				this.speaker.respondQuick(packet, session);
+			}
+			else {
+				// 进行校验会话
+				this.speaker.respondCheck(packet, session);
+			}
+
+			// 重置重试参数
+			if (null != this.speaker.capacity) {
+				this.speaker.retryTimestamp = 0;
+				this.speaker.retryCount = 0;
+				this.speaker.retryEnd = false;
+			}
+		}
 		else if (TalkDefinition.TPT_REQUEST[2] == tag[2]
 			&& TalkDefinition.TPT_REQUEST[3] == tag[3]) {
 			// 完成 Cellet 请求
@@ -201,26 +223,6 @@ public final class SpeakerConnectorHandler implements MessageHandler {
 
 			// 进行协商
 			this.speaker.respondConsult();
-		}
-		else if (TalkDefinition.TPT_INTERROGATE[2] == tag[2]
-			&& TalkDefinition.TPT_INTERROGATE[3] == tag[3]) {
-
-			if (packet.getMajorVersion() >= 2
-				|| (packet.getMajorVersion() == 1 && packet.getMinorVersion() >= 1)) {
-				// 使用 QUICK 进行握手
-				this.speaker.respondQuick(packet, session);
-			}
-			else {
-				// 进行校验会话
-				this.speaker.respondCheck(packet, session);
-			}
-
-			// 重置重试参数
-			if (null != this.speaker.capacity) {
-				this.speaker.retryTimestamp = 0;
-				this.speaker.retryCount = 0;
-				this.speaker.retryEnd = false;
-			}
 		}
 	}
 

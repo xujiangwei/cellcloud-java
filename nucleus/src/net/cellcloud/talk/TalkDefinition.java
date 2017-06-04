@@ -61,7 +61,10 @@ public final class TalkDefinition {
 	public static final byte[] TPT_PROXY = {'C', 'T', 'P', 'X'};
 
 	/** 代理对话应答。 */
-	public static final byte[] TPT_PROXY_DR = {'C', 'T', 'P', 'R'};
+	public static final byte[] TPT_PROXY_RESP = {'C', 'T', 'P', 'R'};
+
+	/** 代理对话信息。 */
+	public static final byte[] TPT_PROXY_INFO = {'C', 'T', 'P', 'I'};
 
 
 	/** 成功状态码。 */
@@ -159,7 +162,17 @@ public final class TalkDefinition {
 	 * @return 如果是 PROXY DIALOGUE RESPONSE 包返回 <code>true</code> 。
 	 */
 	public static boolean isProxyDialogueResponse(byte[] ptg) {
-		return (ptg[2] == TPT_PROXY_DR[2] && ptg[3] == TPT_PROXY_DR[3]);
+		return (ptg[2] == TPT_PROXY_RESP[2] && ptg[3] == TPT_PROXY_RESP[3]);
+	}
+
+	/**
+	 * 判断是否是 PROXY INFO 包。
+	 * 
+	 * @param ptg 指定需验证的包标签。
+	 * @return 如果是 PROXY INFO 包返回 <code>true</code> 。
+	 */
+	public static boolean isProxyInfo(byte[] ptg) {
+		return (ptg[2] == TPT_PROXY_INFO[2] && ptg[3] == TPT_PROXY_INFO[3]);
 	}
 
 }

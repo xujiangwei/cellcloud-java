@@ -418,7 +418,7 @@ public final class Packet {
 			// 解析 SMN
 			byte[] smnBytes = new byte[PFB_SEGMENT_NUM];
 			System.arraycopy(data, dataCursor, smnBytes, 0, PFB_SEGMENT_NUM);
-			int smn = ByteUtils.toShort(smnBytes);
+			short smn = ByteUtils.toShort(smnBytes);
 			// 更新游标
 			dataCursor += PFB_SEGMENT_NUM;
 
@@ -428,7 +428,7 @@ public final class Packet {
 			if (smn > 0) {
 				// 解析动态数据段长度
 				int[] segmentLengths = new int[smn];
-				for (int i = 0; i < smn; ++i) {
+				for (short i = 0; i < smn; ++i) {
 					byte[] lenBytes = new byte[PFB_SEGMENT_LENGTH];
 					System.arraycopy(data, dataCursor, lenBytes, 0, PFB_SEGMENT_LENGTH);
 					segmentLengths[i] = ByteUtils.toInt(lenBytes);
@@ -437,7 +437,7 @@ public final class Packet {
 				}
 
 				// 解析动态数据段数据
-				for (int i = 0; i < smn; ++i) {
+				for (short i = 0; i < smn; ++i) {
 					int length = segmentLengths[i];
 					byte[] segment = new byte[length];
 					System.arraycopy(data, dataCursor, segment, 0, length);

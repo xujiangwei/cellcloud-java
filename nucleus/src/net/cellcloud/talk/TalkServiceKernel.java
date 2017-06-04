@@ -1316,8 +1316,7 @@ public final class TalkServiceKernel implements Service, SpeakerDelegate {
 		if (null != this.speakerMap) {
 			Speaker speaker = this.speakerMap.get(identifier);
 			if (null != speaker) {
-				speaker.pass(data);
-				return true;
+				return speaker.pass(data);
 			}
 		}
 
@@ -1538,11 +1537,36 @@ public final class TalkServiceKernel implements Service, SpeakerDelegate {
 	 * 
 	 * @param remoteTag 指定待查找终端的内核标签。
 	 * @return 如果未找到指定 Endpoint 返回 <code>null</code> 值。
+	 * @deprecated
 	 */
 	public Endpoint findEndpoint(String remoteTag) {
 		TalkSessionContext ctx = this.tagContexts.get(remoteTag);
 		if (null != ctx) {
-			return ctx.getEndpoint();
+			return ctx.getEndpointList().get(0);
+		}
+
+		return null;
+	}
+
+	/**
+	 * 查找指定终端对应的 Endpoint 实例。
+	 * 
+	 * @param remoteTag 指定待查找终端的内核标签。
+	 * @param identifier 远程终端调用的 Cellet 的标识。
+	 * @return 如果未找到指定 Endpoint 返回 <code>null</code> 值。
+	 */
+	public Endpoint findEndpoint(String remoteTag, String identifier) {
+		TalkSessionContext ctx = this.tagContexts.get(remoteTag);
+		if (null != ctx) {
+			for (TalkTracker tracker : ctx.getTrackers()) {
+				List<Cellet> cellets = tracker.getCelletList();
+				for (Cellet cellet : cellets) {
+					if (cellet.getFeature().getIdentifier().equals(identifier)) {
+						Session session = tracker.session;
+						return ctx.getEndpoint(session);
+					}
+				}
+			}
 		}
 
 		return null;
@@ -1628,18 +1652,6 @@ public final class TalkServiceKernel implements Service, SpeakerDelegate {
 		if (null != tag) {
 			TalkSessionContext ctx = this.tagContexts.get(tag);
 			if (null != ctx) {
-				if (!this.executor.isShutdown()) {
-					// 关闭 Socket
-					this.executor.execute(new Runnable() {
-						@Override
-						public void run() {
-							if (acceptor.hasSession(session)) {
-								acceptor.close(session);
-							}
-						}
-					});
-				}
-
 				// 先取出 tracker
 				TalkTracker tracker = ctx.getTracker(session);
 
@@ -1678,6 +1690,18 @@ public final class TalkServiceKernel implements Service, SpeakerDelegate {
 							cellet.quitted(tag);
 						}
 					}
+				}
+
+				if (!this.executor.isShutdown()) {
+					// 关闭 Socket
+					this.executor.execute(new Runnable() {
+						@Override
+						public void run() {
+							if (acceptor.hasSession(session)) {
+								acceptor.close(session);
+							}
+						}
+					});
 				}
 			}
 
@@ -1804,9 +1828,14 @@ public final class TalkServiceKernel implements Service, SpeakerDelegate {
 			TalkCapacity capacity = null;
 			synchronized (ctx) {
 				tracker = ctx.getTracker(session);
+				if (null == tracker) {
+					Logger.e(TalkServiceKernel.class, "Can NOT find tracker: " + session.getAddress().getHostString());
+					return null;
+				}
+
 				capacity = tracker.getCapacity();
 
-				if (null != tracker && !tracker.hasCellet(cellet)) {
+				if (!tracker.hasCellet(cellet)) {
 					tracker.addCellet(cellet);
 				}
 
@@ -1815,7 +1844,7 @@ public final class TalkServiceKernel implements Service, SpeakerDelegate {
 					session.addAttribute("mutex", new Object());
 
 					// 等待处理线程
-					Thread thread = new Thread("Mutex-" + tag) {
+					this.executor.execute(new Runnable() {
 						@Override
 						public void run() {
 							Object mutex = session.getAttribute("mutex");
@@ -1837,7 +1866,7 @@ public final class TalkServiceKernel implements Service, SpeakerDelegate {
 									if (capacity.secure && !session.isSecure()) {
 										boolean ret = session.activeSecretKey((byte[]) session.getAttribute("key"));
 										if (ret) {
-											Endpoint ep = ctx.getEndpoint();
+											Endpoint ep = ctx.getEndpoint(session);
 											Logger.i(Speaker.class, "Active secret key for client: " + ep.getHost() + ":" + ep.getPort());
 										}
 									}
@@ -1849,8 +1878,7 @@ public final class TalkServiceKernel implements Service, SpeakerDelegate {
 
 							session.removeAttribute("mutex");
 						}
-					};
-					thread.start();
+					});
 				}
 			}
 
@@ -1867,6 +1895,9 @@ public final class TalkServiceKernel implements Service, SpeakerDelegate {
 				// 回调 contacted
 				cellet.contacted(tag);
 			}
+		}
+		else {
+			Logger.w(this.getClass(), "Can NOT find cellet: " + identifier);
 		}
 
 		return tracker;
@@ -2181,13 +2212,12 @@ public final class TalkServiceKernel implements Service, SpeakerDelegate {
 	 * @param key 指定密钥。
 	 */
 	private void deliverChecking(Session session, String text, String key) {
-		// 如果是来自 HTTP 协议的 Session 则直接返回
 		if (session instanceof HttpSession) {
+			// 如果是来自 HTTP 协议的 Session 则直接返回
 			return;
 		}
-
-		// 是否是 WebSocket 的 Session
-		if (session instanceof WebSocketSession) {
+		else if (session instanceof WebSocketSession) {
+			// 是否是 WebSocket 的 Session
 			WebSocketSession ws = (WebSocketSession) session;
 
 			byte[] ciphertext = Cryptology.getInstance().simpleEncrypt(text.getBytes(), key.getBytes());
@@ -2220,8 +2250,8 @@ public final class TalkServiceKernel implements Service, SpeakerDelegate {
 
 		byte[] ciphertext = Cryptology.getInstance().simpleEncrypt(text.getBytes(), key.getBytes());
 
-		// 使用 1.1 版包结构，让客户端使用 QUICK 快速握手
-		Packet packet = new Packet(TalkDefinition.TPT_INTERROGATE, 1, 1, 1);
+		// 使用 2.0/1.1 版包结构，让客户端使用 QUICK 快速握手
+		Packet packet = new Packet(TalkDefinition.TPT_INTERROGATE, 1, 2, 0);
 		packet.appendSegment(ciphertext);
 		packet.appendSegment(key.getBytes());
 

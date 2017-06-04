@@ -120,7 +120,7 @@ public final class ServerQuickCommand extends ServerCommand {
 			TalkCapacity ret = this.service.processConsult(this.session, tag, capacity);
 
 			// 请求 Cellet
-			boolean request = false;
+			boolean request = true;
 			byte[][] identifiers = new byte[this.packet.numSegments() - 3][];
 			for (int i = 3, size = this.packet.numSegments(); i < size; ++i) {
 				byte[] identifier = this.packet.getSegment(i);
@@ -130,7 +130,6 @@ public final class ServerQuickCommand extends ServerCommand {
 						tag, Utils.bytes2String(identifier));
 
 				if (null != tracker) {
-					request = true;
 					// 设置 Cellet 的 identifier
 					identifiers[i - 3] = identifier;
 				}

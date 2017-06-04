@@ -59,7 +59,7 @@ public final class ServerDialogueCommand extends ServerCommand {
 
 	@Override
 	public void execute() {
-		// 包格式：序列化的原语|源标签
+		// 包格式：序列化的原语|源标签|Cellet
 
 		if (this.packet.numSegments() < 2) {
 			Logger.e(ServerDialogueCommand.class, "Dialogue packet format error");

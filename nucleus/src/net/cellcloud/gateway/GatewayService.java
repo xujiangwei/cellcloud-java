@@ -335,7 +335,7 @@ public class GatewayService implements Service {
 			Logger.log(this.getClass(), e, LogLevel.ERROR);
 		}
 
-		Packet packet = new Packet(TalkDefinition.TPT_PROXY_DR, 98, 2, 0);
+		Packet packet = new Packet(TalkDefinition.TPT_PROXY_RESP, 98, 2, 0);
 		packet.appendSegment(Utils.string2Bytes(data.toString()));
 		byte[] packetData = Packet.pack(packet);
 		this.talkKernel.pass(cellet.getFeature().getIdentifier(), packetData);

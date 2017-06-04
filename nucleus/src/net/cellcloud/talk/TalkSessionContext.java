@@ -49,6 +49,11 @@ public final class TalkSessionContext {
 	 * 存储当前上下文包含的所有 {@link Session} 列表。
 	 */
 	private LinkedList<Session> sessions;
+	
+	/**
+	 * 上下文关联的终端 {@link Endpoint} 描述。
+	 */
+	private LinkedList<Endpoint> endpoints;
 
 	/**
 	 * {@link Session} 对应的心跳时间戳。
@@ -71,11 +76,6 @@ public final class TalkSessionContext {
 	private String tag;
 
 	/**
-	 * 上下文关联的终端描述。
-	 */
-	private Endpoint endpoint;
-
-	/**
 	 * 对话事件发生的时间戳。
 	 */
 	protected long dialogueTickTime = 0;
@@ -92,18 +92,19 @@ public final class TalkSessionContext {
 		this.sessions = new LinkedList<Session>();
 		this.sessions.add(session);
 
+		this.endpoints = new LinkedList<Endpoint>();
+		this.endpoints.add(new Endpoint(tag, Role.CONSUMER,
+				session.getAddress().getHostString(), session.getAddress().getPort()));
+
 		this.sessionHeartbeats = new ConcurrentHashMap<Long, AtomicLong>();
 		this.sessionHeartbeats.put(session.getId(), new AtomicLong(Clock.currentTimeMillis()));
 
 		this.sessionTrackers = new ConcurrentHashMap<Long, TalkTracker>();
 		this.trackerList = new ArrayList<TalkTracker>();
 
-		TalkTracker tracker = new TalkTracker();
+		TalkTracker tracker = new TalkTracker(session);
 		this.sessionTrackers.put(session.getId(), tracker);
 		this.trackerList.add(tracker);
-
-		this.endpoint = new Endpoint(tag, Role.CONSUMER,
-				session.getAddress().getHostString(), session.getAddress().getPort());
 	}
 
 	/**
@@ -164,9 +165,13 @@ public final class TalkSessionContext {
 			}
 
 			this.sessions.add(session);
+
+			this.endpoints.add(new Endpoint(this.tag, Role.CONSUMER,
+					session.getAddress().getHostString(), session.getAddress().getPort()));
+
 			this.sessionHeartbeats.put(session.getId(), new AtomicLong(Clock.currentTimeMillis()));
 
-			TalkTracker tracker = new TalkTracker();
+			TalkTracker tracker = new TalkTracker(session);
 			this.trackerList.add(tracker);
 			this.sessionTrackers.put(session.getId(), tracker);
 		}
@@ -179,6 +184,10 @@ public final class TalkSessionContext {
 	 */
 	public void removeSession(Session session) {
 		synchronized (this.sessions) {
+			int index = this.sessions.indexOf(session);
+			if (index >= 0) {
+				this.endpoints.remove(index);
+			}
 			this.sessions.remove(session);
 			this.sessionHeartbeats.remove(session.getId());
 			TalkTracker tracker = this.sessionTrackers.remove(session.getId());
@@ -232,12 +241,29 @@ public final class TalkSessionContext {
 	}
 
 	/**
-	 * 获得对应的终端信息描述。
+	 * 获得指定会话的终端信息描述。
 	 * 
-	 * @return 返回终端信息。
+	 * @param session 指定待查找的会话。
+	 * @return 返回指定会话的终端信息描述。
 	 */
-	public Endpoint getEndpoint() {
-		return this.endpoint;
+	public Endpoint getEndpoint(Session session) {
+		synchronized (this.sessions) {
+			int index = this.sessions.indexOf(session);
+			if (index >= 0) {
+				return this.endpoints.get(index);
+			}
+		}
+
+		return null;
+	}
+
+	/**
+	 * 获得对应的终端信息描述列表。
+	 * 
+	 * @return 返回终端信息列表。
+	 */
+	public List<Endpoint> getEndpointList() {
+		return this.endpoints;
 	}
 
 }

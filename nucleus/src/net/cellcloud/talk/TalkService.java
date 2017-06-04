@@ -340,9 +340,21 @@ public class TalkService implements Service {
 	 * 
 	 * @param remoteTag 指定待查找终端的内核标签。
 	 * @return 如果未找到指定 Endpoint 返回 <code>null</code> 值。
+	 * @deprecated
 	 */
 	public Endpoint findEndpoint(String remoteTag) {
 		return this.kernel.findEndpoint(remoteTag);
+	}
+
+	/**
+	 * 查找指定终端对应的 Endpoint 实例。
+	 * 
+	 * @param remoteTag 指定待查找终端的内核标签。
+	 * @param identifier 远程终端调用的 Cellet 的标识。
+	 * @return 如果未找到指定 Endpoint 返回 <code>null</code> 值。
+	 */
+	public Endpoint findEndpoint(String remoteTag, String identifier) {
+		return this.kernel.findEndpoint(remoteTag, identifier);
 	}
 
 	/**
