@@ -50,8 +50,8 @@ public final class ServerRequestCommand extends ServerCommand {
 	/**
 	 * 构造函数。
 	 */
-	public ServerRequestCommand(TalkServiceKernel service, Session session, Packet packet) {
-		super(service, session, packet);
+	public ServerRequestCommand(TalkServiceKernel kernel, Session session, Packet packet) {
+		super(kernel, session, packet);
 	}
 
 	@Override
@@ -70,7 +70,7 @@ public final class ServerRequestCommand extends ServerCommand {
 		packet.appendSegment(talkTag);
 
 		// 请求 Cellet
-		TalkTracker tracker = this.service.processRequest(this.session,
+		TalkTracker tracker = this.kernel.processRequest(this.session,
 				Utils.bytes2String(talkTag), Utils.bytes2String(identifier));
 
 		if (null != tracker) {

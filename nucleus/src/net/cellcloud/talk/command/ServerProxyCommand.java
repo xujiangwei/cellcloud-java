@@ -85,7 +85,7 @@ public final class ServerProxyCommand extends ServerCommand {
 		}
 
 		// 处理代理
-		boolean ret = this.service.processProxy(proxyTag, targetTag, identifier, active);
+		boolean ret = this.kernel.processProxy(proxyTag, targetTag, identifier, active);
 
 		// 包格式：状态码|JSON数据
 		Packet packet = new Packet(TalkDefinition.TPT_PROXY, 20, this.session.major, this.session.minor);

@@ -109,7 +109,7 @@ public class ProxyTalkListener implements TalkListener, SpeakerProxyListener {
 		Logger.d(this.getClass(), "onProxy: " + speaker.getRemoteTag());
 
 		synchronized (this.slave.kernel) {
-			this.slave.kernel.notifyAll();
+			this.slave.kernel.notify();
 		}
 	}
 

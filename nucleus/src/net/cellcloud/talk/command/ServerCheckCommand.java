@@ -51,8 +51,8 @@ public final class ServerCheckCommand extends ServerCommand {
 	/**
 	 * 构造函数。
 	 */
-	public ServerCheckCommand(TalkServiceKernel service, Session session, Packet packet) {
-		super(service, session, packet);
+	public ServerCheckCommand(TalkServiceKernel kernel, Session session, Packet packet) {
+		super(kernel, session, packet);
 	}
 
 	@Override
@@ -63,7 +63,7 @@ public final class ServerCheckCommand extends ServerCommand {
 		this.session.major = this.packet.getMajorVersion();
 		this.session.minor = this.packet.getMinorVersion();
 
-		Certificate cert = this.service.getCertificate(this.session);
+		Certificate cert = this.kernel.getCertificate(this.session);
 		if (null == cert) {
 			return;
 		}
@@ -91,7 +91,7 @@ public final class ServerCheckCommand extends ServerCommand {
 
 		if (checkin) {
 			log.append(" checkin.");
-			this.service.acceptSession(this.session, Utils.bytes2String(tag));
+			this.kernel.acceptSession(this.session, Utils.bytes2String(tag));
 
 			// 包格式：成功码|内核标签
 
@@ -113,7 +113,7 @@ public final class ServerCheckCommand extends ServerCommand {
 		}
 		else {
 			log.append(" checkout.");
-			this.service.rejectSession(this.session);
+			this.kernel.rejectSession(this.session);
 		}
 
 		Logger.d(ServerCheckCommand.class, log.toString());

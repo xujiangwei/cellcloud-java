@@ -189,4 +189,7 @@ public abstract class Cellet extends AbstractCellet {
 		// Nothing
 	}
 
+	public void failed(String tag, int failure, Primitive primitive) {
+		// Nothing
+	}
 }

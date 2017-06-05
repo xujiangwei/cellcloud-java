@@ -41,6 +41,7 @@ import net.cellcloud.talk.command.ServerDialogueCommand;
 import net.cellcloud.talk.command.ServerHeartbeatCommand;
 import net.cellcloud.talk.command.ServerProxyCommand;
 import net.cellcloud.talk.command.ServerProxyDialogueResponseCommand;
+import net.cellcloud.talk.command.ServerProxyInfoCommand;
 import net.cellcloud.talk.command.ServerQuickCommand;
 import net.cellcloud.talk.command.ServerRequestCommand;
 
@@ -62,6 +63,8 @@ public final class TalkAcceptorHandler implements MessageHandler {
 	private LinkedList<ServerQuickCommand> quickCmdQueue;
 	/** 用于优化内存操作的代理命令队列。 */
 	private LinkedList<ServerProxyCommand> proxyCmdQueue;
+	/** 用于优化内存操作的代理信息命令队列。 */
+	private LinkedList<ServerProxyInfoCommand> proxyInfoCmdQueue;
 
 	/**
 	 * 构造函数。
@@ -74,6 +77,7 @@ public final class TalkAcceptorHandler implements MessageHandler {
 		this.heartbeatCmdQueue = new LinkedList<ServerHeartbeatCommand>();
 		this.quickCmdQueue = new LinkedList<ServerQuickCommand>();
 		this.proxyCmdQueue = new LinkedList<ServerProxyCommand>();
+		this.proxyInfoCmdQueue = new LinkedList<ServerProxyInfoCommand>();
 	}
 
 	/**
@@ -215,7 +219,13 @@ public final class TalkAcceptorHandler implements MessageHandler {
 			}
 		}
 		else if (TalkDefinition.isProxyInfo(tag)) {
-			
+			try {
+				ServerProxyInfoCommand cmd = borrowProxyInfoCommand(session, packet);
+				cmd.execute();
+				returnProxyInfoCommand(cmd);
+			} catch (Exception e) {
+				Logger.log(TalkAcceptorHandler.class, e, LogLevel.ERROR);
+			}
 		}
 		else if (TalkDefinition.isRequest(tag)) {
 			try {
@@ -257,7 +267,7 @@ public final class TalkAcceptorHandler implements MessageHandler {
 		synchronized (this.dialogueCmdQueue) {
 			ServerDialogueCommand cmd = null;
 
-			if (this.dialogueCmdQueue.size() <= 1) {
+			if (this.dialogueCmdQueue.isEmpty()) {
 				cmd = new ServerDialogueCommand(this.kernel);
 			}
 			else {
@@ -296,7 +306,7 @@ public final class TalkAcceptorHandler implements MessageHandler {
 		synchronized (this.heartbeatCmdQueue) {
 			ServerHeartbeatCommand cmd = null;
 
-			if (this.heartbeatCmdQueue.size() <= 1) {
+			if (this.heartbeatCmdQueue.isEmpty()) {
 				cmd = new ServerHeartbeatCommand(this.kernel);
 			}
 			else {
@@ -335,7 +345,7 @@ public final class TalkAcceptorHandler implements MessageHandler {
 		synchronized (this.quickCmdQueue) {
 			ServerQuickCommand cmd = null;
 
-			if (this.quickCmdQueue.size() <= 1) {
+			if (this.quickCmdQueue.isEmpty()) {
 				cmd = new ServerQuickCommand(this.kernel);
 			}
 			else {
@@ -374,7 +384,7 @@ public final class TalkAcceptorHandler implements MessageHandler {
 		synchronized (this.proxyCmdQueue) {
 			ServerProxyCommand cmd = null;
 
-			if (this.proxyCmdQueue.size() <= 1) {
+			if (this.proxyCmdQueue.isEmpty()) {
 				cmd = new ServerProxyCommand(this.kernel);
 			}
 			else {
@@ -399,6 +409,45 @@ public final class TalkAcceptorHandler implements MessageHandler {
 			cmd.packet = null;
 
 			this.proxyCmdQueue.offer(cmd);
+		}
+	}
+
+	/**
+	 * 借出代理信息命令。
+	 * 
+	 * @param session 指定关联会话上下文。
+	 * @param packet 指定关联的数据包。
+	 * @return 返回服务器代理信息命令。
+	 */
+	private ServerProxyInfoCommand borrowProxyInfoCommand(Session session, Packet packet) {
+		synchronized (this.proxyInfoCmdQueue) {
+			ServerProxyInfoCommand cmd = null;
+
+			if (this.proxyInfoCmdQueue.isEmpty()) {
+				cmd = new ServerProxyInfoCommand(this.kernel);
+			}
+			else {
+				cmd = this.proxyInfoCmdQueue.poll();
+			}
+
+			cmd.session = session;
+			cmd.packet = packet;
+
+			return cmd;
+		}
+	}
+
+	/**
+	 * 归还代理信息命令。
+	 * 
+	 * @param cmd 指定需归还的服务器代理信息命令。
+	 */
+	private void returnProxyInfoCommand(ServerProxyInfoCommand cmd) {
+		synchronized (this.proxyInfoCmdQueue) {
+			cmd.session = null;
+			cmd.packet = null;
+
+			this.proxyInfoCmdQueue.offer(cmd);
 		}
 	}
 

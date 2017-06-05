@@ -32,6 +32,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import net.cellcloud.common.Session;
 import net.cellcloud.gateway.GatewayService.Slave;
+import net.cellcloud.util.Clock;
 
 /**
  * 代理服务路由表。
@@ -47,6 +48,11 @@ public class RoutingTable {
 	private ConcurrentHashMap<Long, Record> sessionRecordMap;
 
 	/**
+	 * 过期失效的会话记录。
+	 */
+	private Vector<Record> expiredRecord;
+
+	/**
 	 * 终端地址对应的下位机映射。
 	 */
 	private ConcurrentHashMap<String, Slave> addressMap;
@@ -56,6 +62,7 @@ public class RoutingTable {
 	 */
 	public RoutingTable() {
 		this.sessionRecordMap = new ConcurrentHashMap<Long, Record>();
+		this.expiredRecord = new Vector<Record>();
 		this.addressMap = new ConcurrentHashMap<String, Slave>();
 	}
 
@@ -92,7 +99,12 @@ public class RoutingTable {
 	 */
 	public Record remove(Session session) {
 		this.addressMap.remove(session.getAddress().getHostString());
-		return this.sessionRecordMap.remove(session.getId());
+		Record record = this.sessionRecordMap.remove(session.getId());
+		if (null != record) {
+			record.expiredTimestamp = Clock.currentTimeMillis();
+			this.expiredRecord.add(record);
+		}
+		return record;
 	}
 
 	/**
@@ -108,6 +120,7 @@ public class RoutingTable {
 			Record record = iter.next();
 			if (record.slave == slave) {
 				iter.remove();
+				this.expiredRecord.remove(record);
 				++num;
 			}
 		}
@@ -161,6 +174,32 @@ public class RoutingTable {
 	}
 
 	/**
+	 * 通过终端的内核标签查找指定的下位机。
+	 * 
+	 * @param tag
+	 * @return
+	 */
+	public Slave querySlaveByTag(String tag) {
+		Iterator<Record> iter = this.sessionRecordMap.values().iterator();
+		while (iter.hasNext()) {
+			Record r = iter.next();
+			if (r.tag.equals(tag)) {
+				return r.slave;
+			}
+		}
+
+		iter = this.expiredRecord.iterator();
+		while (iter.hasNext()) {
+			Record r = iter.next();
+			if (r.tag.equals(tag)) {
+				return r.slave;
+			}
+		}
+
+		return null;
+	}
+
+	/**
 	 * 更新地址对应的下位机。
 	 * 
 	 * @param address 指定地址。
@@ -171,10 +210,29 @@ public class RoutingTable {
 	}
 
 	/**
+	 * 刷新过期记录。
+	 */
+	public void refreshExpiredRecord() {
+		if (this.expiredRecord.isEmpty()) {
+			return;
+		}
+
+		Iterator<Record> iter = this.expiredRecord.iterator();
+		while (iter.hasNext()) {
+			Record record = iter.next();
+			if (Clock.currentTimeMillis() - record.expiredTimestamp > 60000L) {
+				iter.remove();
+			}
+		}
+	}
+
+	/**
 	 * 清空当前路由表。
 	 */
 	public void clear() {
 		this.sessionRecordMap.clear();
+		this.addressMap.clear();
+		this.expiredRecord.clear();
 	}
 
 	/**
@@ -195,7 +253,10 @@ public class RoutingTable {
 		public Vector<String> identifiers = new Vector<String>();
 
 		/** 此记录创建的时间戳。 */
-		public long timestamp = System.currentTimeMillis();
+		public long timestamp = Clock.currentTimeMillis();
+
+		/** 过期时的时间戳。 */
+		public long expiredTimestamp = 0;
 
 	}
 

@@ -49,8 +49,8 @@ public final class ServerConsultCommand extends ServerCommand {
 	/**
 	 * 构造函数。
 	 */
-	public ServerConsultCommand(TalkServiceKernel service, Session session, Packet packet) {
-		super(service, session, packet);
+	public ServerConsultCommand(TalkServiceKernel kernel, Session session, Packet packet) {
+		super(kernel, session, packet);
 	}
 
 	@Override
@@ -68,7 +68,7 @@ public final class ServerConsultCommand extends ServerCommand {
 			capacity = new TalkCapacity();
 		}
 
-		TalkCapacity ret = this.service.processConsult(this.session, tag, capacity);
+		TalkCapacity ret = this.kernel.processConsult(this.session, tag, capacity);
 
 		// 应答		
 		// 包格式：源标签|能力描述序列化数据

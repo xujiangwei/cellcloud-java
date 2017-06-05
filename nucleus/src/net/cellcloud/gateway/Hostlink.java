@@ -32,6 +32,8 @@ import java.util.List;
 import java.util.Map.Entry;
 import java.util.concurrent.ConcurrentHashMap;
 
+import net.cellcloud.core.Endpoint;
+
 /**
  * 用于记录上位主机与终端之间的连接关系的上位链路。
  * 
@@ -47,10 +49,17 @@ public class Hostlink {
 	private ConcurrentHashMap<String, String> targetMapProxyTag;
 
 	/**
+	 * 存储标签对应的终端信息。
+	 * 键是被代理的终端标签，值是其对应终端信息。
+	 */
+	private ConcurrentHashMap<String, Endpoint> endpointMap;
+
+	/**
 	 * 构造函数。
 	 */
 	public Hostlink() {
 		this.targetMapProxyTag = new ConcurrentHashMap<String, String>();
+		this.endpointMap = new ConcurrentHashMap<String, Endpoint>();
 	}
 
 	/**
@@ -98,6 +107,33 @@ public class Hostlink {
 			}
 		}
 		return list;
+	}
+
+	/**
+	 * 
+	 * 
+	 * @param targetTag
+	 * @param endpoint
+	 */
+	public void addEnpoint(String targetTag, Endpoint endpoint) {
+		this.endpointMap.put(targetTag, endpoint);
+	}
+
+	/**
+	 * 
+	 * @param targetTag
+	 */
+	public void removeEndpoint(String targetTag) {
+		this.endpointMap.remove(targetTag);
+	}
+
+	/**
+	 * 
+	 * @param targetTag
+	 * @return
+	 */
+	public Endpoint getEndpoint(String targetTag) {
+		return this.endpointMap.get(targetTag);
 	}
 
 }

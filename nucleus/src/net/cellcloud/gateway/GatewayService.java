@@ -69,6 +69,11 @@ import org.json.JSONObject;
  */
 public class GatewayService implements Service {
 
+	/**
+	 * 代理端信息分类：终端信息。
+	 */
+	public static final String PROXY_INFO_ENDPOINT = "endpoint";
+
 	/** 线程池执行器。 */
 	private ExecutorService executor;
 
@@ -335,10 +340,16 @@ public class GatewayService implements Service {
 			Logger.log(this.getClass(), e, LogLevel.ERROR);
 		}
 
+		// 查找到 target tag 对应 Slave
+		Slave slave = this.routingTable.querySlaveByTag(targetTag);
+		if (null == slave) {
+			return;
+		}
+
 		Packet packet = new Packet(TalkDefinition.TPT_PROXY_RESP, 98, 2, 0);
 		packet.appendSegment(Utils.string2Bytes(data.toString()));
 		byte[] packetData = Packet.pack(packet);
-		this.talkKernel.pass(cellet.getFeature().getIdentifier(), packetData);
+		slave.kernel.pass(slave.celletIdentifiers.get(0), packetData);
 	}
 
 	/**
@@ -372,36 +383,44 @@ public class GatewayService implements Service {
 			return null;
 		}
 
-		// 计算当前 Session 路由
-		Slave slave = null;
-		if (this.hashRouting) {
-			// 计算远端主机地址字符串形式 Hash 值，然后进行取模，以模数作为索引分配 Slave
-			int mod = Math.abs(session.getAddress().getHostString().hashCode()) % this.onlineSlaves.size();
-			slave = this.onlineSlaves.get(mod);
-		}
-		else {
-			// 查找通信链路数量最小的下位机
-			int value = Integer.MAX_VALUE;
-			Iterator<Slave> iter = this.onlineSlaves.iterator();
-			while (iter.hasNext()) {
-				Slave candidate = iter.next();
-				if (candidate.numSessions() < value) {
-					value = candidate.numSessions();
-					slave = candidate;
-				}
-			}
-		}
+		// 尝试查询下位机
+		Slave slave = this.routingTable.querySlave(session);
 
 		if (null == slave) {
-			Logger.e(this.getClass(), "Can NOT find slave for " + session.getAddress().getHostString() + ":" + session.getAddress().getPort());
-			return null;
+			// 计算当前 Session 路由
+			if (this.hashRouting) {
+				// 计算远端主机地址字符串形式 Hash 值，然后进行取模，以模数作为索引分配 Slave
+				int mod = Math.abs(session.getAddress().getHostString().hashCode()) % this.onlineSlaves.size();
+				slave = this.onlineSlaves.get(mod);
+			}
+			else {
+				// 查找通信链路数量最小的下位机
+				int value = Integer.MAX_VALUE;
+				Iterator<Slave> iter = this.onlineSlaves.iterator();
+				while (iter.hasNext()) {
+					Slave candidate = iter.next();
+					if (candidate.numSessions() < value) {
+						value = candidate.numSessions();
+						slave = candidate;
+					}
+				}
+			}
+
+			if (null == slave) {
+				Logger.e(this.getClass(), "Can NOT find slave for " + session.getAddress().getHostString() + ":" + session.getAddress().getPort());
+				return null;
+			}
+
+			// 更新路由表
+			this.routingTable.update(session, tag, slave, identifier);
+
+			// 添加目标
+			slave.addSession(tag, session);
+
+			if (Logger.isDebugLevel()) {
+				Logger.d(this.getClass(), "New route for session '" + session.getAddress().getHostString() + "' to " + slave.host);
+			}
 		}
-
-		// 更新路由表
-		this.routingTable.update(session, tag, slave, identifier);
-
-		// 添加目标
-		slave.addSession(tag, session);
 
 		JSONObject proxy = new JSONObject();
 		try {
@@ -415,17 +434,49 @@ public class GatewayService implements Service {
 		}
 
 		// 发送代理请求
-		slave.kernel.proxy(slave.celletIdentifiers.get(0), proxy);
+		slave.kernel.proxy(identifier, proxy);
 
-		synchronized (slave.kernel) {
-			try {
-				slave.kernel.wait(1000L);
-			} catch (InterruptedException e) {
-				Logger.log(this.getClass(), e, LogLevel.WARNING);
-			}
-		}
+//		synchronized (slave.kernel) {
+//			try {
+//				slave.kernel.wait(1000L);
+//			} catch (InterruptedException e) {
+//				Logger.log(this.getClass(), e, LogLevel.WARNING);
+//			}
+//		}
 
 		return this.getCellet(identifier);
+	}
+
+	/**
+	 * 将指定会话的信息发送下位机。
+	 * 
+	 * @param session 指定的会话。
+	 * @return
+	 */
+	public boolean sendProxyInfo(Session session, String tag) {
+		Slave slave = this.routingTable.querySlave(session);
+		if (null == slave) {
+			return false;
+		}
+
+		// 给下位机发送会话地址
+		JSONObject info = new JSONObject();
+		try {
+			info.put("proxy", Nucleus.getInstance().getTagAsString());
+			info.put("info", GatewayService.PROXY_INFO_ENDPOINT);
+			info.put("tag", tag);
+			info.put("address", session.getAddress().getHostString());
+			info.put("port", session.getAddress().getPort());
+		} catch (JSONException e) {
+			// Nothing
+		}
+
+		Packet packet = new Packet(TalkDefinition.TPT_PROXY_INFO, 20, session.major, session.minor);
+		packet.appendSegment(Utils.string2Bytes(info.toString()));
+		byte[] data = Packet.pack(packet);
+
+		// 发送
+		return slave.kernel.pass(slave.celletIdentifiers.get(0), data);
 	}
 
 	/**

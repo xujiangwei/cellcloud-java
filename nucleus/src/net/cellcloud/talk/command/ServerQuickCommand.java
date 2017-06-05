@@ -35,6 +35,7 @@ import net.cellcloud.common.Message;
 import net.cellcloud.common.Packet;
 import net.cellcloud.common.Session;
 import net.cellcloud.core.Nucleus;
+import net.cellcloud.core.Role;
 import net.cellcloud.talk.TalkCapacity;
 import net.cellcloud.talk.TalkDefinition;
 import net.cellcloud.talk.TalkServiceKernel;
@@ -53,15 +54,15 @@ public final class ServerQuickCommand extends ServerCommand {
 	/**
 	 * 构造函数。
 	 */
-	public ServerQuickCommand(TalkServiceKernel service) {
-		super(service, null, null);
+	public ServerQuickCommand(TalkServiceKernel kernel) {
+		super(kernel, null, null);
 	}
 
 	/**
 	 * 构造函数。
 	 */
-	public ServerQuickCommand(TalkServiceKernel service, Session session, Packet packet) {
-		super(service, session, packet);
+	public ServerQuickCommand(TalkServiceKernel kernel, Session session, Packet packet) {
+		super(kernel, session, packet);
 	}
 
 	@Override
@@ -76,7 +77,7 @@ public final class ServerQuickCommand extends ServerCommand {
 			Logger.d(this.getClass(), "Packet version is NOT V2: " + session.getAddress().getHostString());
 		}
 
-		Certificate cert = this.service.getCertificate(this.session);
+		Certificate cert = this.kernel.getCertificate(this.session);
 		if (null == cert) {
 			return;
 		}
@@ -107,7 +108,7 @@ public final class ServerQuickCommand extends ServerCommand {
 			String tag = Utils.bytes2String(tagBytes);
 
 			// 接受 Session 连接
-			this.service.acceptSession(this.session, tag);
+			this.kernel.acceptSession(this.session, tag);
 
 			// 能力描述
 			TalkCapacity capacity = TalkCapacity.deserialize(this.packet.getSegment(2));
@@ -117,7 +118,7 @@ public final class ServerQuickCommand extends ServerCommand {
 			}
 
 			// 进行协商
-			TalkCapacity ret = this.service.processConsult(this.session, tag, capacity);
+			TalkCapacity ret = this.kernel.processConsult(this.session, tag, capacity);
 
 			// 请求 Cellet
 			boolean request = true;
@@ -126,7 +127,7 @@ public final class ServerQuickCommand extends ServerCommand {
 				byte[] identifier = this.packet.getSegment(i);
 
 				// 请求 Cellet
-				TalkTracker tracker = this.service.processRequest(this.session,
+				TalkTracker tracker = this.kernel.processRequest(this.session,
 						tag, Utils.bytes2String(identifier));
 
 				if (null != tracker) {
@@ -173,14 +174,20 @@ public final class ServerQuickCommand extends ServerCommand {
 					Logger.log(this.getClass(), e, LogLevel.ERROR);
 				}
 			}
+
+			// 检测是否是网关
+			if (Nucleus.getInstance().getConfig().role == Role.GATEWAY) {
+				if (!Nucleus.getInstance().getGatewayService().sendProxyInfo(this.session, tag)) {
+					Logger.e(this.getClass(), "Send proxy endpoint info error: " + this.session.getAddress().getHostString());
+				}
+			}
 		}
 		else {
 			log.append(" checkout.");
-			this.service.rejectSession(this.session);
+			this.kernel.rejectSession(this.session);
 		}
 
 		Logger.d(ServerQuickCommand.class, log.toString());
 		log = null;
 	}
-
 }

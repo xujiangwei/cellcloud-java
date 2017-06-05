@@ -151,6 +151,9 @@ public class ProxyForwarder implements MessageInterceptor, HttpInterceptable {
 					// 从下位机移除
 					slave.removeSession(record.tag);
 				}
+
+				// 维护过期记录
+				routingTable.refreshExpiredRecord();
 			}
 		});
 
@@ -260,6 +263,8 @@ public class ProxyForwarder implements MessageInterceptor, HttpInterceptable {
 			} catch (NumberFormatException e) {
 				Logger.log(this.getClass(), e, LogLevel.WARNING);
 			} catch (ArrayIndexOutOfBoundsException e) {
+				Logger.log(this.getClass(), e, LogLevel.WARNING);
+			} catch (Exception e) {
 				Logger.log(this.getClass(), e, LogLevel.WARNING);
 			}
 		}

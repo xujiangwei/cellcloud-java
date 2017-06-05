@@ -38,8 +38,8 @@ import net.cellcloud.talk.TalkServiceKernel;
  */
 public abstract class ServerCommand {
 
-	/** 命令调用的会话服务。 */
-	protected TalkServiceKernel service;
+	/** 命令调用的会话服务内核。 */
+	protected TalkServiceKernel kernel;
 	/** 此命令关联的 Session 。 */
 	public Session session;
 	/** 此命令需处理的包。 */
@@ -52,8 +52,8 @@ public abstract class ServerCommand {
 	 * @param session 指定命令关联的 Session 。
 	 * @param packet 指定命令处理的数据包。
 	 */
-	public ServerCommand(TalkServiceKernel service, Session session, Packet packet) {
-		this.service = service;
+	public ServerCommand(TalkServiceKernel kernel, Session session, Packet packet) {
+		this.kernel = kernel;
 		this.session = session;
 		this.packet = packet;
 	}

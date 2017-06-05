@@ -759,6 +759,15 @@ public final class TalkServiceKernel implements Service, SpeakerDelegate {
 	}
 
 	/**
+	 * 获得主机与上位网关的连接信息。
+	 * 
+	 * @return 返回主机与上位网关的连接信息。
+	 */
+	public Hostlink getHostlink() {
+		return this.hostlink;
+	}
+
+	/**
 	 * 启动会话服务的守护线程。
 	 */
 	public void startDaemon() {
@@ -1544,6 +1553,12 @@ public final class TalkServiceKernel implements Service, SpeakerDelegate {
 		if (null != ctx) {
 			return ctx.getEndpointList().get(0);
 		}
+		else {
+			// 从 Hostlink 中获取
+			if (null != this.hostlink) {
+				return this.hostlink.getEndpoint(remoteTag);
+			}
+		}
 
 		return null;
 	}
@@ -1566,6 +1581,12 @@ public final class TalkServiceKernel implements Service, SpeakerDelegate {
 						return ctx.getEndpoint(session);
 					}
 				}
+			}
+		}
+		else {
+			// 从 Hostlink 中获取
+			if (null != this.hostlink) {
+				return this.hostlink.getEndpoint(remoteTag);
 			}
 		}
 
@@ -1679,9 +1700,13 @@ public final class TalkServiceKernel implements Service, SpeakerDelegate {
 								// 查找所有下位标签
 								List<String> list = this.hostlink.listLinkedTag(tag);
 								for (String targetTag : list) {
+									// quitted
 									cellet.quitted(targetTag);
+
 									// 删除下位机
 									this.hostlink.removeLink(targetTag);
+									// 删除终端
+									this.hostlink.removeEndpoint(targetTag);
 								}
 							}
 						}
@@ -1884,12 +1909,12 @@ public final class TalkServiceKernel implements Service, SpeakerDelegate {
 
 			// 判断是否是代理
 			if (capacity.proxy) {
-				// 回调 proxyContacted
-				cellet.proxyContacted(tag);
-
 				if (null == this.hostlink) {
 					this.hostlink = new Hostlink();
 				}
+
+				// 回调 proxyContacted
+				cellet.proxyContacted(tag);
 			}
 			else {
 				// 回调 contacted
@@ -1929,6 +1954,7 @@ public final class TalkServiceKernel implements Service, SpeakerDelegate {
 		else {
 			// 删除记录
 			this.hostlink.removeLink(tag);
+			this.hostlink.removeEndpoint(tag);
 
 			// 回调对应 Cellet 的 quitted
 			cellet.quitted(tag);

@@ -46,15 +46,15 @@ public final class ServerDialogueCommand extends ServerCommand {
 	/**
 	 * 构造函数。
 	 */
-	public ServerDialogueCommand(TalkServiceKernel service) {
-		super(service, null, null);
+	public ServerDialogueCommand(TalkServiceKernel kernel) {
+		super(kernel, null, null);
 	}
 
 	/**
 	 * 构造函数。
 	 */
-	public ServerDialogueCommand(TalkServiceKernel service, Session session, Packet packet) {
-		super(service, session, packet);
+	public ServerDialogueCommand(TalkServiceKernel kernel, Session session, Packet packet) {
+		super(kernel, session, packet);
 	}
 
 	@Override
@@ -78,7 +78,7 @@ public final class ServerDialogueCommand extends ServerCommand {
 		Primitive primitive = new Primitive(speakerTag);
 		primitive.read(stream);
 
-		this.service.processDialogue(this.session, speakerTag, Utils.bytes2String(identifierData), primitive);
+		this.kernel.processDialogue(this.session, speakerTag, Utils.bytes2String(identifierData), primitive);
 	}
 
 }

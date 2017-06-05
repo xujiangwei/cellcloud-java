@@ -26,49 +26,70 @@ THE SOFTWARE.
 
 package net.cellcloud.talk.command;
 
-import java.io.IOException;
-
-import net.cellcloud.common.LogLevel;
 import net.cellcloud.common.Logger;
-import net.cellcloud.common.Message;
 import net.cellcloud.common.Packet;
 import net.cellcloud.common.Session;
-import net.cellcloud.talk.TalkDefinition;
+import net.cellcloud.core.Endpoint;
+import net.cellcloud.core.Role;
+import net.cellcloud.gateway.GatewayService;
+import net.cellcloud.gateway.Hostlink;
 import net.cellcloud.talk.TalkServiceKernel;
+import net.cellcloud.util.Utils;
 
-/**
- * Talk heartbeat command
- * 
- * @author Ambrose Xu
- * 
- */
-public final class ServerHeartbeatCommand extends ServerCommand {
+import org.json.JSONException;
+import org.json.JSONObject;
 
-	/**
-	 * 构造函数。
-	 */
-	public ServerHeartbeatCommand(TalkServiceKernel service) {
+public class ServerProxyInfoCommand extends ServerCommand {
+
+	public ServerProxyInfoCommand(TalkServiceKernel service) {
 		super(service, null, null);
 	}
 
-	/**
-	 * 构造函数。
-	 */
-	public ServerHeartbeatCommand(TalkServiceKernel service, Session session, Packet packet) {
+	public ServerProxyInfoCommand(TalkServiceKernel service, Session session, Packet packet) {
 		super(service, session, packet);
 	}
 
 	@Override
 	public void execute() {
-		// 更新时间戳成功，回送心跳包
-		if (this.kernel.updateSessionHeartbeat(this.session)) {
-			Packet packet = new Packet(TalkDefinition.TPT_HEARTBEAT, 9, this.session.major, this.session.minor);
-			byte[] data = Packet.pack(packet);
-			Message message = new Message(data);
-			try {
-				this.session.write(message);
-			} catch (IOException e) {
-				Logger.log(this.getClass(), e, LogLevel.ERROR);
+		// 包格式：JSON数据
+		
+		byte[] data = this.packet.getSegment(0);
+
+		String jsonString = Utils.bytes2String(data);
+
+		String proxyTag = null;
+		String info = null;
+
+		String targetTag = null;
+		String address = null;
+		int port = 0;
+
+		try {
+			JSONObject json = new JSONObject(jsonString);
+			proxyTag = json.getString("proxy");
+			info = json.getString("info");
+			if (info.equals(GatewayService.PROXY_INFO_ENDPOINT)) {
+				targetTag = json.getString("tag");
+				address = json.getString("address");
+				port = json.getInt("port");
+			}
+		} catch (JSONException e) {
+			e.printStackTrace();
+		}
+
+		if (null == proxyTag) {
+			Logger.e(this.getClass(), "Packet JSON format error");
+			return;
+		}
+
+		if (info.equals(GatewayService.PROXY_INFO_ENDPOINT)) {
+			Hostlink hostlink = this.kernel.getHostlink();
+			if (null != hostlink) {
+				String tag = targetTag.toString();
+				hostlink.addEnpoint(tag, new Endpoint(tag, Role.CONSUMER, address, port));
+			}
+			else {
+				Logger.w(this.getClass(), "Hostlink is null.");
 			}
 		}
 	}
