@@ -472,6 +472,29 @@ public final class Application {
 							Logger.i(this.getClass(), "[-] nucleus.talk.ssl.password = null");
 						}
 
+						// action
+						nl = elTalk.getElementsByTagName("action");
+						if (nl.getLength() > 0) {
+							Element elAction = (Element) nl.item(0);
+
+							// max-thread
+							nl = elAction.getElementsByTagName("max-thread");
+							if (nl.getLength() > 0) {
+								try {
+									config.talk.actionMaxThread = Integer.parseInt(nl.item(0).getTextContent().trim());
+									Logger.i(this.getClass(), "[*] nucleus.talk.action.max-thread = " + config.talk.actionMaxThread);
+								} catch (NumberFormatException e) {
+									Logger.log(this.getClass(), e, LogLevel.WARNING);
+								}
+							}
+							else {
+								Logger.i(this.getClass(), "[-] nucleus.talk.action.max-thread = " + config.talk.actionMaxThread);
+							}
+						}
+						else {
+							Logger.i(this.getClass(), "[-] nucleus.talk.action.max-thread = " + config.talk.actionMaxThread);
+						}
+
 						// chunk
 						nl = elTalk.getElementsByTagName("chunk");
 						if (nl.getLength() > 0) {

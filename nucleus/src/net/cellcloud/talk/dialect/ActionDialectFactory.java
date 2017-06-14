@@ -28,6 +28,7 @@ package net.cellcloud.talk.dialect;
 
 import java.util.LinkedList;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import net.cellcloud.common.LogLevel;
@@ -66,9 +67,9 @@ public final class ActionDialectFactory extends DialectFactory {
 	 * 
 	 * @param executor 指定线程池执行器。
 	 */
-	public ActionDialectFactory(ExecutorService executor) {
+	public ActionDialectFactory() {
 		this.metaData = new DialectMetaData(ActionDialect.DIALECT_NAME, "Action Dialect");
-		this.executor = executor;
+		this.executor = Executors.newCachedThreadPool();
 		this.maxThreadNum = 32;
 		this.threadCount = new AtomicInteger(0);
 		this.dialects = new LinkedList<ActionDialect>();
@@ -89,8 +90,21 @@ public final class ActionDialectFactory extends DialectFactory {
 	 * 
 	 * @return 返回工厂允许最大并发线程数量。
 	 */
-	public int getMaxThreadCounts() {
+	public int getMaxThreadNum() {
 		return this.maxThreadNum;
+	}
+
+	/**
+	 * 设置最大线程数量。
+	 * 
+	 * @param num 设置工厂允许的最大并发线程数量。
+	 */
+	public void setMaxThreadNum(int num) {
+		if (num < 1) {
+			return;
+		}
+
+		this.maxThreadNum = num;
 	}
 
 	/**

@@ -44,7 +44,7 @@ public class TalkService implements Service {
 			this.kernel = new TalkServiceKernel(nucleusContext);
 
 			// 添加默认方言工厂
-			DialectEnumerator.getInstance().addFactory(new ActionDialectFactory(this.kernel.executor));
+			DialectEnumerator.getInstance().addFactory(new ActionDialectFactory());
 			DialectEnumerator.getInstance().addFactory(new ChunkDialectFactory(this.kernel.executor));
 		}
 		else {

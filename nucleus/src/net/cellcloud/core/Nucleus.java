@@ -52,6 +52,8 @@ import net.cellcloud.exception.SingletonException;
 import net.cellcloud.gateway.GatewayService;
 import net.cellcloud.http.HttpService;
 import net.cellcloud.talk.TalkService;
+import net.cellcloud.talk.dialect.ActionDialect;
+import net.cellcloud.talk.dialect.ActionDialectFactory;
 import net.cellcloud.talk.dialect.ChunkDialect;
 import net.cellcloud.talk.dialect.ChunkDialectFactory;
 import net.cellcloud.talk.dialect.DialectEnumerator;
@@ -363,7 +365,11 @@ public final class Nucleus {
 				// 设置 HTTP 会话超时时间
 				this.talkService.setHttpSessionTimeout(this.config.talk.httpSessionTimeout);
 
-				// 配置方言工厂
+				// 配置 Action 方言工厂
+				ActionDialectFactory adf = (ActionDialectFactory) DialectEnumerator.getInstance().getFactory(ActionDialect.DIALECT_NAME);
+				adf.setMaxThreadNum(this.config.talk.actionMaxThread);
+
+				// 配置 Chunk 方言工厂
 				ChunkDialectFactory cdf = (ChunkDialectFactory) DialectEnumerator.getInstance().getFactory(ChunkDialect.DIALECT_NAME);
 				cdf.setMaxCacheMemorySize(this.config.talk.maxChunkMemorySize);
 				cdf.setMaxFileCacheSpace(this.config.talk.maxChunkFileSize);

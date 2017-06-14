@@ -38,7 +38,7 @@ public final class CellVersion {
 
 	public final static int MAJOR = 1;
 	public final static int MINOR = 6;
-	public final static int REVISION = 5;
+	public final static int REVISION = 6;
 
 	public static void main(String[] args) {
 		StringBuilder buf = new StringBuilder();

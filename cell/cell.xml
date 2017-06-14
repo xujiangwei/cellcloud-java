@@ -32,6 +32,10 @@
 				<keystore>/nucleus.jks</keystore>
 				<password>cellcloud</password>
 			</ssl>
+			<!-- 动作方言配置 -->
+			<action>
+			    <max-thread>16</max-thread>
+			</action>
 			<!-- 区块方言配置 -->
 			<chunk>
 			    <cache-path>chunk_cache/</cache-path>

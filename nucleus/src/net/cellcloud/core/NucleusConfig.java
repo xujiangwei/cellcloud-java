@@ -112,6 +112,9 @@ public final class NucleusConfig {
 		/** JKS 相关的 Password 。 */
 		public String keyManagerPassword = null;
 
+		/** Action 方言工厂最大线程数量。 */
+		public int actionMaxThread = 16;
+
 		/** Chunk 方言工厂的文件缓存路径。 */
 		public String chunkFilePath = "_chunks/";
 		/** Chunk 方言工厂的最大内存缓存大小。 */

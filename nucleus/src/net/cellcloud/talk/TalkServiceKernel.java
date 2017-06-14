@@ -350,7 +350,7 @@ public final class TalkServiceKernel implements Service, SpeakerDelegate {
 
 		ActionDialectFactory adf = (ActionDialectFactory) DialectEnumerator.getInstance().getFactory(ActionDialect.DIALECT_NAME);
 		ts.actionDialectThreadNum = adf.getThreadCounts();
-		ts.actionDialectMaxThreadNum = adf.getMaxThreadCounts();
+		ts.actionDialectMaxThreadNum = adf.getMaxThreadNum();
 		ts.actionDialectPendingNum = adf.getPendingNum();
 
 		ChunkDialectFactory cdf = (ChunkDialectFactory) DialectEnumerator.getInstance().getFactory(ChunkDialect.DIALECT_NAME);

@@ -119,14 +119,16 @@ public final class TalkAcceptorHandler implements MessageHandler {
 	public void messageReceived(final Session session, final Message message) {
 		byte[] data = message.get();
 		try {
-			final Packet packet = Packet.unpack(data);
+			Packet packet = Packet.unpack(data);
 			if (null != packet) {
+				process(session, packet);
+				/*
 				this.kernel.executor.execute(new Runnable() {
 					@Override
 					public void run() {
 						process(session, packet);
 					}
-				});
+				});*/
 			}
 		} catch (NumberFormatException e) {
 			Logger.log(this.getClass(), e, LogLevel.WARNING);
