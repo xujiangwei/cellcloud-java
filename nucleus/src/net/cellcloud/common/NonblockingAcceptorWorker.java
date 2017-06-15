@@ -186,7 +186,11 @@ public final class NonblockingAcceptorWorker extends Thread {
 					session = this.sendSessions.remove(0);
 					if (Math.abs(ctime - session.writeTime) > this.eachSessionWriteInterval) {
 						if (null != session.socket) {
-							processSend(session);
+							int n = processSend(session, 2);
+							if (n > 0) {
+								this.sendSessions.add(session);
+							}
+
 							session.writeTime = ctime;
 						}
 					}
@@ -459,20 +463,22 @@ public final class NonblockingAcceptorWorker extends Thread {
 	 * 
 	 * @param session
 	 */
-	private void processSend(NonblockingAcceptorSession session) {
+	private int processSend(NonblockingAcceptorSession session, int total) {
 		SocketChannel channel = (SocketChannel) session.selectionKey.channel();
 
 		if (!channel.isConnected()) {
-			return;
+			return -1;
 		}
 
 		if (!session.isEmptyMessage()) {
 			// 有消息，进行发送
 			Message message = null;
 
+			int count = total;
+
 			synchronized (session) {
 				// 遍历待发信息
-				while (!session.isEmptyMessage()) {
+				while (!session.isEmptyMessage() && count > 0) {
 					message = session.pollMessage();
 					if (null == message) {
 						break;
@@ -501,6 +507,9 @@ public final class NonblockingAcceptorWorker extends Thread {
 					else {
 						buf = ByteBuffer.wrap(message.get());
 					}
+
+					// 计数
+					--count;
 
 					try {
 						int size = channel.write(buf);
@@ -540,7 +549,7 @@ public final class NonblockingAcceptorWorker extends Thread {
 
 						buf = null;
 
-						return;
+						return -1;
 					}
 
 					buf = null;
@@ -550,6 +559,8 @@ public final class NonblockingAcceptorWorker extends Thread {
 				}
 			} // #synchronized
 		}
+
+		return session.numMessages();
 	}
 
 	/**

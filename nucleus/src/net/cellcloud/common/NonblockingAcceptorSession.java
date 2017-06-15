@@ -116,4 +116,15 @@ public class NonblockingAcceptorSession extends Session {
 		}
 	}
 
+	/**
+	 * 消息发送队列里消息数量。
+	 * 
+	 * @return 返回消息发送队列里消息数量。
+	 */
+	protected int numMessages() {
+		synchronized (this.sendBuffer) {
+			return this.sendBuffer.size();
+		}
+	}
+
 }

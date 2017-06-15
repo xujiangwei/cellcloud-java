@@ -379,7 +379,12 @@ public class NonblockingAcceptor extends MessageService implements MessageAccept
 	 * @param num 指定工作器数量。
 	 */
 	public void setWorkerNum(int num) {
-		this.workerNum = num;
+		if (null == this.workers) {
+			this.workerNum = num;
+		}
+		else {
+			Logger.e(NonblockingAcceptor.class, "Can NOT set worker number");
+		}
 	}
 
 	/**
@@ -813,8 +818,7 @@ public class NonblockingAcceptor extends MessageService implements MessageAccept
 			session.socket = clientChannel.socket();
 
 			// 为 Session 选择工作线程
-			int index = (int)(session.getId().longValue() % this.workerNum);
-			session.worker = this.workers[index];
+			session.worker = this.chooseWorker(session);
 
 			// session id
 			sessionId = session.getId();
@@ -908,6 +912,36 @@ public class NonblockingAcceptor extends MessageService implements MessageAccept
 		if (key.isValid()) {
 			key.interestOps(key.interestOps() | SelectionKey.OP_WRITE);
 		}
+	}
+
+	/**
+	 * 为指定的会话选择工作线程。
+	 * 
+	 * @param session
+	 * @return
+	 */
+	private NonblockingAcceptorWorker chooseWorker(NonblockingAcceptorSession session) {
+		/* 下面的算法基于 mod
+		int index = (int)(session.getId().longValue() % this.workerNum);
+		return this.workers[index];
+		*/
+
+		// 选择累计上行流量最小的 Worker
+
+		NonblockingAcceptorWorker worker = this.workers[0];
+		long minTx = Long.MAX_VALUE;
+		long tx = 0;
+
+		for (int i = 0; i < this.workerNum; ++i) {
+			NonblockingAcceptorWorker naw = this.workers[i];
+			tx = naw.getTX();
+			if (tx < minTx) {
+				minTx = tx;
+				worker = naw;
+			}
+		}
+
+		return worker;
 	}
 
 }

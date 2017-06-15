@@ -298,6 +298,8 @@ public class NonblockingConnector extends MessageService implements MessageConne
 			this.executor.shutdown();
 			this.executor = null;
 		}
+
+		this.channel = null;
 	}
 
 	/**
