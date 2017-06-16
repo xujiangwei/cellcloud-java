@@ -24,45 +24,36 @@ THE SOFTWARE.
 -----------------------------------------------------------------------------
 */
 
-package net.cellcloud;
+package net.cellcloud.talk;
+
+import net.cellcloud.common.MessageTrigger;
+import net.cellcloud.common.Session;
 
 /**
- * Nucleus 程序库的版本描述。
- * 
- * @author Ambrose Xu
- * 
+ * 安全踢出客户端触发器。
  */
-public final class Version {
+public class SafeKickTrigger extends MessageTrigger {
 
-	/** 主版本号。 */
-	public static final int MAJOR = 1;
+	private TalkServiceKernel kernel;
 
-	/** 副版本号。 */
-	public static final int MINOR = 6;
-
-	/** 修订号。 */
-	public static final int REVISION = 30;
-
-	/** 版本名。 */
-	public static final String NAME = "Xi";
-
-	/** 版本串号。 */
-	public static final int VERSION_NUMBER = 160;
-
-	private Version() {
+	public SafeKickTrigger(TalkServiceKernel kernel) {
+		this.kernel = kernel;
 	}
 
-	/**
-	 * 获得字符串形式的版本描述。
-	 * 
-	 * @return 返回字符串形式的版本描述。
-	 */
-	public static String getNumbers() {
-		StringBuilder buf = new StringBuilder();
-		buf.append(MAJOR).append(".");
-		buf.append(MINOR).append(".");
-		buf.append(REVISION);
-		return buf.toString();
+	@Override
+	public void trigger(final Session session) {
+		this.kernel.executor.execute(new Runnable() {
+			@Override
+			public void run() {
+				try {
+					Thread.sleep(10L);
+				} catch (InterruptedException e) {
+					e.printStackTrace();
+				}
+
+				kernel.acceptor.close(session);
+			}
+		});
 	}
 
 }

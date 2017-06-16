@@ -40,6 +40,11 @@ public class Message {
 	private byte[] data;
 
 	/**
+	 * 发送成功触发器。
+	 */
+	protected MessageTrigger sentTrigger;
+
+	/**
 	 * 构造函数。
 	 * 
 	 * @param data 指定消息数据。
@@ -73,6 +78,24 @@ public class Message {
 	 */
 	public int length() {
 		return this.data.length;
+	}
+
+	/**
+	 * 设置消息已发送触发器。
+	 * 
+	 * @param trigger
+	 */
+	public void setSentTrigger(MessageTrigger trigger) {
+		this.sentTrigger = trigger;
+	}
+
+	/**
+	 * 获得消息已发送触发器。
+	 * 
+	 * @return
+	 */
+	public MessageTrigger getSentTrigger() {
+		return this.sentTrigger;
 	}
 
 }

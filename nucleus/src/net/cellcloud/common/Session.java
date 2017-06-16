@@ -29,6 +29,7 @@ package net.cellcloud.common;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import net.cellcloud.util.Utils;
 
@@ -59,6 +60,9 @@ public class Session implements Comparable<Object> {
 
 	/** 属性映射，用于存储会话的属性。 */
 	private ConcurrentHashMap<String, Object> attributes;
+
+	/** 当前会话是否被锁。 */
+	public AtomicBoolean lock = new AtomicBoolean(false);
 
 	/** 终端使用的数据包主版本号。 */
 	public int major = 2;

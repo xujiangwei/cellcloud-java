@@ -326,6 +326,32 @@ public class TalkService implements Service {
 	}
 
 	/**
+	 * 在发送完指定的原语后踢出终端。
+	 * 
+	 * @param primitive
+	 * @param targetTag
+	 * @param cellet
+	 * @param sandbox
+	 * @return
+	 */
+	public boolean kickAfterNotice(Primitive primitive, String targetTag, Cellet cellet, CelletSandbox sandbox) {
+		return this.kernel.kickAfter(primitive, targetTag, cellet, sandbox);
+	}
+
+	/**
+	 * 在发送完指定的原语后踢出终端。
+	 * 
+	 * @param dialect
+	 * @param targetTag
+	 * @param cellet
+	 * @param sandbox
+	 * @return
+	 */
+	public boolean kickAfterNotice(Dialect dialect, String targetTag, Cellet cellet, CelletSandbox sandbox) {
+		return this.kernel.kickAfter(dialect, targetTag, cellet, sandbox);
+	}
+
+	/**
 	 * 查询指定终端标签对应的连接会话数量。
 	 * 
 	 * @param tag 指定待查询的标签。

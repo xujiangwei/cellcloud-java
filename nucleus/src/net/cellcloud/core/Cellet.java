@@ -119,6 +119,28 @@ public abstract class Cellet extends AbstractCellet {
 	}
 
 	/**
+	 * 在发送完指定的原语后关闭消费端会话。
+	 * 
+	 * @param targetTag
+	 * @param primitive
+	 * @return
+	 */
+	public boolean hangUpAfterTalk(String targetTag, Primitive primitive) {
+		return TalkService.getInstance().kickAfterNotice(primitive, targetTag, this, this.sandbox);
+	}
+
+	/**
+	 * 在发送完指定的方言后关闭消费端会话。
+	 * 
+	 * @param targetTag
+	 * @param dialect
+	 * @return
+	 */
+	public boolean hangUpAfterTalk(String targetTag, Dialect dialect) {
+		return TalkService.getInstance().kickAfterNotice(dialect, targetTag, this, this.sandbox);
+	}
+
+	/**
 	 * 获得当前与服务有连接的终端的 Tag 。
 	 * 
 	 * @return 返回当前与服务有连接的终端的 Tag 集合。

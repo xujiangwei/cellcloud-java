@@ -24,45 +24,15 @@ THE SOFTWARE.
 -----------------------------------------------------------------------------
 */
 
-package net.cellcloud;
+package net.cellcloud.common;
 
 /**
- * Nucleus 程序库的版本描述。
- * 
- * @author Ambrose Xu
- * 
+ * 消息触发器。
  */
-public final class Version {
+public abstract class MessageTrigger {
 
-	/** 主版本号。 */
-	public static final int MAJOR = 1;
-
-	/** 副版本号。 */
-	public static final int MINOR = 6;
-
-	/** 修订号。 */
-	public static final int REVISION = 30;
-
-	/** 版本名。 */
-	public static final String NAME = "Xi";
-
-	/** 版本串号。 */
-	public static final int VERSION_NUMBER = 160;
-
-	private Version() {
+	public MessageTrigger() {
 	}
 
-	/**
-	 * 获得字符串形式的版本描述。
-	 * 
-	 * @return 返回字符串形式的版本描述。
-	 */
-	public static String getNumbers() {
-		StringBuilder buf = new StringBuilder();
-		buf.append(MAJOR).append(".");
-		buf.append(MINOR).append(".");
-		buf.append(REVISION);
-		return buf.toString();
-	}
-
+	public abstract void trigger(Session session);
 }

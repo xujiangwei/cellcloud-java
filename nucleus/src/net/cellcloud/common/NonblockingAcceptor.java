@@ -694,9 +694,15 @@ public class NonblockingAcceptor extends MessageService implements MessageAccept
 	 * @param session 指定会话。
 	 * @param message 指定消息。
 	 */
-	protected void fireMessageSent(Session session, Message message) {
+	protected void fireMessageSent(NonblockingAcceptorSession session, final Message message) {
 		if (null != this.handler) {
 			this.handler.messageSent(session, message);
+		}
+
+		MessageTrigger trigger = message.sentTrigger;
+		if (null != trigger) {
+			trigger.trigger(session);
+			message.sentTrigger = null;
 		}
 	}
 

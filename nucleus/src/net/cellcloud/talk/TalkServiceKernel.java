@@ -47,6 +47,7 @@ import net.cellcloud.common.LogLevel;
 import net.cellcloud.common.Logger;
 import net.cellcloud.common.Message;
 import net.cellcloud.common.MessageInterceptor;
+import net.cellcloud.common.MessageTrigger;
 import net.cellcloud.common.NonblockingAcceptor;
 import net.cellcloud.common.Packet;
 import net.cellcloud.common.Service;
@@ -160,7 +161,7 @@ public final class TalkServiceKernel implements Service, SpeakerDelegate {
 	/**
 	 * 用于标准协议的非阻塞接收器。
 	 */
-	private NonblockingAcceptor acceptor;
+	protected NonblockingAcceptor acceptor;
 
 	/**
 	 * 内核上下文。
@@ -865,9 +866,10 @@ public final class TalkServiceKernel implements Service, SpeakerDelegate {
 	 * @param primitive 指定发送的原语数据。
 	 * @param cellet 指定源 Cellet 。
 	 * @param sandbox 指定 Cellet 对应的沙盒。
+	 * @param sentTrigger 指定消息触发器。
 	 * @return 如果数据被正确送入发送队列返回 <code>true</code> 。
 	 */
-	public boolean notice(String targetTag, Primitive primitive, Cellet cellet, CelletSandbox sandbox) {
+	private boolean notice(String targetTag, Primitive primitive, Cellet cellet, CelletSandbox sandbox, MessageTrigger sentTrigger) {
 		// 检查 Cellet 合法性
 		if (!Nucleus.getInstance().checkSandbox(cellet, sandbox)) {
 			Logger.w(TalkServiceKernel.class, "Illegal cellet : " + cellet.getFeature().getIdentifier());
@@ -888,7 +890,7 @@ public final class TalkServiceKernel implements Service, SpeakerDelegate {
 
 				if (null == context) {
 					Logger.w(TalkServiceKernel.class, "Can't find target tag in hostlink : " + targetTag);
-					// 因为没有直接发送出去原语，所以返回 false
+					// 没有找到上下文返回 false
 					return false;
 				}
 				else {
@@ -897,7 +899,7 @@ public final class TalkServiceKernel implements Service, SpeakerDelegate {
 			}
 			else {
 				Logger.w(TalkServiceKernel.class, "Can't find target tag in context list : " + targetTag);
-				// 因为没有直接发送出去原语，所以返回 false
+				// 没有找到上下文返回 false
 				return false;
 			}
 		}
@@ -906,6 +908,11 @@ public final class TalkServiceKernel implements Service, SpeakerDelegate {
 
 		synchronized (context) {
 			for (Session session : context.getSessions()) {
+				if (session.lock.get()) {
+					// 会话被锁，不能进行操作
+					continue;
+				}
+
 				// 返回 tracker
 				TalkTracker tracker = context.getTracker(session);
 
@@ -935,6 +942,15 @@ public final class TalkServiceKernel implements Service, SpeakerDelegate {
 					// 打包
 					message = this.packetDialogue(cellet, primitive, session, note);
 
+					// 设置触发器
+					if (null != sentTrigger) {
+						message.setSentTrigger(sentTrigger);
+						// 如果是安全踢出触发器，将会话上锁
+						if (sentTrigger instanceof SafeKickTrigger) {
+							session.lock.set(true);
+						}
+					}
+
 					if (null != message) {
 						try {
 							session.write(message);
@@ -954,6 +970,19 @@ public final class TalkServiceKernel implements Service, SpeakerDelegate {
 	}
 
 	/**
+	 * 向指定标签的终端发送原语。
+	 * 
+	 * @param targetTag 指定目标的内核标签。
+	 * @param primitive 指定发送的原语数据。
+	 * @param cellet 指定源 Cellet 。
+	 * @param sandbox 指定 Cellet 对应的沙盒。
+	 * @return 如果数据被正确送入发送队列返回 <code>true</code> 。
+	 */
+	public boolean notice(String targetTag, Primitive primitive, Cellet cellet, CelletSandbox sandbox) {
+		return this.notice(targetTag, primitive, cellet, sandbox, null);
+	}
+
+	/**
 	 * 向指定标签的终端发送方言。
 	 * 
 	 * @param targetTag 指定目标的内核标签。
@@ -965,9 +994,8 @@ public final class TalkServiceKernel implements Service, SpeakerDelegate {
 	public boolean notice(String targetTag, Dialect dialect, Cellet cellet, CelletSandbox sandbox) {
 		Primitive primitive = dialect.reconstruct();
 		if (null != primitive) {
-			return this.notice(targetTag, primitive, cellet, sandbox);
+			return this.notice(targetTag, primitive, cellet, sandbox, null);
 		}
-
 		return false;
 	}
 
@@ -992,7 +1020,7 @@ public final class TalkServiceKernel implements Service, SpeakerDelegate {
 				Logger.w(TalkServiceKernel.class, "Can't find target tag in context list : " + targetTag);
 			}
 
-			// 因为没有直接发送出去原语，所以返回 false
+			// 没有找到上下文返回 false
 			return false;
 		}
 
@@ -1010,6 +1038,37 @@ public final class TalkServiceKernel implements Service, SpeakerDelegate {
 		list = null;
 
 		return true;
+	}
+
+	/**
+	 * 
+	 * @param primitive
+	 * @param targetTag
+	 * @param cellet
+	 * @param sandbox
+	 * @return
+	 */
+	public boolean kickAfter(Primitive primitive, String targetTag, Cellet cellet, CelletSandbox sandbox) {
+		SafeKickTrigger trigger = new SafeKickTrigger(this);
+		return this.notice(targetTag, primitive, cellet, sandbox, trigger);
+	}
+
+	/**
+	 * 
+	 * @param dialect
+	 * @param targetTag
+	 * @param cellet
+	 * @param sandbox
+	 * @return
+	 */
+	public boolean kickAfter(Dialect dialect, String targetTag, Cellet cellet, CelletSandbox sandbox) {
+		Primitive primitive = dialect.reconstruct();
+		if (null != primitive) {
+			SafeKickTrigger trigger = new SafeKickTrigger(this);
+			return this.notice(targetTag, primitive, cellet, sandbox, trigger);
+		}
+
+		return false;
 	}
 
 	/**
