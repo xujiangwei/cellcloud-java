@@ -31,7 +31,7 @@ import java.nio.ByteBuffer;
 import java.nio.channels.SocketChannel;
 import java.util.ArrayList;
 import java.util.LinkedList;
-import java.util.Vector;
+import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ScheduledExecutorService;
 
 /**
@@ -58,9 +58,9 @@ public final class NonblockingAcceptorWorker extends Thread {
 	private QuotaCalculator transmissionQuota;
 
 	/** 需要执行接收数据任务的 Session 列表。 */
-	private Vector<NonblockingAcceptorSession> receiveSessions = new Vector<NonblockingAcceptorSession>();
+	private ConcurrentLinkedQueue<NonblockingAcceptorSession> receiveSessions = new ConcurrentLinkedQueue<NonblockingAcceptorSession>();
 	/** 需要执行发送数据任务的 Session 列表。 */
-	private Vector<NonblockingAcceptorSession> sendSessions = new Vector<NonblockingAcceptorSession>();
+	private ConcurrentLinkedQueue<NonblockingAcceptorSession> sendSessions = new ConcurrentLinkedQueue<NonblockingAcceptorSession>();
 
 	/** 发送数据流量统计。 */
 	private long tx = 0;
@@ -169,7 +169,7 @@ public final class NonblockingAcceptorWorker extends Thread {
 			try {
 				if (!this.receiveSessions.isEmpty()) {
 					// 执行接收数据任务，并移除已执行的 Session
-					session = this.receiveSessions.remove(0);
+					session = this.receiveSessions.poll();
 					if (Math.abs(ctime - session.readTime) > this.eachSessionReadInterval) {
 						if (null != session.socket) {
 							processReceive(session);
@@ -183,7 +183,7 @@ public final class NonblockingAcceptorWorker extends Thread {
 
 				if (!this.sendSessions.isEmpty()) {
 					// 执行发送数据任务，并移除已执行的 Session
-					session = this.sendSessions.remove(0);
+					session = this.sendSessions.poll();
 					if (Math.abs(ctime - session.writeTime) > this.eachSessionWriteInterval) {
 						if (null != session.socket) {
 							int n = processSend(session, 2);

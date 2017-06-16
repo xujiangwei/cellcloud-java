@@ -191,6 +191,7 @@ public class Speaker implements Speakable {
 		}
 
 		if (this.identifierList.isEmpty()) {
+			this.lost = false;
 			Logger.w(Speaker.class, "Can not find any cellets to call in param 'identifiers'.");
 			return false;
 		}
@@ -406,7 +407,7 @@ public class Speaker implements Speakable {
 			// 标记为丢失
 			this.lost = true;
 		}
-		else {
+		else if (SpeakerState.HANGUP != this.state) {
 			TalkServiceFailure failure = new TalkServiceFailure(TalkFailureCode.NETWORK_NOT_AVAILABLE
 					, this.getClass(), this.address.getHostString(), this.address.getPort());
 			failure.setSourceDescription("Session has closed");
@@ -504,7 +505,12 @@ public class Speaker implements Speakable {
 			if (null != session) {
 				session.deactiveSecretKey();
 			}
+
+			this.connector.disconnect();
+			this.connector = null;
 		}
+
+		this.state = SpeakerState.HANGUP;
 	}
 
 	/**
@@ -519,9 +525,11 @@ public class Speaker implements Speakable {
 			this.delegate.onFailed(this, failure);
 		}
 		else {
-			this.state = SpeakerState.HANGUP;
-			this.delegate.onFailed(this, failure);
-			this.lost = true;
+			if (this.state != SpeakerState.HANGUP) {
+				this.state = SpeakerState.HANGUP;
+				this.delegate.onFailed(this, failure);
+				this.lost = true;
+			}
 		}
 	}
 

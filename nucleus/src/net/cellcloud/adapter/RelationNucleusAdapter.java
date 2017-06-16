@@ -40,8 +40,8 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.Vector;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
@@ -163,7 +163,7 @@ public abstract class RelationNucleusAdapter implements Adapter {
 	/**
 	 * 接收到的 Gene 序号。用于压制重复数据（因为 RUDP 未进行数据压制）。
 	 */
-	private ConcurrentHashMap<Endpoint, Vector<Long>> receivedGeneSeq;
+	private ConcurrentHashMap<Endpoint, ConcurrentLinkedQueue<Long>> receivedGeneSeq;
 
 	/**
 	 * 心跳计划任务的 Future 句柄。
@@ -202,7 +202,7 @@ public abstract class RelationNucleusAdapter implements Adapter {
 		this.quotaCallback = new QuotaCallback();
 
 		this.geneSeq = new AtomicLong(0);
-		this.receivedGeneSeq = new ConcurrentHashMap<Endpoint, Vector<Long>>();
+		this.receivedGeneSeq = new ConcurrentHashMap<Endpoint, ConcurrentLinkedQueue<Long>>();
 	}
 
 	/**
@@ -694,20 +694,20 @@ public abstract class RelationNucleusAdapter implements Adapter {
 	private void fireReceive(Endpoint endpoint, Gene gene, ReliableSocket socket) {
 		// 判断数据是否重复，压制重复数据
 		Long seq = Long.valueOf(gene.getHeader(GeneHeader.Seq));
-		Vector<Long> list = this.receivedGeneSeq.get(endpoint);
+		ConcurrentLinkedQueue<Long> list = this.receivedGeneSeq.get(endpoint);
 		if (null != list) {
 			if (list.contains(seq)) {
 				return;
 			}
 		}
 		else {
-			list = new Vector<Long>();
+			list = new ConcurrentLinkedQueue<Long>();
 			this.receivedGeneSeq.put(endpoint, list);
 		}
 		// 添加新 seq
 		list.add(seq);
 		if (list.size() > 100) {
-			list.remove(0);
+			list.poll();
 		}
 
 		// 查找终端

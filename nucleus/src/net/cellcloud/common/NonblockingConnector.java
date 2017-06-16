@@ -36,7 +36,7 @@ import java.nio.channels.SocketChannel;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.Set;
-import java.util.Vector;
+import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ExecutorService;
 
 import net.cellcloud.util.CachedQueueExecutor;
@@ -77,7 +77,7 @@ public class NonblockingConnector extends MessageService implements MessageConne
 	private long sleepInterval = 20L;
 
 	/** 待发送消息列表。 */
-	private Vector<Message> messages;
+	private ConcurrentLinkedQueue<Message> messages;
 
 	/** 是否关闭连接。 */
 	private boolean closed = false;
@@ -92,7 +92,7 @@ public class NonblockingConnector extends MessageService implements MessageConne
 	 */
 	public NonblockingConnector() {
 		this.connectTimeout = 10000L;
-		this.messages = new Vector<Message>();
+		this.messages = new ConcurrentLinkedQueue<Message>();
 	}
 
 	/**
@@ -257,7 +257,7 @@ public class NonblockingConnector extends MessageService implements MessageConne
 			}
 
 			try {
-				if (this.channel.isOpen()) {
+				if (null != this.channel && this.channel.isOpen()) {
 					this.channel.close();
 				}
 			} catch (Exception e) {
@@ -265,7 +265,9 @@ public class NonblockingConnector extends MessageService implements MessageConne
 			}
 
 			try {
-				this.channel.socket().close();
+				if (null != this.channel) {
+					this.channel.socket().close();
+				}
 			} catch (Exception e) {
 				//Logger.logException(e, LogLevel.DEBUG);
 			}
@@ -399,7 +401,7 @@ public class NonblockingConnector extends MessageService implements MessageConne
 			return;
 		}
 
-		this.messages.add(message);
+		this.messages.offer(message);
 	}
 
 	/**
@@ -672,10 +674,9 @@ public class NonblockingConnector extends MessageService implements MessageConne
 				// 有消息，进行发送
 
 				Message message = null;
-				for (int i = 0, len = this.messages.size(); i < len; ++i) {
-					try {
-						message = this.messages.remove(0);
-					} catch (IndexOutOfBoundsException e) {
+				while (!this.messages.isEmpty()) {
+					message = this.messages.poll();
+					if (null == message) {
 						break;
 					}
 
@@ -709,6 +710,8 @@ public class NonblockingConnector extends MessageService implements MessageConne
 				}
 			}
 		} catch (IOException e) {
+			Logger.log(NonblockingConnector.class, e, LogLevel.WARNING);
+		} catch (Exception e) {
 			Logger.log(NonblockingConnector.class, e, LogLevel.WARNING);
 		}
 
