@@ -147,7 +147,7 @@ public final class TalkServiceKernel implements Service, SpeakerDelegate {
 	/**
 	 * WebSocket 服务管理器。
 	 */
-	private WebSocketManager wsManager;
+	protected WebSocketManager wsManager;
 
 	/**
 	 * WebSocket Secure 消息服务处理器。
@@ -156,7 +156,7 @@ public final class TalkServiceKernel implements Service, SpeakerDelegate {
 	/**
 	 * WebSocket Secure 服务管理器。
 	 */
-	private WebSocketManager wssManager;
+	protected WebSocketManager wssManager;
 
 	/**
 	 * 用于标准协议的非阻塞接收器。
@@ -1031,7 +1031,18 @@ public final class TalkServiceKernel implements Service, SpeakerDelegate {
 		}
 
 		for (Session session : list) {
-			this.acceptor.close(session);
+			if (session instanceof WebSocketSession) {
+				WebSocketSession wss = (WebSocketSession) session;
+				if (null != this.wsManager) {
+					this.wsManager.close(wss);
+				}
+				if (null != this.wssManager) {
+					this.wssManager.close(wss);
+				}
+			}
+			else {
+				this.acceptor.close(session);
+			}
 		}
 
 		list.clear();

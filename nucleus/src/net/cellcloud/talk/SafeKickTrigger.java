@@ -28,6 +28,7 @@ package net.cellcloud.talk;
 
 import net.cellcloud.common.MessageTrigger;
 import net.cellcloud.common.Session;
+import net.cellcloud.http.WebSocketSession;
 
 /**
  * 安全踢出客户端触发器。
@@ -51,7 +52,18 @@ public class SafeKickTrigger extends MessageTrigger {
 					e.printStackTrace();
 				}
 
-				kernel.acceptor.close(session);
+				if (session instanceof WebSocketSession) {
+					WebSocketSession wss = (WebSocketSession) session;
+					if (null != kernel.wsManager) {
+						kernel.wsManager.close(wss);
+					}
+					if (null != kernel.wssManager) {
+						kernel.wssManager.close(wss);
+					}
+				}
+				else {
+					kernel.acceptor.close(session);
+				}
 			}
 		});
 	}
