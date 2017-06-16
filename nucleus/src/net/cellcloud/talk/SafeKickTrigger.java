@@ -47,7 +47,7 @@ public class SafeKickTrigger extends MessageTrigger {
 			@Override
 			public void run() {
 				try {
-					Thread.sleep(10L);
+					Thread.sleep(20L);
 				} catch (InterruptedException e) {
 					e.printStackTrace();
 				}
